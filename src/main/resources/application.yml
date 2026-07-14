@@ -1,0 +1,36 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: lottery-football
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+worldcup:
+  simulation-count: 50000
+  history-path: classpath:data/history_matches.csv
+  schedule-path: classpath:data/schedule_2026.csv
+  user-config-path: config/user-config.json
+  schedule-update:
+    enabled: true
+    source-url: https://raw.githubusercontent.com/openfootball/worldcup/master/2026--usa/cup.txt
+    timeout-seconds: 10
+    target-zone: America/New_York
+  espn-update:
+    enabled: true
+    scoreboard-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?limit=200&dates={start}-{end}
+    timeout-seconds: 10
+    target-zone: America/New_York
+    days-back: 30
+    days-forward: 21
+  max-goals-lambda: 4.5
+  min-goals-lambda: 0.2
+  base-match-weight: 1.0
+  recent-half-year-bonus: 0.1
+  world-cup-bonus: 0.25
+  host-team-goal-factor: 1.42
+  seed-team-goal-factor: 1.77
+  handicap-smoothing-factor: 0.185
+  handicap-max-smoothing: 0.185

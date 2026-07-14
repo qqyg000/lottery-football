@@ -1,0 +1,420 @@
+{
+  "modelFactors" : {
+    "baseMatchWeight" : 1.0,
+    "recentHalfYearBonus" : 0.1,
+    "worldCupBonus" : 0.25,
+    "hostTeamGoalFactor" : 1.42,
+    "seedTeamGoalFactor" : 1.69,
+    "handicapSmoothingFactor" : 0.185
+  },
+  "selectedRows" : {
+    "OF2026-006" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-005" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-002" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-017" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-001" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-007" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-019" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-008" : {
+      "normal" : null,
+      "handicap" : "handicap-2"
+    },
+    "OF2026-013" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-014" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-020" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-025" : {
+      "normal" : null,
+      "handicap" : "handicap--3"
+    },
+    "OF2026-031" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-026" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-032" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-043" : {
+      "normal" : null,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-037" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-044" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-038" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-049" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-050" : {
+      "normal" : null,
+      "handicap" : "handicap-2"
+    },
+    "OF2026-055" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-056" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-061" : {
+      "normal" : true,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-067" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-068" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-062" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-003" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-009" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-010" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-004" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-021" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-015" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-016" : {
+      "normal" : null,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-022" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-033" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-027" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-028" : {
+      "normal" : null,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-034" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-045" : {
+      "normal" : null,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-039" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-046" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-040" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-057" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-051" : {
+      "normal" : null,
+      "handicap" : "handicap--3"
+    },
+    "OF2026-052" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-058" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-063" : {
+      "normal" : null,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-069" : {
+      "normal" : null,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-070" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-064" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-011" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-012" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-018" : {
+      "normal" : null,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-030" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-029" : {
+      "normal" : null,
+      "handicap" : "handicap-2"
+    },
+    "OF2026-036" : {
+      "normal" : null,
+      "handicap" : "handicap-2"
+    },
+    "OF2026-035" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-024" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-023" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-053" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-054" : {
+      "normal" : null,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-047" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-048" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-041" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-042" : {
+      "normal" : null,
+      "handicap" : "handicap-2"
+    },
+    "OF2026-072" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-071" : {
+      "normal" : null,
+      "handicap" : "handicap-2"
+    },
+    "OF2026-065" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-066" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-059" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-060" : {
+      "normal" : null,
+      "handicap" : "handicap-2"
+    },
+    "OF2026-073" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-076" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-074" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-075" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-078" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-077" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-079" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-080" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-082" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-081" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-084" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-083" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-085" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "OF2026-088" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "OF2026-086" : {
+      "normal" : null,
+      "handicap" : "handicap--2"
+    },
+    "OF2026-087" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "ESPN2026-760502" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "ESPN2026-760503" : {
+      "normal" : null,
+      "handicap" : "handicap-2"
+    },
+    "ESPN2026-760504" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "ESPN2026-760505" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "ESPN2026-760506" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "ESPN2026-760507" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "ESPN2026-760509" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "ESPN2026-760508" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "ESPN2026-760510" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "ESPN2026-760511" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "ESPN2026-760512" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
+    },
+    "ESPN2026-760513" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "ESPN2026-760514" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "ESPN2026-760515" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "lottery-football-ui",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve --host 0.0.0.0 --port 8091",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "vue": "2.7.16"
+  },
+  "devDependencies": {
+    "@vue/cli-service": "5.0.8",
+    "vue-template-compiler": "2.7.16"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

@@ -1,0 +1,89 @@
+﻿match_id,match_date,kickoff_time,group_name,home_team_cn,away_team_cn,home_team_en,away_team_en,venue,neutral,status,home_score,away_score
+OF2026-001,2026-06-11,15:00,A组,墨西哥,南非,Mexico,South Africa,Mexico City,true,COMPLETED,2,0
+OF2026-002,2026-06-11,22:00,A组,韩国,捷克,South Korea,Czechia,Guadalajara (Zapopan),true,COMPLETED,2,1
+OF2026-007,2026-06-12,15:00,B组,加拿大,波黑,Canada,Bosnia and Herzegovina,Toronto,true,COMPLETED,1,1
+OF2026-019,2026-06-12,21:00,D组,美国,巴拉圭,United States,Paraguay,Los Angeles (Inglewood),true,COMPLETED,4,1
+OF2026-008,2026-06-13,15:00,B组,卡塔尔,瑞士,Qatar,Switzerland,San Francisco Bay Area (Santa Clara),true,COMPLETED,1,1
+OF2026-013,2026-06-13,18:00,C组,巴西,摩洛哥,Brazil,Morocco,New York/New Jersey (East Rutherford),true,COMPLETED,1,1
+OF2026-014,2026-06-13,21:00,C组,海地,苏格兰,Haiti,Scotland,Boston (Foxborough),true,COMPLETED,0,1
+OF2026-020,2026-06-14,00:00,D组,澳大利亚,土耳其,Australia,Turkey,Vancouver,true,COMPLETED,2,0
+OF2026-025,2026-06-14,13:00,E组,德国,库拉索,Germany,Curacao,Houston,true,COMPLETED,7,1
+OF2026-031,2026-06-14,16:00,F组,荷兰,日本,Netherlands,Japan,Dallas (Arlington),true,COMPLETED,2,2
+OF2026-026,2026-06-14,19:00,E组,科特迪瓦,厄瓜多尔,Ivory Coast,Ecuador,Philadelphia,true,COMPLETED,1,0
+OF2026-032,2026-06-14,22:00,F组,瑞典,突尼斯,Sweden,Tunisia,Monterrey (Guadalupe),true,COMPLETED,5,1
+OF2026-043,2026-06-15,12:00,H组,西班牙,佛得角,Spain,Cape Verde,Atlanta,true,COMPLETED,0,0
+OF2026-037,2026-06-15,15:00,G组,比利时,埃及,Belgium,Egypt,Seattle,true,COMPLETED,1,1
+OF2026-044,2026-06-15,18:00,H组,沙特阿拉伯,乌拉圭,Saudi Arabia,Uruguay,Miami (Miami Gardens),true,COMPLETED,1,1
+OF2026-038,2026-06-15,21:00,G组,伊朗,新西兰,Iran,New Zealand,Los Angeles (Inglewood),true,COMPLETED,2,2
+OF2026-049,2026-06-16,15:00,I组,法国,塞内加尔,France,Senegal,New York/New Jersey (East Rutherford),true,COMPLETED,3,1
+OF2026-050,2026-06-16,18:00,I组,伊拉克,挪威,Iraq,Norway,Boston (Foxborough),true,COMPLETED,1,4
+OF2026-055,2026-06-16,21:00,J组,阿根廷,阿尔及利亚,Argentina,Algeria,Kansas City,true,COMPLETED,3,0
+OF2026-056,2026-06-17,00:00,J组,奥地利,约旦,Austria,Jordan,San Francisco Bay Area (Santa Clara),true,COMPLETED,3,1
+OF2026-061,2026-06-17,13:00,K组,葡萄牙,刚果民主共和国,Portugal,DR Congo,Houston,true,COMPLETED,1,1
+OF2026-067,2026-06-17,16:00,L组,英格兰,克罗地亚,England,Croatia,Dallas (Arlington),true,COMPLETED,4,2
+OF2026-068,2026-06-17,19:00,L组,加纳,巴拿马,Ghana,Panama,Toronto,true,COMPLETED,1,0
+OF2026-062,2026-06-17,22:00,K组,乌兹别克斯坦,哥伦比亚,Uzbekistan,Colombia,Mexico City,true,COMPLETED,1,3
+OF2026-003,2026-06-18,12:00,A组,捷克,南非,Czechia,South Africa,Atlanta,true,COMPLETED,1,1
+OF2026-009,2026-06-18,15:00,B组,瑞士,波黑,Switzerland,Bosnia and Herzegovina,Los Angeles (Inglewood),true,COMPLETED,4,1
+OF2026-010,2026-06-18,18:00,B组,加拿大,卡塔尔,Canada,Qatar,Vancouver,true,COMPLETED,6,0
+OF2026-004,2026-06-18,21:00,A组,墨西哥,韩国,Mexico,South Korea,Guadalajara (Zapopan),true,COMPLETED,1,0
+OF2026-021,2026-06-19,15:00,D组,美国,澳大利亚,United States,Australia,Seattle,true,COMPLETED,2,0
+OF2026-015,2026-06-19,18:00,C组,苏格兰,摩洛哥,Scotland,Morocco,Boston (Foxborough),true,COMPLETED,0,1
+OF2026-016,2026-06-19,20:30,C组,巴西,海地,Brazil,Haiti,Philadelphia,true,COMPLETED,3,0
+OF2026-022,2026-06-19,23:00,D组,土耳其,巴拉圭,Turkey,Paraguay,San Francisco Bay Area (Santa Clara),true,COMPLETED,0,1
+OF2026-033,2026-06-20,13:00,F组,荷兰,瑞典,Netherlands,Sweden,Houston,true,COMPLETED,5,1
+OF2026-027,2026-06-20,16:00,E组,德国,科特迪瓦,Germany,Ivory Coast,Toronto,true,COMPLETED,2,1
+OF2026-028,2026-06-20,20:00,E组,厄瓜多尔,库拉索,Ecuador,Curacao,Kansas City,true,COMPLETED,0,0
+OF2026-034,2026-06-21,00:00,F组,突尼斯,日本,Tunisia,Japan,Monterrey (Guadalupe),true,COMPLETED,0,4
+OF2026-045,2026-06-21,12:00,H组,西班牙,沙特阿拉伯,Spain,Saudi Arabia,Atlanta,true,COMPLETED,4,0
+OF2026-039,2026-06-21,15:00,G组,比利时,伊朗,Belgium,Iran,Los Angeles (Inglewood),true,COMPLETED,0,0
+OF2026-046,2026-06-21,18:00,H组,乌拉圭,佛得角,Uruguay,Cape Verde,Miami (Miami Gardens),true,COMPLETED,2,2
+OF2026-040,2026-06-21,21:00,G组,新西兰,埃及,New Zealand,Egypt,Vancouver,true,COMPLETED,1,3
+OF2026-057,2026-06-22,13:00,J组,阿根廷,奥地利,Argentina,Austria,Dallas (Arlington),true,COMPLETED,2,0
+OF2026-051,2026-06-22,17:00,I组,法国,伊拉克,France,Iraq,Philadelphia,true,COMPLETED,3,0
+OF2026-052,2026-06-22,20:00,I组,挪威,塞内加尔,Norway,Senegal,New York/New Jersey (East Rutherford),true,COMPLETED,3,2
+OF2026-058,2026-06-22,23:00,J组,约旦,阿尔及利亚,Jordan,Algeria,San Francisco Bay Area (Santa Clara),true,COMPLETED,1,2
+OF2026-063,2026-06-23,13:00,K组,葡萄牙,乌兹别克斯坦,Portugal,Uzbekistan,Houston,true,COMPLETED,5,0
+OF2026-069,2026-06-23,16:00,L组,英格兰,加纳,England,Ghana,Boston (Foxborough),true,COMPLETED,0,0
+OF2026-070,2026-06-23,19:00,L组,巴拿马,克罗地亚,Panama,Croatia,Toronto,true,COMPLETED,0,1
+OF2026-064,2026-06-23,22:00,K组,哥伦比亚,刚果民主共和国,Colombia,DR Congo,Guadalajara (Zapopan),true,COMPLETED,1,0
+OF2026-011,2026-06-24,15:00,B组,瑞士,加拿大,Switzerland,Canada,Vancouver,true,COMPLETED,2,1
+OF2026-012,2026-06-24,15:00,B组,波黑,卡塔尔,Bosnia and Herzegovina,Qatar,Seattle,true,COMPLETED,3,1
+OF2026-017,2026-06-24,18:00,C组,苏格兰,巴西,Scotland,Brazil,Miami (Miami Gardens),true,COMPLETED,0,3
+OF2026-018,2026-06-24,18:00,C组,摩洛哥,海地,Morocco,Haiti,Atlanta,true,COMPLETED,4,2
+OF2026-005,2026-06-24,21:00,A组,捷克,墨西哥,Czechia,Mexico,Mexico City,true,COMPLETED,0,3
+OF2026-006,2026-06-24,21:00,A组,南非,韩国,South Africa,South Korea,Monterrey (Guadalupe),true,COMPLETED,1,0
+OF2026-029,2026-06-25,16:00,E组,库拉索,科特迪瓦,Curacao,Ivory Coast,Philadelphia,true,COMPLETED,0,2
+OF2026-030,2026-06-25,16:00,E组,厄瓜多尔,德国,Ecuador,Germany,New York/New Jersey (East Rutherford),true,COMPLETED,2,1
+OF2026-035,2026-06-25,19:00,F组,日本,瑞典,Japan,Sweden,Dallas (Arlington),true,COMPLETED,1,1
+OF2026-036,2026-06-25,19:00,F组,突尼斯,荷兰,Tunisia,Netherlands,Kansas City,true,COMPLETED,1,3
+OF2026-023,2026-06-25,22:00,D组,土耳其,美国,Turkey,United States,Los Angeles (Inglewood),true,COMPLETED,3,2
+OF2026-024,2026-06-25,22:00,D组,巴拉圭,澳大利亚,Paraguay,Australia,San Francisco Bay Area (Santa Clara),true,COMPLETED,0,0
+OF2026-053,2026-06-26,15:00,I组,挪威,法国,Norway,France,Boston (Foxborough),true,COMPLETED,1,4
+OF2026-054,2026-06-26,15:00,I组,塞内加尔,伊拉克,Senegal,Iraq,Toronto,true,COMPLETED,5,0
+OF2026-047,2026-06-26,20:00,H组,佛得角,沙特阿拉伯,Cape Verde,Saudi Arabia,Houston,true,COMPLETED,0,0
+OF2026-048,2026-06-26,20:00,H组,乌拉圭,西班牙,Uruguay,Spain,Guadalajara (Zapopan),true,COMPLETED,0,1
+OF2026-041,2026-06-26,23:00,G组,埃及,伊朗,Egypt,Iran,Seattle,true,COMPLETED,1,1
+OF2026-042,2026-06-26,23:00,G组,新西兰,比利时,New Zealand,Belgium,Vancouver,true,COMPLETED,1,5
+OF2026-071,2026-06-27,17:00,L组,巴拿马,英格兰,Panama,England,New York/New Jersey (East Rutherford),true,COMPLETED,0,2
+OF2026-072,2026-06-27,17:00,L组,克罗地亚,加纳,Croatia,Ghana,Philadelphia,true,COMPLETED,2,1
+OF2026-065,2026-06-27,19:30,K组,哥伦比亚,葡萄牙,Colombia,Portugal,Miami (Miami Gardens),true,COMPLETED,0,0
+OF2026-066,2026-06-27,19:30,K组,刚果民主共和国,乌兹别克斯坦,DR Congo,Uzbekistan,Atlanta,true,COMPLETED,3,1
+OF2026-059,2026-06-27,22:00,J组,阿尔及利亚,奥地利,Algeria,Austria,Kansas City,true,COMPLETED,3,3
+OF2026-060,2026-06-27,22:00,J组,约旦,阿根廷,Jordan,Argentina,Dallas (Arlington),true,COMPLETED,1,3
+OF2026-073,2026-06-28,15:00,32强淘汰赛,南非,加拿大,South Africa,Canada,Los Angeles (Inglewood),true,COMPLETED,0,1
+OF2026-076,2026-06-29,13:00,32强淘汰赛,巴西,日本,Brazil,Japan,Houston,true,SCHEDULED,,
+OF2026-074,2026-06-29,16:30,32强淘汰赛,德国,巴拉圭,Germany,Paraguay,Boston (Foxborough),true,SCHEDULED,,
+OF2026-075,2026-06-29,21:00,32强淘汰赛,荷兰,摩洛哥,Netherlands,Morocco,Monterrey (Guadalupe),true,SCHEDULED,,
+OF2026-078,2026-06-30,13:00,32强淘汰赛,科特迪瓦,挪威,Ivory Coast,Norway,Dallas (Arlington),true,SCHEDULED,,
+OF2026-077,2026-06-30,17:00,32强淘汰赛,法国,瑞典,France,Sweden,New York/New Jersey (East Rutherford),true,SCHEDULED,,
+OF2026-079,2026-06-30,21:00,32强淘汰赛,墨西哥,厄瓜多尔,Mexico,Ecuador,Mexico City,true,SCHEDULED,,
+OF2026-080,2026-07-01,12:00,32强淘汰赛,英格兰,刚果民主共和国,England,DR Congo,Atlanta,true,SCHEDULED,,
+OF2026-082,2026-07-01,16:00,32强淘汰赛,比利时,塞内加尔,Belgium,Senegal,Seattle,true,SCHEDULED,,
+OF2026-081,2026-07-01,20:00,32强淘汰赛,美国,波黑,United States,Bosnia and Herzegovina,San Francisco Bay Area (Santa Clara),true,SCHEDULED,,
+OF2026-084,2026-07-02,15:00,32强淘汰赛,西班牙,奥地利,Spain,Austria,Los Angeles (Inglewood),true,SCHEDULED,,
+OF2026-083,2026-07-02,19:00,32强淘汰赛,葡萄牙,克罗地亚,Portugal,Croatia,Toronto,true,SCHEDULED,,
+OF2026-085,2026-07-02,23:00,32强淘汰赛,瑞士,阿尔及利亚,Switzerland,Algeria,Vancouver,true,SCHEDULED,,
+OF2026-088,2026-07-03,14:00,32强淘汰赛,澳大利亚,埃及,Australia,Egypt,Dallas (Arlington),true,SCHEDULED,,
+OF2026-086,2026-07-03,18:00,32强淘汰赛,阿根廷,佛得角,Argentina,Cape Verde,Miami (Miami Gardens),true,SCHEDULED,,
+OF2026-087,2026-07-03,21:30,32强淘汰赛,哥伦比亚,加纳,Colombia,Ghana,Kansas City,true,SCHEDULED,,
