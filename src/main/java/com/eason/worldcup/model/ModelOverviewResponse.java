@@ -5,6 +5,10 @@ import java.util.List;
 
 public class ModelOverviewResponse {
 
+    private Competition competition = Competition.WORLD_CUP;
+
+    private String competitionName;
+
     private int historicalMatchCount;
 
     private int scheduleMatchCount;
@@ -14,6 +18,22 @@ public class ModelOverviewResponse {
     private double baselineGoals;
 
     private List<String> scheduleDates = new ArrayList<>();
+
+    public Competition getCompetition() {
+        return competition;
+    }
+
+    public void setCompetition(Competition competition) {
+        this.competition = competition == null ? Competition.WORLD_CUP : competition;
+    }
+
+    public String getCompetitionName() {
+        return competitionName;
+    }
+
+    public void setCompetitionName(String competitionName) {
+        this.competitionName = competitionName;
+    }
 
     public int getHistoricalMatchCount() {
         return historicalMatchCount;

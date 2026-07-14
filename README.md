@@ -1,10 +1,10 @@
 # lottery-football
 
-2026世界杯胜平负概率预测程序
+竞彩足球胜平负概率预测程序
 
 ## 一、功能说明
 
-本项目是一个可直接落地运行的 Java + Vue2 小程序，用于根据 2026 世界杯赛程按日期查询比赛，并展示：
+本项目是一个可直接落地运行的 Java + Vue2 小程序，支持按赛事和日期查询世界杯、欧冠、挪超、瑞超、芬超、欧罗巴、巴甲、美职和韩职比赛，并展示：
 
 1. 常规胜平负概率：主胜、平局、主负
 2. 主队让球胜平负概率：-3、-2、-1、+1、+2、+3
@@ -13,12 +13,14 @@
 
 模型口径：
 
-1. 从 `history_matches.csv` 读取历史战绩
-2. 按比赛时间衰减权重和世界杯赛事权重计算球队进攻强度、失球弱点
-3. 根据双方强度生成双方期望进球 λ
-4. 使用泊松分布生成单场进球
-5. 使用蒙特卡洛重复模拟 N 次
-6. 统计胜平负与让球胜平负概率
+1. 世界杯从 `history_matches.csv` 读取国家队历史战绩
+2. 欧冠、挪超、瑞超、欧罗巴、巴甲和美职从 ESPN 读取赛程及近三季结果
+3. 芬超和韩职从 TheSportsDB 读取近三季样本、近期比赛及未来轮次，并使用本地缓存抗网络波动
+4. 各俱乐部赛事独立计算球队进攻强度、失球弱点，不跨赛事混合样本
+5. 根据双方强度生成双方期望进球 λ
+6. 使用泊松分布生成单场进球
+7. 使用蒙特卡洛重复模拟 N 次
+8. 统计胜平负与让球胜平负概率
 
 该项目仅用于数据分析、算法学习和系统开发验证，不构成投注建议。
 
@@ -29,7 +31,7 @@
 - Java 17
 - Spring Boot 3.3.5
 - Maven
-- CSV 文件数据源
+- CSV、ESPN 与 TheSportsDB 赛事数据源
 
 前端：
 
@@ -116,36 +118,56 @@ http://127.0.0.1:8080
 ### 1. 健康检查
 
 ```http
-GET /api/worldcup/health
+GET /api/football/health
 ```
 
 ### 2. 数据概览
 
 ```http
-GET /api/worldcup/overview
+GET /api/football/overview?competition=CHAMPIONS_LEAGUE
 ```
 
 返回字段：
 
 | 字段 | 说明 |
 |---|---|
+| competition | 赛事代码，见下方赛事代码表 |
+| competitionName | 赛事中文名 |
 | historicalMatchCount | 历史战绩样本数量 |
 | scheduleMatchCount | 赛程数量 |
+| completedMatchCount | 已完赛数量 |
 | baselineGoals | 基准场均进球 |
 | scheduleDates | 可查询的比赛日期 |
 
 ### 3. 按日期查询概率
 
 ```http
-GET /api/worldcup/predictions?date=2026-06-18&simulations=50000
+GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simulations=50000
 ```
 
 参数：
 
 | 参数 | 必填 | 说明 |
 |---|---|---|
+| competition | 否 | 赛事代码，默认 WORLD_CUP |
 | date | 是 | 比赛日期，格式 yyyy-MM-dd |
 | simulations | 否 | 蒙特卡洛模拟次数，默认 50000，允许范围 1000 到 500000 |
+
+旧版 `/api/worldcup` 路径继续保留，未传 `competition` 时默认查询世界杯。
+
+赛事代码：
+
+| 赛事 | 代码 |
+|---|---|
+| 世界杯 | WORLD_CUP |
+| 欧冠 | CHAMPIONS_LEAGUE |
+| 挪超 | NORWEGIAN_ELITESERIEN |
+| 瑞超 | SWEDISH_ALLSVENSKAN |
+| 芬超 | FINNISH_VEIKKAUSLIIGA |
+| 欧罗巴 | EUROPA_LEAGUE |
+| 巴甲 | BRAZIL_SERIE_A |
+| 美职 | MLS |
+| 韩职 | K_LEAGUE_1 |
 
 ## 六、数据文件说明
 
@@ -196,6 +218,21 @@ src/main/resources/data/history_matches.csv
 | neutral | 是否中立场 |
 
 英文队名必须和 `schedule_2026.csv` 中的 `home_team_en`、`away_team_en` 保持一致，否则模型会使用默认强度。
+
+### 3. 欧冠赛程与历史结果
+
+欧冠不依赖本地 CSV，启动及手动更新数据时会分别调用：
+
+- `uefa.champions_qual`：欧冠资格赛与附加赛
+- `uefa.champions`：欧冠联赛阶段与淘汰赛
+
+默认读取当前赛季及此前两个赛季，比赛时间统一转换为 `Asia/Shanghai`。数据源不可用时不会影响世界杯内置赛程启动。
+
+### 4. 其他俱乐部赛事
+
+挪超、瑞超、欧罗巴、巴甲和美职由 ESPN Scoreboard 动态加载。芬超、韩职使用 TheSportsDB 免费接口，并按免费额度只请求近三季样本、最近/下一场及未来六轮。
+
+所有新增赛事按赛事代码独立建模，时间统一转换为 `Asia/Shanghai`。成功获取的赛程会缓存到 `config/club-competition-schedules.json`，外部数据源暂时不可用时继续使用已有缓存。
 
 ## 七、模型说明
 

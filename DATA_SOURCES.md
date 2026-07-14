@@ -28,3 +28,43 @@ match_date,tournament,home_team,away_team,home_score,away_score,neutral
 ```
 
 其中 `home_team` 和 `away_team` 必须与赛程文件中的英文队名一致。
+
+## 欧洲冠军联赛
+
+欧冠赛程和历史结果由 ESPN Scoreboard 接口动态加载，分为两个赛事代码：
+
+- `uefa.champions_qual`：资格赛与附加赛
+- `uefa.champions`：联赛阶段与淘汰赛
+
+应用默认加载当前赛季和此前两个赛季，目标时区为 `Asia/Shanghai`。相关地址、超时时间和赛季数量配置位于 `src/main/resources/application.yml` 的 `champions-league.espn-update` 节点。
+
+## 其他俱乐部赛事
+
+以下赛事由 ESPN Scoreboard 动态加载当前赛季和此前两个赛季：
+
+- `nor.1`：挪超
+- `swe.1`：瑞超
+- `uefa.europa`、`uefa.europa_qual`：欧罗巴正赛、资格赛与附加赛
+- `bra.1`：巴甲
+- `usa.1`：美职
+
+芬超和韩职使用 TheSportsDB：
+
+- 联赛 `4636`：芬超
+- 联赛 `4689`：韩职
+
+TheSportsDB 免费接口存在返回条数和每分钟请求次数限制，因此程序读取近三季样本、最近/下一场及未来六轮，并将成功结果缓存到 `config/club-competition-schedules.json`。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 节点。
+
+## 俱乐部中文名
+
+俱乐部中文名映射位于 `src/main/java/com/eason/worldcup/util/ClubTeamNameTranslator.java`，英文源名称只用于关联赛程和历史数据。
+
+中文名称优先采用国家体育总局体育彩票管理中心在竞彩网公布的竞猜球队全称及受注赛程：
+
+- [2026 年瑞超、芬超部分竞猜球队全简称](https://www.sporttery.cn/ctzc/czgg/20260421/10053253.html)
+- [2025 年挪超部分竞猜球队全简称](https://m.sporttery.cn/mctzc/zcgg/20250429/10048134.html)
+- [2025 年美职足部分竞猜球队全简称](https://www.sporttery.cn/ctzc/zcgg/20250522/10048467.html)
+- [2026 年 5 月 29 日至 6 月 4 日受注赛程](https://m.sporttery.cn/mctzc/czgg/20260526/10053843.html)
+- [竞彩网韩职联赛资料](https://info.sporttery.cn/football/history/history_data.php?mid=51)
+
+新出现的俱乐部如果尚未在国内来源核验，程序保留数据源原名，不根据英文自行音译，核验后再补充静态映射。

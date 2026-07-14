@@ -6,6 +6,8 @@ import java.util.List;
 
 public class PredictionQueryResponse {
 
+    private Competition competition = Competition.WORLD_CUP;
+
     private LocalDate date;
 
     private int simulations;
@@ -13,6 +15,14 @@ public class PredictionQueryResponse {
     private int total;
 
     private List<MatchPredictionResponse> matches = new ArrayList<>();
+
+    public Competition getCompetition() {
+        return competition;
+    }
+
+    public void setCompetition(Competition competition) {
+        this.competition = competition == null ? Competition.WORLD_CUP : competition;
+    }
 
     public LocalDate getDate() {
         return date;

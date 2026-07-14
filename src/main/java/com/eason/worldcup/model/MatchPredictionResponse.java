@@ -7,6 +7,8 @@ import java.util.List;
 
 public class MatchPredictionResponse {
 
+    private Competition competition = Competition.WORLD_CUP;
+
     private String matchId;
 
     private LocalDate matchDate;
@@ -60,6 +62,14 @@ public class MatchPredictionResponse {
     private int correctionMatchCount;
 
     private String modelRemark;
+
+    public Competition getCompetition() {
+        return competition;
+    }
+
+    public void setCompetition(Competition competition) {
+        this.competition = competition == null ? Competition.WORLD_CUP : competition;
+    }
 
     public String getMatchId() {
         return matchId;

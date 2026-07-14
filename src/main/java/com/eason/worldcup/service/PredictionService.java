@@ -1,5 +1,6 @@
 package com.eason.worldcup.service;
 
+import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HandicapProbability;
 import com.eason.worldcup.model.HalfFullProbability;
 import com.eason.worldcup.model.MatchPredictionResponse;
@@ -63,9 +64,32 @@ public class PredictionService {
             Double baseMatchWeight,
             Double recentHalfYearBonus,
             Double worldCupBonus) {
+        return queryByDate(
+                Competition.WORLD_CUP,
+                date,
+                simulations,
+                hostTeamGoalFactor,
+                seedTeamGoalFactor,
+                handicapSmoothingFactor,
+                baseMatchWeight,
+                recentHalfYearBonus,
+                worldCupBonus);
+    }
+
+    public PredictionQueryResponse queryByDate(
+            Competition competition,
+            LocalDate date,
+            Integer simulations,
+            Double hostTeamGoalFactor,
+            Double seedTeamGoalFactor,
+            Double handicapSmoothingFactor,
+            Double baseMatchWeight,
+            Double recentHalfYearBonus,
+            Double worldCupBonus) {
+        Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         int simulationCount = normalizeSimulationCount(simulations);
         double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
-        List<MatchPredictionResponse> matches = dataRepository.findSchedulesByDate(date)
+        List<MatchPredictionResponse> matches = dataRepository.findSchedulesByDate(date, effectiveCompetition)
                 .stream()
                 .map(schedule -> predict(
                         schedule,
@@ -79,6 +103,7 @@ public class PredictionService {
                         worldCupBonus))
                 .toList();
         PredictionQueryResponse response = new PredictionQueryResponse();
+        response.setCompetition(effectiveCompetition);
         response.setDate(date);
         response.setSimulations(simulationCount);
         response.setTotal(matches.size());
@@ -87,19 +112,30 @@ public class PredictionService {
     }
 
     public ModelOverviewResponse overview() {
+        return overview(Competition.WORLD_CUP);
+    }
+
+    public ModelOverviewResponse overview(Competition competition) {
+        Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         ModelOverviewResponse response = new ModelOverviewResponse();
-        response.setHistoricalMatchCount(dataRepository.getHistoricalMatches().size());
-        response.setScheduleMatchCount(dataRepository.getSchedules().size());
-        response.setCompletedMatchCount(teamStrengthService.countCompletedScheduleMatches());
-        response.setBaselineGoals(teamStrengthService.getBaselineGoals());
-        response.setScheduleDates(dataRepository.findScheduleDates());
+        response.setCompetition(effectiveCompetition);
+        response.setCompetitionName(effectiveCompetition.getDisplayName());
+        response.setHistoricalMatchCount(teamStrengthService.countHistoricalMatches(effectiveCompetition));
+        response.setScheduleMatchCount(dataRepository.getSchedules(effectiveCompetition).size());
+        response.setCompletedMatchCount(teamStrengthService.countCompletedScheduleMatches(effectiveCompetition));
+        response.setBaselineGoals(teamStrengthService.getBaselineGoals(effectiveCompetition));
+        response.setScheduleDates(dataRepository.findScheduleDates(effectiveCompetition));
         return response;
     }
 
     public ModelOverviewResponse refreshData() {
+        return refreshData(Competition.WORLD_CUP);
+    }
+
+    public ModelOverviewResponse refreshData(Competition competition) {
         dataRepository.reloadData();
         teamStrengthService.rebuildModels();
-        return overview();
+        return overview(competition);
     }
 
     private MatchPredictionResponse predict(
@@ -130,6 +166,7 @@ public class PredictionService {
                 worldCupBonus);
         SimulationCounter postMatchCounter = runMonteCarlo(schedule, postMatchExpectedGoals, simulationCount, effectiveHandicapSmoothingFactor);
         MatchPredictionResponse response = new MatchPredictionResponse();
+        response.setCompetition(schedule.getCompetition());
         response.setMatchId(schedule.getMatchId());
         response.setMatchDate(schedule.getMatchDate());
         response.setKickoffTime(schedule.getKickoffTime());

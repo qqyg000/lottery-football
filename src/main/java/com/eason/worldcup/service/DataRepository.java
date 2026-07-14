@@ -1,5 +1,6 @@
 package com.eason.worldcup.service;
 
+import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.util.CsvUtils;
@@ -38,6 +39,8 @@ public class DataRepository {
 
     private final EspnScheduleUpdater espnScheduleUpdater;
 
+    private final ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater;
+
     @Value("${worldcup.history-path:classpath:data/history_matches.csv}")
     private String historyPath;
 
@@ -48,10 +51,15 @@ public class DataRepository {
 
     private volatile List<MatchSchedule> schedules = Collections.emptyList();
 
-    public DataRepository(ResourceLoader resourceLoader, OpenFootballScheduleUpdater scheduleUpdater, EspnScheduleUpdater espnScheduleUpdater) {
+    public DataRepository(
+            ResourceLoader resourceLoader,
+            OpenFootballScheduleUpdater scheduleUpdater,
+            EspnScheduleUpdater espnScheduleUpdater,
+            ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater) {
         this.resourceLoader = resourceLoader;
         this.scheduleUpdater = scheduleUpdater;
         this.espnScheduleUpdater = espnScheduleUpdater;
+        this.clubCompetitionScheduleUpdater = clubCompetitionScheduleUpdater;
     }
 
     @PostConstruct
@@ -74,8 +82,21 @@ public class DataRepository {
         return schedules;
     }
 
-    public List<MatchSchedule> findSchedulesByDate(LocalDate date) {
+    public List<MatchSchedule> getSchedules(Competition competition) {
+        Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         return schedules.stream()
+                .filter(item -> item.getCompetition() == effectiveCompetition)
+                .collect(Collectors.toList());
+    }
+
+    public List<MatchSchedule> findSchedulesByDate(LocalDate date) {
+        return findSchedulesByDate(date, Competition.WORLD_CUP);
+    }
+
+    public List<MatchSchedule> findSchedulesByDate(LocalDate date, Competition competition) {
+        Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
+        return schedules.stream()
+                .filter(item -> item.getCompetition() == effectiveCompetition)
                 .filter(item -> getScheduleQueryDate(item).equals(date))
                 .sorted(Comparator.comparingInt(this::getScheduleSortSeconds)
                         .thenComparing(MatchSchedule::getMatchDate)
@@ -84,7 +105,13 @@ public class DataRepository {
     }
 
     public List<String> findScheduleDates() {
+        return findScheduleDates(Competition.WORLD_CUP);
+    }
+
+    public List<String> findScheduleDates(Competition competition) {
+        Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         return schedules.stream()
+                .filter(item -> item.getCompetition() == effectiveCompetition)
                 .map(item -> getScheduleQueryDate(item).toString())
                 .distinct()
                 .sorted()
@@ -92,14 +119,16 @@ public class DataRepository {
     }
 
     private LocalDate getScheduleQueryDate(MatchSchedule schedule) {
-        if (LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())) {
+        if (schedule.getCompetition() == Competition.WORLD_CUP
+                && LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())) {
             return schedule.getMatchDate().minusDays(1);
         }
         return schedule.getMatchDate();
     }
 
     private int getScheduleSortSeconds(MatchSchedule schedule) {
-        if (LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())) {
+        if (schedule.getCompetition() == Competition.WORLD_CUP
+                && LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())) {
             return 24 * 60 * 60;
         }
         return schedule.getKickoffTime().toSecondOfDay();
@@ -152,6 +181,7 @@ public class DataRepository {
                 }
                 List<String> row = CsvUtils.parseLine(line);
                 MatchSchedule schedule = new MatchSchedule();
+                schedule.setCompetition(Competition.WORLD_CUP);
                 schedule.setMatchId(CsvUtils.get(row, 0));
                 schedule.setMatchDate(LocalDate.parse(CsvUtils.get(row, 1)));
                 schedule.setKickoffTime(LocalTime.parse(CsvUtils.get(row, 2)));
@@ -178,6 +208,14 @@ public class DataRepository {
         int espnUpdatedCount = espnScheduleUpdater.updateSchedules(result);
         if (espnUpdatedCount > 0) {
             log.info("Backfilled {} World Cup schedule rows from ESPN scoreboard.", espnUpdatedCount);
+        }
+        int championsLeagueUpdatedCount = espnScheduleUpdater.updateChampionsLeagueSchedules(result);
+        if (championsLeagueUpdatedCount > 0) {
+            log.info("Loaded {} Champions League schedule rows from ESPN scoreboard.", championsLeagueUpdatedCount);
+        }
+        int clubCompetitionUpdatedCount = clubCompetitionScheduleUpdater.updateSchedules(result);
+        if (clubCompetitionUpdatedCount > 0) {
+            log.info("Loaded {} additional club competition schedule rows.", clubCompetitionUpdatedCount);
         }
         result.sort(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getKickoffTime));
         return result;

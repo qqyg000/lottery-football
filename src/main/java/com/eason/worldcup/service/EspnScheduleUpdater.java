@@ -1,6 +1,8 @@
 package com.eason.worldcup.service;
 
+import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.MatchSchedule;
+import com.eason.worldcup.util.ClubTeamNameTranslator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -58,6 +60,24 @@ public class EspnScheduleUpdater {
     @Value("${worldcup.espn-update.days-forward:21}")
     private int daysForward;
 
+    @Value("${champions-league.espn-update.enabled:true}")
+    private boolean championsLeagueEnabled;
+
+    @Value("${champions-league.espn-update.scoreboard-url-template:https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard?limit=1000&dates={start}-{end}}")
+    private String championsLeagueScoreboardUrlTemplate;
+
+    @Value("${champions-league.espn-update.qualifying-scoreboard-url-template:https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions_qual/scoreboard?limit=500&dates={start}-{end}}")
+    private String championsLeagueQualifyingScoreboardUrlTemplate;
+
+    @Value("${champions-league.espn-update.timeout-seconds:10}")
+    private int championsLeagueTimeoutSeconds;
+
+    @Value("${champions-league.espn-update.target-zone:Asia/Shanghai}")
+    private String championsLeagueTargetZone;
+
+    @Value("${champions-league.espn-update.history-seasons:3}")
+    private int championsLeagueHistorySeasons;
+
     public EspnScheduleUpdater(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
@@ -83,14 +103,75 @@ public class EspnScheduleUpdater {
         }
     }
 
+    public int updateChampionsLeagueSchedules(List<MatchSchedule> schedules) {
+        if (!championsLeagueEnabled) {
+            log.info("ESPN Champions League schedule update is disabled.");
+            return 0;
+        }
+
+        ZoneId zoneId = ZoneId.of(championsLeagueTargetZone);
+        int currentSeasonStartYear = resolveChampionsLeagueSeasonStartYear(LocalDate.now(zoneId));
+        int seasonCount = Math.max(1, Math.min(5, championsLeagueHistorySeasons));
+        List<RemoteMatch> remoteMatches = new ArrayList<>();
+        for (int offset = seasonCount - 1; offset >= 0; offset--) {
+            int seasonStartYear = currentSeasonStartYear - offset;
+            addRemoteMatches(
+                    remoteMatches,
+                    championsLeagueQualifyingScoreboardUrlTemplate,
+                    LocalDate.of(seasonStartYear, 7, 1),
+                    LocalDate.of(seasonStartYear, 8, 31),
+                    zoneId);
+            addRemoteMatches(
+                    remoteMatches,
+                    championsLeagueScoreboardUrlTemplate,
+                    LocalDate.of(seasonStartYear, 9, 1),
+                    LocalDate.of(seasonStartYear + 1, 6, 30),
+                    zoneId);
+        }
+
+        int updatedCount = mergeChampionsLeagueSchedules(schedules, remoteMatches);
+        log.info("Updated {} Champions League schedule rows from ESPN scoreboard.", updatedCount);
+        return updatedCount;
+    }
+
+    private int resolveChampionsLeagueSeasonStartYear(LocalDate today) {
+        return today.getMonthValue() >= 7 ? today.getYear() : today.getYear() - 1;
+    }
+
+    private void addRemoteMatches(
+            List<RemoteMatch> target,
+            String urlTemplate,
+            LocalDate startDate,
+            LocalDate endDate,
+            ZoneId zoneId) {
+        String url = buildScoreboardUrl(urlTemplate, startDate, endDate);
+        try {
+            String content = downloadContent(url, championsLeagueTimeoutSeconds);
+            target.addAll(parseMatches(content, zoneId));
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            log.warn("Champions League schedule update was interrupted for {} to {}.", startDate, endDate);
+        } catch (Exception ex) {
+            log.warn("Unable to load Champions League schedule for {} to {}: {}", startDate, endDate, ex.getMessage());
+        }
+    }
+
     private String buildScoreboardUrl(LocalDate startDate, LocalDate endDate) {
-        return scoreboardUrlTemplate
+        return buildScoreboardUrl(scoreboardUrlTemplate, startDate, endDate);
+    }
+
+    private String buildScoreboardUrl(String urlTemplate, LocalDate startDate, LocalDate endDate) {
+        return urlTemplate
                 .replace("{start}", startDate.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE))
                 .replace("{end}", endDate.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE));
     }
 
     private String downloadContent(String url) throws IOException, InterruptedException {
-        Duration timeout = Duration.ofSeconds(Math.max(1, timeoutSeconds));
+        return downloadContent(url, timeoutSeconds);
+    }
+
+    private String downloadContent(String url, int configuredTimeoutSeconds) throws IOException, InterruptedException {
+        Duration timeout = Duration.ofSeconds(Math.max(1, configuredTimeoutSeconds));
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(timeout)
                 .build();
@@ -151,6 +232,7 @@ public class EspnScheduleUpdater {
         RemoteMatch match = new RemoteMatch();
         match.eventId = event.path("id").asText("");
         match.eventName = event.path("name").asText("");
+        match.seasonSlug = event.path("season").path("slug").asText("");
         String homeTeamId = readTeamId(homeCompetitor);
         String awayTeamId = readTeamId(awayCompetitor);
         match.homeTeam = readTeamName(homeCompetitor);
@@ -158,6 +240,7 @@ public class EspnScheduleUpdater {
         match.matchDate = targetDateTime.toLocalDate();
         match.kickoffTime = targetDateTime.toLocalTime().withSecond(0).withNano(0);
         match.venue = competition.path("venue").path("fullName").asText("");
+        match.neutral = competition.path("neutralSite").asBoolean(false);
         match.status = completed ? "COMPLETED" : ("in".equalsIgnoreCase(state) ? "LIVE" : "SCHEDULED");
         Integer fullHomeScore = parseScore(homeCompetitor.path("score").asText(""));
         Integer fullAwayScore = parseScore(awayCompetitor.path("score").asText(""));
@@ -284,27 +367,32 @@ public class EspnScheduleUpdater {
     }
 
     private boolean isFirstHalf(JsonNode detail) {
-        JsonNode clock = detail.path("clock");
-        JsonNode clockValue = clock.path("value");
-        if (clockValue.isNumber()) {
-            return clockValue.asDouble() <= REGULATION_SECONDS / 2.0D;
+        Integer displayMinute = readDisplayMinute(detail);
+        if (displayMinute != null) {
+            return displayMinute <= 45;
         }
 
-        String displayValue = clock.path("displayValue").asText("");
-        Matcher matcher = CLOCK_MINUTE_PATTERN.matcher(displayValue);
-        return matcher.find() && Integer.parseInt(matcher.group(1)) <= 45;
+        JsonNode clockValue = detail.path("clock").path("value");
+        return clockValue.isNumber() && clockValue.asDouble() <= REGULATION_SECONDS / 2.0D;
     }
 
     private boolean isAfterRegulation(JsonNode detail) {
-        JsonNode clock = detail.path("clock");
-        JsonNode clockValue = clock.path("value");
-        if (clockValue.isNumber()) {
-            return clockValue.asDouble() > REGULATION_SECONDS;
+        Integer displayMinute = readDisplayMinute(detail);
+        if (displayMinute != null) {
+            return displayMinute > 90;
         }
 
-        String displayValue = clock.path("displayValue").asText("");
+        JsonNode clockValue = detail.path("clock").path("value");
+        return clockValue.isNumber() && clockValue.asDouble() > REGULATION_SECONDS;
+    }
+
+    private Integer readDisplayMinute(JsonNode detail) {
+        String displayValue = detail.path("clock").path("displayValue").asText("");
         Matcher matcher = CLOCK_MINUTE_PATTERN.matcher(displayValue);
-        return matcher.find() && Integer.parseInt(matcher.group(1)) > 90;
+        if (!matcher.find()) {
+            return null;
+        }
+        return Integer.valueOf(matcher.group(1));
     }
 
     private int scoreTotal(Integer homeScore, Integer awayScore) {
@@ -313,6 +401,7 @@ public class EspnScheduleUpdater {
 
     private int mergeSchedules(List<MatchSchedule> schedules, List<RemoteMatch> remoteMatches) {
         Map<String, MatchSchedule> scheduleByTeams = schedules.stream()
+                .filter(schedule -> schedule.getCompetition() == Competition.WORLD_CUP)
                 .collect(Collectors.toMap(
                         schedule -> buildTeamKey(schedule.getHomeTeamEn(), schedule.getAwayTeamEn()),
                         schedule -> schedule,
@@ -334,8 +423,42 @@ public class EspnScheduleUpdater {
         return updatedCount;
     }
 
+    private int mergeChampionsLeagueSchedules(List<MatchSchedule> schedules, List<RemoteMatch> remoteMatches) {
+        Map<String, MatchSchedule> schedulesById = schedules.stream()
+                .filter(schedule -> schedule.getCompetition() == Competition.CHAMPIONS_LEAGUE)
+                .collect(Collectors.toMap(
+                        MatchSchedule::getMatchId,
+                        schedule -> schedule,
+                        (left, right) -> left));
+
+        int updatedCount = 0;
+        for (RemoteMatch remoteMatch : remoteMatches) {
+            String matchId = buildChampionsLeagueMatchId(remoteMatch);
+            MatchSchedule schedule = schedulesById.get(matchId);
+            if (schedule == null) {
+                schedule = toChampionsLeagueSchedule(remoteMatch, matchId);
+                schedules.add(schedule);
+                schedulesById.put(matchId, schedule);
+            } else {
+                applyRemoteMatch(schedule, remoteMatch);
+                schedule.setGroupName(toChampionsLeagueStageName(remoteMatch.seasonSlug));
+            }
+            updatedCount++;
+        }
+        return updatedCount;
+    }
+
+    private String buildChampionsLeagueMatchId(RemoteMatch remoteMatch) {
+        if (remoteMatch.eventId != null && !remoteMatch.eventId.isBlank()) {
+            return "ESPN-UCL-" + remoteMatch.eventId;
+        }
+        return "ESPN-UCL-" + remoteMatch.matchDate + "-"
+                + buildTeamKey(remoteMatch.homeTeam, remoteMatch.awayTeam).replace('|', '-');
+    }
+
     private MatchSchedule toSchedule(RemoteMatch remoteMatch) {
         MatchSchedule schedule = new MatchSchedule();
+        schedule.setCompetition(Competition.WORLD_CUP);
         schedule.setMatchId(remoteMatch.eventId == null || remoteMatch.eventId.isBlank()
                 ? "ESPN2026-" + buildTeamKey(remoteMatch.homeTeam, remoteMatch.awayTeam).replace('|', '-')
                 : "ESPN2026-" + remoteMatch.eventId);
@@ -349,9 +472,23 @@ public class EspnScheduleUpdater {
         return schedule;
     }
 
+    private MatchSchedule toChampionsLeagueSchedule(RemoteMatch remoteMatch, String matchId) {
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setCompetition(Competition.CHAMPIONS_LEAGUE);
+        schedule.setMatchId(matchId);
+        schedule.setGroupName(toChampionsLeagueStageName(remoteMatch.seasonSlug));
+        schedule.setHomeTeamCn(toChineseClubName(remoteMatch.homeTeam));
+        schedule.setAwayTeamCn(toChineseClubName(remoteMatch.awayTeam));
+        schedule.setHomeTeamEn(remoteMatch.homeTeam);
+        schedule.setAwayTeamEn(remoteMatch.awayTeam);
+        applyRemoteMatch(schedule, remoteMatch);
+        return schedule;
+    }
+
     private void applyRemoteMatch(MatchSchedule schedule, RemoteMatch remoteMatch) {
         schedule.setMatchDate(remoteMatch.matchDate);
         schedule.setKickoffTime(remoteMatch.kickoffTime);
+        schedule.setNeutral(remoteMatch.neutral);
         if (remoteMatch.venue != null && !remoteMatch.venue.isBlank()) {
             schedule.setVenue(remoteMatch.venue);
         }
@@ -412,6 +549,109 @@ public class EspnScheduleUpdater {
             return "决赛";
         }
         return "淘汰赛";
+    }
+
+    private String toChampionsLeagueStageName(String seasonSlug) {
+        String normalized = seasonSlug == null ? "" : seasonSlug.toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "first-round" -> "资格赛第一轮";
+            case "second-round" -> "资格赛第二轮";
+            case "third-round" -> "资格赛第三轮";
+            case "playoff-round", "playoffs" -> "附加赛";
+            case "league-phase", "group-stage" -> "联赛阶段";
+            case "knockout-round-playoffs" -> "淘汰赛附加赛";
+            case "round-of-16" -> "16强";
+            case "quarterfinals" -> "四分之一决赛";
+            case "semifinals" -> "半决赛";
+            case "final" -> "决赛";
+            default -> "欧冠";
+        };
+    }
+
+    private String toChineseClubName(String teamName) {
+        Map<String, String> teamNames = new HashMap<>();
+        teamNames.put("AC Milan", "AC米兰");
+        teamNames.put("Ajax Amsterdam", "阿贾克斯");
+        teamNames.put("Ararat-Armenia", "阿拉拉特亚美尼亚");
+        teamNames.put("Arsenal", "阿森纳");
+        teamNames.put("AS Monaco", "摩纳哥");
+        teamNames.put("Aston Villa", "阿斯顿维拉");
+        teamNames.put("Atalanta", "亚特兰大");
+        teamNames.put("Athletic Club", "毕尔巴鄂竞技");
+        teamNames.put("Atletico Madrid", "马德里竞技");
+        teamNames.put("Barcelona", "巴塞罗那");
+        teamNames.put("Bayer Leverkusen", "勒沃库森");
+        teamNames.put("Bayern Munich", "拜仁慕尼黑");
+        teamNames.put("Benfica", "本菲卡");
+        teamNames.put("Bodo/Glimt", "博德闪耀");
+        teamNames.put("Bologna", "博洛尼亚");
+        teamNames.put("Borac Banja Luka", "巴尼亚卢卡战士");
+        teamNames.put("Borussia Dortmund", "多特蒙德");
+        teamNames.put("Brest", "布雷斯特");
+        teamNames.put("Celtic", "凯尔特人");
+        teamNames.put("Chelsea", "切尔西");
+        teamNames.put("Club Brugge", "布鲁日");
+        teamNames.put("CSU Craiova", "克拉约瓦大学");
+        teamNames.put("Dinamo Zagreb", "萨格勒布迪纳摩");
+        teamNames.put("Drita Gjilan", "德里塔");
+        teamNames.put("Egnatia", "埃格纳蒂亚");
+        teamNames.put("Eintracht Frankfurt", "法兰克福");
+        teamNames.put("F.C. København", "哥本哈根");
+        teamNames.put("FC Atert Bissen", "阿特尔特比森");
+        teamNames.put("Feyenoord Rotterdam", "费耶诺德");
+        teamNames.put("FK Sutjeska", "苏捷斯卡");
+        teamNames.put("FK Qarabag", "卡拉巴赫");
+        teamNames.put("Flora", "塔林弗洛拉");
+        teamNames.put("Floriana FC", "弗洛里亚纳");
+        teamNames.put("Galatasaray", "加拉塔萨雷");
+        teamNames.put("Girona", "赫罗纳");
+        teamNames.put("Gyori ETO FC", "杰尔ETO");
+        teamNames.put("Iberia 1999", "伊比利亚1999");
+        teamNames.put("Inter D'Escaldes", "伊斯卡尔德斯国际");
+        teamNames.put("Internazionale", "国际米兰");
+        teamNames.put("Juventus", "尤文图斯");
+        teamNames.put("Kairat Almaty", "阿拉木图凯拉特");
+        teamNames.put("Kauno Zalgiris", "考诺萨基列斯");
+        teamNames.put("KI Klaksvik", "克拉克斯维克");
+        teamNames.put("KuPS Kuopio", "古比斯");
+        teamNames.put("Larne", "拉恩");
+        teamNames.put("Levski Sofia", "索菲亚列夫斯基");
+        teamNames.put("Lille", "里尔");
+        teamNames.put("Lincoln Red Imps", "林肯红魔");
+        teamNames.put("Liverpool", "利物浦");
+        teamNames.put("Manchester City", "曼城");
+        teamNames.put("Marseille", "马赛");
+        teamNames.put("ML Vitebsk", "维捷布斯克ML");
+        teamNames.put("Napoli", "那不勒斯");
+        teamNames.put("Newcastle United", "纽卡斯尔联");
+        teamNames.put("Olympiacos", "奥林匹亚科斯");
+        teamNames.put("Pafos", "帕福斯");
+        teamNames.put("Paris Saint-Germain", "巴黎圣日耳曼");
+        teamNames.put("Petrocub", "佩特罗库布");
+        teamNames.put("PSV Eindhoven", "埃因霍温");
+        teamNames.put("RB Leipzig", "RB莱比锡");
+        teamNames.put("RB Salzburg", "萨尔茨堡红牛");
+        teamNames.put("Real Madrid", "皇家马德里");
+        teamNames.put("Red Star Belgrade", "贝尔格莱德红星");
+        teamNames.put("Riga FC", "里加");
+        teamNames.put("Sabah FK", "萨巴赫");
+        teamNames.put("Shamrock Rovers", "沙姆洛克流浪");
+        teamNames.put("Shakhtar Donetsk", "顿涅茨克矿工");
+        teamNames.put("SK Sturm Graz", "格拉茨风暴");
+        teamNames.put("Slavia Prague", "布拉格斯拉维亚");
+        teamNames.put("Slovan Bratislava", "布拉迪斯拉发");
+        teamNames.put("Sparta Prague", "布拉格斯巴达");
+        teamNames.put("Sporting CP", "葡萄牙体育");
+        teamNames.put("Tottenham Hotspur", "托特纳姆热刺");
+        teamNames.put("The New Saints", "新圣徒");
+        teamNames.put("Tre Fiori", "特雷菲奥里");
+        teamNames.put("Union St.-Gilloise", "圣吉罗斯联合");
+        teamNames.put("Vardar", "华达");
+        teamNames.put("VfB Stuttgart", "斯图加特");
+        teamNames.put("Vikingur Reykjavik", "雷克雅未克维京人");
+        teamNames.put("Villarreal", "比利亚雷亚尔");
+        teamNames.put("Young Boys", "伯尔尼年轻人");
+        return teamNames.getOrDefault(teamName, ClubTeamNameTranslator.translate(teamName));
     }
 
     private String toChineseTeamName(String teamName) {
@@ -501,6 +741,8 @@ public class EspnScheduleUpdater {
 
         private String eventName;
 
+        private String seasonSlug;
+
         private String homeTeam;
 
         private String awayTeam;
@@ -510,6 +752,8 @@ public class EspnScheduleUpdater {
         private LocalTime kickoffTime;
 
         private String venue;
+
+        private boolean neutral;
 
         private String status;
 

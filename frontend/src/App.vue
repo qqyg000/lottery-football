@@ -3,8 +3,19 @@
     <header class="hero">
       <div>
         <p class="eyebrow">Monte Carlo + Poisson</p>
-        <h1>2026世界杯胜平负概率预测</h1>
-        <p class="sub-title">根据历史战绩计算球队强度，用泊松分布模拟进球，再统计常规胜平负与主队让球胜平负概率</p>
+        <h1>彩票预测-竞彩足球</h1>
+        <nav class="competition-tabs" aria-label="赛事切换">
+          <button
+            v-for="competition in competitions"
+            :key="competition.code"
+            type="button"
+            :class="{ 'is-active': activeCompetition === competition.code }"
+            :disabled="loading || updatingData"
+            @click="switchCompetition(competition.code)"
+          >
+            {{ competition.name }}
+          </button>
+        </nav>
       </div>
       <div class="hero-card">
         <div class="hero-summary-column">
@@ -48,7 +59,11 @@
               @keyup.enter="commitModelFactors"
             >
           </label>
-          <label class="factor-control">
+          <label
+            class="factor-control"
+            :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
+            :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
+          >
             <span>世界杯加成</span>
             <input
               type="number"
@@ -56,7 +71,7 @@
               max="3"
               step="0.01"
               v-model.number="modelFactors.worldCupBonus"
-              :disabled="loading || updatingData"
+              :disabled="loading || updatingData || activeCompetition !== 'WORLD_CUP'"
               @change="saveModelFactorInput('worldCupBonus')"
               @keyup.enter="commitModelFactors"
             >
@@ -68,7 +83,11 @@
           </div>
         </div>
         <div class="factor-controls" aria-label="模型参数">
-          <label class="factor-control">
+          <label
+            class="factor-control"
+            :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
+            :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
+          >
             <span>种子队进球系数</span>
             <input
               type="number"
@@ -76,12 +95,16 @@
               max="3"
               step="0.01"
               v-model.number="modelFactors.seedTeamGoalFactor"
-              :disabled="loading || updatingData"
+              :disabled="loading || updatingData || activeCompetition !== 'WORLD_CUP'"
               @change="saveModelFactorInput('seedTeamGoalFactor')"
               @keyup.enter="commitModelFactors"
             >
           </label>
-          <label class="factor-control">
+          <label
+            class="factor-control"
+            :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
+            :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
+          >
             <span>东道主进球系数</span>
             <input
               type="number"
@@ -89,7 +112,7 @@
               max="3"
               step="0.01"
               v-model.number="modelFactors.hostTeamGoalFactor"
-              :disabled="loading || updatingData"
+              :disabled="loading || updatingData || activeCompetition !== 'WORLD_CUP'"
               @change="saveModelFactorInput('hostTeamGoalFactor')"
               @keyup.enter="commitModelFactors"
             >
@@ -264,6 +287,17 @@
 <script>
 const FIXED_SIMULATIONS = 50000
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
+const COMPETITIONS = [
+  { code: 'WORLD_CUP', name: '世界杯' },
+  { code: 'CHAMPIONS_LEAGUE', name: '欧冠' },
+  { code: 'EUROPA_LEAGUE', name: '欧罗巴' },
+  { code: 'BRAZIL_SERIE_A', name: '巴甲' },
+  { code: 'MLS', name: '美职' },
+  { code: 'NORWEGIAN_ELITESERIEN', name: '挪超' },
+  { code: 'SWEDISH_ALLSVENSKAN', name: '瑞超' },
+  { code: 'K_LEAGUE_1', name: '韩职' },
+  { code: 'FINNISH_VEIKKAUSLIIGA', name: '芬超' }
+]
 const SELECTION_COOKIE = 'worldcup_recommendation_rows'
 const SELECTION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const MODEL_FACTOR_COOKIE = 'worldcup_model_factors'
@@ -299,6 +333,8 @@ export default {
     return {
       overview: {},
       response: {},
+      competitions: COMPETITIONS,
+      activeCompetition: 'WORLD_CUP',
       scheduleDates: [],
       weekdays: WEEKDAYS,
       calendarMonth: '',
@@ -352,7 +388,7 @@ export default {
     },
     async loadUserConfig() {
       try {
-        const res = await fetch('/api/worldcup/user-config')
+        const res = await fetch('/api/football/user-config')
         if (!res.ok) {
           return
         }
@@ -380,7 +416,9 @@ export default {
     async loadOverview() {
       this.errorMessage = ''
       try {
-        const res = await fetch('/api/worldcup/overview')
+        const params = new URLSearchParams()
+        params.append('competition', this.activeCompetition)
+        const res = await fetch('/api/football/overview?' + params.toString())
         if (!res.ok) {
           throw new Error('服务响应异常')
         }
@@ -392,6 +430,17 @@ export default {
       } catch (error) {
         this.errorMessage = '读取赛程概览失败：' + error.message
       }
+    },
+    async switchCompetition(competition) {
+      if (competition === this.activeCompetition || this.loading || this.updatingData) {
+        return
+      }
+      this.activeCompetition = competition
+      this.overview = {}
+      this.response = {}
+      this.scheduleDates = []
+      this.queryDate = ''
+      await this.loadOverview()
     },
     applyOverview(data, preferredDate) {
       const nextScheduleDates = data.scheduleDates || []
@@ -411,7 +460,9 @@ export default {
       this.errorMessage = ''
       try {
         const currentDate = this.queryDate
-        const res = await fetch('/api/worldcup/data/refresh', {
+        const params = new URLSearchParams()
+        params.append('competition', this.activeCompetition)
+        const res = await fetch('/api/football/data/refresh?' + params.toString(), {
           method: 'POST'
         })
         if (!res.ok) {
@@ -440,6 +491,7 @@ export default {
       try {
         const params = new URLSearchParams()
         params.append('date', this.queryDate)
+        params.append('competition', this.activeCompetition)
         params.append('simulations', FIXED_SIMULATIONS)
         params.append('baseMatchWeight', this.formatModelFactorValue(this.modelFactors.baseMatchWeight, DEFAULT_BASE_MATCH_WEIGHT, 'baseMatchWeight'))
         params.append('recentHalfYearBonus', this.formatModelFactorValue(this.modelFactors.recentHalfYearBonus, DEFAULT_RECENT_HALF_YEAR_BONUS, 'recentHalfYearBonus'))
@@ -447,7 +499,7 @@ export default {
         params.append('hostTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'))
         params.append('seedTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'))
         params.append('handicapSmoothingFactor', this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
-        const res = await fetch('/api/worldcup/predictions?' + params.toString())
+        const res = await fetch('/api/football/predictions?' + params.toString())
         if (!res.ok) {
           throw new Error('服务响应异常')
         }
@@ -466,7 +518,8 @@ export default {
       if (dates.includes(today)) {
         return today
       }
-      return dates[0]
+      const upcomingDate = dates.find(date => date >= today)
+      return upcomingDate || dates[dates.length - 1]
     },
     selectDate(date) {
       if (!date) {
@@ -677,7 +730,7 @@ export default {
         modelFactors: this.buildModelFactorPayload(),
         selectedRows: this.normalizeSelectedRows(this.selectedRows)
       }
-      fetch('/api/worldcup/user-config', {
+      fetch('/api/football/user-config', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -1076,13 +1129,37 @@ h1 {
   line-height: 1.15;
 }
 
-.sub-title {
-  max-width: 820px;
-  margin: 5px 0 0;
-  font-size: 13px;
-  line-height: 1.35;
-  color: rgba(255, 255, 255, 0.82);
-  overflow-wrap: anywhere;
+.competition-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  width: 430px;
+  max-width: 100%;
+  margin-top: 16px;
+}
+
+.competition-tabs button {
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.84);
+  background: rgba(15, 23, 42, 0.2);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.competition-tabs button.is-active {
+  border-color: #ffffff;
+  color: #1d4ed8;
+  background: #ffffff;
+}
+
+.competition-tabs button:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .hero-card {
@@ -1153,6 +1230,7 @@ h1 {
 .hero-actions {
   display: grid;
   margin-top: 7px;
+  margin-bottom: 3px;
 }
 
 .refresh-data-button {
@@ -1202,6 +1280,18 @@ h1 {
 .factor-control input[type="number"]:focus {
   border-color: #ffffff;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.24);
+}
+
+.factor-control.is-competition-disabled span {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.factor-control.is-competition-disabled input[type="number"] {
+  cursor: not-allowed;
+  border-color: rgba(203, 213, 225, 0.58);
+  color: #94a3b8;
+  background: #e2e8f0;
+  opacity: 1;
 }
 
 .factor-actions {

@@ -415,6 +415,18 @@
     "ESPN2026-760515" : {
       "normal" : true,
       "handicap" : "handicap--1"
+    },
+    "ESPN-SWEDISH_ALLSVENSKAN-401842751" : {
+      "normal" : true,
+      "handicap" : "handicap--2"
+    },
+    "ESPN-UCL-401877815" : {
+      "normal" : true,
+      "handicap" : "handicap--1"
+    },
+    "ESPN-UCL-401877817" : {
+      "normal" : true,
+      "handicap" : "handicap-1"
     }
   }
 }

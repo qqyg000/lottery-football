@@ -34,3 +34,27 @@ worldcup:
   seed-team-goal-factor: 1.77
   handicap-smoothing-factor: 0.185
   handicap-max-smoothing: 0.185
+
+champions-league:
+  espn-update:
+    enabled: true
+    scoreboard-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard?limit=1000&dates={start}-{end}
+    qualifying-scoreboard-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions_qual/scoreboard?limit=500&dates={start}-{end}
+    timeout-seconds: 10
+    target-zone: Asia/Shanghai
+    history-seasons: 3
+
+club-competitions:
+  schedule-update:
+    enabled: true
+    espn-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard?limit=1000&dates={start}-{end}
+    sportsdb-url-template: https://www.thesportsdb.com/api/v1/json/123/eventsround.php?id={leagueId}&r={round}&s={season}
+    sportsdb-season-url-template: https://www.thesportsdb.com/api/v1/json/123/eventsseason.php?id={leagueId}&s={season}
+    sportsdb-next-url-template: https://www.thesportsdb.com/api/v1/json/123/eventsnextleague.php?id={leagueId}
+    sportsdb-past-url-template: https://www.thesportsdb.com/api/v1/json/123/eventspastleague.php?id={leagueId}
+    timeout-seconds: 15
+    target-zone: Asia/Shanghai
+    history-seasons: 3
+    parallelism: 12
+    sportsdb-future-rounds: 6
+    cache-path: config/club-competition-schedules.json

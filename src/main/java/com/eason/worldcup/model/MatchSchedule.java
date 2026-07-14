@@ -5,6 +5,8 @@ import java.time.LocalTime;
 
 public class MatchSchedule {
 
+    private Competition competition = Competition.WORLD_CUP;
+
     private String matchId;
 
     private LocalDate matchDate;
@@ -34,6 +36,14 @@ public class MatchSchedule {
     private Integer halfTimeHomeScore;
 
     private Integer halfTimeAwayScore;
+
+    public Competition getCompetition() {
+        return competition;
+    }
+
+    public void setCompetition(Competition competition) {
+        this.competition = competition == null ? Competition.WORLD_CUP : competition;
+    }
 
     public String getMatchId() {
         return matchId;

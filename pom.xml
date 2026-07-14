@@ -15,7 +15,7 @@
     <artifactId>lottery-football</artifactId>
     <version>1.0.0</version>
     <name>lottery-football</name>
-    <description>2026世界杯蒙特卡洛泊松分布胜平负预测程序</description>
+    <description>竞彩足球蒙特卡洛泊松分布胜平负预测程序</description>
     <packaging>jar</packaging>
 
     <properties>
