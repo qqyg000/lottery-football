@@ -174,6 +174,7 @@ public final class ClubTeamNameTranslator {
         teamNames.put("Jeju SK", "济州SK");
         teamNames.put("Jeju United FC", "济州联");
         teamNames.put("Jeonbuk Hyundai Motors", "全北现代");
+        teamNames.put("Jeonbuk Hyundai Motors FC", "全北现代");
         teamNames.put("Juventude", "尤文图德");
         teamNames.put("Juventus", "尤文图斯");
         teamNames.put("Kairat Almaty", "阿拉木图凯拉特");
@@ -306,6 +307,7 @@ public final class ClubTeamNameTranslator {
         teamNames.put("TSG Hoffenheim", "霍芬海姆");
         teamNames.put("UE Santa Coloma", "圣科洛马联");
         teamNames.put("Ulsan HD", "蔚山现代");
+        teamNames.put("Ulsan HD FC", "蔚山现代");
         teamNames.put("Ulsan Hyundai FC", "蔚山现代");
         teamNames.put("Union St.-Gilloise", "圣吉罗斯联合");
         teamNames.put("Universitatea Cluj", "克卢日大学");

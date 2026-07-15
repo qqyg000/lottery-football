@@ -16,7 +16,7 @@
 
 1. 世界杯从 `history_matches.csv` 读取国家队历史战绩
 2. 欧冠、挪超、瑞超、欧罗巴、巴甲和美职从 ESPN 读取赛程及近三季结果
-3. 芬超和韩职从 TheSportsDB 读取近三季样本、近期比赛及未来轮次，并使用本地缓存抗网络波动
+3. 芬超从 TheSportsDB 读取近三季样本和轮次，韩职从 FotMob 读取近三季完整赛程，并使用本地缓存抗网络波动
 4. ESPN 赛程直接解析进球事件生成半场比分，缺少半场数据时使用 FotMob 比赛详情补齐并写入本地缓存
 5. 各俱乐部赛事独立计算球队进攻强度、失球弱点，不跨赛事混合样本
 6. 根据双方强度生成双方期望进球 λ
@@ -232,7 +232,7 @@ src/main/resources/data/history_matches.csv
 
 ### 4. 其他俱乐部赛事
 
-挪超、瑞超、欧罗巴、巴甲和美职由 ESPN Scoreboard 动态加载。芬超、韩职使用 TheSportsDB 免费接口，并按免费额度只请求近三季样本、最近/下一场及未来六轮。
+挪超、瑞超、欧罗巴、巴甲和美职由 ESPN Scoreboard 动态加载。芬超使用 TheSportsDB 免费接口；韩职使用 FotMob 联赛 `9080` 的完整赛季接口加载当前赛季及此前两个赛季，TheSportsDB 作为韩职兜底数据源。
 
 所有新增赛事按赛事代码独立建模，时间统一转换为 `Asia/Shanghai`。成功获取的赛程会缓存到 `config/club-competition-schedules.json`，外部数据源暂时不可用时继续使用已有缓存。
 

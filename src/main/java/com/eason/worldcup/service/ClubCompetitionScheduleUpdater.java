@@ -28,10 +28,12 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,6 +50,8 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final Pattern CLOCK_MINUTE_PATTERN = Pattern.compile("^(\\d+)");
 
+    private static final Pattern SCORE_PATTERN = Pattern.compile("^\\s*(\\d+)\\s*-\\s*(\\d+)\\s*$");
+
     private static final List<EspnLeagueSource> ESPN_SOURCES = List.of(
             new EspnLeagueSource(Competition.NORWEGIAN_ELITESERIEN, "nor.1", false),
             new EspnLeagueSource(Competition.SWEDISH_ALLSVENSKAN, "swe.1", false),
@@ -60,6 +64,10 @@ public class ClubCompetitionScheduleUpdater {
     private static final List<SportsDbLeagueSource> SPORTS_DB_SOURCES = List.of(
             new SportsDbLeagueSource(Competition.FINNISH_VEIKKAUSLIIGA, "4636", 27),
             new SportsDbLeagueSource(Competition.K_LEAGUE_1, "4689", 38)
+    );
+
+    private static final List<FotMobLeagueSource> FOTMOB_SOURCES = List.of(
+            new FotMobLeagueSource(Competition.K_LEAGUE_1, "9080")
     );
 
     private final ObjectMapper objectMapper;
@@ -81,6 +89,9 @@ public class ClubCompetitionScheduleUpdater {
 
     @Value("${club-competitions.schedule-update.sportsdb-past-url-template:https://www.thesportsdb.com/api/v1/json/123/eventspastleague.php?id={leagueId}}")
     private String sportsDbPastUrlTemplate;
+
+    @Value("${club-competitions.schedule-update.fotmob-league-url-template:https://www.fotmob.com/api/data/leagues?id={leagueId}&ccode3=CHN&season={season}}")
+    private String fotMobLeagueUrlTemplate;
 
     @Value("${club-competitions.schedule-update.timeout-seconds:15}")
     private int timeoutSeconds;
@@ -119,9 +130,20 @@ public class ClubCompetitionScheduleUpdater {
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
 
-        List<MatchSchedule> remoteSchedules = new ArrayList<>(loadCachedSchedules());
+        List<MatchSchedule> cachedSchedules = new ArrayList<>(loadCachedSchedules());
+        FotMobScheduleBatch fotMobBatch = loadFotMobSchedules(client, zoneId, timeout);
+        removeReplacedCachedSchedules(cachedSchedules, fotMobBatch.loadedSeasons());
+
+        List<MatchSchedule> remoteSchedules = new ArrayList<>(cachedSchedules);
         remoteSchedules.addAll(loadEspnSchedules(client, zoneId, timeout));
-        remoteSchedules.addAll(loadSportsDbSchedules(client, zoneId, timeout));
+        List<MatchSchedule> sportsDbSchedules = loadSportsDbSchedules(
+                client,
+                zoneId,
+                timeout,
+                fotMobBatch.loadedSeasons());
+        removeReplacedCachedSchedules(sportsDbSchedules, fotMobBatch.loadedSeasons());
+        remoteSchedules.addAll(sportsDbSchedules);
+        remoteSchedules.addAll(fotMobBatch.schedules());
         int updatedCount = mergeSchedules(schedules, remoteSchedules);
         saveCachedSchedules(remoteSchedules);
         log.info("Loaded {} schedule rows for additional club competitions.", updatedCount);
@@ -155,6 +177,150 @@ public class ClubCompetitionScheduleUpdater {
             log.warn("No additional club competition schedules were returned by ESPN.");
         }
         return result;
+    }
+
+    private FotMobScheduleBatch loadFotMobSchedules(HttpClient client, ZoneId zoneId, Duration timeout) {
+        int currentYear = LocalDate.now(zoneId).getYear();
+        int seasonCount = normalizeHistorySeasons();
+        List<MatchSchedule> result = new ArrayList<>();
+        Set<CompetitionSeason> loadedSeasons = new HashSet<>();
+        for (FotMobLeagueSource source : FOTMOB_SOURCES) {
+            for (int offset = seasonCount - 1; offset >= 0; offset--) {
+                int season = currentYear - offset;
+                List<MatchSchedule> seasonSchedules = loadFotMobSeason(
+                        client,
+                        source,
+                        season,
+                        zoneId,
+                        timeout);
+                if (!seasonSchedules.isEmpty()) {
+                    result.addAll(seasonSchedules);
+                    loadedSeasons.add(new CompetitionSeason(source.competition(), season));
+                }
+            }
+        }
+        if (result.isEmpty()) {
+            log.warn("No Korean league schedules were returned by FotMob; using cached or TheSportsDB data.");
+        }
+        return new FotMobScheduleBatch(result, loadedSeasons);
+    }
+
+    private List<MatchSchedule> loadFotMobSeason(
+            HttpClient client,
+            FotMobLeagueSource source,
+            int season,
+            ZoneId zoneId,
+            Duration timeout) {
+        String url = fotMobLeagueUrlTemplate
+                .replace("{leagueId}", source.leagueId())
+                .replace("{season}", Integer.toString(season));
+        try {
+            JsonNode root = downloadJsonWithRetry(client, url, timeout, 2);
+            List<MatchSchedule> result = new ArrayList<>();
+            for (JsonNode match : root.path("fixtures").path("allMatches")) {
+                MatchSchedule schedule = parseFotMobLeagueMatch(match, source.competition(), zoneId);
+                if (schedule != null) {
+                    result.add(schedule);
+                }
+            }
+            return result;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return List.of();
+        } catch (Exception ex) {
+            log.debug("Unable to load FotMob league {} season {}: {}",
+                    source.leagueId(), season, ex.getMessage());
+            return List.of();
+        }
+    }
+
+    private MatchSchedule parseFotMobLeagueMatch(JsonNode match, Competition competition, ZoneId zoneId) {
+        String eventId = match.path("id").asText("");
+        String homeTeam = readFotMobTeamName(match.path("home"));
+        String awayTeam = readFotMobTeamName(match.path("away"));
+        JsonNode status = match.path("status");
+        String utcTime = status.path("utcTime").asText("");
+        if (eventId.isBlank() || homeTeam.isBlank() || awayTeam.isBlank() || utcTime.isBlank()) {
+            return null;
+        }
+        if (status.path("cancelled").asBoolean(false)) {
+            return null;
+        }
+
+        ZonedDateTime matchDateTime;
+        try {
+            matchDateTime = OffsetDateTime.parse(utcTime).atZoneSameInstant(zoneId);
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
+
+        ScorePair score = parseScore(status.path("scoreStr").asText(""));
+        boolean completed = status.path("finished").asBoolean(false) && score != null;
+        boolean live = !completed && status.path("started").asBoolean(false);
+        String round = match.path("round").asText("");
+        if (round.isBlank()) {
+            round = match.path("roundName").asText("");
+        }
+
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setCompetition(competition);
+        schedule.setMatchId(buildMatchId(
+                "FOTMOB",
+                competition,
+                eventId,
+                matchDateTime.toLocalDate(),
+                homeTeam,
+                awayTeam));
+        schedule.setMatchDate(matchDateTime.toLocalDate());
+        schedule.setKickoffTime(matchDateTime.toLocalTime().withSecond(0).withNano(0));
+        schedule.setGroupName(round.isBlank() ? competition.getDisplayName() : "第" + round + "轮");
+        schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(homeTeam));
+        schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(awayTeam));
+        schedule.setHomeTeamEn(homeTeam);
+        schedule.setAwayTeamEn(awayTeam);
+        schedule.setVenue("");
+        schedule.setNeutral(false);
+        schedule.setStatus(completed ? "COMPLETED" : (live ? "LIVE" : "SCHEDULED"));
+        if (score != null && (completed || live)) {
+            schedule.setHomeScore(score.homeScore);
+            schedule.setAwayScore(score.awayScore);
+        }
+        return schedule;
+    }
+
+    private String readFotMobTeamName(JsonNode team) {
+        String longName = team.path("longName").asText("");
+        if (!longName.isBlank()) {
+            return longName;
+        }
+        String name = team.path("name").asText("");
+        if (!name.isBlank()) {
+            return name;
+        }
+        return team.path("shortName").asText("");
+    }
+
+    private ScorePair parseScore(String value) {
+        Matcher matcher = SCORE_PATTERN.matcher(value == null ? "" : value);
+        if (!matcher.matches()) {
+            return null;
+        }
+        return new ScorePair(
+                Integer.parseInt(matcher.group(1)),
+                Integer.parseInt(matcher.group(2)));
+    }
+
+    private void removeReplacedCachedSchedules(
+            List<MatchSchedule> schedules,
+            Set<CompetitionSeason> replacedSeasons) {
+        if (replacedSeasons.isEmpty()) {
+            return;
+        }
+        schedules.removeIf(schedule -> schedule.getCompetition() != null
+                && schedule.getMatchDate() != null
+                && replacedSeasons.contains(new CompetitionSeason(
+                        schedule.getCompetition(),
+                        schedule.getMatchDate().getYear())));
     }
 
     private List<MatchSchedule> loadEspnScheduleRange(
@@ -404,13 +570,24 @@ public class ClubCompetitionScheduleUpdater {
         return (homeScore == null ? 0 : homeScore) + (awayScore == null ? 0 : awayScore);
     }
 
-    private List<MatchSchedule> loadSportsDbSchedules(HttpClient client, ZoneId zoneId, Duration timeout) {
+    private List<MatchSchedule> loadSportsDbSchedules(
+            HttpClient client,
+            ZoneId zoneId,
+            Duration timeout,
+            Set<CompetitionSeason> replacedSeasons) {
         int currentYear = LocalDate.now(zoneId).getYear();
         int seasonCount = normalizeHistorySeasons();
         List<MatchSchedule> result = new ArrayList<>();
         for (SportsDbLeagueSource source : SPORTS_DB_SOURCES) {
             for (int offset = seasonCount - 1; offset >= 0; offset--) {
-                result.addAll(loadSportsDbSeason(client, source, currentYear - offset, zoneId, timeout));
+                int season = currentYear - offset;
+                if (!replacedSeasons.contains(new CompetitionSeason(source.competition(), season))) {
+                    result.addAll(loadSportsDbSeason(client, source, season, zoneId, timeout));
+                }
+            }
+
+            if (replacedSeasons.contains(new CompetitionSeason(source.competition(), currentYear))) {
+                continue;
             }
 
             SportsDbBatch pastBatch = loadSportsDbWindow(
@@ -817,6 +994,20 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     private record EspnLeagueSource(Competition competition, String leagueSlug, boolean crossYearSeason) {
+
+    }
+
+    private record FotMobLeagueSource(Competition competition, String leagueId) {
+
+    }
+
+    private record CompetitionSeason(Competition competition, int season) {
+
+    }
+
+    private record FotMobScheduleBatch(
+            List<MatchSchedule> schedules,
+            Set<CompetitionSeason> loadedSeasons) {
 
     }
 

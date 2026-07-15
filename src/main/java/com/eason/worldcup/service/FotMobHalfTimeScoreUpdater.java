@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -99,14 +100,20 @@ public class FotMobHalfTimeScoreUpdater {
                 .connectTimeout(timeout)
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
+        Map<MatchSchedule, FotMobMatch> scheduleMatches = matchDirectFotMobSchedules(
+                missingSchedules,
+                zoneId);
+        List<MatchSchedule> schedulesRequiringLookup = missingSchedules.stream()
+                .filter(schedule -> !scheduleMatches.containsKey(schedule))
+                .toList();
         Map<LocalDate, List<FotMobMatch>> matchesByDate = loadMatchesByDate(
                 client,
-                buildLookupDates(missingSchedules),
+                buildLookupDates(schedulesRequiringLookup),
                 timeout);
-        Map<MatchSchedule, FotMobMatch> scheduleMatches = matchSchedules(
-                missingSchedules,
+        scheduleMatches.putAll(matchSchedules(
+                schedulesRequiringLookup,
                 matchesByDate,
-                zoneId);
+                zoneId));
         Map<Long, ScorePair> halfTimeScores = loadHalfTimeScores(
                 client,
                 scheduleMatches.values(),
@@ -133,6 +140,51 @@ public class FotMobHalfTimeScoreUpdater {
         int unresolvedCount = findMissingSchedules(schedules).size();
         logCoverage(schedules, cachedCount, downloadedCount, unresolvedCount);
         return cachedCount + downloadedCount;
+    }
+
+    private Map<MatchSchedule, FotMobMatch> matchDirectFotMobSchedules(
+            List<MatchSchedule> schedules,
+            ZoneId zoneId) {
+        Map<MatchSchedule, FotMobMatch> result = new LinkedHashMap<>();
+        for (MatchSchedule schedule : schedules) {
+            Long fotMobMatchId = extractFotMobMatchId(schedule.getMatchId());
+            if (fotMobMatchId == null) {
+                continue;
+            }
+
+            OffsetDateTime kickoffTime = null;
+            if (schedule.getMatchDate() != null && schedule.getKickoffTime() != null) {
+                kickoffTime = ZonedDateTime.of(
+                        schedule.getMatchDate(),
+                        schedule.getKickoffTime(),
+                        zoneId).toOffsetDateTime();
+            }
+            result.put(schedule, new FotMobMatch(
+                    fotMobMatchId,
+                    schedule.getCompetition().getDisplayName(),
+                    schedule.getHomeTeamEn(),
+                    schedule.getAwayTeamEn(),
+                    schedule.getHomeScore(),
+                    schedule.getAwayScore(),
+                    kickoffTime,
+                    true));
+        }
+        return result;
+    }
+
+    private Long extractFotMobMatchId(String matchId) {
+        if (matchId == null || !matchId.startsWith("FOTMOB-")) {
+            return null;
+        }
+        int separatorIndex = matchId.lastIndexOf('-');
+        if (separatorIndex < 0 || separatorIndex == matchId.length() - 1) {
+            return null;
+        }
+        String value = matchId.substring(separatorIndex + 1);
+        if (!value.matches("\\d+")) {
+            return null;
+        }
+        return Long.valueOf(value);
     }
 
     private List<MatchSchedule> findMissingSchedules(List<MatchSchedule> schedules) {
@@ -391,6 +443,7 @@ public class FotMobHalfTimeScoreUpdater {
         String canonicalName = String.join("", tokens);
         return switch (canonicalName) {
             case "usa", "unitedstatesofamerica" -> "unitedstates";
+            case "turkiye" -> "turkey";
             default -> canonicalName;
         };
     }

@@ -52,6 +52,7 @@ club-competitions:
     sportsdb-season-url-template: https://www.thesportsdb.com/api/v1/json/123/eventsseason.php?id={leagueId}&s={season}
     sportsdb-next-url-template: https://www.thesportsdb.com/api/v1/json/123/eventsnextleague.php?id={leagueId}
     sportsdb-past-url-template: https://www.thesportsdb.com/api/v1/json/123/eventspastleague.php?id={leagueId}
+    fotmob-league-url-template: https://www.fotmob.com/api/data/leagues?id={leagueId}&ccode3=CHN&season={season}
     timeout-seconds: 15
     target-zone: Asia/Shanghai
     history-seasons: 3
