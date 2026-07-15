@@ -85,7 +85,21 @@ public class UserConfigService {
     private UserConfig normalize(UserConfig config) {
         UserConfig normalized = config == null ? UserConfigDefaults.newConfig() : config;
         normalized.setModelFactors(normalizeModelFactors(normalized.getModelFactors()));
+        normalized.setGlobalParameters(normalizeGlobalParameters(normalized.getGlobalParameters()));
         normalized.setSelectedRows(normalizeSelectedRows(normalized.getSelectedRows()));
+        return normalized;
+    }
+
+    private UserConfig.GlobalParameters normalizeGlobalParameters(UserConfig.GlobalParameters parameters) {
+        UserConfig.GlobalParameters defaults = UserConfig.GlobalParameters.defaults();
+        UserConfig.GlobalParameters normalized = parameters == null
+                ? new UserConfig.GlobalParameters()
+                : parameters;
+        normalized.setRecommendationOdds(normalizeNumber(
+                normalized.getRecommendationOdds(),
+                defaults.getRecommendationOdds(),
+                1.0D,
+                100.0D));
         return normalized;
     }
 
@@ -145,6 +159,7 @@ public class UserConfigService {
         private static UserConfig newConfig() {
             UserConfig config = new UserConfig();
             config.setModelFactors(UserConfig.ModelFactors.defaults());
+            config.setGlobalParameters(UserConfig.GlobalParameters.defaults());
             config.setSelectedRows(new LinkedHashMap<>());
             return config;
         }

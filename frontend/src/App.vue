@@ -10,15 +10,16 @@
             :key="competition.code"
             type="button"
             :class="{ 'is-active': activeCompetition === competition.code }"
-            :disabled="loading || updatingData"
+            :disabled="loading || updatingData || backtesting"
             @click="switchCompetition(competition.code)"
           >
             {{ competition.name }}
           </button>
         </nav>
       </div>
-      <div class="hero-card">
-        <div class="hero-summary-column">
+      <div class="hero-card-group">
+        <div class="hero-card">
+          <div class="hero-summary-column">
           <div class="hero-number">{{ overview.historicalMatchCount || 0 }}</div>
           <div class="hero-label">历史战绩样本</div>
           <div class="hero-small">赛程：{{ overview.scheduleMatchCount || 0 }} 场 · 已完赛：{{ overview.completedMatchCount || 0 }} 场</div>
@@ -27,12 +28,12 @@
             <button type="button" :class="{ 'is-active': modelMode === 'after' }" @click="setModelMode('after')">开赛后</button>
           </div>
           <div class="hero-actions">
-            <button type="button" class="factor-recalculate factor-reset refresh-data-button" :disabled="loading || updatingData" @click="refreshData">
+            <button type="button" class="factor-recalculate factor-reset refresh-data-button" :disabled="loading || updatingData || backtesting" @click="refreshData">
               {{ updatingData ? '更新中' : '更新数据' }}
             </button>
           </div>
-        </div>
-        <div class="weight-controls" aria-label="权重参数">
+          </div>
+          <div class="weight-controls" aria-label="权重参数">
           <label class="factor-control">
             <span>基础权重</span>
             <input
@@ -41,7 +42,7 @@
               max="5"
               step="0.01"
               v-model.number="modelFactors.baseMatchWeight"
-              :disabled="loading || updatingData"
+              :disabled="loading || updatingData || backtesting"
               @change="saveModelFactorInput('baseMatchWeight')"
               @keyup.enter="commitModelFactors"
             >
@@ -54,7 +55,7 @@
               max="3"
               step="0.01"
               v-model.number="modelFactors.recentHalfYearBonus"
-              :disabled="loading || updatingData"
+              :disabled="loading || updatingData || backtesting"
               @change="saveModelFactorInput('recentHalfYearBonus')"
               @keyup.enter="commitModelFactors"
             >
@@ -71,18 +72,18 @@
               max="3"
               step="0.01"
               v-model.number="modelFactors.worldCupBonus"
-              :disabled="loading || updatingData || activeCompetition !== 'WORLD_CUP'"
+              :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
               @change="saveModelFactorInput('worldCupBonus')"
               @keyup.enter="commitModelFactors"
             >
           </label>
           <div class="factor-actions">
-            <button type="button" class="factor-recalculate factor-reset" :disabled="loading || updatingData" @click="resetModelFactors">
-              重置
+            <button type="button" class="factor-recalculate factor-reset" :disabled="loading || updatingData || backtesting" @click="resetModelFactors">
+              重置参数
             </button>
           </div>
-        </div>
-        <div class="factor-controls" aria-label="模型参数">
+          </div>
+          <div class="factor-controls" aria-label="模型参数">
           <label
             class="factor-control"
             :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
@@ -95,7 +96,7 @@
               max="3"
               step="0.01"
               v-model.number="modelFactors.seedTeamGoalFactor"
-              :disabled="loading || updatingData || activeCompetition !== 'WORLD_CUP'"
+              :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
               @change="saveModelFactorInput('seedTeamGoalFactor')"
               @keyup.enter="commitModelFactors"
             >
@@ -112,7 +113,7 @@
               max="3"
               step="0.01"
               v-model.number="modelFactors.hostTeamGoalFactor"
-              :disabled="loading || updatingData || activeCompetition !== 'WORLD_CUP'"
+              :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
               @change="saveModelFactorInput('hostTeamGoalFactor')"
               @keyup.enter="commitModelFactors"
             >
@@ -125,16 +126,56 @@
               max="0.8"
               step="0.001"
               v-model.number="modelFactors.handicapSmoothingFactor"
-              :disabled="loading || updatingData"
+              :disabled="loading || updatingData || backtesting"
               @change="saveModelFactorInput('handicapSmoothingFactor')"
               @keyup.enter="commitModelFactors"
             >
           </label>
           <div class="factor-actions">
-            <button type="button" class="factor-recalculate" :disabled="loading || updatingData || !queryDate" @click="commitModelFactors">
+            <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting || !queryDate" @click="commitModelFactors">
               {{ loading ? '计算中' : '重新计算' }}
             </button>
           </div>
+          </div>
+        </div>
+        <div class="global-parameter-card" aria-label="全局参数">
+          <div class="backtest-result" :class="{ 'is-empty': !backtestActive }">
+            <small v-if="backtestActive">
+              命中 {{ backtestSummary.hitMatchCount }} 场 · 未中 {{ backtestSummary.missMatchCount }} 场 · 推荐 {{ backtestSummary.recommendedMatchCount }} 场
+            </small>
+            <small v-else>回测全部赛事已结束比赛</small>
+            <div class="backtest-average-grid">
+              <div>
+                <strong>{{ backtestOddsIncludingMissesText }}</strong>
+                <span>含未中奖场次</span>
+              </div>
+              <div>
+                <strong>{{ backtestOddsExcludingMissesText }}</strong>
+                <span>仅中奖场次</span>
+              </div>
+            </div>
+          </div>
+          <label class="factor-control global-parameter-control">
+            <span>推荐赔率阈值</span>
+            <input
+              type="number"
+              min="1"
+              max="100"
+              step="0.01"
+              v-model.number="recommendationOdds"
+              :disabled="loading || updatingData || backtesting"
+              @change="normalizeRecommendationOddsInput"
+              @keyup.enter="runRecommendationOddsBacktest"
+            >
+          </label>
+          <button
+            type="button"
+            class="factor-recalculate backtest-odds-button"
+            :disabled="loading || updatingData || backtesting"
+            @click="runRecommendationOddsBacktest"
+          >
+            {{ backtesting ? '回测中' : '开始回测' }}
+          </button>
         </div>
       </div>
     </header>
@@ -159,7 +200,7 @@
           type="button"
           class="calendar-day"
           :class="{ 'is-empty': cell.empty, 'is-selected': cell.date === queryDate, 'is-loading': cell.date === queryDate && loading, 'has-schedule': cell.hasSchedule }"
-          :disabled="cell.empty || loading || updatingData"
+          :disabled="cell.empty || loading || updatingData || backtesting"
           @click="selectDate(cell.date)"
         >
           <span class="calendar-day-number">{{ cell.day }}</span>
@@ -169,12 +210,12 @@
 
     <section v-if="errorMessage" class="error-box">{{ errorMessage }}</section>
 
-    <section v-if="!loading && matches.length === 0" class="empty-box">
-      当前日期暂无赛程，请切换日期后查询
+    <section v-if="!loading && !backtesting && matches.length === 0" class="empty-box">
+      {{ backtestActive ? '当前推荐赔率下没有中奖场次' : '当前日期暂无带赔率的赛程，请切换日期后查询' }}
     </section>
 
-    <section class="match-list" :style="{ '--match-columns': matchColumns }">
-      <article v-for="match in matches" :key="match.matchId" class="match-card">
+    <section class="match-list" :class="{ 'is-backtest': backtestActive }" :style="{ '--match-columns': matchColumns }">
+      <article v-for="match in matches" :key="match.competition + '-' + match.matchId" class="match-card">
         <div class="match-head">
           <div class="match-info">
             <div class="match-time">{{ match.matchDate }} {{ match.kickoffTime }} · {{ match.groupName }}</div>
@@ -192,10 +233,16 @@
               </span>
             </p>
           </div>
-          <div class="goal-box">
+          <button
+            type="button"
+            class="goal-box"
+            :aria-label="'查看' + match.homeTeamCn + '与' + match.awayTeamCn + '的历史交战数据'"
+            title="点击查看历史交战数据"
+            @click="openHeadToHeadDialog(match)"
+          >
             <div>期望进球</div>
             <strong>{{ activeExpectedHomeGoals(match) }} : {{ activeExpectedAwayGoals(match) }}</strong>
-          </div>
+          </button>
         </div>
 
         <div class="match-summary-row">
@@ -317,6 +364,53 @@
         </div>
       </article>
     </section>
+
+    <div
+      v-if="headToHeadDialogVisible"
+      class="dialog-backdrop"
+      @click.self="closeHeadToHeadDialog"
+      @keydown.esc="closeHeadToHeadDialog"
+    >
+      <section
+        ref="headToHeadDialog"
+        class="head-to-head-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="head-to-head-dialog-title"
+        tabindex="-1"
+      >
+        <header class="head-to-head-dialog-header">
+          <div>
+            <span class="dialog-eyebrow">历史交战</span>
+            <h3 id="head-to-head-dialog-title">{{ headToHeadTitle }}</h3>
+          </div>
+          <button type="button" class="dialog-close" aria-label="关闭历史交战弹窗" @click="closeHeadToHeadDialog">×</button>
+        </header>
+        <p class="head-to-head-description">仅展示本场开赛前已结束的交锋，最多显示最近 10 场</p>
+
+        <div v-if="headToHeadLoading" class="dialog-state" role="status">正在读取历史交战数据...</div>
+        <div v-else-if="headToHeadError" class="dialog-state is-error">{{ headToHeadError }}</div>
+        <div v-else-if="headToHeadMatches.length === 0" class="dialog-state">暂无双方历史交战数据</div>
+        <div v-else class="head-to-head-list">
+          <article
+            v-for="(item, index) in headToHeadMatches"
+            :key="item.matchDate + '-' + item.homeTeamCn + '-' + item.awayTeamCn + '-' + index"
+            class="head-to-head-item"
+          >
+            <div class="head-to-head-meta">
+              <span>{{ item.matchDate }}{{ formatHeadToHeadKickoffTime(item.kickoffTime) }}</span>
+              <span>{{ item.competitionName }}</span>
+              <span v-if="item.neutral" class="neutral-badge">中立场</span>
+            </div>
+            <div class="head-to-head-score">
+              <span class="head-to-head-team is-home">{{ item.homeTeamCn }}</span>
+              <strong>{{ item.homeScore }} : {{ item.awayScore }}</strong>
+              <span class="head-to-head-team is-away">{{ item.awayTeamCn }}</span>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -324,6 +418,7 @@
 const FIXED_SIMULATIONS = 50000
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
 const COMPETITIONS = [
+  { code: 'ALL', name: 'ALL' },
   { code: 'WORLD_CUP', name: '世界杯' },
   { code: 'CHAMPIONS_LEAGUE', name: '欧冠' },
   { code: 'EUROPA_LEAGUE', name: '欧罗巴' },
@@ -338,12 +433,17 @@ const SELECTION_COOKIE = 'worldcup_recommendation_rows'
 const SELECTION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const MODEL_FACTOR_COOKIE = 'worldcup_model_factors'
 const MODEL_FACTOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
+const GLOBAL_PARAMETER_COOKIE = 'worldcup_global_parameters'
+const GLOBAL_PARAMETER_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const DEFAULT_BASE_MATCH_WEIGHT = 1
 const DEFAULT_RECENT_HALF_YEAR_BONUS = 0.1
 const DEFAULT_WORLD_CUP_BONUS = 0.25
 const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.42
 const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.77
 const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.185
+const DEFAULT_RECOMMENDATION_ODDS = 1
+const RECOMMENDATION_ODDS_MIN = 1
+const RECOMMENDATION_ODDS_MAX = 100
 const MODEL_FACTOR_MIN = 0.1
 const MODEL_FACTOR_MAX = 3
 const MATCH_WEIGHT_MIN = 0
@@ -363,11 +463,27 @@ const MODEL_FACTOR_KEYS = [
 const PROBABILITY_KEYS = ['win', 'draw', 'lose']
 const HANDICAP_PAIR_SWITCH_THRESHOLD = 52
 
+function createEmptyBacktestSummary() {
+  return {
+    completedMatchCount: 0,
+    sportteryCompletedMatchCount: 0,
+    oddsMatchCount: 0,
+    recommendedMatchCount: 0,
+    hitMatchCount: 0,
+    missMatchCount: 0,
+    winningSelectionCount: 0,
+    averageWinningOdds: null,
+    averageOddsExcludingMisses: null,
+    averageOddsIncludingMisses: null
+  }
+}
+
 export default {
   name: 'App',
   data() {
     return {
       overview: {},
+      competitionOverviews: {},
       response: {},
       competitions: COMPETITIONS,
       activeCompetition: 'WORLD_CUP',
@@ -384,7 +500,19 @@ export default {
         seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR,
         handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR
       },
+      recommendationOdds: DEFAULT_RECOMMENDATION_ODDS,
       selectedRows: {},
+      backtesting: false,
+      backtestActive: false,
+      backtestSourceMatches: [],
+      backtestMatches: [],
+      backtestSummary: createEmptyBacktestSummary(),
+      headToHeadDialogVisible: false,
+      headToHeadLoading: false,
+      headToHeadError: '',
+      headToHeadMatch: null,
+      headToHeadMatches: [],
+      headToHeadRequestId: 0,
       loading: false,
       updatingData: false,
       errorMessage: ''
@@ -392,7 +520,20 @@ export default {
   },
   computed: {
     matches() {
-      return this.response.matches || []
+      const sourceMatches = this.backtestActive ? this.backtestMatches : (this.response.matches || [])
+      return sourceMatches.filter(match => this.hasSportteryOdds(match))
+    },
+    headToHeadTitle() {
+      if (!this.headToHeadMatch) {
+        return ''
+      }
+      return this.headToHeadMatch.homeTeamCn + ' vs ' + this.headToHeadMatch.awayTeamCn
+    },
+    backtestOddsExcludingMissesText() {
+      return this.formatBacktestOdds(this.backtestSummary.averageOddsExcludingMisses)
+    },
+    backtestOddsIncludingMissesText() {
+      return this.formatBacktestOdds(this.backtestSummary.averageOddsIncludingMisses)
     },
     matchColumns() {
       const matchCount = this.matches.length || 1
@@ -415,9 +556,69 @@ export default {
   created() {
     this.initializeUserConfig()
   },
+  beforeDestroy() {
+    document.body.classList.remove('dialog-open')
+  },
   methods: {
+    async openHeadToHeadDialog(match) {
+      if (!match || !match.matchId) {
+        return
+      }
+      const requestId = ++this.headToHeadRequestId
+      this.headToHeadMatch = match
+      this.headToHeadMatches = []
+      this.headToHeadError = ''
+      this.headToHeadLoading = true
+      this.headToHeadDialogVisible = true
+      document.body.classList.add('dialog-open')
+      this.$nextTick(() => {
+        if (this.$refs.headToHeadDialog) {
+          this.$refs.headToHeadDialog.focus()
+        }
+      })
+
+      try {
+        const params = new URLSearchParams()
+        params.append('competition', match.competition || this.activeCompetition)
+        params.append('matchId', match.matchId)
+        params.append('limit', '10')
+        const res = await fetch('/api/football/head-to-head?' + params.toString())
+        if (!res.ok) {
+          throw new Error('服务响应异常')
+        }
+        const data = await res.json()
+        if (requestId !== this.headToHeadRequestId) {
+          return
+        }
+        this.headToHeadMatches = Array.isArray(data) ? data : []
+      } catch (error) {
+        if (requestId === this.headToHeadRequestId) {
+          this.headToHeadError = '读取历史交战数据失败：' + error.message
+        }
+      } finally {
+        if (requestId === this.headToHeadRequestId) {
+          this.headToHeadLoading = false
+        }
+      }
+    },
+    closeHeadToHeadDialog() {
+      this.headToHeadRequestId += 1
+      this.headToHeadDialogVisible = false
+      this.headToHeadLoading = false
+      this.headToHeadError = ''
+      this.headToHeadMatch = null
+      this.headToHeadMatches = []
+      document.body.classList.remove('dialog-open')
+    },
+    formatHeadToHeadKickoffTime(value) {
+      if (!value) {
+        return ''
+      }
+      return ' ' + String(value).slice(0, 5)
+    },
     async initializeUserConfig() {
       this.loadModelFactors()
+      this.loadGlobalParameters()
       this.loadRecommendationSelections()
       await this.loadUserConfig()
       this.loadOverview()
@@ -444,22 +645,32 @@ export default {
         })
         this.saveModelFactorsToCookie()
       }
+      if (config.globalParameters && typeof config.globalParameters === 'object' && !Array.isArray(config.globalParameters)) {
+        this.recommendationOdds = this.normalizeRecommendationOdds(config.globalParameters.recommendationOdds)
+        this.saveGlobalParametersToCookie()
+      }
       if (config.selectedRows && typeof config.selectedRows === 'object' && !Array.isArray(config.selectedRows)) {
         this.selectedRows = this.normalizeSelectedRows(config.selectedRows)
         this.saveRecommendationSelectionsToCookie()
       }
     },
-    async loadOverview() {
+    async loadOverview(preferredDate) {
       this.errorMessage = ''
       try {
-        const params = new URLSearchParams()
-        params.append('competition', this.activeCompetition)
-        const res = await fetch('/api/football/overview?' + params.toString())
-        if (!res.ok) {
-          throw new Error('服务响应异常')
+        let data
+        if (this.activeCompetition === 'ALL') {
+          const overviewEntries = await Promise.all(this.getConcreteCompetitions().map(async competition => {
+            return [competition.code, await this.fetchCompetitionOverview(competition.code)]
+          }))
+          this.competitionOverviews = Object.fromEntries(overviewEntries)
+          data = this.mergeCompetitionOverviews(overviewEntries.map(entry => entry[1]))
+        } else {
+          data = await this.fetchCompetitionOverview(this.activeCompetition)
+          this.competitionOverviews = {
+            [this.activeCompetition]: data
+          }
         }
-        const data = await res.json()
-        this.applyOverview(data)
+        this.applyOverview(data, preferredDate)
         if (this.queryDate) {
           await this.loadPredictions()
         }
@@ -467,29 +678,54 @@ export default {
         this.errorMessage = '读取赛程概览失败：' + error.message
       }
     },
+    getConcreteCompetitions() {
+      return this.competitions.filter(competition => competition.code !== 'ALL')
+    },
+    async fetchCompetitionOverview(competition) {
+      const params = new URLSearchParams()
+      params.append('competition', competition)
+      const res = await fetch('/api/football/overview?' + params.toString())
+      if (!res.ok) {
+        throw new Error('服务响应异常')
+      }
+      return res.json()
+    },
+    mergeCompetitionOverviews(overviews) {
+      const historicalMatchCount = overviews.reduce((sum, item) => sum + (Number(item.historicalMatchCount) || 0), 0)
+      const weightedBaselineGoals = overviews.reduce((sum, item) => {
+        return sum + (Number(item.baselineGoals) || 0) * (Number(item.historicalMatchCount) || 0)
+      }, 0)
+      return {
+        competition: 'ALL',
+        competitionName: '全部赛事',
+        historicalMatchCount,
+        scheduleMatchCount: overviews.reduce((sum, item) => sum + (Number(item.scheduleMatchCount) || 0), 0),
+        completedMatchCount: overviews.reduce((sum, item) => sum + (Number(item.completedMatchCount) || 0), 0),
+        baselineGoals: historicalMatchCount > 0 ? weightedBaselineGoals / historicalMatchCount : 0,
+        scheduleDates: Array.from(new Set(overviews.flatMap(item => item.scheduleDates || []))).sort()
+      }
+    },
     async switchCompetition(competition) {
-      if (competition === this.activeCompetition || this.loading || this.updatingData) {
+      if (competition === this.activeCompetition || this.loading || this.updatingData || this.backtesting) {
         return
       }
+      const currentDate = this.queryDate
       this.activeCompetition = competition
       this.overview = {}
       this.response = {}
       this.scheduleDates = []
-      this.queryDate = ''
-      await this.loadOverview()
+      await this.loadOverview(currentDate)
     },
     applyOverview(data, preferredDate) {
       const nextScheduleDates = data.scheduleDates || []
-      const nextDate = preferredDate && nextScheduleDates.includes(preferredDate)
-        ? preferredDate
-        : this.findDefaultDate(nextScheduleDates)
+      const nextDate = preferredDate || this.findDefaultDate(nextScheduleDates)
       this.overview = data
       this.scheduleDates = nextScheduleDates
       this.queryDate = nextDate
       this.calendarMonth = this.queryDate ? this.getMonthKey(this.parseDate(this.queryDate)) : this.getMonthKey(new Date())
     },
     async refreshData() {
-      if (this.updatingData) {
+      if (this.updatingData || this.backtesting) {
         return
       }
       this.updatingData = true
@@ -497,7 +733,7 @@ export default {
       try {
         const currentDate = this.queryDate
         const params = new URLSearchParams()
-        params.append('competition', this.activeCompetition)
+        params.append('competition', this.activeCompetition === 'ALL' ? 'WORLD_CUP' : this.activeCompetition)
         if (currentDate) {
           params.append('date', currentDate)
         }
@@ -507,13 +743,8 @@ export default {
         if (!res.ok) {
           throw new Error('服务响应异常')
         }
-        const data = await res.json()
-        this.applyOverview(data, currentDate)
-        if (this.queryDate) {
-          await this.loadPredictions()
-        } else {
-          this.response = {}
-        }
+        await res.json()
+        await this.loadOverview(currentDate)
       } catch (error) {
         this.errorMessage = '更新数据失败：' + error.message
       } finally {
@@ -525,29 +756,152 @@ export default {
         this.errorMessage = '请选择比赛日期'
         return
       }
+      this.clearBacktestResults()
       this.loading = true
       this.errorMessage = ''
       try {
-        const params = new URLSearchParams()
-        params.append('date', this.queryDate)
-        params.append('competition', this.activeCompetition)
-        params.append('simulations', FIXED_SIMULATIONS)
-        params.append('baseMatchWeight', this.formatModelFactorValue(this.modelFactors.baseMatchWeight, DEFAULT_BASE_MATCH_WEIGHT, 'baseMatchWeight'))
-        params.append('recentHalfYearBonus', this.formatModelFactorValue(this.modelFactors.recentHalfYearBonus, DEFAULT_RECENT_HALF_YEAR_BONUS, 'recentHalfYearBonus'))
-        params.append('worldCupBonus', this.formatModelFactorValue(this.modelFactors.worldCupBonus, DEFAULT_WORLD_CUP_BONUS, 'worldCupBonus'))
-        params.append('hostTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'))
-        params.append('seedTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'))
-        params.append('handicapSmoothingFactor', this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
-        const res = await fetch('/api/football/predictions?' + params.toString())
-        if (!res.ok) {
-          throw new Error('服务响应异常')
+        const competitions = this.getPredictionCompetitions()
+        const responses = await Promise.all(competitions.map(competition => this.fetchCompetitionPredictions(competition)))
+        const competitionOrder = new Map(this.getConcreteCompetitions().map((competition, index) => [competition.code, index]))
+        const matches = responses.flatMap(response => response.matches || [])
+        matches.sort((left, right) => {
+          const leftTime = (left.matchDate || '') + ' ' + (left.kickoffTime || '')
+          const rightTime = (right.matchDate || '') + ' ' + (right.kickoffTime || '')
+          return leftTime.localeCompare(rightTime) ||
+            (competitionOrder.get(left.competition) ?? Number.MAX_SAFE_INTEGER) -
+            (competitionOrder.get(right.competition) ?? Number.MAX_SAFE_INTEGER) ||
+            String(left.matchId || '').localeCompare(String(right.matchId || ''))
+        })
+        this.response = {
+          competition: this.activeCompetition,
+          date: this.queryDate,
+          simulations: FIXED_SIMULATIONS,
+          total: matches.length,
+          matches
         }
-        this.response = await res.json()
       } catch (error) {
         this.errorMessage = '查询概率失败：' + error.message
       } finally {
         this.loading = false
       }
+    },
+    getPredictionCompetitions() {
+      if (this.activeCompetition !== 'ALL') {
+        return [this.activeCompetition]
+      }
+      return this.getConcreteCompetitions()
+        .filter(competition => {
+          const overview = this.competitionOverviews[competition.code]
+          return !overview || !Array.isArray(overview.scheduleDates) || overview.scheduleDates.includes(this.queryDate)
+        })
+        .map(competition => competition.code)
+    },
+    async fetchCompetitionPredictions(competition) {
+      const params = new URLSearchParams()
+      params.append('date', this.queryDate)
+      params.append('competition', competition)
+      params.append('simulations', FIXED_SIMULATIONS)
+      this.appendModelFactorParams(params)
+      const res = await fetch('/api/football/predictions?' + params.toString())
+      if (!res.ok) {
+        throw new Error('服务响应异常')
+      }
+      return res.json()
+    },
+    appendModelFactorParams(params) {
+      params.append('baseMatchWeight', this.formatModelFactorValue(this.modelFactors.baseMatchWeight, DEFAULT_BASE_MATCH_WEIGHT, 'baseMatchWeight'))
+      params.append('recentHalfYearBonus', this.formatModelFactorValue(this.modelFactors.recentHalfYearBonus, DEFAULT_RECENT_HALF_YEAR_BONUS, 'recentHalfYearBonus'))
+      params.append('worldCupBonus', this.formatModelFactorValue(this.modelFactors.worldCupBonus, DEFAULT_WORLD_CUP_BONUS, 'worldCupBonus'))
+      params.append('hostTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'))
+      params.append('seedTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'))
+      params.append('handicapSmoothingFactor', this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
+    },
+    async runRecommendationOddsBacktest() {
+      if (this.backtesting) {
+        return
+      }
+      this.recommendationOdds = this.normalizeRecommendationOdds(this.recommendationOdds)
+      this.saveGlobalParametersToCookie()
+      this.backtesting = true
+      this.errorMessage = ''
+      try {
+        await this.persistUserConfig()
+        const params = new URLSearchParams()
+        params.append('simulations', FIXED_SIMULATIONS)
+        this.appendModelFactorParams(params)
+        const res = await fetch('/api/football/recommendation-backtest?' + params.toString())
+        if (!res.ok) {
+          throw new Error('服务响应异常')
+        }
+        const data = await res.json()
+        this.backtestSourceMatches = Array.isArray(data.matches) ? data.matches : []
+        this.backtestSummary = {
+          ...createEmptyBacktestSummary(),
+          completedMatchCount: Number(data.completedMatchCount) || 0,
+          sportteryCompletedMatchCount: Number(data.sportteryCompletedMatchCount) || 0,
+          oddsMatchCount: Number(data.oddsMatchCount) || this.backtestSourceMatches.length
+        }
+        this.refreshBacktestResults()
+        this.backtestActive = true
+      } catch (error) {
+        this.errorMessage = '回测赔率失败：' + error.message
+      } finally {
+        this.backtesting = false
+      }
+    },
+    refreshBacktestResults() {
+      const recommendedMatches = []
+      const hitMatches = []
+      const winningMatchOdds = []
+      const settledMatchOdds = []
+      let winningSelectionCount = 0
+      this.backtestSourceMatches.forEach(match => {
+        if (this.getRecommendationKeys(match).size === 0) {
+          return
+        }
+        recommendedMatches.push(match)
+        if (this.recommendationResult(match) !== 'hit') {
+          settledMatchOdds.push(0)
+          return
+        }
+        hitMatches.push(match)
+        const matchWinningOdds = this.getRecommendationOddsDetails(match)
+          .filter(item => item.winning)
+          .map(item => item.odds)
+        winningSelectionCount += matchWinningOdds.length
+        const winningOdds = matchWinningOdds.reduce((sum, odds) => sum + odds, 0)
+        winningMatchOdds.push(winningOdds)
+        settledMatchOdds.push(winningOdds)
+      })
+      const missMatchCount = recommendedMatches.length - hitMatches.length
+      this.backtestMatches = hitMatches
+      this.backtestSummary = {
+        ...this.backtestSummary,
+        recommendedMatchCount: recommendedMatches.length,
+        hitMatchCount: hitMatches.length,
+        missMatchCount,
+        winningSelectionCount,
+        averageWinningOdds: this.calculateAverageOdds(winningMatchOdds),
+        averageOddsExcludingMisses: this.calculateAverageOdds(winningMatchOdds),
+        averageOddsIncludingMisses: this.calculateAverageOdds(settledMatchOdds)
+      }
+    },
+    calculateAverageOdds(values) {
+      return values.length > 0
+        ? values.reduce((sum, odds) => sum + odds, 0) / values.length
+        : null
+    },
+    formatBacktestOdds(value) {
+      const numberValue = Number(value)
+      return this.backtestActive && value !== null && Number.isFinite(numberValue)
+        ? numberValue.toFixed(2)
+        : '--'
+    },
+    clearBacktestResults() {
+      this.backtestActive = false
+      this.backtestSourceMatches = []
+      this.backtestMatches = []
+      this.backtestSummary = createEmptyBacktestSummary()
     },
     findDefaultDate(dates) {
       if (!dates || dates.length === 0) {
@@ -561,7 +915,7 @@ export default {
       return upcomingDate || dates[dates.length - 1]
     },
     selectDate(date) {
-      if (!date) {
+      if (!date || this.backtesting) {
         return
       }
       this.queryDate = date
@@ -624,6 +978,9 @@ export default {
     },
     setModelMode(mode) {
       this.modelMode = mode
+      if (this.backtestActive) {
+        this.refreshBacktestResults()
+      }
     },
     loadRecommendationSelections() {
       const cookieValue = this.getCookie(SELECTION_COOKIE)
@@ -730,6 +1087,45 @@ export default {
     setCookie(name, value, maxAge) {
       document.cookie = name + '=' + encodeURIComponent(value) + '; max-age=' + maxAge + '; path=/; SameSite=Lax'
     },
+    loadGlobalParameters() {
+      const cookieValue = this.getCookie(GLOBAL_PARAMETER_COOKIE)
+      if (!cookieValue) {
+        return
+      }
+      try {
+        const parsedValue = JSON.parse(cookieValue)
+        if (parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue)) {
+          this.recommendationOdds = this.normalizeRecommendationOdds(parsedValue.recommendationOdds)
+        }
+      } catch (error) {
+        this.recommendationOdds = DEFAULT_RECOMMENDATION_ODDS
+      }
+    },
+    saveGlobalParametersToCookie() {
+      this.setCookie(
+        GLOBAL_PARAMETER_COOKIE,
+        JSON.stringify(this.buildGlobalParameterPayload()),
+        GLOBAL_PARAMETER_COOKIE_MAX_AGE
+      )
+    },
+    buildGlobalParameterPayload() {
+      return {
+        recommendationOdds: this.normalizeRecommendationOdds(this.recommendationOdds)
+      }
+    },
+    normalizeRecommendationOdds(value) {
+      const numberValue = Number(value)
+      if (!Number.isFinite(numberValue)) {
+        return DEFAULT_RECOMMENDATION_ODDS
+      }
+      return Number(Math.max(RECOMMENDATION_ODDS_MIN, Math.min(RECOMMENDATION_ODDS_MAX, numberValue)).toFixed(2))
+    },
+    normalizeRecommendationOddsInput() {
+      this.recommendationOdds = this.normalizeRecommendationOdds(this.recommendationOdds)
+      if (this.backtestActive) {
+        this.refreshBacktestResults()
+      }
+    },
     loadModelFactors() {
       const cookieValue = this.getCookie(MODEL_FACTOR_COOKIE)
       if (!cookieValue) {
@@ -776,20 +1172,30 @@ export default {
         handicapSmoothingFactor: Number(this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
       }
     },
-    saveUserConfig() {
-      const payload = {
+    buildUserConfigPayload() {
+      return {
         modelFactors: this.buildModelFactorPayload(),
+        globalParameters: this.buildGlobalParameterPayload(),
         selectedRows: this.normalizeSelectedRows(this.selectedRows)
       }
-      fetch('/api/football/user-config', {
+    },
+    saveUserConfig() {
+      this.persistUserConfig().catch(() => {
+        // Local cookies still keep the UI usable if the config file write fails.
+      })
+    },
+    async persistUserConfig() {
+      const res = await fetch('/api/football/user-config', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
-      }).catch(() => {
-        // Local cookies still keep the UI usable if the config file write fails.
+        body: JSON.stringify(this.buildUserConfigPayload())
       })
+      if (!res.ok) {
+        throw new Error('保存全局参数失败')
+      }
+      return res.json()
     },
     saveModelFactorInput(key) {
       const fallback = this.getDefaultModelFactor(key)
@@ -936,6 +1342,9 @@ export default {
 
       this.$set(this.selectedRows, match.matchId, selection)
       this.saveRecommendationSelections()
+      if (this.backtestActive) {
+        this.refreshBacktestResults()
+      }
     },
     isRecommended(match, item, probabilityKey) {
       return this.getRecommendationKeys(match).has(this.getRecommendationCellKey(item, probabilityKey))
@@ -1009,6 +1418,12 @@ export default {
       return 'lose'
     },
     getRecommendationKeys(match) {
+      const recommendationKeys = this.getBaseRecommendationKeys(match)
+      return this.hasQualifiedRecommendationOdds(match, recommendationKeys)
+        ? recommendationKeys
+        : new Set()
+    },
+    getBaseRecommendationKeys(match) {
       const selectedRows = this.probabilityRows(match).filter(item => this.isRowSelected(match, item))
       if (selectedRows.length === 0) {
         return new Set()
@@ -1026,6 +1441,46 @@ export default {
         return this.buildRecommendationKeys(handicapRows, false)
       }
       return this.buildRecommendationKeys(normalRows, false)
+    },
+    hasQualifiedRecommendationOdds(match, recommendationKeys) {
+      if (!recommendationKeys || recommendationKeys.size === 0) {
+        return false
+      }
+      const threshold = this.normalizeRecommendationOdds(this.recommendationOdds)
+      const recommendationOdds = []
+      this.probabilityRows(match).forEach(item => {
+        PROBABILITY_KEYS.forEach(probabilityKey => {
+          if (!recommendationKeys.has(this.getRecommendationCellKey(item, probabilityKey))) {
+            return
+          }
+          recommendationOdds.push(this.sportteryOddsValue(match, item, probabilityKey))
+        })
+      })
+      return recommendationOdds.length === recommendationKeys.size &&
+        recommendationOdds.every(odds => odds !== null && odds >= threshold)
+    },
+    getRecommendationOddsDetails(match) {
+      const score = this.parseScore(match)
+      const recommendationKeys = this.getRecommendationKeys(match)
+      if (!score || recommendationKeys.size === 0) {
+        return []
+      }
+      return this.probabilityRows(match).reduce((result, item) => {
+        const actualProbabilityKey = this.getActualProbabilityKey(score, item.handicap)
+        PROBABILITY_KEYS.forEach(probabilityKey => {
+          if (!recommendationKeys.has(this.getRecommendationCellKey(item, probabilityKey))) {
+            return
+          }
+          const odds = this.sportteryOddsValue(match, item, probabilityKey)
+          if (odds !== null) {
+            result.push({
+              odds,
+              winning: probabilityKey === actualProbabilityKey
+            })
+          }
+        })
+        return result
+      }, [])
     },
     buildRecommendationKeys(rows, applyHandicapThreshold) {
       const maxCell = this.findMaxProbabilityCell(rows)
@@ -1173,6 +1628,17 @@ export default {
     formatHandicap(value) {
       return value > 0 ? '+' + value : String(value)
     },
+    hasSportteryOdds(match) {
+      if (!match) {
+        return false
+      }
+      return [match.sportteryNormalOdds, match.sportteryHandicapOdds].some(odds => {
+        return odds && PROBABILITY_KEYS.some(key => {
+          const value = Number(odds[key])
+          return Number.isFinite(value) && value > 0
+        })
+      })
+    },
     sportteryOddsForRow(match, item) {
       if (!match || !item) {
         return null
@@ -1242,7 +1708,7 @@ body {
 
 .hero {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 16px;
   padding: 12px 18px;
@@ -1264,6 +1730,15 @@ h1 {
   margin: 0;
   font-size: 25px;
   line-height: 1.15;
+}
+
+.hero-card-group {
+  display: flex;
+  align-self: stretch;
+  align-items: stretch;
+  gap: 14px;
+  min-width: 0;
+  margin-left: auto;
 }
 
 .competition-tabs {
@@ -1437,6 +1912,78 @@ h1 {
   margin-bottom: 3px;
 }
 
+.global-parameter-card {
+  flex: 0 0 230px;
+  align-self: stretch;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  gap: 8px;
+  width: 230px;
+  min-width: 230px;
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  text-align: left;
+}
+
+.global-parameter-control {
+  grid-template-columns: minmax(0, 1fr) 70px;
+}
+
+.global-parameter-control input[type="number"] {
+  width: 70px;
+}
+
+.backtest-odds-button {
+  align-self: end;
+  margin-bottom: 3px;
+}
+
+.backtest-result {
+  align-self: end;
+  display: grid;
+  gap: 6px;
+  text-align: center;
+}
+
+.backtest-average-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.backtest-average-grid > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 5px 3px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.backtest-result strong {
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.backtest-result span {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.backtest-result small {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.backtest-result.is-empty strong {
+  color: rgba(255, 255, 255, 0.58);
+}
+
 .factor-recalculate {
   width: 100%;
   height: 24px;
@@ -1582,6 +2129,11 @@ h1 {
   margin-top: 14px;
 }
 
+.match-list.is-backtest {
+  flex: 0 0 auto;
+  grid-auto-rows: auto;
+}
+
 .match-card {
   display: flex;
   flex-direction: column;
@@ -1720,11 +2272,26 @@ h1 {
   flex: 0 0 auto;
   min-width: 78px;
   padding: 2px 6px;
+  border: 1px solid #bfdbfe;
   border-radius: 6px;
   background: #eff6ff;
   color: #1d4ed8;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 10px;
   text-align: center;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.goal-box:hover {
+  border-color: #60a5fa;
+  background: #dbeafe;
+  transform: translateY(-1px);
+}
+
+.goal-box:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
 }
 
 .goal-box strong {
@@ -1946,9 +2513,212 @@ h1 {
   font-weight: 800;
 }
 
+body.dialog-open {
+  overflow: hidden;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+.head-to-head-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(680px, calc(100vw - 48px));
+  max-height: min(720px, calc(100vh - 48px));
+  overflow: hidden;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+}
+
+.head-to-head-dialog:focus {
+  outline: none;
+}
+
+.head-to-head-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px 10px;
+}
+
+.dialog-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.head-to-head-dialog h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 21px;
+  line-height: 1.25;
+}
+
+.dialog-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #d7deea;
+  border-radius: 9px;
+  color: #475569;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.dialog-close:hover {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.head-to-head-description {
+  margin: 0;
+  padding: 0 22px 15px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.dialog-state {
+  min-height: 180px;
+  padding: 72px 24px;
+  color: #64748b;
+  text-align: center;
+}
+
+.dialog-state.is-error {
+  color: #b91c1c;
+}
+
+.head-to-head-list {
+  display: grid;
+  gap: 10px;
+  padding: 16px 22px 22px;
+  overflow-y: auto;
+}
+
+.head-to-head-item {
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.head-to-head-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 9px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.head-to-head-meta span:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.neutral-badge {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #475569;
+  background: #e2e8f0;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.head-to-head-score {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.head-to-head-score strong {
+  min-width: 66px;
+  color: #1d4ed8;
+  font-size: 19px;
+  text-align: center;
+}
+
+.head-to-head-team {
+  min-width: 0;
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.head-to-head-team.is-home {
+  text-align: right;
+}
+
+.head-to-head-team.is-away {
+  text-align: left;
+}
+
+@media (max-width: 1450px) {
+  .hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero-card-group {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .hero-card {
+    flex: 1 1 auto;
+    width: auto;
+  }
+}
+
 @media (max-width: 980px) {
   .page {
     overflow-y: auto;
+  }
+
+  .hero-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .hero-card-group {
+    flex-direction: column;
+  }
+
+  .global-parameter-card {
+    flex-basis: auto;
+    width: 100%;
+    min-width: 0;
   }
 
   .match-list {
@@ -2007,6 +2777,14 @@ h1 {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .global-parameter-control {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .global-parameter-control input[type="number"] {
+    width: 100%;
+  }
+
   .calendar-panel {
     padding: 10px;
   }
@@ -2032,6 +2810,38 @@ h1 {
 
   .match-list {
     grid-template-columns: 1fr;
+  }
+
+  .dialog-backdrop {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .head-to-head-dialog {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    border-radius: 14px;
+  }
+
+  .head-to-head-dialog-header {
+    padding: 17px 17px 9px;
+  }
+
+  .head-to-head-description {
+    padding: 0 17px 13px;
+  }
+
+  .head-to-head-list {
+    padding: 13px 15px 17px;
+  }
+
+  .head-to-head-score {
+    gap: 8px;
+  }
+
+  .head-to-head-score strong {
+    min-width: 56px;
+    font-size: 17px;
   }
 }
 </style>

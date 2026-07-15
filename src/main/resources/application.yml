@@ -42,7 +42,7 @@ champions-league:
     qualifying-scoreboard-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions_qual/scoreboard?limit=500&dates={start}-{end}
     timeout-seconds: 10
     target-zone: Asia/Shanghai
-    history-seasons: 3
+    history-seasons: 5
 
 club-competitions:
   schedule-update:
@@ -55,7 +55,7 @@ club-competitions:
     fotmob-league-url-template: https://www.fotmob.com/api/data/leagues?id={leagueId}&ccode3=CHN&season={season}
     timeout-seconds: 15
     target-zone: Asia/Shanghai
-    history-seasons: 3
+    history-seasons: 5
     parallelism: 12
     sportsdb-future-rounds: 6
     cache-path: config/club-competition-schedules.json

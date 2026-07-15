@@ -119,8 +119,20 @@ public class SportteryMarketSelectionService {
         if (enabled) {
             refreshMarketEntries(buildLookupDates(supportedSchedules), false, containsUpcomingSchedule(supportedSchedules));
         }
-        int matchedCount = applyMarketEntries(supportedSchedules);
+        int matchedCount = applyMarketEntries(supportedSchedules, true);
         log.debug("Matched {} of {} displayed schedules with Sporttery market data", matchedCount, supportedSchedules.size());
+        return matchedCount;
+    }
+
+    public synchronized int applyCachedSelections(List<MatchSchedule> schedules) {
+        List<MatchSchedule> supportedSchedules = filterSupportedSchedules(schedules);
+        if (supportedSchedules.isEmpty()) {
+            return 0;
+        }
+
+        ensureCacheLoaded();
+        int matchedCount = applyMarketEntries(supportedSchedules, false);
+        log.debug("Matched {} of {} completed schedules with cached Sporttery data", matchedCount, supportedSchedules.size());
         return matchedCount;
     }
 
@@ -642,7 +654,7 @@ public class SportteryMarketSelectionService {
         return storedCount;
     }
 
-    private int applyMarketEntries(List<MatchSchedule> schedules) {
+    private int applyMarketEntries(List<MatchSchedule> schedules, boolean lookupMissingOdds) {
         Map<Competition, List<SportteryMarketEntry>> entriesByCompetition = new HashMap<>();
         for (SportteryMarketEntry entry : entriesByMatchId.values()) {
             entriesByCompetition.computeIfAbsent(entry.getCompetition(), ignored -> new ArrayList<>()).add(entry);
@@ -663,7 +675,7 @@ public class SportteryMarketSelectionService {
             if (entry == null) {
                 continue;
             }
-            if (enabled && !oddsLookupInterrupted && needsOddsLookup(entry)) {
+            if (lookupMissingOdds && enabled && !oddsLookupInterrupted && needsOddsLookup(entry)) {
                 if (oddsClient == null) {
                     oddsClient = HttpClient.newBuilder()
                             .connectTimeout(timeout)

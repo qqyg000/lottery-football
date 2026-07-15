@@ -67,6 +67,7 @@ public class ClubCompetitionScheduleUpdater {
     );
 
     private static final List<FotMobLeagueSource> FOTMOB_SOURCES = List.of(
+            new FotMobLeagueSource(Competition.FINNISH_VEIKKAUSLIIGA, "51"),
             new FotMobLeagueSource(Competition.K_LEAGUE_1, "9080")
     );
 
@@ -99,7 +100,7 @@ public class ClubCompetitionScheduleUpdater {
     @Value("${club-competitions.schedule-update.target-zone:Asia/Shanghai}")
     private String targetZone;
 
-    @Value("${club-competitions.schedule-update.history-seasons:3}")
+    @Value("${club-competitions.schedule-update.history-seasons:5}")
     private int historySeasons;
 
     @Value("${club-competitions.schedule-update.parallelism:12}")
@@ -200,7 +201,7 @@ public class ClubCompetitionScheduleUpdater {
             }
         }
         if (result.isEmpty()) {
-            log.warn("No Korean league schedules were returned by FotMob; using cached or TheSportsDB data.");
+            log.warn("No Finnish or Korean league schedules were returned by FotMob; using cached or TheSportsDB data.");
         }
         return new FotMobScheduleBatch(result, loadedSeasons);
     }

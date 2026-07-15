@@ -1,8 +1,10 @@
 package com.eason.worldcup.controller;
 
 import com.eason.worldcup.model.Competition;
+import com.eason.worldcup.model.HeadToHeadMatchResponse;
 import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
+import com.eason.worldcup.model.RecommendationBacktestResponse;
 import com.eason.worldcup.model.UserConfig;
 import com.eason.worldcup.service.PredictionService;
 import com.eason.worldcup.service.UserConfigService;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -54,6 +57,33 @@ public class PredictionController {
                 baseMatchWeight,
                 recentHalfYearBonus,
                 worldCupBonus);
+    }
+
+    @GetMapping("/recommendation-backtest")
+    public RecommendationBacktestResponse recommendationBacktest(
+            @RequestParam(value = "simulations", required = false) Integer simulations,
+            @RequestParam(value = "hostTeamGoalFactor", required = false) Double hostTeamGoalFactor,
+            @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
+            @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
+            @RequestParam(value = "baseMatchWeight", required = false) Double baseMatchWeight,
+            @RequestParam(value = "recentHalfYearBonus", required = false) Double recentHalfYearBonus,
+            @RequestParam(value = "worldCupBonus", required = false) Double worldCupBonus) {
+        return predictionService.queryRecommendationBacktest(
+                simulations,
+                hostTeamGoalFactor,
+                seedTeamGoalFactor,
+                handicapSmoothingFactor,
+                baseMatchWeight,
+                recentHalfYearBonus,
+                worldCupBonus);
+    }
+
+    @GetMapping("/head-to-head")
+    public List<HeadToHeadMatchResponse> headToHead(
+            @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition,
+            @RequestParam("matchId") String matchId,
+            @RequestParam(value = "limit", defaultValue = "10") Integer limit) {
+        return predictionService.queryHeadToHead(parseCompetition(competition), matchId, limit);
     }
 
     @GetMapping("/overview")

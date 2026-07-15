@@ -7,6 +7,8 @@ public class UserConfig {
 
     private ModelFactors modelFactors = ModelFactors.defaults();
 
+    private GlobalParameters globalParameters = GlobalParameters.defaults();
+
     private Map<String, RecommendationSelection> selectedRows = new LinkedHashMap<>();
 
     public ModelFactors getModelFactors() {
@@ -17,12 +19,40 @@ public class UserConfig {
         this.modelFactors = modelFactors;
     }
 
+    public GlobalParameters getGlobalParameters() {
+        return globalParameters;
+    }
+
+    public void setGlobalParameters(GlobalParameters globalParameters) {
+        this.globalParameters = globalParameters;
+    }
+
     public Map<String, RecommendationSelection> getSelectedRows() {
         return selectedRows;
     }
 
     public void setSelectedRows(Map<String, RecommendationSelection> selectedRows) {
         this.selectedRows = selectedRows;
+    }
+
+    public static class GlobalParameters {
+
+        private Double recommendationOdds;
+
+        public static GlobalParameters defaults() {
+            GlobalParameters parameters = new GlobalParameters();
+            parameters.setRecommendationOdds(1.0D);
+            return parameters;
+        }
+
+        public Double getRecommendationOdds() {
+            return recommendationOdds;
+        }
+
+        public void setRecommendationOdds(Double recommendationOdds) {
+            this.recommendationOdds = recommendationOdds;
+        }
+
     }
 
     public static class ModelFactors {

@@ -75,7 +75,7 @@ public class EspnScheduleUpdater {
     @Value("${champions-league.espn-update.target-zone:Asia/Shanghai}")
     private String championsLeagueTargetZone;
 
-    @Value("${champions-league.espn-update.history-seasons:3}")
+    @Value("${champions-league.espn-update.history-seasons:5}")
     private int championsLeagueHistorySeasons;
 
     public EspnScheduleUpdater(ObjectMapper objectMapper) {

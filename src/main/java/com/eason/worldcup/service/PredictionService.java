@@ -3,10 +3,13 @@ package com.eason.worldcup.service;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HandicapProbability;
 import com.eason.worldcup.model.HalfFullProbability;
+import com.eason.worldcup.model.HeadToHeadMatchResponse;
+import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.MatchPredictionResponse;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
+import com.eason.worldcup.model.RecommendationBacktestResponse;
 import com.eason.worldcup.model.ScoreProbability;
 import com.eason.worldcup.model.ThreeWayProbability;
 import com.eason.worldcup.model.TotalGoalsProbability;
@@ -16,10 +19,16 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SplittableRandom;
 
@@ -29,6 +38,10 @@ public class PredictionService {
     private static final int[] HANDICAPS = {-3, -2, -1, 1, 2, 3};
 
     private static final double FIRST_HALF_GOAL_SHARE = 0.45D;
+
+    private static final ZoneId UTC_PLUS_EIGHT_ZONE = ZoneId.of("Asia/Shanghai");
+
+    private static final ZoneId WORLD_CUP_SCHEDULE_ZONE = ZoneId.of("America/New_York");
 
     private final DataRepository dataRepository;
 
@@ -119,6 +132,55 @@ public class PredictionService {
         return response;
     }
 
+    public RecommendationBacktestResponse queryRecommendationBacktest(
+            Integer simulations,
+            Double hostTeamGoalFactor,
+            Double seedTeamGoalFactor,
+            Double handicapSmoothingFactor,
+            Double baseMatchWeight,
+            Double recentHalfYearBonus,
+            Double worldCupBonus) {
+        int simulationCount = normalizeSimulationCount(simulations);
+        double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
+        List<MatchSchedule> completedSchedules = dataRepository.getSchedules().stream()
+                .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
+                .filter(schedule -> schedule.getHomeScore() != null && schedule.getAwayScore() != null)
+                .toList();
+        sportteryMarketSelectionService.applyCachedSelections(completedSchedules);
+        List<MatchSchedule> sportterySchedules = completedSchedules.stream()
+                .filter(schedule -> schedule.getSportteryMatchId() != null && !schedule.getSportteryMatchId().isBlank())
+                .toList();
+        List<MatchSchedule> oddsSchedules = sportterySchedules.stream()
+                .filter(schedule -> schedule.getSportteryNormalOdds() != null || schedule.getSportteryHandicapOdds() != null)
+                .sorted(Comparator
+                        .comparing(
+                                MatchSchedule::getMatchDate,
+                                Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(
+                                MatchSchedule::getKickoffTime,
+                                Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+        List<MatchPredictionResponse> matches = oddsSchedules.stream()
+                .map(schedule -> predict(
+                        schedule,
+                        simulationCount,
+                        schedule.getMatchDate(),
+                        hostTeamGoalFactor,
+                        seedTeamGoalFactor,
+                        effectiveHandicapSmoothingFactor,
+                        baseMatchWeight,
+                        recentHalfYearBonus,
+                        worldCupBonus))
+                .toList();
+
+        RecommendationBacktestResponse response = new RecommendationBacktestResponse();
+        response.setCompletedMatchCount(completedSchedules.size());
+        response.setSportteryCompletedMatchCount(sportterySchedules.size());
+        response.setOddsMatchCount(oddsSchedules.size());
+        response.setMatches(matches);
+        return response;
+    }
+
     public ModelOverviewResponse overview() {
         return overview(Competition.WORLD_CUP);
     }
@@ -151,6 +213,203 @@ public class PredictionService {
         return overview(competition);
     }
 
+    public List<HeadToHeadMatchResponse> queryHeadToHead(
+            Competition competition,
+            String matchId,
+            Integer limit) {
+        Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
+        if (matchId == null || matchId.isBlank()) {
+            return List.of();
+        }
+
+        MatchSchedule target = dataRepository.getSchedules(effectiveCompetition).stream()
+                .filter(schedule -> matchId.equals(schedule.getMatchId()))
+                .findFirst()
+                .orElse(null);
+        if (target == null) {
+            return List.of();
+        }
+
+        int resultLimit = limit == null ? 10 : Math.max(1, Math.min(50, limit));
+        Map<String, HeadToHeadMatchResponse> matchesByFixture = new HashMap<>();
+        for (MatchSchedule schedule : dataRepository.getSchedules()) {
+            if (!isCompletedSchedule(schedule)
+                    || !isScheduleBeforeTarget(schedule, target)
+                    || !isSameTeamPair(
+                            schedule.getHomeTeamEn(),
+                            schedule.getAwayTeamEn(),
+                            target.getHomeTeamEn(),
+                            target.getAwayTeamEn())) {
+                continue;
+            }
+            HeadToHeadMatchResponse response = toHeadToHeadResponse(schedule);
+            matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
+                    schedule.getMatchDate(),
+                    schedule.getHomeTeamEn(),
+                    schedule.getAwayTeamEn(),
+                    schedule.getHomeScore(),
+                    schedule.getAwayScore()), response);
+        }
+
+        if (effectiveCompetition == Competition.WORLD_CUP) {
+            for (HistoricalMatch historicalMatch : dataRepository.getHistoricalMatches()) {
+                if (historicalMatch.getMatchDate() == null
+                        || target.getMatchDate() == null
+                        || !historicalMatch.getMatchDate().isBefore(target.getMatchDate())
+                        || !isSameTeamPair(
+                                historicalMatch.getHomeTeam(),
+                                historicalMatch.getAwayTeam(),
+                                target.getHomeTeamEn(),
+                                target.getAwayTeamEn())) {
+                    continue;
+                }
+                HeadToHeadMatchResponse response = toHeadToHeadResponse(historicalMatch, target);
+                matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
+                        historicalMatch.getMatchDate(),
+                        historicalMatch.getHomeTeam(),
+                        historicalMatch.getAwayTeam(),
+                        historicalMatch.getHomeScore(),
+                        historicalMatch.getAwayScore()), response);
+            }
+        }
+
+        return matchesByFixture.values().stream()
+                .sorted(Comparator
+                        .comparing(
+                                HeadToHeadMatchResponse::getMatchDate,
+                                Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(
+                                HeadToHeadMatchResponse::getKickoffTime,
+                                Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(resultLimit)
+                .toList();
+    }
+
+    private boolean isCompletedSchedule(MatchSchedule schedule) {
+        return "COMPLETED".equalsIgnoreCase(schedule.getStatus())
+                && schedule.getHomeScore() != null
+                && schedule.getAwayScore() != null;
+    }
+
+    private boolean isScheduleBeforeTarget(MatchSchedule schedule, MatchSchedule target) {
+        if (schedule.getMatchDate() == null || target.getMatchDate() == null) {
+            return false;
+        }
+        int dateComparison = schedule.getMatchDate().compareTo(target.getMatchDate());
+        if (dateComparison != 0) {
+            return dateComparison < 0;
+        }
+        LocalTime scheduleTime = schedule.getKickoffTime() == null ? LocalTime.MIN : schedule.getKickoffTime();
+        LocalTime targetTime = target.getKickoffTime() == null ? LocalTime.MIN : target.getKickoffTime();
+        return scheduleTime.isBefore(targetTime);
+    }
+
+    private boolean isSameTeamPair(
+            String homeTeam,
+            String awayTeam,
+            String targetHomeTeam,
+            String targetAwayTeam) {
+        String home = canonicalTeamName(homeTeam);
+        String away = canonicalTeamName(awayTeam);
+        String targetHome = canonicalTeamName(targetHomeTeam);
+        String targetAway = canonicalTeamName(targetAwayTeam);
+        return home.equals(targetHome) && away.equals(targetAway)
+                || home.equals(targetAway) && away.equals(targetHome);
+    }
+
+    private HeadToHeadMatchResponse toHeadToHeadResponse(MatchSchedule schedule) {
+        LocalDateTime displayKickoffDateTime = toUtcPlusEight(schedule);
+        HeadToHeadMatchResponse response = new HeadToHeadMatchResponse();
+        response.setMatchDate(displayKickoffDateTime == null
+                ? schedule.getMatchDate()
+                : displayKickoffDateTime.toLocalDate());
+        response.setKickoffTime(displayKickoffDateTime == null
+                ? schedule.getKickoffTime()
+                : displayKickoffDateTime.toLocalTime());
+        response.setCompetitionName(buildHeadToHeadCompetitionName(schedule));
+        response.setHomeTeamCn(readableTeamName(schedule.getHomeTeamCn(), schedule.getHomeTeamEn()));
+        response.setAwayTeamCn(readableTeamName(schedule.getAwayTeamCn(), schedule.getAwayTeamEn()));
+        response.setHomeScore(schedule.getHomeScore());
+        response.setAwayScore(schedule.getAwayScore());
+        response.setNeutral(schedule.isNeutral());
+        return response;
+    }
+
+    private HeadToHeadMatchResponse toHeadToHeadResponse(HistoricalMatch historicalMatch, MatchSchedule target) {
+        HeadToHeadMatchResponse response = new HeadToHeadMatchResponse();
+        response.setMatchDate(historicalMatch.getMatchDate());
+        response.setCompetitionName(historicalMatch.getTournament());
+        response.setHomeTeamCn(resolveHistoricalTeamName(historicalMatch.getHomeTeam(), target));
+        response.setAwayTeamCn(resolveHistoricalTeamName(historicalMatch.getAwayTeam(), target));
+        response.setHomeScore(historicalMatch.getHomeScore());
+        response.setAwayScore(historicalMatch.getAwayScore());
+        response.setNeutral(historicalMatch.isNeutral());
+        return response;
+    }
+
+    private String buildHeadToHeadCompetitionName(MatchSchedule schedule) {
+        String competitionName = schedule.getCompetition().getDisplayName();
+        String groupName = schedule.getGroupName();
+        if (groupName == null || groupName.isBlank() || competitionName.equals(groupName)) {
+            return competitionName;
+        }
+        return competitionName + " · " + groupName;
+    }
+
+    private String resolveHistoricalTeamName(String teamName, MatchSchedule target) {
+        String canonicalName = canonicalTeamName(teamName);
+        if (canonicalName.equals(canonicalTeamName(target.getHomeTeamEn()))) {
+            return readableTeamName(target.getHomeTeamCn(), target.getHomeTeamEn());
+        }
+        if (canonicalName.equals(canonicalTeamName(target.getAwayTeamEn()))) {
+            return readableTeamName(target.getAwayTeamCn(), target.getAwayTeamEn());
+        }
+        return teamName;
+    }
+
+    private String readableTeamName(String chineseName, String englishName) {
+        if (chineseName != null && !chineseName.isBlank()) {
+            return chineseName;
+        }
+        return englishName == null ? "" : englishName;
+    }
+
+    private String buildHeadToHeadFixtureKey(
+            LocalDate matchDate,
+            String homeTeamName,
+            String awayTeamName,
+            int homeScore,
+            int awayScore) {
+        String homeTeam = canonicalTeamName(homeTeamName);
+        String awayTeam = canonicalTeamName(awayTeamName);
+        if (homeTeam.compareTo(awayTeam) <= 0) {
+            return matchDate + "|" + homeTeam + "|" + homeScore
+                    + "|" + awayTeam + "|" + awayScore;
+        }
+        return matchDate + "|" + awayTeam + "|" + awayScore
+                + "|" + homeTeam + "|" + homeScore;
+    }
+
+    private String canonicalTeamName(String teamName) {
+        String source = teamName == null ? "" : teamName.trim();
+        String normalized = Normalizer.normalize(source, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}]", "");
+        return switch (normalized) {
+            case "usa" -> "unitedstates";
+            case "czechrepublic" -> "czechia";
+            case "bosniaherzegovina" -> "bosniaandherzegovina";
+            case "cotedivoire" -> "ivorycoast";
+            case "korearepublic" -> "southkorea";
+            case "iriran" -> "iran";
+            case "caboverde" -> "capeverde";
+            case "congodr" -> "drcongo";
+            case "turkiye" -> "turkey";
+            default -> normalized;
+        };
+    }
+
     private MatchPredictionResponse predict(
             MatchSchedule schedule,
             int simulationCount,
@@ -178,11 +437,12 @@ public class PredictionService {
                 recentHalfYearBonus,
                 worldCupBonus);
         SimulationCounter postMatchCounter = runMonteCarlo(schedule, postMatchExpectedGoals, simulationCount, effectiveHandicapSmoothingFactor);
+        LocalDateTime displayKickoffDateTime = toUtcPlusEight(schedule);
         MatchPredictionResponse response = new MatchPredictionResponse();
         response.setCompetition(schedule.getCompetition());
         response.setMatchId(schedule.getMatchId());
-        response.setMatchDate(schedule.getMatchDate());
-        response.setKickoffTime(schedule.getKickoffTime());
+        response.setMatchDate(displayKickoffDateTime == null ? schedule.getMatchDate() : displayKickoffDateTime.toLocalDate());
+        response.setKickoffTime(displayKickoffDateTime == null ? schedule.getKickoffTime() : displayKickoffDateTime.toLocalTime());
         response.setGroupName(schedule.getGroupName());
         response.setHomeTeamCn(schedule.getHomeTeamCn());
         response.setAwayTeamCn(schedule.getAwayTeamCn());
@@ -218,6 +478,19 @@ public class PredictionService {
         response.setCorrectionMatchCount(postMatchExpectedGoals.getCorrectionMatchCount());
         response.setModelRemark(buildModelRemark(schedule));
         return response;
+    }
+
+    private LocalDateTime toUtcPlusEight(MatchSchedule schedule) {
+        if (schedule.getMatchDate() == null || schedule.getKickoffTime() == null) {
+            return null;
+        }
+        ZoneId sourceZone = schedule.getCompetition() == Competition.WORLD_CUP
+                ? WORLD_CUP_SCHEDULE_ZONE
+                : UTC_PLUS_EIGHT_ZONE;
+        return LocalDateTime.of(schedule.getMatchDate(), schedule.getKickoffTime())
+                .atZone(sourceZone)
+                .withZoneSameInstant(UTC_PLUS_EIGHT_ZONE)
+                .toLocalDateTime();
     }
 
     private SimulationCounter runMonteCarlo(MatchSchedule schedule, TeamStrengthService.ExpectedGoals expectedGoals, int simulationCount, double effectiveHandicapSmoothingFactor) {

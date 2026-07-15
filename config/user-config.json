@@ -7,5 +7,8 @@
     "seedTeamGoalFactor" : 1.69,
     "handicapSmoothingFactor" : 0.185
   },
+  "globalParameters" : {
+    "recommendationOdds" : 2.33
+  },
   "selectedRows" : { }
 }
