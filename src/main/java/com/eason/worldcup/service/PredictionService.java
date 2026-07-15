@@ -196,6 +196,8 @@ public class PredictionService {
         response.setSportteryMatchNumber(schedule.getSportteryMatchNumber());
         response.setSportteryNormalAvailable(schedule.getSportteryNormalAvailable());
         response.setSportteryHandicap(schedule.getSportteryHandicap());
+        response.setSportteryNormalOdds(schedule.getSportteryNormalOdds());
+        response.setSportteryHandicapOdds(schedule.getSportteryHandicapOdds());
         response.setSimulations(simulationCount);
         response.setExpectedHomeGoals(round(preMatchExpectedGoals.getHomeGoals(), 2));
         response.setExpectedAwayGoals(round(preMatchExpectedGoals.getAwayGoals(), 2));

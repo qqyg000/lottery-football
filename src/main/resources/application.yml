@@ -75,6 +75,7 @@ sporttery:
     enabled: true
     api-url: https://webapi.sporttery.cn/gateway/uniform/football/getUniformMatchResultV1.qry
     calculator-api-url: https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry
+    odds-history-api-url: https://webapi.sporttery.cn/gateway/uniform/football/getOddsHistoryV1.qry
     source-page-url: https://www.lottery.gov.cn/jc/zqsgkj/
     calculator-source-page-url: https://www.sporttery.cn/jc/jsq/zqbf/
     timeout-seconds: 12

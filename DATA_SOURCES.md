@@ -74,16 +74,19 @@ ESPN 赛事从 Scoreboard 的进球明细直接计算半场比分。TheSportsDB 
 
 ## 体彩玩法开售状态与让球数
 
-全场胜平负和全场让球胜平负自动选择来自中国体彩网的[足球赛果开奖页面](https://www.lottery.gov.cn/jc/zqsgkj/)和[竞彩足球计算器](https://www.sporttery.cn/jc/jsq/zqbf/)。程序调用页面实际使用的两个官方接口：
+全场胜平负和全场让球胜平负自动选择及最新赔率来自中国体彩网的[足球赛果开奖页面](https://www.lottery.gov.cn/jc/zqsgkj/)和[竞彩足球计算器](https://www.sporttery.cn/jc/jsq/zqbf/)。程序调用页面实际使用的三个官方接口：
 
 `https://webapi.sporttery.cn/gateway/uniform/football/getUniformMatchResultV1.qry`
 
 `https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry`
 
+`https://webapi.sporttery.cn/gateway/uniform/football/getOddsHistoryV1.qry`
+
 字段口径：
 
 - 赛果接口的 `h`、`d`、`a` 以及在售接口的 `had` 用于判断全场胜平负
 - 赛果接口的 `goalLine` 以及在售接口的 `hhad.goalLine` 表示全场让球胜平负的让球数
+- 在售接口的 `had`、`hhad` 直接提供当前赔率；已完赛场次从赔率历史接口的 `hadList`、`hhadList` 选择更新时间最新的一条
 - `matchId`、`matchDate`、`leagueId`、`allHomeTeam`、`allAwayTeam` 用于关联本地赛程
 - `sectionsNo999` 用于已完赛场次的比分复核
 

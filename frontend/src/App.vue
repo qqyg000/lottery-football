@@ -254,8 +254,8 @@
           <table class="handicap-table">
             <thead>
             <tr>
-              <th class="select-col">选</th>
-              <th>盘口</th>
+              <th class="select-col" aria-label="选择"></th>
+              <th class="handicap-col">盘口</th>
               <th>胜</th>
               <th>平</th>
               <th>负</th>
@@ -275,20 +275,41 @@
               <td class="handicap-cell" :title="item.label">
                 {{ item.label }}
               </td>
-              <td>
-                {{ formatProbability(item.probability.win) }}
-                <span v-if="isRecommended(match, item, 'win')" class="recommend-badge">荐</span>
-                <span v-if="isWinningRecommendation(match, item, 'win')" class="hit-cell-badge">中</span>
+              <td class="probability-cell">
+                <span class="probability-cell-content">
+                  <span class="probability-value">{{ formatProbability(item.probability.win) }}</span>
+                  <span
+                    v-if="sportteryOddsValue(match, item, 'win') !== null"
+                    class="sporttery-odds"
+                    :title="sportteryOddsTitle(match, item)"
+                  >{{ formatSportteryOdds(sportteryOddsValue(match, item, 'win')) }}</span>
+                  <span v-if="isRecommended(match, item, 'win')" class="recommend-badge">荐</span>
+                  <span v-if="isWinningRecommendation(match, item, 'win')" class="hit-cell-badge">中</span>
+                </span>
               </td>
-              <td>
-                {{ formatProbability(item.probability.draw) }}
-                <span v-if="isRecommended(match, item, 'draw')" class="recommend-badge">荐</span>
-                <span v-if="isWinningRecommendation(match, item, 'draw')" class="hit-cell-badge">中</span>
+              <td class="probability-cell">
+                <span class="probability-cell-content">
+                  <span class="probability-value">{{ formatProbability(item.probability.draw) }}</span>
+                  <span
+                    v-if="sportteryOddsValue(match, item, 'draw') !== null"
+                    class="sporttery-odds"
+                    :title="sportteryOddsTitle(match, item)"
+                  >{{ formatSportteryOdds(sportteryOddsValue(match, item, 'draw')) }}</span>
+                  <span v-if="isRecommended(match, item, 'draw')" class="recommend-badge">荐</span>
+                  <span v-if="isWinningRecommendation(match, item, 'draw')" class="hit-cell-badge">中</span>
+                </span>
               </td>
-              <td>
-                {{ formatProbability(item.probability.lose) }}
-                <span v-if="isRecommended(match, item, 'lose')" class="recommend-badge">荐</span>
-                <span v-if="isWinningRecommendation(match, item, 'lose')" class="hit-cell-badge">中</span>
+              <td class="probability-cell">
+                <span class="probability-cell-content">
+                  <span class="probability-value">{{ formatProbability(item.probability.lose) }}</span>
+                  <span
+                    v-if="sportteryOddsValue(match, item, 'lose') !== null"
+                    class="sporttery-odds"
+                    :title="sportteryOddsTitle(match, item)"
+                  >{{ formatSportteryOdds(sportteryOddsValue(match, item, 'lose')) }}</span>
+                  <span v-if="isRecommended(match, item, 'lose')" class="recommend-badge">荐</span>
+                  <span v-if="isWinningRecommendation(match, item, 'lose')" class="hit-cell-badge">中</span>
+                </span>
               </td>
             </tr>
             </tbody>
@@ -375,10 +396,10 @@ export default {
     },
     matchColumns() {
       const matchCount = this.matches.length || 1
-      if (matchCount > 4) {
-        return '3'
+      if (matchCount === 4) {
+        return '2'
       }
-      return String(matchCount)
+      return String(Math.min(matchCount, 3))
     },
     calendarCells() {
       return this.buildCalendarCells()
@@ -1152,6 +1173,32 @@ export default {
     formatHandicap(value) {
       return value > 0 ? '+' + value : String(value)
     },
+    sportteryOddsForRow(match, item) {
+      if (!match || !item) {
+        return null
+      }
+      if (item.handicap === 0) {
+        return match.sportteryNormalOdds || null
+      }
+      return Number(match.sportteryHandicap) === Number(item.handicap)
+        ? match.sportteryHandicapOdds || null
+        : null
+    },
+    sportteryOddsValue(match, item, probabilityKey) {
+      const odds = this.sportteryOddsForRow(match, item)
+      const value = odds ? Number(odds[probabilityKey]) : NaN
+      return Number.isFinite(value) && value > 0 ? value : null
+    },
+    sportteryOddsTitle(match, item) {
+      const odds = this.sportteryOddsForRow(match, item)
+      const marketName = item.handicap === 0 ? '不让球' : '让球' + this.formatHandicap(item.handicap)
+      const updatedAt = odds && odds.updatedAt ? '，更新时间：' + odds.updatedAt : ''
+      return '中国体彩网' + marketName + '最新赔率' + updatedAt
+    },
+    formatSportteryOdds(value) {
+      const odds = Number(value)
+      return Number.isFinite(odds) && odds > 0 ? odds.toFixed(2) : '--'
+    },
     probabilityRows(match) {
       const handicapRows = (this.activeHandicapProbabilities(match) || []).map(item => ({
         key: 'handicap-' + item.handicap,
@@ -1776,7 +1823,10 @@ h1 {
   text-align: left;
 }
 
+.handicap-col,
 .handicap-cell {
+  width: auto;
+  min-width: 150px;
   white-space: nowrap;
 }
 
@@ -1799,6 +1849,7 @@ h1 {
 .handicap-table th {
   color: #64748b;
   background: #f8fafc;
+  text-align: left;
 }
 
 .handicap-table td:nth-child(3) {
@@ -1816,11 +1867,50 @@ h1 {
   font-weight: 700;
 }
 
+.probability-value,
+.sporttery-odds {
+  white-space: nowrap;
+}
+
+.probability-cell {
+  text-align: left;
+}
+
+.probability-cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 18px;
+}
+
+.probability-value {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.sporttery-odds {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #475569;
+  background: #e2e8f0;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .recommend-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: 4px;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
@@ -1830,14 +1920,12 @@ h1 {
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
-  vertical-align: middle;
 }
 
 .hit-cell-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: 3px;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
@@ -1847,7 +1935,6 @@ h1 {
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
-  vertical-align: middle;
 }
 
 .normal-row td {

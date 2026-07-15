@@ -45,6 +45,10 @@ public class MatchSchedule {
 
     private Integer sportteryHandicap;
 
+    private SportteryOdds sportteryNormalOdds;
+
+    private SportteryOdds sportteryHandicapOdds;
+
     public Competition getCompetition() {
         return competition;
     }
@@ -203,6 +207,22 @@ public class MatchSchedule {
 
     public void setSportteryHandicap(Integer sportteryHandicap) {
         this.sportteryHandicap = sportteryHandicap;
+    }
+
+    public SportteryOdds getSportteryNormalOdds() {
+        return sportteryNormalOdds;
+    }
+
+    public void setSportteryNormalOdds(SportteryOdds sportteryNormalOdds) {
+        this.sportteryNormalOdds = sportteryNormalOdds;
+    }
+
+    public SportteryOdds getSportteryHandicapOdds() {
+        return sportteryHandicapOdds;
+    }
+
+    public void setSportteryHandicapOdds(SportteryOdds sportteryHandicapOdds) {
+        this.sportteryHandicapOdds = sportteryHandicapOdds;
     }
 
 }

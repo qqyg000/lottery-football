@@ -167,6 +167,8 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 | sportteryMatchNumber | 体彩赛事编号，例如周一201 |
 | sportteryNormalAvailable | 是否开售全场胜平负 |
 | sportteryHandicap | 全场让球胜平负让球数，例如 -1、+1 |
+| sportteryNormalOdds | 最新不让球胜平负赔率，包含 win、draw、lose、updatedAt |
+| sportteryHandicapOdds | 最新让球胜平负赔率，包含 win、draw、lose、updatedAt |
 
 赛事代码：
 
@@ -253,6 +255,7 @@ src/main/resources/data/history_matches.csv
 
 - `h`、`d`、`a` 三个固定奖字段都有值时，自动勾选全场胜平负
 - `goalLine` 有值时，自动勾选对应的全场让球胜平负行
+- 概率表在概率与推荐标记之间显示体彩最新赔率，历史场次从官方赔率历史接口取时间最新记录
 - 默认使用体彩勾选结果，用户修改任意勾选框后，该场改为手工覆盖并保存
 - 没有体彩数据的场次仍可手工勾选，兼容非竞彩场次和接口异常
 - 查询结果缓存到 `config/sporttery-market-selections.json`，近期日期默认每 30 分钟更新

@@ -2,6 +2,7 @@ package com.eason.worldcup.service;
 
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.MatchSchedule;
+import com.eason.worldcup.model.SportteryOdds;
 import com.eason.worldcup.util.ClubTeamNameTranslator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -74,6 +75,9 @@ public class SportteryMarketSelectionService {
 
     @Value("${sporttery.result-update.calculator-api-url:https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry}")
     private String calculatorApiUrl;
+
+    @Value("${sporttery.result-update.odds-history-api-url:https://webapi.sporttery.cn/gateway/uniform/football/getOddsHistoryV1.qry}")
+    private String oddsHistoryApiUrl;
 
     @Value("${sporttery.result-update.source-page-url:https://www.lottery.gov.cn/jc/zqsgkj/}")
     private String sourcePageUrl;
@@ -327,6 +331,53 @@ public class SportteryMarketSelectionService {
         return entries;
     }
 
+    private void downloadLatestOdds(
+            HttpClient client,
+            SportteryMarketEntry entry,
+            Duration timeout) throws IOException, InterruptedException {
+        String separator = oddsHistoryApiUrl.contains("?") ? "&" : "?";
+        JsonNode root = downloadJson(
+                client,
+                oddsHistoryApiUrl + separator + "matchId=" + entry.getSportteryMatchId(),
+                "https://www.sporttery.cn",
+                calculatorSourcePageUrl,
+                timeout,
+                "体彩赔率历史接口");
+        JsonNode value = root.path("value");
+        LatestMarketOdds normalOdds = parseLatestMarketOdds(value.path("hadList"));
+        LatestMarketOdds handicapOdds = parseLatestMarketOdds(value.path("hhadList"));
+        if (normalOdds != null) {
+            entry.setNormalOdds(normalOdds.odds());
+            entry.setNormalAvailable(true);
+        }
+        if (handicapOdds != null) {
+            entry.setHandicapOdds(handicapOdds.odds());
+            if (handicapOdds.handicap() != null) {
+                entry.setHandicap(handicapOdds.handicap());
+            }
+        }
+        entry.setOddsLookupCompleted(true);
+    }
+
+    private LatestMarketOdds parseLatestMarketOdds(JsonNode oddsList) {
+        LatestMarketOdds latest = null;
+        String latestUpdatedAt = "";
+        for (JsonNode item : oddsList) {
+            SportteryOdds odds = parseOdds(item);
+            if (odds == null) {
+                continue;
+            }
+            String updatedAt = odds.getUpdatedAt() == null ? "" : odds.getUpdatedAt();
+            if (latest == null || updatedAt.compareTo(latestUpdatedAt) > 0) {
+                latest = new LatestMarketOdds(
+                        odds,
+                        parseHandicap(item.path("goalLine").asText("")));
+                latestUpdatedAt = updatedAt;
+            }
+        }
+        return latest;
+    }
+
     private SportteryPage downloadPage(
             HttpClient client,
             DateRange dateRange,
@@ -431,9 +482,8 @@ public class SportteryMarketSelectionService {
         entry.setHomeTeam(homeTeam);
         entry.setAwayTeam(awayTeam);
         entry.setCurrentSale(false);
-        entry.setNormalAvailable(hasText(match.path("h").asText(""))
-                && hasText(match.path("d").asText(""))
-                && hasText(match.path("a").asText("")));
+        entry.setNormalOdds(parseOdds(match));
+        entry.setNormalAvailable(entry.getNormalOdds() != null);
         entry.setHandicap(parseHandicap(match.path("goalLine").asText("")));
         applyFullTimeScore(entry, match.path("sectionsNo999").asText(""));
         return entry;
@@ -467,18 +517,48 @@ public class SportteryMarketSelectionService {
         entry.setHomeTeam(homeTeam);
         entry.setAwayTeam(awayTeam);
         entry.setCurrentSale(true);
-        entry.setNormalAvailable(hasThreeWayOdds(normalMarket));
-        entry.setHandicap(hasThreeWayOdds(handicapMarket)
+        entry.setNormalOdds(parseOdds(normalMarket));
+        entry.setHandicapOdds(parseOdds(handicapMarket));
+        entry.setNormalAvailable(entry.getNormalOdds() != null);
+        entry.setHandicap(entry.getHandicapOdds() != null
                 ? parseHandicap(handicapMarket.path("goalLine").asText(""))
                 : null);
+        entry.setOddsLookupCompleted(true);
         return entry;
     }
 
-    private boolean hasThreeWayOdds(JsonNode market) {
-        return market != null
-                && hasText(market.path("h").asText(""))
-                && hasText(market.path("d").asText(""))
-                && hasText(market.path("a").asText(""));
+    private SportteryOdds parseOdds(JsonNode market) {
+        if (market == null) {
+            return null;
+        }
+        Double win = parseOddsValue(market.path("h").asText(""));
+        Double draw = parseOddsValue(market.path("d").asText(""));
+        Double lose = parseOddsValue(market.path("a").asText(""));
+        if (win == null || draw == null || lose == null) {
+            return null;
+        }
+        return new SportteryOdds(win, draw, lose, parseOddsUpdatedAt(market));
+    }
+
+    private Double parseOddsValue(String value) {
+        if (!hasText(value)) {
+            return null;
+        }
+        try {
+            double odds = Double.parseDouble(value.trim());
+            return Double.isFinite(odds) && odds > 0.0D ? odds : null;
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private String parseOddsUpdatedAt(JsonNode market) {
+        String updateDate = market.path("updateDate").asText("").trim();
+        String updateTime = market.path("updateTime").asText("").trim();
+        if (updateDate.isBlank()) {
+            return updateTime.isBlank() ? null : updateTime;
+        }
+        return updateTime.isBlank() ? updateDate : updateDate + " " + updateTime;
     }
 
     private Competition parseCompetition(JsonNode match) {
@@ -570,6 +650,10 @@ public class SportteryMarketSelectionService {
 
         int matchedCount = 0;
         Set<String> usedMatchIds = new HashSet<>();
+        Duration timeout = Duration.ofSeconds(Math.max(1, timeoutSeconds));
+        HttpClient oddsClient = null;
+        boolean oddsCacheChanged = false;
+        boolean oddsLookupInterrupted = false;
         for (MatchSchedule schedule : schedules) {
             clearSelection(schedule);
             SportteryMarketEntry entry = findBestEntry(
@@ -579,14 +663,47 @@ public class SportteryMarketSelectionService {
             if (entry == null) {
                 continue;
             }
+            if (enabled && !oddsLookupInterrupted && needsOddsLookup(entry)) {
+                if (oddsClient == null) {
+                    oddsClient = HttpClient.newBuilder()
+                            .connectTimeout(timeout)
+                            .version(HttpClient.Version.HTTP_1_1)
+                            .build();
+                }
+                try {
+                    downloadLatestOdds(oddsClient, entry, timeout);
+                    oddsCacheChanged = true;
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    oddsLookupInterrupted = true;
+                    log.warn("Sporttery odds query interrupted for match {}", entry.getSportteryMatchId());
+                } catch (Exception ex) {
+                    log.warn(
+                            "Unable to query Sporttery odds for match {}: {}",
+                            entry.getSportteryMatchId(),
+                            ex.getMessage());
+                }
+            }
             schedule.setSportteryMatchId(entry.getSportteryMatchId());
             schedule.setSportteryMatchNumber(entry.getSportteryMatchNumber());
             schedule.setSportteryNormalAvailable(entry.getNormalAvailable());
             schedule.setSportteryHandicap(entry.getHandicap());
+            schedule.setSportteryNormalOdds(entry.getNormalOdds());
+            schedule.setSportteryHandicapOdds(entry.getHandicapOdds());
             usedMatchIds.add(entry.getSportteryMatchId());
             matchedCount++;
         }
+        if (oddsCacheChanged) {
+            saveCache(LocalDateTime.now(resolveTargetZone()));
+        }
         return matchedCount;
+    }
+
+    private boolean needsOddsLookup(SportteryMarketEntry entry) {
+        if (Boolean.TRUE.equals(entry.getOddsLookupCompleted())) {
+            return false;
+        }
+        return Boolean.TRUE.equals(entry.getNormalAvailable()) || entry.getHandicap() != null;
     }
 
     private void clearSelection(MatchSchedule schedule) {
@@ -594,6 +711,8 @@ public class SportteryMarketSelectionService {
         schedule.setSportteryMatchNumber(null);
         schedule.setSportteryNormalAvailable(null);
         schedule.setSportteryHandicap(null);
+        schedule.setSportteryNormalOdds(null);
+        schedule.setSportteryHandicapOdds(null);
     }
 
     private SportteryMarketEntry findBestEntry(
@@ -812,6 +931,10 @@ public class SportteryMarketSelectionService {
 
     }
 
+    private record LatestMarketOdds(SportteryOdds odds, Integer handicap) {
+
+    }
+
     public static class SportteryMarketCache {
 
         private String updatedAt;
@@ -873,6 +996,12 @@ public class SportteryMarketSelectionService {
         private Boolean normalAvailable;
 
         private Integer handicap;
+
+        private SportteryOdds normalOdds;
+
+        private SportteryOdds handicapOdds;
+
+        private Boolean oddsLookupCompleted;
 
         private Integer homeScore;
 
@@ -942,6 +1071,30 @@ public class SportteryMarketSelectionService {
 
         public void setHandicap(Integer handicap) {
             this.handicap = handicap;
+        }
+
+        public SportteryOdds getNormalOdds() {
+            return normalOdds;
+        }
+
+        public void setNormalOdds(SportteryOdds normalOdds) {
+            this.normalOdds = normalOdds;
+        }
+
+        public SportteryOdds getHandicapOdds() {
+            return handicapOdds;
+        }
+
+        public void setHandicapOdds(SportteryOdds handicapOdds) {
+            this.handicapOdds = handicapOdds;
+        }
+
+        public Boolean getOddsLookupCompleted() {
+            return oddsLookupCompleted;
+        }
+
+        public void setOddsLookupCompleted(Boolean oddsLookupCompleted) {
+            this.oddsLookupCompleted = oddsLookupCompleted;
         }
 
         public Integer getHomeScore() {
