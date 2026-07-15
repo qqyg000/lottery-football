@@ -4,3 +4,4 @@ frontend/dist/
 frontend/package-lock.json
 *.log
 config/club-competition-schedules.json
+config/half-time-scores.json

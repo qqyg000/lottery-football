@@ -55,6 +55,17 @@ match_date,tournament,home_team,away_team,home_score,away_score,neutral
 
 TheSportsDB 免费接口存在返回条数和每分钟请求次数限制，因此程序读取近三季样本、最近/下一场及未来六轮，并将成功结果缓存到 `config/club-competition-schedules.json`。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 节点。
 
+## 半场比分补充
+
+ESPN 赛事从 Scoreboard 的进球明细直接计算半场比分。TheSportsDB 的赛季和赛程接口只返回全场比分，不包含历史半场比分，因此程序会对所有已完赛但缺少半场比分的赛事使用 FotMob 进行补充：
+
+- 按比赛日期读取 `https://www.fotmob.com/api/data/matches?date={date}`
+- 按主客队、全场比分、开球时间和赛事名称匹配比赛
+- 从 `https://www.fotmob.com/api/data/matchDetails?matchId={matchId}` 的 `HT` 事件读取半场比分
+- 校验半场比分不大于全场比分后写入 `config/half-time-scores.json`
+
+缓存会优先回填，只有新增完赛且缺少半场比分的比赛才访问 FotMob。相关配置位于 `application.yml` 的 `half-time-score.fotmob-update` 节点。
+
 ## 俱乐部中文名
 
 俱乐部中文名映射位于 `src/main/java/com/eason/worldcup/util/ClubTeamNameTranslator.java`，英文源名称只用于关联赛程和历史数据。

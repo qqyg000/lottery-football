@@ -1057,10 +1057,13 @@ export default {
         actualScore.away === Number(score.awayScore)
     },
     isWinningHalfFullPrediction(match, item) {
-      return Boolean(match &&
-        match.status === '已完赛' &&
-        match.actualHalfFullResult &&
-        match.actualHalfFullResult === item.label)
+      if (!match || match.status !== '已完赛' || !item) {
+        return false
+      }
+      const actualResult = String(match.actualHalfFullResult || '').trim()
+      const predictionResult = String(item.label ||
+        ((item.halfTimeResult || '') + (item.fullTimeResult || ''))).trim()
+      return actualResult !== '' && actualResult === predictionResult
     },
     isWinningTotalGoalsPrediction(match, item) {
       if (!match || match.status !== '已完赛') {

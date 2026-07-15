@@ -41,6 +41,8 @@ public class DataRepository {
 
     private final ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater;
 
+    private final FotMobHalfTimeScoreUpdater fotMobHalfTimeScoreUpdater;
+
     @Value("${worldcup.history-path:classpath:data/history_matches.csv}")
     private String historyPath;
 
@@ -55,11 +57,13 @@ public class DataRepository {
             ResourceLoader resourceLoader,
             OpenFootballScheduleUpdater scheduleUpdater,
             EspnScheduleUpdater espnScheduleUpdater,
-            ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater) {
+            ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater,
+            FotMobHalfTimeScoreUpdater fotMobHalfTimeScoreUpdater) {
         this.resourceLoader = resourceLoader;
         this.scheduleUpdater = scheduleUpdater;
         this.espnScheduleUpdater = espnScheduleUpdater;
         this.clubCompetitionScheduleUpdater = clubCompetitionScheduleUpdater;
+        this.fotMobHalfTimeScoreUpdater = fotMobHalfTimeScoreUpdater;
     }
 
     @PostConstruct
@@ -216,6 +220,10 @@ public class DataRepository {
         int clubCompetitionUpdatedCount = clubCompetitionScheduleUpdater.updateSchedules(result);
         if (clubCompetitionUpdatedCount > 0) {
             log.info("Loaded {} additional club competition schedule rows.", clubCompetitionUpdatedCount);
+        }
+        int halfTimeUpdatedCount = fotMobHalfTimeScoreUpdater.updateSchedules(result);
+        if (halfTimeUpdatedCount > 0) {
+            log.info("Backfilled {} schedule rows with cached or FotMob half-time scores.", halfTimeUpdatedCount);
         }
         result.sort(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getKickoffTime));
         return result;
