@@ -9,6 +9,7 @@ import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
 import com.eason.worldcup.model.ScoreProbability;
 import com.eason.worldcup.model.ThreeWayProbability;
+import com.eason.worldcup.model.TotalGoalsProbability;
 import com.eason.worldcup.util.PoissonRandom;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -186,6 +187,7 @@ public class PredictionService {
         response.setNormalProbability(preMatchProbability);
         response.setHandicapProbabilities(preMatchCounter.toHandicapProbabilities(simulationCount, preMatchProbability));
         response.setHalfFullProbabilities(preMatchCounter.toTopHalfFullProbabilities(simulationCount));
+        response.setTotalGoalsProbabilities(preMatchCounter.toTopTotalGoalsProbabilities(simulationCount));
         response.setScoreProbabilities(preMatchCounter.toTopScoreProbabilities(simulationCount));
         response.setAdjustedExpectedHomeGoals(round(postMatchExpectedGoals.getHomeGoals(), 2));
         response.setAdjustedExpectedAwayGoals(round(postMatchExpectedGoals.getAwayGoals(), 2));
@@ -193,6 +195,7 @@ public class PredictionService {
         response.setAdjustedNormalProbability(postMatchProbability);
         response.setAdjustedHandicapProbabilities(postMatchCounter.toHandicapProbabilities(simulationCount, postMatchProbability));
         response.setAdjustedHalfFullProbabilities(postMatchCounter.toTopHalfFullProbabilities(simulationCount));
+        response.setAdjustedTotalGoalsProbabilities(postMatchCounter.toTopTotalGoalsProbabilities(simulationCount));
         response.setAdjustedScoreProbabilities(postMatchCounter.toTopScoreProbabilities(simulationCount));
         response.setCorrectionMatchCount(postMatchExpectedGoals.getCorrectionMatchCount());
         response.setModelRemark(buildModelRemark(schedule));
@@ -319,6 +322,8 @@ public class PredictionService {
 
         private final Map<String, HalfFullCounter> halfFullCounters = new HashMap<>();
 
+        private final Map<Integer, Integer> totalGoalsCounters = new HashMap<>();
+
         private final List<HandicapCounter> handicapCounters = new ArrayList<>();
 
         private SimulationCounter(double effectiveHandicapSmoothingFactor) {
@@ -331,6 +336,7 @@ public class PredictionService {
         private void addNormal(int homeGoals, int awayGoals, int halfTimeHomeGoals, int halfTimeAwayGoals) {
             addScore(homeGoals, awayGoals);
             addHalfFull(halfTimeHomeGoals, halfTimeAwayGoals, homeGoals, awayGoals);
+            addTotalGoals(homeGoals, awayGoals);
             if (homeGoals > awayGoals) {
                 win++;
             } else if (homeGoals == awayGoals) {
@@ -364,6 +370,10 @@ public class PredictionService {
             String key = homeGoals + "-" + awayGoals;
             ScoreCounter counter = scoreCounters.computeIfAbsent(key, ignored -> new ScoreCounter(homeGoals, awayGoals));
             counter.count++;
+        }
+
+        private void addTotalGoals(int homeGoals, int awayGoals) {
+            totalGoalsCounters.merge(homeGoals + awayGoals, 1, Integer::sum);
         }
 
         private void addHandicap(int handicap, int homeGoals, int awayGoals) {
@@ -425,6 +435,23 @@ public class PredictionService {
                             counter.halfTimeResult,
                             counter.fullTimeResult,
                             roundPercent(counter.count * 100.0D / simulationCount)))
+                    .toList();
+        }
+
+        private List<TotalGoalsProbability> toTopTotalGoalsProbabilities(int simulationCount) {
+            return totalGoalsCounters.entrySet()
+                    .stream()
+                    .sorted((left, right) -> {
+                        int countCompare = Integer.compare(right.getValue(), left.getValue());
+                        if (countCompare != 0) {
+                            return countCompare;
+                        }
+                        return Integer.compare(left.getKey(), right.getKey());
+                    })
+                    .limit(4)
+                    .map(entry -> new TotalGoalsProbability(
+                            entry.getKey(),
+                            roundPercent(entry.getValue() * 100.0D / simulationCount)))
                     .toList();
         }
 

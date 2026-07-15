@@ -206,20 +206,6 @@
             </div>
           </div>
           <div class="prediction-prob-stack">
-            <div v-if="activeHalfFullProbabilities(match).length" class="score-prob-row score-prob-summary" :title="halfFullProbabilityTitle(match)">
-              <span class="score-prob-label">半全场</span>
-              <span class="score-prob-items">
-                <span
-                  v-for="item in activeHalfFullProbabilities(match)"
-                  :key="match.matchId + '-half-full-' + item.halfTimeResult + '-' + item.fullTimeResult"
-                  class="score-prob-pill half-full-prob-pill"
-                  :class="{ 'is-winning-prediction': isWinningHalfFullPrediction(match, item) }"
-                >
-                  {{ item.label }}
-                  <span>{{ formatProbability(item.probability) }}</span>
-                </span>
-              </span>
-            </div>
             <div v-if="activeScoreProbabilities(match).length" class="score-prob-row score-prob-summary" :title="scoreProbabilityTitle(match)">
               <span class="score-prob-label">比分</span>
               <span class="score-prob-items">
@@ -231,6 +217,34 @@
                 >
                   {{ score.homeScore }}-{{ score.awayScore }}
                   <span>{{ formatProbability(score.probability) }}</span>
+                </span>
+              </span>
+            </div>
+            <div v-if="activeTotalGoalsProbabilities(match).length" class="score-prob-row score-prob-summary" :title="totalGoalsProbabilityTitle(match)">
+              <span class="score-prob-label">进球数</span>
+              <span class="score-prob-items">
+                <span
+                  v-for="item in activeTotalGoalsProbabilities(match)"
+                  :key="match.matchId + '-total-goals-' + item.totalGoals"
+                  class="score-prob-pill"
+                  :class="{ 'is-winning-prediction': isWinningTotalGoalsPrediction(match, item) }"
+                >
+                  {{ item.totalGoals }}球
+                  <span>{{ formatProbability(item.probability) }}</span>
+                </span>
+              </span>
+            </div>
+            <div v-if="activeHalfFullProbabilities(match).length" class="score-prob-row score-prob-summary" :title="halfFullProbabilityTitle(match)">
+              <span class="score-prob-label">半全场</span>
+              <span class="score-prob-items">
+                <span
+                  v-for="item in activeHalfFullProbabilities(match)"
+                  :key="match.matchId + '-half-full-' + item.halfTimeResult + '-' + item.fullTimeResult"
+                  class="score-prob-pill half-full-prob-pill"
+                  :class="{ 'is-winning-prediction': isWinningHalfFullPrediction(match, item) }"
+                >
+                  {{ item.label }}
+                  <span>{{ formatProbability(item.probability) }}</span>
                 </span>
               </span>
             </div>
@@ -1025,7 +1039,13 @@ export default {
       const probabilities = this.modelMode === 'after' && match.adjustedHalfFullProbabilities
         ? match.adjustedHalfFullProbabilities
         : match.halfFullProbabilities
-      return (probabilities || []).slice(0, 3)
+      return (probabilities || []).slice(0, 4)
+    },
+    activeTotalGoalsProbabilities(match) {
+      const probabilities = this.modelMode === 'after' && match.adjustedTotalGoalsProbabilities
+        ? match.adjustedTotalGoalsProbabilities
+        : match.totalGoalsProbabilities
+      return (probabilities || []).slice(0, 4)
     },
     isWinningScorePrediction(match, score) {
       if (!match || match.status !== '已完赛') {
@@ -1042,6 +1062,14 @@ export default {
         match.actualHalfFullResult &&
         match.actualHalfFullResult === item.label)
     },
+    isWinningTotalGoalsPrediction(match, item) {
+      if (!match || match.status !== '已完赛') {
+        return false
+      }
+      const actualScore = this.parseScore(match)
+      return actualScore !== null &&
+        actualScore.home + actualScore.away === Number(item.totalGoals)
+    },
     formatProbability(value) {
       const numberValue = Number(value)
       if (!Number.isFinite(numberValue)) {
@@ -1057,6 +1085,11 @@ export default {
     halfFullProbabilityTitle(match) {
       return this.activeHalfFullProbabilities(match)
         .map(item => item.label + ' ' + this.formatProbability(item.probability))
+        .join('，')
+    },
+    totalGoalsProbabilityTitle(match) {
+      return this.activeTotalGoalsProbabilities(match)
+        .map(item => item.totalGoals + '球 ' + this.formatProbability(item.probability))
         .join('，')
     },
     formatHandicap(value) {
@@ -1581,31 +1614,31 @@ h1 {
 
 .goal-box {
   flex: 0 0 auto;
-  min-width: 86px;
-  padding: 8px 9px;
-  border-radius: 10px;
+  min-width: 78px;
+  padding: 2px 6px;
+  border-radius: 6px;
   background: #eff6ff;
   color: #1d4ed8;
-  font-size: 11px;
+  font-size: 10px;
   text-align: center;
 }
 
 .goal-box strong {
   display: block;
-  margin-top: 4px;
-  font-size: 15px;
-  line-height: 1.1;
+  margin-top: 0;
+  font-size: 12px;
+  line-height: 1;
   white-space: nowrap;
 }
 
 .match-summary-row {
   display: grid;
   grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-  align-items: center;
+  align-items: end;
   gap: 8px 12px;
-  margin-top: 8px;
+  margin-top: -20px;
   margin-bottom: 4px;
-  min-height: 36px;
+  min-height: 50px;
 }
 
 .summary-title-row {
@@ -1658,11 +1691,10 @@ h1 {
 
 .prediction-prob-stack {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
-  max-height: 36px;
+  max-height: 50px;
   overflow: hidden;
-  transform: translateY(-8px);
 }
 
 .handicap-table-wrap {

@@ -47,6 +47,8 @@ public class MatchPredictionResponse {
 
     private List<HalfFullProbability> halfFullProbabilities = new ArrayList<>();
 
+    private List<TotalGoalsProbability> totalGoalsProbabilities = new ArrayList<>();
+
     private double adjustedExpectedHomeGoals;
 
     private double adjustedExpectedAwayGoals;
@@ -58,6 +60,8 @@ public class MatchPredictionResponse {
     private List<ScoreProbability> adjustedScoreProbabilities = new ArrayList<>();
 
     private List<HalfFullProbability> adjustedHalfFullProbabilities = new ArrayList<>();
+
+    private List<TotalGoalsProbability> adjustedTotalGoalsProbabilities = new ArrayList<>();
 
     private int correctionMatchCount;
 
@@ -223,6 +227,14 @@ public class MatchPredictionResponse {
         this.halfFullProbabilities = halfFullProbabilities;
     }
 
+    public List<TotalGoalsProbability> getTotalGoalsProbabilities() {
+        return totalGoalsProbabilities;
+    }
+
+    public void setTotalGoalsProbabilities(List<TotalGoalsProbability> totalGoalsProbabilities) {
+        this.totalGoalsProbabilities = totalGoalsProbabilities;
+    }
+
     public double getAdjustedExpectedHomeGoals() {
         return adjustedExpectedHomeGoals;
     }
@@ -269,6 +281,14 @@ public class MatchPredictionResponse {
 
     public void setAdjustedHalfFullProbabilities(List<HalfFullProbability> adjustedHalfFullProbabilities) {
         this.adjustedHalfFullProbabilities = adjustedHalfFullProbabilities;
+    }
+
+    public List<TotalGoalsProbability> getAdjustedTotalGoalsProbabilities() {
+        return adjustedTotalGoalsProbabilities;
+    }
+
+    public void setAdjustedTotalGoalsProbabilities(List<TotalGoalsProbability> adjustedTotalGoalsProbabilities) {
+        this.adjustedTotalGoalsProbabilities = adjustedTotalGoalsProbabilities;
     }
 
     public int getCorrectionMatchCount() {
