@@ -64,8 +64,10 @@ public class PredictionController {
 
     @PostMapping("/data/refresh")
     public ModelOverviewResponse refreshData(
-            @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition) {
-        return predictionService.refreshData(parseCompetition(competition));
+            @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition,
+            @RequestParam(value = "date", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+        return predictionService.refreshData(parseCompetition(competition), date);
     }
 
     @GetMapping("/user-config")

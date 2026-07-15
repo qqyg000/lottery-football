@@ -267,7 +267,8 @@
                 <input
                   type="checkbox"
                   :checked="isRowSelected(match, item)"
-                  :aria-label="'选择' + item.label"
+                  :title="selectionInputTitle(match, item)"
+                  :aria-label="selectionInputTitle(match, item)"
                   @change="toggleRecommendationRow(match, item, $event)"
                 >
               </td>
@@ -476,6 +477,9 @@ export default {
         const currentDate = this.queryDate
         const params = new URLSearchParams()
         params.append('competition', this.activeCompetition)
+        if (currentDate) {
+          params.append('date', currentDate)
+        }
         const res = await fetch('/api/football/data/refresh?' + params.toString(), {
           method: 'POST'
         })
@@ -633,14 +637,20 @@ export default {
           return
         }
         const selection = {}
+        let manualOverride = false
         parts[1].split(',').forEach(flag => {
-          if (flag === 'n') {
+          if (flag === 'o') {
+            manualOverride = true
+          } else if (flag === 'n') {
             selection.normal = true
+            manualOverride = true
           } else if (flag.startsWith('h')) {
             selection.handicap = 'handicap-' + flag.slice(1)
+            manualOverride = true
           }
         })
-        if (selection.normal || selection.handicap) {
+        if (manualOverride) {
+          selection.manualOverride = true
           result[parts[0]] = selection
         }
       })
@@ -653,16 +663,19 @@ export default {
         if (!matchId || !selection || typeof selection !== 'object' || Array.isArray(selection)) {
           return
         }
-        const normalized = {}
+        const validHandicap = typeof selection.handicap === 'string' && /^handicap--?\d+$/.test(selection.handicap)
+        const manualOverride = selection.manualOverride === true || selection.normal === true || validHandicap
+        if (!manualOverride) {
+          return
+        }
+        const normalized = { manualOverride: true }
         if (selection.normal === true) {
           normalized.normal = true
         }
-        if (typeof selection.handicap === 'string' && /^handicap--?\d+$/.test(selection.handicap)) {
+        if (validHandicap) {
           normalized.handicap = selection.handicap
         }
-        if (normalized.normal || normalized.handicap) {
-          result[matchId] = normalized
-        }
+        result[matchId] = normalized
       })
       return result
     },
@@ -670,6 +683,9 @@ export default {
       return Object.keys(this.selectedRows).map(matchId => {
         const selection = this.selectedRows[matchId] || {}
         const flags = []
+        if (selection.manualOverride === true) {
+          flags.push('o')
+        }
         if (selection.normal) {
           flags.push('n')
         }
@@ -830,8 +846,43 @@ export default {
     formatModelFactorValue(value, fallback, key) {
       return this.normalizeModelFactor(value, fallback, key).toFixed(this.getModelFactorScale(key))
     },
+    hasSportterySelection(match) {
+      return Boolean(match && match.sportteryMatchId)
+    },
+    getSportterySelection(match) {
+      if (!this.hasSportterySelection(match)) {
+        return null
+      }
+      const selection = {}
+      if (match.sportteryNormalAvailable === true) {
+        selection.normal = true
+      }
+      const handicap = Number(match.sportteryHandicap)
+      if (Number.isInteger(handicap) && handicap !== 0) {
+        selection.handicap = 'handicap-' + handicap
+      }
+      return selection
+    },
     getSelectionForMatch(match) {
-      return this.selectedRows[match.matchId] || {}
+      const manualSelection = this.selectedRows[match.matchId]
+      if (manualSelection && manualSelection.manualOverride === true) {
+        return manualSelection
+      }
+      return this.getSportterySelection(match) || {}
+    },
+    hasManualOverride(match) {
+      const selection = match ? this.selectedRows[match.matchId] : null
+      return Boolean(selection && selection.manualOverride === true)
+    },
+    selectionInputTitle(match, item) {
+      if (this.hasManualOverride(match)) {
+        return '手工覆盖：' + item.label
+      }
+      if (!this.hasSportterySelection(match)) {
+        return '手工选择：' + item.label
+      }
+      const matchNumber = match.sportteryMatchNumber ? '（' + match.sportteryMatchNumber + '）' : ''
+      return '中国体彩网自动获取' + matchNumber + '，可手工覆盖：' + item.label
     },
     isRowSelected(match, item) {
       const selection = this.getSelectionForMatch(match)
@@ -842,7 +893,14 @@ export default {
     },
     toggleRecommendationRow(match, item, event) {
       const checked = event.target.checked
-      const selection = Object.assign({}, this.getSelectionForMatch(match))
+      const effectiveSelection = this.getSelectionForMatch(match)
+      const selection = { manualOverride: true }
+      if (effectiveSelection.normal === true) {
+        selection.normal = true
+      }
+      if (effectiveSelection.handicap) {
+        selection.handicap = effectiveSelection.handicap
+      }
       if (item.handicap === 0) {
         if (checked) {
           selection.normal = true
@@ -855,11 +913,7 @@ export default {
         delete selection.handicap
       }
 
-      if (selection.normal || selection.handicap) {
-        this.$set(this.selectedRows, match.matchId, selection)
-      } else {
-        this.$delete(this.selectedRows, match.matchId)
-      }
+      this.$set(this.selectedRows, match.matchId, selection)
       this.saveRecommendationSelections()
     },
     isRecommended(match, item, probabilityKey) {
@@ -1033,19 +1087,19 @@ export default {
       const scores = this.modelMode === 'after' && match.adjustedScoreProbabilities
         ? match.adjustedScoreProbabilities
         : match.scoreProbabilities
-      return scores || []
+      return (scores || []).slice(0, 3)
     },
     activeHalfFullProbabilities(match) {
       const probabilities = this.modelMode === 'after' && match.adjustedHalfFullProbabilities
         ? match.adjustedHalfFullProbabilities
         : match.halfFullProbabilities
-      return (probabilities || []).slice(0, 4)
+      return (probabilities || []).slice(0, 3)
     },
     activeTotalGoalsProbabilities(match) {
       const probabilities = this.modelMode === 'after' && match.adjustedTotalGoalsProbabilities
         ? match.adjustedTotalGoalsProbabilities
         : match.totalGoalsProbabilities
-      return (probabilities || []).slice(0, 4)
+      return (probabilities || []).slice(0, 3)
     },
     isWinningScorePrediction(match, score) {
       if (!match || match.status !== '已完赛') {

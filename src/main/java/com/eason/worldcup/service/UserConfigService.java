@@ -118,17 +118,26 @@ public class UserConfigService {
                 return;
             }
             RecommendationSelection normalizedSelection = new RecommendationSelection();
+            boolean manualOverride = Boolean.TRUE.equals(selection.getManualOverride())
+                    || Boolean.TRUE.equals(selection.getNormal())
+                    || isValidHandicap(selection.getHandicap());
+            if (!manualOverride) {
+                return;
+            }
+            normalizedSelection.setManualOverride(true);
             if (Boolean.TRUE.equals(selection.getNormal())) {
                 normalizedSelection.setNormal(true);
             }
-            if (selection.getHandicap() != null && selection.getHandicap().matches("handicap--?\\d+")) {
+            if (isValidHandicap(selection.getHandicap())) {
                 normalizedSelection.setHandicap(selection.getHandicap());
             }
-            if (Boolean.TRUE.equals(normalizedSelection.getNormal()) || normalizedSelection.getHandicap() != null) {
-                normalized.put(matchId, normalizedSelection);
-            }
+            normalized.put(matchId, normalizedSelection);
         });
         return normalized;
+    }
+
+    private boolean isValidHandicap(String handicap) {
+        return handicap != null && handicap.matches("handicap--?\\d+");
     }
 
     private static class UserConfigDefaults {

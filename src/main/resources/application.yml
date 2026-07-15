@@ -69,3 +69,17 @@ half-time-score:
     parallelism: 8
     target-zone: Asia/Shanghai
     cache-path: config/half-time-scores.json
+
+sporttery:
+  result-update:
+    enabled: true
+    api-url: https://webapi.sporttery.cn/gateway/uniform/football/getUniformMatchResultV1.qry
+    calculator-api-url: https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry
+    source-page-url: https://www.lottery.gov.cn/jc/zqsgkj/
+    calculator-source-page-url: https://www.sporttery.cn/jc/jsq/zqbf/
+    timeout-seconds: 12
+    page-size: 100
+    refresh-minutes: 30
+    future-days: 2
+    target-zone: Asia/Shanghai
+    cache-path: config/sporttery-market-selections.json

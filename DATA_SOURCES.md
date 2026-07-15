@@ -72,6 +72,23 @@ ESPN 赛事从 Scoreboard 的进球明细直接计算半场比分。TheSportsDB 
 
 缓存会优先回填，只有新增完赛且缺少半场比分的比赛才访问 FotMob。相关配置位于 `application.yml` 的 `half-time-score.fotmob-update` 节点。
 
+## 体彩玩法开售状态与让球数
+
+全场胜平负和全场让球胜平负自动选择来自中国体彩网的[足球赛果开奖页面](https://www.lottery.gov.cn/jc/zqsgkj/)和[竞彩足球计算器](https://www.sporttery.cn/jc/jsq/zqbf/)。程序调用页面实际使用的两个官方接口：
+
+`https://webapi.sporttery.cn/gateway/uniform/football/getUniformMatchResultV1.qry`
+
+`https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry`
+
+字段口径：
+
+- 赛果接口的 `h`、`d`、`a` 以及在售接口的 `had` 用于判断全场胜平负
+- 赛果接口的 `goalLine` 以及在售接口的 `hhad.goalLine` 表示全场让球胜平负的让球数
+- `matchId`、`matchDate`、`leagueId`、`allHomeTeam`、`allAwayTeam` 用于关联本地赛程
+- `sectionsNo999` 用于已完赛场次的比分复核
+
+体彩日期和外部赛程数据转换后的日期可能相差一天，因此程序从目标日期前一天查询到后两天，并同时校验赛事、主客队和比分，避免仅按队名误关联。结果写入 `config/sporttery-market-selections.json`；默认采用体彩结果，用户可逐场手工覆盖。点击“更新数据”时会跳过缓存刷新间隔并重新查询。相关配置位于 `application.yml` 的 `sporttery.result-update` 节点。
+
 ## 俱乐部中文名
 
 俱乐部中文名映射位于 `src/main/java/com/eason/worldcup/util/ClubTeamNameTranslator.java`，英文源名称只用于关联赛程和历史数据。

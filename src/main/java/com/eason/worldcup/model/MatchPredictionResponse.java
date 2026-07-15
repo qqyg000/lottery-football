@@ -33,6 +33,14 @@ public class MatchPredictionResponse {
 
     private String actualHalfFullResult;
 
+    private String sportteryMatchId;
+
+    private String sportteryMatchNumber;
+
+    private Boolean sportteryNormalAvailable;
+
+    private Integer sportteryHandicap;
+
     private int simulations;
 
     private double expectedHomeGoals;
@@ -169,6 +177,38 @@ public class MatchPredictionResponse {
 
     public void setActualHalfFullResult(String actualHalfFullResult) {
         this.actualHalfFullResult = actualHalfFullResult;
+    }
+
+    public String getSportteryMatchId() {
+        return sportteryMatchId;
+    }
+
+    public void setSportteryMatchId(String sportteryMatchId) {
+        this.sportteryMatchId = sportteryMatchId;
+    }
+
+    public String getSportteryMatchNumber() {
+        return sportteryMatchNumber;
+    }
+
+    public void setSportteryMatchNumber(String sportteryMatchNumber) {
+        this.sportteryMatchNumber = sportteryMatchNumber;
+    }
+
+    public Boolean getSportteryNormalAvailable() {
+        return sportteryNormalAvailable;
+    }
+
+    public void setSportteryNormalAvailable(Boolean sportteryNormalAvailable) {
+        this.sportteryNormalAvailable = sportteryNormalAvailable;
+    }
+
+    public Integer getSportteryHandicap() {
+        return sportteryHandicap;
+    }
+
+    public void setSportteryHandicap(Integer sportteryHandicap) {
+        this.sportteryHandicap = sportteryHandicap;
     }
 
     public int getSimulations() {

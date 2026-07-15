@@ -34,6 +34,8 @@ public class PredictionService {
 
     private final TeamStrengthService teamStrengthService;
 
+    private final SportteryMarketSelectionService sportteryMarketSelectionService;
+
     @Value("${worldcup.simulation-count:50000}")
     private int defaultSimulationCount;
 
@@ -43,9 +45,13 @@ public class PredictionService {
     @Value("${worldcup.handicap-max-smoothing:0.36}")
     private double handicapMaxSmoothing;
 
-    public PredictionService(DataRepository dataRepository, TeamStrengthService teamStrengthService) {
+    public PredictionService(
+            DataRepository dataRepository,
+            TeamStrengthService teamStrengthService,
+            SportteryMarketSelectionService sportteryMarketSelectionService) {
         this.dataRepository = dataRepository;
         this.teamStrengthService = teamStrengthService;
+        this.sportteryMarketSelectionService = sportteryMarketSelectionService;
     }
 
     public PredictionQueryResponse queryByDate(LocalDate date, Integer simulations) {
@@ -90,8 +96,9 @@ public class PredictionService {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         int simulationCount = normalizeSimulationCount(simulations);
         double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
-        List<MatchPredictionResponse> matches = dataRepository.findSchedulesByDate(date, effectiveCompetition)
-                .stream()
+        List<MatchSchedule> schedules = dataRepository.findSchedulesByDate(date, effectiveCompetition);
+        sportteryMarketSelectionService.updateSelections(schedules);
+        List<MatchPredictionResponse> matches = schedules.stream()
                 .map(schedule -> predict(
                         schedule,
                         simulationCount,
@@ -134,8 +141,13 @@ public class PredictionService {
     }
 
     public ModelOverviewResponse refreshData(Competition competition) {
+        return refreshData(competition, null);
+    }
+
+    public ModelOverviewResponse refreshData(Competition competition, LocalDate date) {
         dataRepository.reloadData();
         teamStrengthService.rebuildModels();
+        sportteryMarketSelectionService.forceRefresh(date);
         return overview(competition);
     }
 
@@ -180,6 +192,10 @@ public class PredictionService {
         response.setStatus(toChineseStatus(schedule.getStatus()));
         response.setScoreText(buildScoreText(schedule));
         response.setActualHalfFullResult(buildActualHalfFullResult(schedule));
+        response.setSportteryMatchId(schedule.getSportteryMatchId());
+        response.setSportteryMatchNumber(schedule.getSportteryMatchNumber());
+        response.setSportteryNormalAvailable(schedule.getSportteryNormalAvailable());
+        response.setSportteryHandicap(schedule.getSportteryHandicap());
         response.setSimulations(simulationCount);
         response.setExpectedHomeGoals(round(preMatchExpectedGoals.getHomeGoals(), 2));
         response.setExpectedAwayGoals(round(preMatchExpectedGoals.getAwayGoals(), 2));
@@ -411,7 +427,7 @@ public class PredictionService {
                         }
                         return Integer.compare(left.awayScore, right.awayScore);
                     })
-                    .limit(4)
+                    .limit(3)
                     .map(counter -> new ScoreProbability(
                             counter.homeScore,
                             counter.awayScore,
@@ -430,7 +446,7 @@ public class PredictionService {
                         return (left.halfTimeResult + left.fullTimeResult)
                                 .compareTo(right.halfTimeResult + right.fullTimeResult);
                     })
-                    .limit(4)
+                    .limit(3)
                     .map(counter -> new HalfFullProbability(
                             counter.halfTimeResult,
                             counter.fullTimeResult,
@@ -448,7 +464,7 @@ public class PredictionService {
                         }
                         return Integer.compare(left.getKey(), right.getKey());
                     })
-                    .limit(4)
+                    .limit(3)
                     .map(entry -> new TotalGoalsProbability(
                             entry.getKey(),
                             roundPercent(entry.getValue() * 100.0D / simulationCount)))

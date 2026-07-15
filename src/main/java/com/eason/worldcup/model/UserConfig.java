@@ -102,9 +102,19 @@ public class UserConfig {
 
     public static class RecommendationSelection {
 
+        private Boolean manualOverride;
+
         private Boolean normal;
 
         private String handicap;
+
+        public Boolean getManualOverride() {
+            return manualOverride;
+        }
+
+        public void setManualOverride(Boolean manualOverride) {
+            this.manualOverride = manualOverride;
+        }
 
         public Boolean getNormal() {
             return normal;
