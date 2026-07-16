@@ -43,9 +43,6 @@ public class PredictionController {
             @RequestParam(value = "hostTeamGoalFactor", required = false) Double hostTeamGoalFactor,
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
-            @RequestParam(value = "baseMatchWeight", required = false) Double baseMatchWeight,
-            @RequestParam(value = "recentHalfYearBonus", required = false) Double recentHalfYearBonus,
-            @RequestParam(value = "worldCupBonus", required = false) Double worldCupBonus,
             @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition) {
         return predictionService.queryByDate(
                 parseCompetition(competition),
@@ -53,10 +50,7 @@ public class PredictionController {
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
-                handicapSmoothingFactor,
-                baseMatchWeight,
-                recentHalfYearBonus,
-                worldCupBonus);
+                handicapSmoothingFactor);
     }
 
     @GetMapping("/recommendation-backtest")
@@ -65,17 +59,13 @@ public class PredictionController {
             @RequestParam(value = "hostTeamGoalFactor", required = false) Double hostTeamGoalFactor,
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
-            @RequestParam(value = "baseMatchWeight", required = false) Double baseMatchWeight,
-            @RequestParam(value = "recentHalfYearBonus", required = false) Double recentHalfYearBonus,
-            @RequestParam(value = "worldCupBonus", required = false) Double worldCupBonus) {
+            @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
         return predictionService.queryRecommendationBacktest(
+                parseBacktestCompetition(competition),
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
-                handicapSmoothingFactor,
-                baseMatchWeight,
-                recentHalfYearBonus,
-                worldCupBonus);
+                handicapSmoothingFactor);
     }
 
     @GetMapping("/head-to-head")
@@ -121,6 +111,13 @@ public class PredictionController {
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不支持的赛事类型：" + value, ex);
         }
+    }
+
+    private Competition parseBacktestCompetition(String value) {
+        if (value == null || value.isBlank() || "ALL".equalsIgnoreCase(value.trim())) {
+            return null;
+        }
+        return parseCompetition(value);
     }
 
 }

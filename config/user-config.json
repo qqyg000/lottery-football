@@ -1,10 +1,7 @@
 {
   "modelFactors" : {
-    "baseMatchWeight" : 1.0,
-    "recentHalfYearBonus" : 0.1,
-    "worldCupBonus" : 0.25,
     "hostTeamGoalFactor" : 1.42,
-    "seedTeamGoalFactor" : 1.69,
+    "seedTeamGoalFactor" : 1.67,
     "handicapSmoothingFactor" : 0.185
   },
   "globalParameters" : {

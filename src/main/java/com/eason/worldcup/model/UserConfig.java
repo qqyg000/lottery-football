@@ -57,12 +57,6 @@ public class UserConfig {
 
     public static class ModelFactors {
 
-        private Double baseMatchWeight;
-
-        private Double recentHalfYearBonus;
-
-        private Double worldCupBonus;
-
         private Double hostTeamGoalFactor;
 
         private Double seedTeamGoalFactor;
@@ -71,37 +65,10 @@ public class UserConfig {
 
         public static ModelFactors defaults() {
             ModelFactors factors = new ModelFactors();
-            factors.setBaseMatchWeight(1.0D);
-            factors.setRecentHalfYearBonus(0.10D);
-            factors.setWorldCupBonus(0.25D);
             factors.setHostTeamGoalFactor(1.42D);
-            factors.setSeedTeamGoalFactor(1.77D);
+            factors.setSeedTeamGoalFactor(1.67D);
             factors.setHandicapSmoothingFactor(0.185D);
             return factors;
-        }
-
-        public Double getBaseMatchWeight() {
-            return baseMatchWeight;
-        }
-
-        public void setBaseMatchWeight(Double baseMatchWeight) {
-            this.baseMatchWeight = baseMatchWeight;
-        }
-
-        public Double getRecentHalfYearBonus() {
-            return recentHalfYearBonus;
-        }
-
-        public void setRecentHalfYearBonus(Double recentHalfYearBonus) {
-            this.recentHalfYearBonus = recentHalfYearBonus;
-        }
-
-        public Double getWorldCupBonus() {
-            return worldCupBonus;
-        }
-
-        public void setWorldCupBonus(Double worldCupBonus) {
-            this.worldCupBonus = worldCupBonus;
         }
 
         public Double getHostTeamGoalFactor() {

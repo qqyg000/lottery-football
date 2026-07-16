@@ -8,11 +8,8 @@ const SCHEDULE_PATH = path.join(ROOT, 'src/main/resources/data/schedule_2026.csv
 const PROBABILITY_KEYS = ['win', 'draw', 'lose']
 
 const DEFAULT_FACTORS = {
-  baseMatchWeight: 1,
-  recentHalfYearBonus: 0.1,
-  worldCupBonus: 0.25,
   hostTeamGoalFactor: 1.42,
-  seedTeamGoalFactor: 1.77,
+  seedTeamGoalFactor: 1.67,
   handicapSmoothingFactor: 0.185
 }
 
@@ -365,10 +362,7 @@ async function fetchPredictions(state, simulations, factorOverrides = {}) {
       simulations: String(simulations),
       seedTeamGoalFactor: String(factors.seedTeamGoalFactor),
       hostTeamGoalFactor: String(factors.hostTeamGoalFactor),
-      handicapSmoothingFactor: String(factors.handicapSmoothingFactor),
-      baseMatchWeight: String(factors.baseMatchWeight),
-      recentHalfYearBonus: String(factors.recentHalfYearBonus),
-      worldCupBonus: String(factors.worldCupBonus)
+      handicapSmoothingFactor: String(factors.handicapSmoothingFactor)
     })
     const response = await fetch(`${API_BASE}/api/worldcup/predictions?${params}`)
     if (!response.ok) {
@@ -597,10 +591,7 @@ async function runSweep(state, simulations, concurrency, strategy) {
   const definitions = {
     seedTeamGoalFactor: range(1.2, 2.4, 0.05),
     hostTeamGoalFactor: range(1.0, 1.8, 0.05),
-    handicapSmoothingFactor: range(0.05, 0.35, 0.01),
-    baseMatchWeight: range(0.5, 1.5, 0.05),
-    recentHalfYearBonus: range(0, 0.5, 0.025),
-    worldCupBonus: range(0, 0.75, 0.025)
+    handicapSmoothingFactor: range(0.05, 0.35, 0.01)
   }
   const summary = {}
 
@@ -639,20 +630,6 @@ async function runGoalGrid(state, simulations, concurrency, strategy) {
     }
   }
   await runComboGrid(state, simulations, concurrency, 'goal-grid', combos, strategy)
-}
-
-async function runWeightGrid(state, simulations, concurrency, strategy) {
-  const combos = []
-  for (const seedTeamGoalFactor of [1.8, 1.85, 1.9, 1.95, 2.0]) {
-    for (const baseMatchWeight of [0.8, 1.0, 1.2]) {
-      for (const recentHalfYearBonus of [0, 0.1, 0.15, 0.2]) {
-        for (const worldCupBonus of [0.15, 0.2, 0.25, 0.275, 0.3]) {
-          combos.push({ seedTeamGoalFactor, baseMatchWeight, recentHalfYearBonus, worldCupBonus })
-        }
-      }
-    }
-  }
-  await runComboGrid(state, simulations, concurrency, 'weight-grid', combos, strategy)
 }
 
 async function runComboGrid(state, simulations, concurrency, mode, combos, strategy) {
@@ -729,8 +706,6 @@ async function main() {
     await runVariants(state, args.simulations)
   } else if (args.mode === 'goal-grid') {
     await runGoalGrid(state, args.simulations, args.concurrency, args.strategy)
-  } else if (args.mode === 'weight-grid') {
-    await runWeightGrid(state, args.simulations, args.concurrency, args.strategy)
   } else {
     throw new Error(`Unknown mode: ${args.mode}`)
   }

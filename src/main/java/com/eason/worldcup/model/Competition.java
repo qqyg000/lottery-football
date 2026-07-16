@@ -1,5 +1,6 @@
 package com.eason.worldcup.model;
 
+import java.time.LocalDate;
 import java.util.Locale;
 
 public enum Competition {
@@ -36,6 +37,29 @@ public enum Competition {
 
     public boolean isCrossYearSeason() {
         return crossYearSeason;
+    }
+
+    public LocalDate getSeasonStartDate(LocalDate referenceDate) {
+        LocalDate effectiveDate = referenceDate == null ? LocalDate.now() : referenceDate;
+        if (!crossYearSeason) {
+            return LocalDate.of(effectiveDate.getYear(), 1, 1);
+        }
+        int seasonStartYear = effectiveDate.getMonthValue() >= 7
+                ? effectiveDate.getYear()
+                : effectiveDate.getYear() - 1;
+        return LocalDate.of(seasonStartYear, 7, 1);
+    }
+
+    public boolean isDateInSeason(LocalDate matchDate, LocalDate referenceDate) {
+        if (matchDate == null) {
+            return false;
+        }
+        if (!clubCompetition) {
+            return true;
+        }
+        LocalDate seasonStartDate = getSeasonStartDate(referenceDate);
+        return !matchDate.isBefore(seasonStartDate)
+                && matchDate.isBefore(seasonStartDate.plusYears(1));
     }
 
     public static Competition fromCode(String value) {

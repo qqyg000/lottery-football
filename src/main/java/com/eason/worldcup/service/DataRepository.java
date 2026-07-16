@@ -134,6 +134,21 @@ public class DataRepository {
                 .collect(Collectors.toList());
     }
 
+    public List<MatchSchedule> getCurrentSeasonSchedules(Competition competition) {
+        Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
+        LocalDate today = LocalDate.now();
+        return schedules.stream()
+                .filter(item -> item.getCompetition() == effectiveCompetition)
+                .filter(item -> effectiveCompetition.isDateInSeason(item.getMatchDate(), today))
+                .collect(Collectors.toList());
+    }
+
+    public boolean isCurrentSeasonSchedule(MatchSchedule schedule) {
+        return schedule != null
+                && schedule.getCompetition() != null
+                && schedule.getCompetition().isDateInSeason(schedule.getMatchDate(), LocalDate.now());
+    }
+
     public List<MatchSchedule> findSchedulesByDate(LocalDate date) {
         return findSchedulesByDate(date, Competition.WORLD_CUP);
     }
@@ -155,8 +170,7 @@ public class DataRepository {
 
     public List<String> findScheduleDates(Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
-        return schedules.stream()
-                .filter(item -> item.getCompetition() == effectiveCompetition)
+        return getCurrentSeasonSchedules(effectiveCompetition).stream()
                 .map(item -> getScheduleQueryDate(item).toString())
                 .distinct()
                 .sorted()

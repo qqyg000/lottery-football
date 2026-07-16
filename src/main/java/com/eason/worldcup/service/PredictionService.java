@@ -69,28 +69,13 @@ public class PredictionService {
     }
 
     public PredictionQueryResponse queryByDate(LocalDate date, Integer simulations, Double hostTeamGoalFactor, Double seedTeamGoalFactor, Double handicapSmoothingFactor) {
-        return queryByDate(date, simulations, hostTeamGoalFactor, seedTeamGoalFactor, handicapSmoothingFactor, null, null, null);
-    }
-
-    public PredictionQueryResponse queryByDate(
-            LocalDate date,
-            Integer simulations,
-            Double hostTeamGoalFactor,
-            Double seedTeamGoalFactor,
-            Double handicapSmoothingFactor,
-            Double baseMatchWeight,
-            Double recentHalfYearBonus,
-            Double worldCupBonus) {
         return queryByDate(
                 Competition.WORLD_CUP,
                 date,
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
-                handicapSmoothingFactor,
-                baseMatchWeight,
-                recentHalfYearBonus,
-                worldCupBonus);
+                handicapSmoothingFactor);
     }
 
     public PredictionQueryResponse queryByDate(
@@ -99,10 +84,7 @@ public class PredictionService {
             Integer simulations,
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
-            Double handicapSmoothingFactor,
-            Double baseMatchWeight,
-            Double recentHalfYearBonus,
-            Double worldCupBonus) {
+            Double handicapSmoothingFactor) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         int simulationCount = normalizeSimulationCount(simulations);
         double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
@@ -115,10 +97,7 @@ public class PredictionService {
                         date,
                         hostTeamGoalFactor,
                         seedTeamGoalFactor,
-                        effectiveHandicapSmoothingFactor,
-                        baseMatchWeight,
-                        recentHalfYearBonus,
-                        worldCupBonus))
+                        effectiveHandicapSmoothingFactor))
                 .toList();
         PredictionQueryResponse response = new PredictionQueryResponse();
         response.setCompetition(effectiveCompetition);
@@ -130,16 +109,16 @@ public class PredictionService {
     }
 
     public RecommendationBacktestResponse queryRecommendationBacktest(
+            Competition competition,
             Integer simulations,
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
-            Double handicapSmoothingFactor,
-            Double baseMatchWeight,
-            Double recentHalfYearBonus,
-            Double worldCupBonus) {
+            Double handicapSmoothingFactor) {
         int simulationCount = normalizeSimulationCount(simulations);
         double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
         List<MatchSchedule> completedSchedules = dataRepository.getSchedules().stream()
+                .filter(schedule -> competition == null || schedule.getCompetition() == competition)
+                .filter(dataRepository::isCurrentSeasonSchedule)
                 .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
                 .filter(schedule -> schedule.getHomeScore() != null && schedule.getAwayScore() != null)
                 .toList();
@@ -164,10 +143,7 @@ public class PredictionService {
                         schedule.getMatchDate(),
                         hostTeamGoalFactor,
                         seedTeamGoalFactor,
-                        effectiveHandicapSmoothingFactor,
-                        baseMatchWeight,
-                        recentHalfYearBonus,
-                        worldCupBonus))
+                        effectiveHandicapSmoothingFactor))
                 .toList();
 
         RecommendationBacktestResponse response = new RecommendationBacktestResponse();
@@ -188,7 +164,7 @@ public class PredictionService {
         response.setCompetition(effectiveCompetition);
         response.setCompetitionName(effectiveCompetition.getDisplayName());
         response.setHistoricalMatchCount(teamStrengthService.countHistoricalMatches(effectiveCompetition));
-        response.setScheduleMatchCount(dataRepository.getSchedules(effectiveCompetition).size());
+        response.setScheduleMatchCount(dataRepository.getCurrentSeasonSchedules(effectiveCompetition).size());
         response.setCompletedMatchCount(teamStrengthService.countCompletedScheduleMatches(effectiveCompetition));
         response.setBaselineGoals(teamStrengthService.getBaselineGoals(effectiveCompetition));
         response.setScheduleDates(dataRepository.findScheduleDates(effectiveCompetition));
@@ -426,26 +402,17 @@ public class PredictionService {
             LocalDate predictionDate,
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
-            double effectiveHandicapSmoothingFactor,
-            Double baseMatchWeight,
-            Double recentHalfYearBonus,
-            Double worldCupBonus) {
+            double effectiveHandicapSmoothingFactor) {
         TeamStrengthService.AdjustedExpectedGoals preMatchExpectedGoals = teamStrengthService.calculatePreTournamentExpectedGoals(
                 schedule,
                 hostTeamGoalFactor,
-                seedTeamGoalFactor,
-                baseMatchWeight,
-                recentHalfYearBonus,
-                worldCupBonus);
+                seedTeamGoalFactor);
         SimulationCounter preMatchCounter = runMonteCarlo(schedule, preMatchExpectedGoals, simulationCount, effectiveHandicapSmoothingFactor);
         TeamStrengthService.AdjustedExpectedGoals postMatchExpectedGoals = teamStrengthService.calculateCurrentExpectedGoals(
                 schedule,
                 predictionDate,
                 hostTeamGoalFactor,
-                seedTeamGoalFactor,
-                baseMatchWeight,
-                recentHalfYearBonus,
-                worldCupBonus);
+                seedTeamGoalFactor);
         SimulationCounter postMatchCounter = runMonteCarlo(schedule, postMatchExpectedGoals, simulationCount, effectiveHandicapSmoothingFactor);
         LocalDateTime displayKickoffDateTime = toUtcPlusEight(schedule);
         MatchPredictionResponse response = new MatchPredictionResponse();

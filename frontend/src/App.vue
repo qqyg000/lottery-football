@@ -33,56 +33,6 @@
             </button>
           </div>
           </div>
-          <div class="weight-controls" aria-label="权重参数">
-          <label class="factor-control">
-            <span>基础权重</span>
-            <input
-              type="number"
-              min="0"
-              max="5"
-              step="0.01"
-              v-model.number="modelFactors.baseMatchWeight"
-              :disabled="loading || updatingData || backtesting"
-              @change="saveModelFactorInput('baseMatchWeight')"
-              @keyup.enter="commitModelFactors"
-            >
-          </label>
-          <label class="factor-control">
-            <span>近半年加成</span>
-            <input
-              type="number"
-              min="0"
-              max="3"
-              step="0.01"
-              v-model.number="modelFactors.recentHalfYearBonus"
-              :disabled="loading || updatingData || backtesting"
-              @change="saveModelFactorInput('recentHalfYearBonus')"
-              @keyup.enter="commitModelFactors"
-            >
-          </label>
-          <label
-            class="factor-control"
-            :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
-            :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
-          >
-            <span>世界杯加成</span>
-            <input
-              type="number"
-              min="0"
-              max="3"
-              step="0.01"
-              v-model.number="modelFactors.worldCupBonus"
-              :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
-              @change="saveModelFactorInput('worldCupBonus')"
-              @keyup.enter="commitModelFactors"
-            >
-          </label>
-          <div class="factor-actions">
-            <button type="button" class="factor-recalculate factor-reset" :disabled="loading || updatingData || backtesting" @click="resetModelFactors">
-              重置参数
-            </button>
-          </div>
-          </div>
           <div class="factor-controls" aria-label="模型参数">
           <label
             class="factor-control"
@@ -143,7 +93,7 @@
             <small v-if="backtestActive">
               命中 {{ backtestSummary.hitMatchCount }} 场 · 未中 {{ backtestSummary.missMatchCount }} 场 · 推荐 {{ backtestSummary.recommendedMatchCount }} 场
             </small>
-            <small v-else>回测全部赛事已结束比赛</small>
+            <small v-else>{{ backtestScopeLabel }}</small>
             <div class="backtest-average-grid">
               <div>
                 <strong>{{ backtestOddsIncludingMissesText }}</strong>
@@ -424,27 +374,17 @@ const MODEL_FACTOR_COOKIE = 'worldcup_model_factors'
 const MODEL_FACTOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const GLOBAL_PARAMETER_COOKIE = 'worldcup_global_parameters'
 const GLOBAL_PARAMETER_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
-const DEFAULT_BASE_MATCH_WEIGHT = 1
-const DEFAULT_RECENT_HALF_YEAR_BONUS = 0.1
-const DEFAULT_WORLD_CUP_BONUS = 0.25
 const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.42
-const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.77
+const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.67
 const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.185
 const DEFAULT_RECOMMENDATION_ODDS = 1
 const RECOMMENDATION_ODDS_MIN = 1
 const RECOMMENDATION_ODDS_MAX = 100
 const MODEL_FACTOR_MIN = 0.1
 const MODEL_FACTOR_MAX = 3
-const MATCH_WEIGHT_MIN = 0
-const MATCH_WEIGHT_MAX = 5
-const BONUS_WEIGHT_MIN = 0
-const BONUS_WEIGHT_MAX = 3
 const HANDICAP_SMOOTHING_MIN = 0
 const HANDICAP_SMOOTHING_MAX = 0.8
 const MODEL_FACTOR_KEYS = [
-  'baseMatchWeight',
-  'recentHalfYearBonus',
-  'worldCupBonus',
   'hostTeamGoalFactor',
   'seedTeamGoalFactor',
   'handicapSmoothingFactor'
@@ -482,9 +422,6 @@ export default {
       queryDate: '',
       modelMode: 'after',
       modelFactors: {
-        baseMatchWeight: DEFAULT_BASE_MATCH_WEIGHT,
-        recentHalfYearBonus: DEFAULT_RECENT_HALF_YEAR_BONUS,
-        worldCupBonus: DEFAULT_WORLD_CUP_BONUS,
         hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR,
         seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR,
         handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR
@@ -511,6 +448,11 @@ export default {
     matches() {
       const sourceMatches = this.backtestActive ? this.backtestMatches : (this.response.matches || [])
       return sourceMatches.filter(match => this.hasSportteryOdds(match))
+    },
+    backtestScopeLabel() {
+      const competition = this.competitions.find(item => item.code === this.activeCompetition)
+      const competitionName = competition ? competition.name : '当前赛事'
+      return '回测' + competitionName + '已结束比赛'
     },
     headToHeadTitle() {
       if (!this.headToHeadMatch) {
@@ -699,6 +641,7 @@ export default {
         return
       }
       const currentDate = this.queryDate
+      this.clearBacktestResults()
       this.activeCompetition = competition
       this.overview = {}
       this.response = {}
@@ -798,9 +741,6 @@ export default {
       return res.json()
     },
     appendModelFactorParams(params) {
-      params.append('baseMatchWeight', this.formatModelFactorValue(this.modelFactors.baseMatchWeight, DEFAULT_BASE_MATCH_WEIGHT, 'baseMatchWeight'))
-      params.append('recentHalfYearBonus', this.formatModelFactorValue(this.modelFactors.recentHalfYearBonus, DEFAULT_RECENT_HALF_YEAR_BONUS, 'recentHalfYearBonus'))
-      params.append('worldCupBonus', this.formatModelFactorValue(this.modelFactors.worldCupBonus, DEFAULT_WORLD_CUP_BONUS, 'worldCupBonus'))
       params.append('hostTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'))
       params.append('seedTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'))
       params.append('handicapSmoothingFactor', this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
@@ -817,6 +757,7 @@ export default {
         await this.persistUserConfig()
         const params = new URLSearchParams()
         params.append('simulations', FIXED_SIMULATIONS)
+        params.append('competition', this.activeCompetition)
         this.appendModelFactorParams(params)
         const res = await fetch('/api/football/recommendation-backtest?' + params.toString())
         if (!res.ok) {
@@ -1126,18 +1067,12 @@ export default {
           return
         }
         this.modelFactors = {
-          baseMatchWeight: this.normalizeModelFactor(parsedValue.baseMatchWeight, DEFAULT_BASE_MATCH_WEIGHT, 'baseMatchWeight'),
-          recentHalfYearBonus: this.normalizeModelFactor(parsedValue.recentHalfYearBonus, DEFAULT_RECENT_HALF_YEAR_BONUS, 'recentHalfYearBonus'),
-          worldCupBonus: this.normalizeModelFactor(parsedValue.worldCupBonus, DEFAULT_WORLD_CUP_BONUS, 'worldCupBonus'),
           hostTeamGoalFactor: this.normalizeModelFactor(parsedValue.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'),
           seedTeamGoalFactor: this.normalizeModelFactor(parsedValue.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'),
           handicapSmoothingFactor: this.normalizeModelFactor(parsedValue.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor')
         }
       } catch (error) {
         this.modelFactors = {
-          baseMatchWeight: DEFAULT_BASE_MATCH_WEIGHT,
-          recentHalfYearBonus: DEFAULT_RECENT_HALF_YEAR_BONUS,
-          worldCupBonus: DEFAULT_WORLD_CUP_BONUS,
           hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR,
           seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR,
           handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR
@@ -1153,9 +1088,6 @@ export default {
     },
     buildModelFactorPayload() {
       return {
-        baseMatchWeight: Number(this.formatModelFactorValue(this.modelFactors.baseMatchWeight, DEFAULT_BASE_MATCH_WEIGHT, 'baseMatchWeight')),
-        recentHalfYearBonus: Number(this.formatModelFactorValue(this.modelFactors.recentHalfYearBonus, DEFAULT_RECENT_HALF_YEAR_BONUS, 'recentHalfYearBonus')),
-        worldCupBonus: Number(this.formatModelFactorValue(this.modelFactors.worldCupBonus, DEFAULT_WORLD_CUP_BONUS, 'worldCupBonus')),
         hostTeamGoalFactor: Number(this.formatModelFactorValue(this.modelFactors.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor')),
         seedTeamGoalFactor: Number(this.formatModelFactorValue(this.modelFactors.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor')),
         handicapSmoothingFactor: Number(this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
@@ -1200,25 +1132,7 @@ export default {
         this.loadPredictions()
       }
     },
-    resetModelFactors() {
-      MODEL_FACTOR_KEYS.forEach(key => {
-        this.$set(this.modelFactors, key, this.getDefaultModelFactor(key))
-      })
-      this.saveModelFactors()
-      if (this.queryDate) {
-        this.loadPredictions()
-      }
-    },
     getDefaultModelFactor(key) {
-      if (key === 'baseMatchWeight') {
-        return DEFAULT_BASE_MATCH_WEIGHT
-      }
-      if (key === 'recentHalfYearBonus') {
-        return DEFAULT_RECENT_HALF_YEAR_BONUS
-      }
-      if (key === 'worldCupBonus') {
-        return DEFAULT_WORLD_CUP_BONUS
-      }
       if (key === 'seedTeamGoalFactor') {
         return DEFAULT_SEED_TEAM_GOAL_FACTOR
       }
@@ -1228,27 +1142,12 @@ export default {
       return DEFAULT_HOST_TEAM_GOAL_FACTOR
     },
     getModelFactorMin(key) {
-      if (key === 'baseMatchWeight') {
-        return MATCH_WEIGHT_MIN
-      }
-      if (key === 'recentHalfYearBonus' || key === 'worldCupBonus') {
-        return BONUS_WEIGHT_MIN
-      }
       return key === 'handicapSmoothingFactor' ? HANDICAP_SMOOTHING_MIN : MODEL_FACTOR_MIN
     },
     getModelFactorMax(key) {
-      if (key === 'baseMatchWeight') {
-        return MATCH_WEIGHT_MAX
-      }
-      if (key === 'recentHalfYearBonus' || key === 'worldCupBonus') {
-        return BONUS_WEIGHT_MAX
-      }
       return key === 'handicapSmoothingFactor' ? HANDICAP_SMOOTHING_MAX : MODEL_FACTOR_MAX
     },
     getModelFactorScale(key) {
-      if (key === 'baseMatchWeight' || key === 'recentHalfYearBonus' || key === 'worldCupBonus') {
-        return 2
-      }
       return key === 'handicapSmoothingFactor' ? 3 : 2
     },
     normalizeModelFactor(value, fallback, key) {
@@ -1746,11 +1645,11 @@ h1 {
 .hero-card {
   align-self: stretch;
   display: grid;
-  grid-template-columns: minmax(160px, 0.8fr) minmax(210px, 1fr) minmax(270px, 1.1fr);
+  grid-template-columns: repeat(2, 230px);
   align-items: end;
   gap: 14px;
   justify-content: center;
-  width: 780px;
+  width: 500px;
   min-width: 0;
   max-width: 100%;
   padding: 4px 12px;
@@ -1818,8 +1717,7 @@ h1 {
   white-space: nowrap;
 }
 
-.factor-controls,
-.weight-controls {
+.factor-controls {
   display: grid;
   gap: 8px;
   min-width: 0;
@@ -2734,8 +2632,7 @@ body.dialog-open {
     overflow: hidden;
   }
 
-  .factor-controls,
-  .weight-controls {
+  .factor-controls {
     margin-top: 10px;
     padding-left: 0;
     padding-top: 10px;

@@ -4,6 +4,7 @@ import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.TeamStrength;
+import com.eason.worldcup.util.DixonColesWeightModel;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,10 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TeamStrengthService {
 
     private static final double SHRINK_WEIGHT = 8.0D;
-    private static final int RECENT_HALF_YEAR_DAYS = 183;
-    private static final double DEFAULT_BASE_MATCH_WEIGHT = 1.0D;
-    private static final double DEFAULT_RECENT_HALF_YEAR_BONUS = 0.10D;
-    private static final double DEFAULT_WORLD_CUP_BONUS = 0.25D;
     private static final LocalDate TOURNAMENT_START_DATE = LocalDate.of(2026, 6, 11);
     private static final String WORLD_CUP_2026 = "FIFA World Cup 2026";
     private static final List<String> HOST_TEAMS = List.of("Canada", "Mexico", "United States");
@@ -58,17 +55,8 @@ public class TeamStrengthService {
     @Value("${worldcup.host-team-goal-factor:1.42}")
     private double hostTeamGoalFactor;
 
-    @Value("${worldcup.seed-team-goal-factor:1.77}")
+    @Value("${worldcup.seed-team-goal-factor:1.67}")
     private double seedTeamGoalFactor;
-
-    @Value("${worldcup.base-match-weight:1.0}")
-    private double baseMatchWeight;
-
-    @Value("${worldcup.recent-half-year-bonus:0.10}")
-    private double recentHalfYearBonus;
-
-    @Value("${worldcup.world-cup-bonus:0.25}")
-    private double worldCupBonus;
 
     @Value("${worldcup.current-model-excluded-dates:}")
     private String currentModelExcludedDateText;
@@ -100,8 +88,12 @@ public class TeamStrengthService {
         currentModelByPredictionDate.clear();
         clubPreSeasonModelByStartDate.clear();
         clubModelByPredictionDate.clear();
-        preTournamentModel = buildStrengthModel(filterPreTournamentMatches(historicalMatches));
-        currentModel = buildStrengthModel(buildCurrentMatches(historicalMatches, LocalDate.now()));
+        preTournamentModel = buildStrengthModel(
+                filterPreTournamentMatches(historicalMatches),
+                TOURNAMENT_START_DATE);
+        currentModel = buildStrengthModel(
+                buildCurrentMatches(historicalMatches, LocalDate.now()),
+                LocalDate.now());
     }
 
     public AdjustedExpectedGoals calculatePreTournamentExpectedGoals(MatchSchedule schedule) {
@@ -109,25 +101,9 @@ public class TeamStrengthService {
     }
 
     public AdjustedExpectedGoals calculatePreTournamentExpectedGoals(MatchSchedule schedule, Double hostTeamGoalFactorOverride, Double seedTeamGoalFactorOverride) {
-        return calculatePreTournamentExpectedGoals(schedule, hostTeamGoalFactorOverride, seedTeamGoalFactorOverride, null, null, null);
-    }
-
-    public AdjustedExpectedGoals calculatePreTournamentExpectedGoals(
-            MatchSchedule schedule,
-            Double hostTeamGoalFactorOverride,
-            Double seedTeamGoalFactorOverride,
-            Double baseMatchWeightOverride,
-            Double recentHalfYearBonusOverride,
-            Double worldCupBonusOverride) {
-        MatchWeightConfig weightConfig = resolveMatchWeightConfig(baseMatchWeightOverride, recentHalfYearBonusOverride, worldCupBonusOverride);
-        StrengthModel model;
-        if (schedule.getCompetition().isClubCompetition()) {
-            model = getClubPreSeasonModel(schedule.getCompetition(), schedule.getMatchDate(), weightConfig);
-        } else {
-            model = weightConfig.isDefaultOf(defaultMatchWeightConfig())
-                    ? preTournamentModel
-                    : buildStrengthModel(filterPreTournamentMatches(dataRepository.getHistoricalMatches()), weightConfig);
-        }
+        StrengthModel model = schedule.getCompetition().isClubCompetition()
+                ? getClubPreSeasonModel(schedule.getCompetition(), schedule.getMatchDate())
+                : preTournamentModel;
         ExpectedGoals expectedGoals = calculateExpectedGoals(schedule, model, hostTeamGoalFactorOverride, seedTeamGoalFactorOverride);
         return new AdjustedExpectedGoals(expectedGoals.getHomeGoals(), expectedGoals.getAwayGoals(), model.getSampleCount());
     }
@@ -145,21 +121,9 @@ public class TeamStrengthService {
     }
 
     public AdjustedExpectedGoals calculateCurrentExpectedGoals(MatchSchedule schedule, LocalDate predictionDate, Double hostTeamGoalFactorOverride, Double seedTeamGoalFactorOverride) {
-        return calculateCurrentExpectedGoals(schedule, predictionDate, hostTeamGoalFactorOverride, seedTeamGoalFactorOverride, null, null, null);
-    }
-
-    public AdjustedExpectedGoals calculateCurrentExpectedGoals(
-            MatchSchedule schedule,
-            LocalDate predictionDate,
-            Double hostTeamGoalFactorOverride,
-            Double seedTeamGoalFactorOverride,
-            Double baseMatchWeightOverride,
-            Double recentHalfYearBonusOverride,
-            Double worldCupBonusOverride) {
-        MatchWeightConfig weightConfig = resolveMatchWeightConfig(baseMatchWeightOverride, recentHalfYearBonusOverride, worldCupBonusOverride);
         StrengthModel model = schedule.getCompetition().isClubCompetition()
-                ? getClubModelForPredictionDate(schedule.getCompetition(), predictionDate, weightConfig)
-                : getCurrentModelForPredictionDate(predictionDate, weightConfig);
+                ? getClubModelForPredictionDate(schedule.getCompetition(), predictionDate)
+                : getCurrentModelForPredictionDate(predictionDate);
         ExpectedGoals expectedGoals = calculateExpectedGoals(schedule, model, hostTeamGoalFactorOverride, seedTeamGoalFactorOverride);
         return new AdjustedExpectedGoals(expectedGoals.getHomeGoals(), expectedGoals.getAwayGoals(), model.getSampleCount());
     }
@@ -171,7 +135,7 @@ public class TeamStrengthService {
     public double getBaselineGoals(Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         StrengthModel model = effectiveCompetition.isClubCompetition()
-                ? getClubModelForPredictionDate(effectiveCompetition, LocalDate.now().plusDays(1), defaultMatchWeightConfig())
+                ? getClubModelForPredictionDate(effectiveCompetition, LocalDate.now().plusDays(1))
                 : currentModel;
         return round(model.getBaselineGoals(), 4);
     }
@@ -189,7 +153,7 @@ public class TeamStrengthService {
     }
 
     public int countCompletedScheduleMatches(Competition competition) {
-        return (int) dataRepository.getSchedules(competition)
+        return (int) dataRepository.getCurrentSeasonSchedules(competition)
                 .stream()
                 .filter(this::isCompletedWithScore)
                 .count();
@@ -268,14 +232,6 @@ public class TeamStrengthService {
     }
 
     private StrengthModel getCurrentModelForPredictionDate(LocalDate predictionDate) {
-        return getCurrentModelForPredictionDate(predictionDate, defaultMatchWeightConfig());
-    }
-
-    private StrengthModel getCurrentModelForPredictionDate(LocalDate predictionDate, MatchWeightConfig weightConfig) {
-        if (!weightConfig.isDefaultOf(defaultMatchWeightConfig())) {
-            LocalDate cutoffDate = predictionDate == null ? LocalDate.now() : predictionDate;
-            return buildStrengthModel(buildCurrentMatchesBefore(dataRepository.getHistoricalMatches(), cutoffDate), weightConfig);
-        }
         if (predictionDate == null) {
             return currentModel;
         }
@@ -283,7 +239,9 @@ public class TeamStrengthService {
     }
 
     private StrengthModel buildCurrentModelBefore(LocalDate predictionDate) {
-        return buildStrengthModel(buildCurrentMatchesBefore(dataRepository.getHistoricalMatches(), predictionDate));
+        return buildStrengthModel(
+                buildCurrentMatchesBefore(dataRepository.getHistoricalMatches(), predictionDate),
+                predictionDate);
     }
 
     private List<HistoricalMatch> buildCurrentMatchesBefore(List<HistoricalMatch> matches, LocalDate cutoffDate) {
@@ -311,30 +269,27 @@ public class TeamStrengthService {
 
     private StrengthModel getClubPreSeasonModel(
             Competition competition,
-            LocalDate matchDate,
-            MatchWeightConfig weightConfig) {
-        LocalDate seasonStartDate = getClubSeasonStartDate(competition, matchDate);
-        if (!weightConfig.isDefaultOf(defaultMatchWeightConfig())) {
-            return buildStrengthModel(buildClubMatchesBefore(competition, seasonStartDate), weightConfig);
-        }
-        CompetitionDateKey key = new CompetitionDateKey(competition, seasonStartDate);
+            LocalDate matchDate) {
+        LocalDate effectiveMatchDate = matchDate == null ? LocalDate.now() : matchDate;
+        LocalDate seasonStartDate = competition.getSeasonStartDate(effectiveMatchDate);
+        CompetitionDateKey key = new CompetitionDateKey(competition, effectiveMatchDate);
         return clubPreSeasonModelByStartDate.computeIfAbsent(
                 key,
-                ignored -> buildStrengthModel(buildClubMatchesBefore(competition, seasonStartDate)));
+                ignored -> buildStrengthModel(
+                        buildClubMatchesBefore(competition, seasonStartDate),
+                        effectiveMatchDate));
     }
 
     private StrengthModel getClubModelForPredictionDate(
             Competition competition,
-            LocalDate predictionDate,
-            MatchWeightConfig weightConfig) {
+            LocalDate predictionDate) {
         LocalDate cutoffDate = predictionDate == null ? LocalDate.now().plusDays(1) : predictionDate;
-        if (!weightConfig.isDefaultOf(defaultMatchWeightConfig())) {
-            return buildStrengthModel(buildClubMatchesBefore(competition, cutoffDate), weightConfig);
-        }
         CompetitionDateKey key = new CompetitionDateKey(competition, cutoffDate);
         return clubModelByPredictionDate.computeIfAbsent(
                 key,
-                ignored -> buildStrengthModel(buildClubMatchesBefore(competition, cutoffDate)));
+                ignored -> buildStrengthModel(
+                        buildClubMatchesBefore(competition, cutoffDate),
+                        cutoffDate));
     }
 
     private List<HistoricalMatch> buildClubMatchesBefore(Competition competition, LocalDate cutoffDate) {
@@ -374,17 +329,6 @@ public class TeamStrengthService {
         return Normalizer.normalize(teamName == null ? "" : teamName, Normalizer.Form.NFKC)
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^\\p{L}\\p{N}]", "");
-    }
-
-    private LocalDate getClubSeasonStartDate(Competition competition, LocalDate matchDate) {
-        LocalDate effectiveDate = matchDate == null ? LocalDate.now() : matchDate;
-        if (!competition.isCrossYearSeason()) {
-            return LocalDate.of(effectiveDate.getYear(), 1, 1);
-        }
-        int seasonStartYear = effectiveDate.getMonthValue() >= 7
-                ? effectiveDate.getYear()
-                : effectiveDate.getYear() - 1;
-        return LocalDate.of(seasonStartYear, 7, 1);
     }
 
     private List<LocalDate> parseExcludedDates(String value) {
@@ -450,23 +394,22 @@ public class TeamStrengthService {
                 && schedule.getAwayScore() != null;
     }
 
-    private StrengthModel buildStrengthModel(List<HistoricalMatch> matches) {
-        return buildStrengthModel(matches, defaultMatchWeightConfig());
-    }
-
-    private StrengthModel buildStrengthModel(List<HistoricalMatch> matches, MatchWeightConfig weightConfig) {
+    private StrengthModel buildStrengthModel(List<HistoricalMatch> matches, LocalDate referenceDate) {
         if (matches == null || matches.isEmpty()) {
             return StrengthModel.empty();
         }
-        LocalDate latestDate = matches.stream()
+        LocalDate latestMatchDate = matches.stream()
                 .map(HistoricalMatch::getMatchDate)
                 .max(LocalDate::compareTo)
                 .orElse(LocalDate.now());
+        LocalDate effectiveReferenceDate = referenceDate != null && referenceDate.isAfter(latestMatchDate)
+                ? referenceDate
+                : latestMatchDate;
         Map<String, TeamStatsAccumulator> statsMap = new HashMap<>();
         double totalGoals = 0.0D;
         double totalAppearances = 0.0D;
         for (HistoricalMatch match : matches) {
-            double weight = calculateMatchWeight(match, latestDate, weightConfig);
+            double weight = calculateMatchWeight(match, effectiveReferenceDate);
             if (weight <= 0.0D) {
                 continue;
             }
@@ -496,7 +439,7 @@ public class TeamStrengthService {
             strength.setSampleWeight(round(accumulator.weight, 4));
             newStrengthMap.put(entry.getKey(), strength);
         }
-        return new StrengthModel(newStrengthMap, baselineGoals, matches, latestDate, weightConfig);
+        return new StrengthModel(newStrengthMap, baselineGoals, matches, effectiveReferenceDate);
     }
 
     private void addTeamStats(Map<String, TeamStatsAccumulator> statsMap, String teamName, int goalsFor, int goalsAgainst, double weight) {
@@ -507,21 +450,8 @@ public class TeamStrengthService {
     }
 
     private double calculateMatchWeight(HistoricalMatch match, LocalDate latestDate) {
-        return calculateMatchWeight(match, latestDate, defaultMatchWeightConfig());
-    }
-
-    private double calculateMatchWeight(HistoricalMatch match, LocalDate latestDate, MatchWeightConfig weightConfig) {
         long days = Math.max(0, ChronoUnit.DAYS.between(match.getMatchDate(), latestDate));
-        double recencyWeight = Math.exp(-days / 1825.0D);
-        double tournamentWeight = weightConfig.baseMatchWeight();
-        String tournament = match.getTournament() == null ? "" : match.getTournament().toLowerCase(Locale.ROOT);
-        if (days <= RECENT_HALF_YEAR_DAYS) {
-            tournamentWeight += weightConfig.recentHalfYearBonus();
-        }
-        if (tournament.contains("world cup")) {
-            tournamentWeight += weightConfig.worldCupBonus();
-        }
-        return recencyWeight * tournamentWeight;
+        return DixonColesWeightModel.weightForDays(days);
     }
 
     private double calculateHeadToHeadFactor(String homeTeam, String awayTeam, StrengthModel model) {
@@ -533,7 +463,7 @@ public class TeamStrengthService {
             if (!sameDirection && !reverseDirection) {
                 continue;
             }
-            double weight = calculateMatchWeight(match, model.getLatestDate(), model.getWeightConfig());
+            double weight = calculateMatchWeight(match, model.getLatestDate());
             if (sameDirection) {
                 goalDiff += (match.getHomeScore() - match.getAwayScore()) * weight;
             } else {
@@ -559,30 +489,6 @@ public class TeamStrengthService {
         return Math.max(minGoalsLambda, Math.min(maxGoalsLambda, value));
     }
 
-    private MatchWeightConfig defaultMatchWeightConfig() {
-        return new MatchWeightConfig(
-                normalizeWeightValue(null, baseMatchWeight, 0.0D, 5.0D),
-                normalizeWeightValue(null, recentHalfYearBonus, 0.0D, 3.0D),
-                normalizeWeightValue(null, worldCupBonus, 0.0D, 3.0D)
-        );
-    }
-
-    private MatchWeightConfig resolveMatchWeightConfig(Double baseMatchWeightOverride, Double recentHalfYearBonusOverride, Double worldCupBonusOverride) {
-        MatchWeightConfig defaults = defaultMatchWeightConfig();
-        return new MatchWeightConfig(
-                normalizeWeightValue(baseMatchWeightOverride, defaults.baseMatchWeight(), 0.0D, 5.0D),
-                normalizeWeightValue(recentHalfYearBonusOverride, defaults.recentHalfYearBonus(), 0.0D, 3.0D),
-                normalizeWeightValue(worldCupBonusOverride, defaults.worldCupBonus(), 0.0D, 3.0D)
-        );
-    }
-
-    private double normalizeWeightValue(Double value, double defaultValue, double min, double max) {
-        if (value == null || !Double.isFinite(value)) {
-            return Math.max(min, Math.min(max, defaultValue));
-        }
-        return Math.max(min, Math.min(max, value));
-    }
-
     private double round(double value, int scale) {
         double factor = Math.pow(10, scale);
         return Math.round(value * factor) / factor;
@@ -598,18 +504,15 @@ public class TeamStrengthService {
 
         private final LocalDate latestDate;
 
-        private final MatchWeightConfig weightConfig;
-
-        private StrengthModel(Map<String, TeamStrength> strengthMap, double baselineGoals, List<HistoricalMatch> matches, LocalDate latestDate, MatchWeightConfig weightConfig) {
+        private StrengthModel(Map<String, TeamStrength> strengthMap, double baselineGoals, List<HistoricalMatch> matches, LocalDate latestDate) {
             this.strengthMap = Collections.unmodifiableMap(new HashMap<>(strengthMap));
             this.baselineGoals = baselineGoals;
             this.matches = Collections.unmodifiableList(new ArrayList<>(matches));
             this.latestDate = latestDate;
-            this.weightConfig = weightConfig;
         }
 
         private static StrengthModel empty() {
-            return new StrengthModel(Collections.emptyMap(), 1.25D, Collections.emptyList(), LocalDate.now(), MatchWeightConfig.defaults());
+            return new StrengthModel(Collections.emptyMap(), 1.25D, Collections.emptyList(), LocalDate.now());
         }
 
         private Map<String, TeamStrength> getStrengthMap() {
@@ -628,10 +531,6 @@ public class TeamStrengthService {
             return latestDate;
         }
 
-        private MatchWeightConfig getWeightConfig() {
-            return weightConfig;
-        }
-
         private int getSampleCount() {
             return matches.size();
         }
@@ -639,20 +538,6 @@ public class TeamStrengthService {
     }
 
     private record CompetitionDateKey(Competition competition, LocalDate date) {
-
-    }
-
-    private record MatchWeightConfig(double baseMatchWeight, double recentHalfYearBonus, double worldCupBonus) {
-
-        private static MatchWeightConfig defaults() {
-            return new MatchWeightConfig(DEFAULT_BASE_MATCH_WEIGHT, DEFAULT_RECENT_HALF_YEAR_BONUS, DEFAULT_WORLD_CUP_BONUS);
-        }
-
-        private boolean isDefaultOf(MatchWeightConfig other) {
-            return Math.abs(baseMatchWeight - other.baseMatchWeight) < 0.000001D
-                    && Math.abs(recentHalfYearBonus - other.recentHalfYearBonus) < 0.000001D
-                    && Math.abs(worldCupBonus - other.worldCupBonus) < 0.000001D;
-        }
 
     }
 

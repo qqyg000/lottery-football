@@ -30,11 +30,8 @@ worldcup:
     target-zone: America/New_York
   max-goals-lambda: 4.5
   min-goals-lambda: 0.2
-  base-match-weight: 1.0
-  recent-half-year-bonus: 0.1
-  world-cup-bonus: 0.25
   host-team-goal-factor: 1.42
-  seed-team-goal-factor: 1.77
+  seed-team-goal-factor: 1.67
   handicap-smoothing-factor: 0.185
   handicap-max-smoothing: 0.185
 

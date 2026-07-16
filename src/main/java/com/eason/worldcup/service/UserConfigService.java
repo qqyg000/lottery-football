@@ -106,9 +106,6 @@ public class UserConfigService {
     private UserConfig.ModelFactors normalizeModelFactors(UserConfig.ModelFactors factors) {
         UserConfig.ModelFactors defaults = UserConfig.ModelFactors.defaults();
         UserConfig.ModelFactors normalized = factors == null ? new UserConfig.ModelFactors() : factors;
-        normalized.setBaseMatchWeight(normalizeNumber(normalized.getBaseMatchWeight(), defaults.getBaseMatchWeight(), 0.0D, 5.0D));
-        normalized.setRecentHalfYearBonus(normalizeNumber(normalized.getRecentHalfYearBonus(), defaults.getRecentHalfYearBonus(), 0.0D, 3.0D));
-        normalized.setWorldCupBonus(normalizeNumber(normalized.getWorldCupBonus(), defaults.getWorldCupBonus(), 0.0D, 3.0D));
         normalized.setHostTeamGoalFactor(normalizeNumber(normalized.getHostTeamGoalFactor(), defaults.getHostTeamGoalFactor(), 0.1D, 3.0D));
         normalized.setSeedTeamGoalFactor(normalizeNumber(normalized.getSeedTeamGoalFactor(), defaults.getSeedTeamGoalFactor(), 0.1D, 3.0D));
         normalized.setHandicapSmoothingFactor(normalizeNumber(normalized.getHandicapSmoothingFactor(), defaults.getHandicapSmoothingFactor(), 0.0D, 0.8D));
