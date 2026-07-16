@@ -30,10 +30,10 @@ worldcup:
     target-zone: America/New_York
   max-goals-lambda: 4.5
   min-goals-lambda: 0.2
-  host-team-goal-factor: 1.42
-  seed-team-goal-factor: 1.67
-  handicap-smoothing-factor: 0.185
-  handicap-max-smoothing: 0.185
+  host-team-goal-factor: 1.22
+  seed-team-goal-factor: 1.57
+  handicap-smoothing-factor: 0.225
+  handicap-max-smoothing: 0.225
 
 champions-league:
   espn-update:

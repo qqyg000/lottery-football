@@ -8,15 +8,15 @@ const SCHEDULE_PATH = path.join(ROOT, 'src/main/resources/data/schedule_2026.csv
 const PROBABILITY_KEYS = ['win', 'draw', 'lose']
 
 const DEFAULT_FACTORS = {
-  hostTeamGoalFactor: 1.42,
-  seedTeamGoalFactor: 1.67,
-  handicapSmoothingFactor: 0.185
+  hostTeamGoalFactor: 1.22,
+  seedTeamGoalFactor: 1.57,
+  handicapSmoothingFactor: 0.225
 }
 
 const DEFAULT_RECOMMENDATION_RULES = {
-  pairSwitchThreshold: 52,
-  handicapInvertThreshold: 50,
-  singleRecommendationThreshold: 80
+  pairSwitchThreshold: 54,
+  handicapInvertThreshold: 52,
+  singleRecommendationThreshold: 70
 }
 
 function normalizeThreshold(value, fallback) {
