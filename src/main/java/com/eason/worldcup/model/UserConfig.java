@@ -39,9 +39,18 @@ public class UserConfig {
 
         private Double recommendationOdds;
 
+        private Double handicapRecommendationThreshold;
+
+        private Double handicapReverseThreshold;
+
+        private Double singleRecommendationThreshold;
+
         public static GlobalParameters defaults() {
             GlobalParameters parameters = new GlobalParameters();
             parameters.setRecommendationOdds(1.0D);
+            parameters.setHandicapRecommendationThreshold(52.0D);
+            parameters.setHandicapReverseThreshold(50.0D);
+            parameters.setSingleRecommendationThreshold(80.0D);
             return parameters;
         }
 
@@ -51,6 +60,30 @@ public class UserConfig {
 
         public void setRecommendationOdds(Double recommendationOdds) {
             this.recommendationOdds = recommendationOdds;
+        }
+
+        public Double getHandicapRecommendationThreshold() {
+            return handicapRecommendationThreshold;
+        }
+
+        public void setHandicapRecommendationThreshold(Double handicapRecommendationThreshold) {
+            this.handicapRecommendationThreshold = handicapRecommendationThreshold;
+        }
+
+        public Double getHandicapReverseThreshold() {
+            return handicapReverseThreshold;
+        }
+
+        public void setHandicapReverseThreshold(Double handicapReverseThreshold) {
+            this.handicapReverseThreshold = handicapReverseThreshold;
+        }
+
+        public Double getSingleRecommendationThreshold() {
+            return singleRecommendationThreshold;
+        }
+
+        public void setSingleRecommendationThreshold(Double singleRecommendationThreshold) {
+            this.singleRecommendationThreshold = singleRecommendationThreshold;
         }
 
     }

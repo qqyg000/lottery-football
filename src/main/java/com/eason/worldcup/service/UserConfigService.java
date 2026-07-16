@@ -100,6 +100,21 @@ public class UserConfigService {
                 defaults.getRecommendationOdds(),
                 1.0D,
                 100.0D));
+        normalized.setHandicapRecommendationThreshold(normalizeNumber(
+                normalized.getHandicapRecommendationThreshold(),
+                defaults.getHandicapRecommendationThreshold(),
+                0.0D,
+                100.0D));
+        normalized.setHandicapReverseThreshold(normalizeNumber(
+                normalized.getHandicapReverseThreshold(),
+                defaults.getHandicapReverseThreshold(),
+                0.0D,
+                100.0D));
+        normalized.setSingleRecommendationThreshold(normalizeNumber(
+                normalized.getSingleRecommendationThreshold(),
+                defaults.getSingleRecommendationThreshold(),
+                0.0D,
+                100.0D));
         return normalized;
     }
 

@@ -13,8 +13,19 @@ const DEFAULT_FACTORS = {
   handicapSmoothingFactor: 0.185
 }
 
-const CURRENT_PAIR_SWITCH_THRESHOLD = 52
-const CURRENT_HANDICAP_INVERT_THRESHOLD = 50
+const DEFAULT_RECOMMENDATION_RULES = {
+  pairSwitchThreshold: 52,
+  handicapInvertThreshold: 50,
+  singleRecommendationThreshold: 80
+}
+
+function normalizeThreshold(value, fallback) {
+  const numberValue = Number(value)
+  if (!Number.isFinite(numberValue)) {
+    return fallback
+  }
+  return Math.max(0, Math.min(100, numberValue))
+}
 
 function parseCsv(text) {
   const rows = []
@@ -98,10 +109,25 @@ async function loadState() {
   const config = JSON.parse(configText)
   const schedule = parseCsv(scheduleText)
   const completed = schedule.filter(row => row.status === 'COMPLETED')
+  const globalParameters = config.globalParameters || {}
 
   return {
     config,
     factors: { ...DEFAULT_FACTORS, ...(config.modelFactors || {}) },
+    recommendationRules: {
+      pairSwitchThreshold: normalizeThreshold(
+        globalParameters.handicapRecommendationThreshold,
+        DEFAULT_RECOMMENDATION_RULES.pairSwitchThreshold
+      ),
+      handicapInvertThreshold: normalizeThreshold(
+        globalParameters.handicapReverseThreshold,
+        DEFAULT_RECOMMENDATION_RULES.handicapInvertThreshold
+      ),
+      singleRecommendationThreshold: normalizeThreshold(
+        globalParameters.singleRecommendationThreshold,
+        DEFAULT_RECOMMENDATION_RULES.singleRecommendationThreshold
+      )
+    },
     modelMode: config.modelMode || 'after',
     selectedRows: config.selectedRows || {},
     completed,
@@ -222,12 +248,22 @@ function buildHandicapPairSwitchKeys(normalRow, handicapRow, rows, options) {
 
 function getRecommendationKeys(match, state, options = {}) {
   const mergedOptions = {
-    pairSwitchThreshold: CURRENT_PAIR_SWITCH_THRESHOLD,
-    handicapInvertThreshold: CURRENT_HANDICAP_INVERT_THRESHOLD,
+    ...DEFAULT_RECOMMENDATION_RULES,
+    ...(state.recommendationRules || {}),
     disablePairSwitch: false,
     strategy: 'current',
     ...options
   }
+  const recommendationKeys = getBaseRecommendationKeys(match, state, mergedOptions)
+  return applySingleRecommendationThreshold(
+    match,
+    state.modelMode,
+    recommendationKeys,
+    mergedOptions.singleRecommendationThreshold
+  )
+}
+
+function getBaseRecommendationKeys(match, state, mergedOptions) {
   const selected = probabilityRows(match, state.modelMode)
     .filter(item => isRowSelected(match, item, state.selectedRows))
 
@@ -275,6 +311,28 @@ function getRecommendationKeys(match, state, options = {}) {
   }
 
   return buildRecommendationKeys(normalRows, false, mergedOptions)
+}
+
+function applySingleRecommendationThreshold(match, modelMode, recommendationKeys, threshold) {
+  if (!recommendationKeys || recommendationKeys.size !== 2) {
+    return recommendationKeys
+  }
+  let strongestRecommendation = null
+  probabilityRows(match, modelMode).forEach(row => {
+    PROBABILITY_KEYS.forEach(probabilityKey => {
+      const key = cellKey(row, probabilityKey)
+      if (!recommendationKeys.has(key)) {
+        return
+      }
+      const value = Number(row.probability[probabilityKey]) || 0
+      if (!strongestRecommendation || value > strongestRecommendation.value) {
+        strongestRecommendation = { key, value }
+      }
+    })
+  })
+  return strongestRecommendation && strongestRecommendation.value > threshold
+    ? new Set([strongestRecommendation.key])
+    : recommendationKeys
 }
 
 function getRecommendationKeysByStrategy(selected, strategy) {

@@ -34,58 +34,113 @@
           </div>
           </div>
           <div class="factor-controls" aria-label="模型参数">
-          <label
-            class="factor-control"
-            :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
-            :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
-          >
-            <span>种子队进球系数</span>
-            <input
-              type="number"
-              min="0.1"
-              max="3"
-              step="0.01"
-              v-model.number="modelFactors.seedTeamGoalFactor"
-              :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
-              @change="saveModelFactorInput('seedTeamGoalFactor')"
-              @keyup.enter="commitModelFactors"
-            >
-          </label>
-          <label
-            class="factor-control"
-            :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
-            :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
-          >
-            <span>东道主进球系数</span>
-            <input
-              type="number"
-              min="0.1"
-              max="3"
-              step="0.01"
-              v-model.number="modelFactors.hostTeamGoalFactor"
-              :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
-              @change="saveModelFactorInput('hostTeamGoalFactor')"
-              @keyup.enter="commitModelFactors"
-            >
-          </label>
-          <label class="factor-control">
-            <span>让球平滑系数</span>
-            <input
-              type="number"
-              min="0"
-              max="0.8"
-              step="0.001"
-              v-model.number="modelFactors.handicapSmoothingFactor"
-              :disabled="loading || updatingData || backtesting"
-              @change="saveModelFactorInput('handicapSmoothingFactor')"
-              @keyup.enter="commitModelFactors"
-            >
-          </label>
-          <div class="factor-actions">
-            <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting || !queryDate" @click="commitModelFactors">
-              {{ loading ? '计算中' : '重新计算' }}
-            </button>
-          </div>
+            <div class="factor-control-column">
+              <label
+                class="factor-control"
+                :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
+                :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
+              >
+                <span>种子队进球系数</span>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="3"
+                  step="0.01"
+                  v-model.number="modelFactors.seedTeamGoalFactor"
+                  :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
+                  @change="saveModelFactorInput('seedTeamGoalFactor')"
+                  @keyup.enter="commitModelFactors"
+                >
+              </label>
+              <label
+                class="factor-control"
+                :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
+                :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
+              >
+                <span>东道主进球系数</span>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="3"
+                  step="0.01"
+                  v-model.number="modelFactors.hostTeamGoalFactor"
+                  :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
+                  @change="saveModelFactorInput('hostTeamGoalFactor')"
+                  @keyup.enter="commitModelFactors"
+                >
+              </label>
+              <label class="factor-control">
+                <span>让球平滑系数</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="0.8"
+                  step="0.001"
+                  v-model.number="modelFactors.handicapSmoothingFactor"
+                  :disabled="loading || updatingData || backtesting"
+                  @change="saveModelFactorInput('handicapSmoothingFactor')"
+                  @keyup.enter="commitModelFactors"
+                >
+              </label>
+            </div>
+            <div class="factor-control-column">
+              <label class="factor-control percentage-factor-control">
+                <span>让球推荐阈值</span>
+                <span class="percentage-input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    inputmode="decimal"
+                    v-model.number="handicapRecommendationThreshold"
+                    :disabled="loading || updatingData || backtesting"
+                    @change="saveRecommendationThresholdInputs"
+                    @keyup.enter="saveRecommendationThresholdInputs"
+                  >
+                  <span class="percentage-suffix">%</span>
+                </span>
+              </label>
+              <label class="factor-control percentage-factor-control">
+                <span>让球反向阈值</span>
+                <span class="percentage-input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    inputmode="decimal"
+                    v-model.number="handicapReverseThreshold"
+                    :disabled="loading || updatingData || backtesting"
+                    @change="saveRecommendationThresholdInputs"
+                    @keyup.enter="saveRecommendationThresholdInputs"
+                  >
+                  <span class="percentage-suffix">%</span>
+                </span>
+              </label>
+              <label class="factor-control percentage-factor-control">
+                <span>单项推荐阈值</span>
+                <span class="percentage-input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    inputmode="decimal"
+                    v-model.number="singleRecommendationThreshold"
+                    :disabled="loading || updatingData || backtesting"
+                    @change="saveRecommendationThresholdInputs"
+                    @keyup.enter="saveRecommendationThresholdInputs"
+                  >
+                  <span class="percentage-suffix">%</span>
+                </span>
+              </label>
+            </div>
+            <div class="factor-actions">
+              <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting || !queryDate" @click="commitModelFactors">
+                {{ loading ? '计算中' : '重新计算' }}
+              </button>
+            </div>
           </div>
         </div>
         <div class="global-parameter-card" aria-label="全局参数">
@@ -112,6 +167,7 @@
               min="1"
               max="100"
               step="0.01"
+              inputmode="decimal"
               v-model.number="recommendationOdds"
               :disabled="loading || updatingData || backtesting"
               @change="normalizeRecommendationOddsInput"
@@ -378,8 +434,13 @@ const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.42
 const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.67
 const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.185
 const DEFAULT_RECOMMENDATION_ODDS = 1
+const DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD = 52
+const DEFAULT_HANDICAP_REVERSE_THRESHOLD = 50
+const DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD = 80
 const RECOMMENDATION_ODDS_MIN = 1
 const RECOMMENDATION_ODDS_MAX = 100
+const RECOMMENDATION_THRESHOLD_MIN = 0
+const RECOMMENDATION_THRESHOLD_MAX = 100
 const MODEL_FACTOR_MIN = 0.1
 const MODEL_FACTOR_MAX = 3
 const HANDICAP_SMOOTHING_MIN = 0
@@ -390,7 +451,6 @@ const MODEL_FACTOR_KEYS = [
   'handicapSmoothingFactor'
 ]
 const PROBABILITY_KEYS = ['win', 'draw', 'lose']
-const HANDICAP_PAIR_SWITCH_THRESHOLD = 52
 
 function createEmptyBacktestSummary() {
   return {
@@ -427,6 +487,9 @@ export default {
         handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR
       },
       recommendationOdds: DEFAULT_RECOMMENDATION_ODDS,
+      handicapRecommendationThreshold: DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD,
+      handicapReverseThreshold: DEFAULT_HANDICAP_REVERSE_THRESHOLD,
+      singleRecommendationThreshold: DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD,
       selectedRows: {},
       backtesting: false,
       backtestActive: false,
@@ -578,6 +641,18 @@ export default {
       }
       if (config.globalParameters && typeof config.globalParameters === 'object' && !Array.isArray(config.globalParameters)) {
         this.recommendationOdds = this.normalizeRecommendationOdds(config.globalParameters.recommendationOdds)
+        this.handicapRecommendationThreshold = this.normalizeRecommendationThreshold(
+          config.globalParameters.handicapRecommendationThreshold,
+          DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
+        )
+        this.handicapReverseThreshold = this.normalizeRecommendationThreshold(
+          config.globalParameters.handicapReverseThreshold,
+          DEFAULT_HANDICAP_REVERSE_THRESHOLD
+        )
+        this.singleRecommendationThreshold = this.normalizeRecommendationThreshold(
+          config.globalParameters.singleRecommendationThreshold,
+          DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+        )
         this.saveGlobalParametersToCookie()
       }
       if (config.selectedRows && typeof config.selectedRows === 'object' && !Array.isArray(config.selectedRows)) {
@@ -750,6 +825,7 @@ export default {
         return
       }
       this.recommendationOdds = this.normalizeRecommendationOdds(this.recommendationOdds)
+      this.normalizeRecommendationThresholdInputs()
       this.saveGlobalParametersToCookie()
       this.backtesting = true
       this.errorMessage = ''
@@ -786,7 +862,8 @@ export default {
       const settledMatchOdds = []
       let winningSelectionCount = 0
       this.backtestSourceMatches.forEach(match => {
-        if (this.getRecommendationKeys(match).size === 0) {
+        const recommendationKeys = this.getRecommendationKeys(match)
+        if (recommendationKeys.size === 0) {
           return
         }
         recommendedMatches.push(match)
@@ -799,6 +876,9 @@ export default {
           .filter(item => item.winning)
           .map(item => item.odds)
         winningSelectionCount += matchWinningOdds.length
+        if (recommendationKeys.size === 1) {
+          return
+        }
         const winningOdds = matchWinningOdds.reduce((sum, odds) => sum + odds, 0)
         winningMatchOdds.push(winningOdds)
         settledMatchOdds.push(winningOdds)
@@ -1026,9 +1106,24 @@ export default {
         const parsedValue = JSON.parse(cookieValue)
         if (parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue)) {
           this.recommendationOdds = this.normalizeRecommendationOdds(parsedValue.recommendationOdds)
+          this.handicapRecommendationThreshold = this.normalizeRecommendationThreshold(
+            parsedValue.handicapRecommendationThreshold,
+            DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
+          )
+          this.handicapReverseThreshold = this.normalizeRecommendationThreshold(
+            parsedValue.handicapReverseThreshold,
+            DEFAULT_HANDICAP_REVERSE_THRESHOLD
+          )
+          this.singleRecommendationThreshold = this.normalizeRecommendationThreshold(
+            parsedValue.singleRecommendationThreshold,
+            DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+          )
         }
       } catch (error) {
         this.recommendationOdds = DEFAULT_RECOMMENDATION_ODDS
+        this.handicapRecommendationThreshold = DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
+        this.handicapReverseThreshold = DEFAULT_HANDICAP_REVERSE_THRESHOLD
+        this.singleRecommendationThreshold = DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
       }
     },
     saveGlobalParametersToCookie() {
@@ -1040,7 +1135,19 @@ export default {
     },
     buildGlobalParameterPayload() {
       return {
-        recommendationOdds: this.normalizeRecommendationOdds(this.recommendationOdds)
+        recommendationOdds: this.normalizeRecommendationOdds(this.recommendationOdds),
+        handicapRecommendationThreshold: this.normalizeRecommendationThreshold(
+          this.handicapRecommendationThreshold,
+          DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
+        ),
+        handicapReverseThreshold: this.normalizeRecommendationThreshold(
+          this.handicapReverseThreshold,
+          DEFAULT_HANDICAP_REVERSE_THRESHOLD
+        ),
+        singleRecommendationThreshold: this.normalizeRecommendationThreshold(
+          this.singleRecommendationThreshold,
+          DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+        )
       }
     },
     normalizeRecommendationOdds(value) {
@@ -1052,6 +1159,38 @@ export default {
     },
     normalizeRecommendationOddsInput() {
       this.recommendationOdds = this.normalizeRecommendationOdds(this.recommendationOdds)
+      this.saveGlobalParametersToCookie()
+      this.saveUserConfig()
+      if (this.backtestActive) {
+        this.refreshBacktestResults()
+      }
+    },
+    normalizeRecommendationThreshold(value, fallback) {
+      const numberValue = Number(value)
+      if (!Number.isFinite(numberValue)) {
+        return fallback
+      }
+      const clampedValue = Math.max(RECOMMENDATION_THRESHOLD_MIN, Math.min(RECOMMENDATION_THRESHOLD_MAX, numberValue))
+      return Number(clampedValue.toFixed(2))
+    },
+    normalizeRecommendationThresholdInputs() {
+      this.handicapRecommendationThreshold = this.normalizeRecommendationThreshold(
+        this.handicapRecommendationThreshold,
+        DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
+      )
+      this.handicapReverseThreshold = this.normalizeRecommendationThreshold(
+        this.handicapReverseThreshold,
+        DEFAULT_HANDICAP_REVERSE_THRESHOLD
+      )
+      this.singleRecommendationThreshold = this.normalizeRecommendationThreshold(
+        this.singleRecommendationThreshold,
+        DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+      )
+    },
+    saveRecommendationThresholdInputs() {
+      this.normalizeRecommendationThresholdInputs()
+      this.saveGlobalParametersToCookie()
+      this.saveUserConfig()
       if (this.backtestActive) {
         this.refreshBacktestResults()
       }
@@ -1306,10 +1445,38 @@ export default {
       return 'lose'
     },
     getRecommendationKeys(match) {
-      const recommendationKeys = this.getBaseRecommendationKeys(match)
+      const recommendationKeys = this.applySingleRecommendationThreshold(
+        match,
+        this.getBaseRecommendationKeys(match)
+      )
       return this.hasQualifiedRecommendationOdds(match, recommendationKeys)
         ? recommendationKeys
         : new Set()
+    },
+    applySingleRecommendationThreshold(match, recommendationKeys) {
+      if (!recommendationKeys || recommendationKeys.size !== 2) {
+        return recommendationKeys
+      }
+      const threshold = this.normalizeRecommendationThreshold(
+        this.singleRecommendationThreshold,
+        DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+      )
+      let strongestRecommendation = null
+      this.probabilityRows(match).forEach(item => {
+        PROBABILITY_KEYS.forEach(probabilityKey => {
+          const key = this.getRecommendationCellKey(item, probabilityKey)
+          if (!recommendationKeys.has(key)) {
+            return
+          }
+          const value = Number(item.probability[probabilityKey]) || 0
+          if (!strongestRecommendation || value > strongestRecommendation.value) {
+            strongestRecommendation = { key, value }
+          }
+        })
+      })
+      return strongestRecommendation && strongestRecommendation.value > threshold
+        ? new Set([strongestRecommendation.key])
+        : recommendationKeys
     },
     getBaseRecommendationKeys(match) {
       const selectedRows = this.probabilityRows(match).filter(item => this.isRowSelected(match, item))
@@ -1375,7 +1542,11 @@ export default {
       if (!maxCell) {
         return new Set()
       }
-      if (applyHandicapThreshold && maxCell.row.handicap !== 0 && maxCell.value < 50) {
+      const reverseThreshold = this.normalizeRecommendationThreshold(
+        this.handicapReverseThreshold,
+        DEFAULT_HANDICAP_REVERSE_THRESHOLD
+      )
+      if (applyHandicapThreshold && maxCell.row.handicap !== 0 && maxCell.value < reverseThreshold) {
         return new Set(
           PROBABILITY_KEYS
             .filter(key => key !== maxCell.probabilityKey)
@@ -1397,7 +1568,11 @@ export default {
       }
 
       const handicapValue = Number(handicapRow.probability[maxCell.probabilityKey]) || 0
-      if (handicapValue >= HANDICAP_PAIR_SWITCH_THRESHOLD && handicapValue < maxCell.value) {
+      const recommendationThreshold = this.normalizeRecommendationThreshold(
+        this.handicapRecommendationThreshold,
+        DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
+      )
+      if (handicapValue >= recommendationThreshold && handicapValue < maxCell.value) {
         return new Set(
           [maxCell.probabilityKey, 'draw']
             .map(key => this.getRecommendationCellKey(handicapRow, key))
@@ -1645,11 +1820,11 @@ h1 {
 .hero-card {
   align-self: stretch;
   display: grid;
-  grid-template-columns: repeat(2, 230px);
+  grid-template-columns: 230px 460px;
   align-items: end;
   gap: 14px;
   justify-content: center;
-  width: 500px;
+  width: 730px;
   min-width: 0;
   max-width: 100%;
   padding: 4px 12px;
@@ -1719,11 +1894,19 @@ h1 {
 
 .factor-controls {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
   min-width: 0;
   padding-left: 14px;
   border-left: 1px solid rgba(255, 255, 255, 0.2);
   text-align: left;
+}
+
+.factor-control-column {
+  display: grid;
+  align-content: end;
+  gap: 8px;
+  min-width: 0;
 }
 
 .factor-control {
@@ -1756,6 +1939,28 @@ h1 {
   outline: none;
 }
 
+.percentage-factor-control {
+  grid-template-columns: minmax(0, 1fr) 96px;
+}
+
+.factor-control .percentage-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px;
+  align-items: center;
+  min-width: 0;
+}
+
+.percentage-input input[type="number"] {
+  width: 100%;
+  min-width: 0;
+}
+
+.factor-control .percentage-suffix {
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .factor-control input[type="number"]:focus {
   border-color: #ffffff;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.24);
@@ -1776,6 +1981,7 @@ h1 {
 .factor-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-column: 1 / -1;
   margin-bottom: 3px;
 }
 
@@ -2633,6 +2839,7 @@ body.dialog-open {
   }
 
   .factor-controls {
+    grid-template-columns: minmax(0, 1fr);
     margin-top: 10px;
     padding-left: 0;
     padding-top: 10px;
@@ -2654,7 +2861,12 @@ body.dialog-open {
   }
 
   .factor-actions {
+    grid-column: auto;
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .percentage-input {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .global-parameter-control {
