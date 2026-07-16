@@ -2,7 +2,6 @@ package com.eason.worldcup.service;
 
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HandicapProbability;
-import com.eason.worldcup.model.HalfFullProbability;
 import com.eason.worldcup.model.HeadToHeadMatchResponse;
 import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.MatchPredictionResponse;
@@ -36,8 +35,6 @@ import java.util.SplittableRandom;
 public class PredictionService {
 
     private static final int[] HANDICAPS = {-3, -2, -1, 1, 2, 3};
-
-    private static final double FIRST_HALF_GOAL_SHARE = 0.45D;
 
     private static final ZoneId UTC_PLUS_EIGHT_ZONE = ZoneId.of("Asia/Shanghai");
 
@@ -207,7 +204,7 @@ public class PredictionService {
     }
 
     public ModelOverviewResponse refreshData(Competition competition, LocalDate date) {
-        dataRepository.reloadData();
+        dataRepository.refreshSchedules();
         teamStrengthService.rebuildModels();
         sportteryMarketSelectionService.forceRefresh(date);
         return overview(competition);
@@ -232,45 +229,48 @@ public class PredictionService {
 
         int resultLimit = limit == null ? 10 : Math.max(1, Math.min(50, limit));
         Map<String, HeadToHeadMatchResponse> matchesByFixture = new HashMap<>();
+        String targetHomeTeam = getScheduleComparisonTeamName(target, true);
+        String targetAwayTeam = getScheduleComparisonTeamName(target, false);
         for (MatchSchedule schedule : dataRepository.getSchedules()) {
             if (!isCompletedSchedule(schedule)
                     || !isScheduleBeforeTarget(schedule, target)
                     || !isSameTeamPair(
-                            schedule.getHomeTeamEn(),
-                            schedule.getAwayTeamEn(),
-                            target.getHomeTeamEn(),
-                            target.getAwayTeamEn())) {
+                            getScheduleComparisonTeamName(schedule, true),
+                            getScheduleComparisonTeamName(schedule, false),
+                            targetHomeTeam,
+                            targetAwayTeam)) {
                 continue;
             }
             HeadToHeadMatchResponse response = toHeadToHeadResponse(schedule);
             matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
                     schedule.getMatchDate(),
-                    schedule.getHomeTeamEn(),
-                    schedule.getAwayTeamEn(),
+                    getScheduleComparisonTeamName(schedule, true),
+                    getScheduleComparisonTeamName(schedule, false),
                     schedule.getHomeScore(),
                     schedule.getAwayScore()), response);
         }
 
-        if (effectiveCompetition == Competition.WORLD_CUP) {
-            for (HistoricalMatch historicalMatch : dataRepository.getHistoricalMatches()) {
-                if (historicalMatch.getMatchDate() == null
-                        || target.getMatchDate() == null
-                        || !historicalMatch.getMatchDate().isBefore(target.getMatchDate())
-                        || !isSameTeamPair(
-                                historicalMatch.getHomeTeam(),
-                                historicalMatch.getAwayTeam(),
-                                target.getHomeTeamEn(),
-                                target.getAwayTeamEn())) {
-                    continue;
-                }
-                HeadToHeadMatchResponse response = toHeadToHeadResponse(historicalMatch, target);
-                matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
-                        historicalMatch.getMatchDate(),
-                        historicalMatch.getHomeTeam(),
-                        historicalMatch.getAwayTeam(),
-                        historicalMatch.getHomeScore(),
-                        historicalMatch.getAwayScore()), response);
+        List<HistoricalMatch> historicalMatches = effectiveCompetition == Competition.WORLD_CUP
+                ? dataRepository.getHistoricalMatches()
+                : dataRepository.getClubHistoricalMatches();
+        for (HistoricalMatch historicalMatch : historicalMatches) {
+            if (historicalMatch.getMatchDate() == null
+                    || target.getMatchDate() == null
+                    || !historicalMatch.getMatchDate().isBefore(target.getMatchDate())
+                    || !isSameTeamPair(
+                            historicalMatch.getHomeTeam(),
+                            historicalMatch.getAwayTeam(),
+                            targetHomeTeam,
+                            targetAwayTeam)) {
+                continue;
             }
+            HeadToHeadMatchResponse response = toHeadToHeadResponse(historicalMatch, target);
+            matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
+                    historicalMatch.getMatchDate(),
+                    historicalMatch.getHomeTeam(),
+                    historicalMatch.getAwayTeam(),
+                    historicalMatch.getHomeScore(),
+                    historicalMatch.getAwayScore()), response);
         }
 
         return matchesByFixture.values().stream()
@@ -358,13 +358,23 @@ public class PredictionService {
 
     private String resolveHistoricalTeamName(String teamName, MatchSchedule target) {
         String canonicalName = canonicalTeamName(teamName);
-        if (canonicalName.equals(canonicalTeamName(target.getHomeTeamEn()))) {
+        if (canonicalName.equals(canonicalTeamName(getScheduleComparisonTeamName(target, true)))) {
             return readableTeamName(target.getHomeTeamCn(), target.getHomeTeamEn());
         }
-        if (canonicalName.equals(canonicalTeamName(target.getAwayTeamEn()))) {
+        if (canonicalName.equals(canonicalTeamName(getScheduleComparisonTeamName(target, false)))) {
             return readableTeamName(target.getAwayTeamCn(), target.getAwayTeamEn());
         }
         return teamName;
+    }
+
+    private String getScheduleComparisonTeamName(MatchSchedule schedule, boolean homeTeam) {
+        if (schedule.getCompetition().isClubCompetition()) {
+            String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
+            if (chineseName != null && !chineseName.isBlank()) {
+                return chineseName;
+            }
+        }
+        return homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
     }
 
     private String readableTeamName(String chineseName, String englishName) {
@@ -451,7 +461,6 @@ public class PredictionService {
         response.setVenue(schedule.getVenue());
         response.setStatus(toChineseStatus(schedule.getStatus()));
         response.setScoreText(buildScoreText(schedule));
-        response.setActualHalfFullResult(buildActualHalfFullResult(schedule));
         response.setSportteryMatchId(schedule.getSportteryMatchId());
         response.setSportteryMatchNumber(schedule.getSportteryMatchNumber());
         response.setSportteryNormalAvailable(schedule.getSportteryNormalAvailable());
@@ -464,7 +473,6 @@ public class PredictionService {
         ThreeWayProbability preMatchProbability = preMatchCounter.toNormalProbability(simulationCount);
         response.setNormalProbability(preMatchProbability);
         response.setHandicapProbabilities(preMatchCounter.toHandicapProbabilities(simulationCount, preMatchProbability));
-        response.setHalfFullProbabilities(preMatchCounter.toTopHalfFullProbabilities(simulationCount));
         response.setTotalGoalsProbabilities(preMatchCounter.toTopTotalGoalsProbabilities(simulationCount));
         response.setScoreProbabilities(preMatchCounter.toTopScoreProbabilities(simulationCount));
         response.setAdjustedExpectedHomeGoals(round(postMatchExpectedGoals.getHomeGoals(), 2));
@@ -472,7 +480,6 @@ public class PredictionService {
         ThreeWayProbability postMatchProbability = postMatchCounter.toNormalProbability(simulationCount);
         response.setAdjustedNormalProbability(postMatchProbability);
         response.setAdjustedHandicapProbabilities(postMatchCounter.toHandicapProbabilities(simulationCount, postMatchProbability));
-        response.setAdjustedHalfFullProbabilities(postMatchCounter.toTopHalfFullProbabilities(simulationCount));
         response.setAdjustedTotalGoalsProbabilities(postMatchCounter.toTopTotalGoalsProbabilities(simulationCount));
         response.setAdjustedScoreProbabilities(postMatchCounter.toTopScoreProbabilities(simulationCount));
         response.setCorrectionMatchCount(postMatchExpectedGoals.getCorrectionMatchCount());
@@ -496,29 +503,16 @@ public class PredictionService {
     private SimulationCounter runMonteCarlo(MatchSchedule schedule, TeamStrengthService.ExpectedGoals expectedGoals, int simulationCount, double effectiveHandicapSmoothingFactor) {
         long seed = buildSeed(schedule, expectedGoals, simulationCount);
         SplittableRandom random = new SplittableRandom(seed);
-        SplittableRandom halfTimeRandom = new SplittableRandom(seed ^ 0x9E3779B97F4A7C15L);
         SimulationCounter counter = new SimulationCounter(effectiveHandicapSmoothingFactor);
         for (int i = 0; i < simulationCount; i++) {
             int homeGoals = PoissonRandom.next(expectedGoals.getHomeGoals(), random);
             int awayGoals = PoissonRandom.next(expectedGoals.getAwayGoals(), random);
-            int halfTimeHomeGoals = nextBinomial(homeGoals, FIRST_HALF_GOAL_SHARE, halfTimeRandom);
-            int halfTimeAwayGoals = nextBinomial(awayGoals, FIRST_HALF_GOAL_SHARE, halfTimeRandom);
-            counter.addNormal(homeGoals, awayGoals, halfTimeHomeGoals, halfTimeAwayGoals);
+            counter.addNormal(homeGoals, awayGoals);
             for (int handicap : HANDICAPS) {
                 counter.addHandicap(handicap, homeGoals, awayGoals);
             }
         }
         return counter;
-    }
-
-    private int nextBinomial(int trials, double probability, SplittableRandom random) {
-        int successes = 0;
-        for (int i = 0; i < trials; i++) {
-            if (random.nextDouble() < probability) {
-                successes++;
-            }
-        }
-        return successes;
     }
 
     private int normalizeSimulationCount(Integer simulations) {
@@ -566,28 +560,6 @@ public class PredictionService {
         return schedule.getHomeScore() + " - " + schedule.getAwayScore();
     }
 
-    private String buildActualHalfFullResult(MatchSchedule schedule) {
-        if (!"COMPLETED".equalsIgnoreCase(schedule.getStatus())
-                || schedule.getHalfTimeHomeScore() == null
-                || schedule.getHalfTimeAwayScore() == null
-                || schedule.getHomeScore() == null
-                || schedule.getAwayScore() == null) {
-            return "";
-        }
-        return toMatchResult(schedule.getHalfTimeHomeScore(), schedule.getHalfTimeAwayScore())
-                + toMatchResult(schedule.getHomeScore(), schedule.getAwayScore());
-    }
-
-    private String toMatchResult(int homeGoals, int awayGoals) {
-        if (homeGoals > awayGoals) {
-            return "胜";
-        }
-        if (homeGoals == awayGoals) {
-            return "平";
-        }
-        return "负";
-    }
-
     private String buildModelRemark(MatchSchedule schedule) {
         if ("COMPLETED".equalsIgnoreCase(schedule.getStatus())) {
             return "该场已完赛，页面展示的是模型概率口径，实际比分以赛程数据为准";
@@ -611,8 +583,6 @@ public class PredictionService {
 
         private final Map<String, ScoreCounter> scoreCounters = new HashMap<>();
 
-        private final Map<String, HalfFullCounter> halfFullCounters = new HashMap<>();
-
         private final Map<Integer, Integer> totalGoalsCounters = new HashMap<>();
 
         private final List<HandicapCounter> handicapCounters = new ArrayList<>();
@@ -624,9 +594,8 @@ public class PredictionService {
             }
         }
 
-        private void addNormal(int homeGoals, int awayGoals, int halfTimeHomeGoals, int halfTimeAwayGoals) {
+        private void addNormal(int homeGoals, int awayGoals) {
             addScore(homeGoals, awayGoals);
-            addHalfFull(halfTimeHomeGoals, halfTimeAwayGoals, homeGoals, awayGoals);
             addTotalGoals(homeGoals, awayGoals);
             if (homeGoals > awayGoals) {
                 win++;
@@ -635,26 +604,6 @@ public class PredictionService {
             } else {
                 lose++;
             }
-        }
-
-        private void addHalfFull(int halfTimeHomeGoals, int halfTimeAwayGoals, int homeGoals, int awayGoals) {
-            String halfTimeResult = toResult(halfTimeHomeGoals, halfTimeAwayGoals);
-            String fullTimeResult = toResult(homeGoals, awayGoals);
-            String key = halfTimeResult + fullTimeResult;
-            HalfFullCounter counter = halfFullCounters.computeIfAbsent(
-                    key,
-                    ignored -> new HalfFullCounter(halfTimeResult, fullTimeResult));
-            counter.count++;
-        }
-
-        private String toResult(int homeGoals, int awayGoals) {
-            if (homeGoals > awayGoals) {
-                return "胜";
-            }
-            if (homeGoals == awayGoals) {
-                return "平";
-            }
-            return "负";
         }
 
         private void addScore(int homeGoals, int awayGoals) {
@@ -706,25 +655,6 @@ public class PredictionService {
                     .map(counter -> new ScoreProbability(
                             counter.homeScore,
                             counter.awayScore,
-                            roundPercent(counter.count * 100.0D / simulationCount)))
-                    .toList();
-        }
-
-        private List<HalfFullProbability> toTopHalfFullProbabilities(int simulationCount) {
-            return halfFullCounters.values()
-                    .stream()
-                    .sorted((left, right) -> {
-                        int countCompare = Integer.compare(right.count, left.count);
-                        if (countCompare != 0) {
-                            return countCompare;
-                        }
-                        return (left.halfTimeResult + left.fullTimeResult)
-                                .compareTo(right.halfTimeResult + right.fullTimeResult);
-                    })
-                    .limit(3)
-                    .map(counter -> new HalfFullProbability(
-                            counter.halfTimeResult,
-                            counter.fullTimeResult,
                             roundPercent(counter.count * 100.0D / simulationCount)))
                     .toList();
         }
@@ -841,21 +771,6 @@ public class PredictionService {
         private ScoreCounter(int homeScore, int awayScore) {
             this.homeScore = homeScore;
             this.awayScore = awayScore;
-        }
-
-    }
-
-    private static class HalfFullCounter {
-
-        private final String halfTimeResult;
-
-        private final String fullTimeResult;
-
-        private int count;
-
-        private HalfFullCounter(String halfTimeResult, String fullTimeResult) {
-            this.halfTimeResult = halfTimeResult;
-            this.fullTimeResult = fullTimeResult;
         }
 
     }

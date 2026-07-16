@@ -53,12 +53,12 @@ public class ClubCompetitionScheduleUpdater {
     private static final Pattern SCORE_PATTERN = Pattern.compile("^\\s*(\\d+)\\s*-\\s*(\\d+)\\s*$");
 
     private static final List<EspnLeagueSource> ESPN_SOURCES = List.of(
-            new EspnLeagueSource(Competition.NORWEGIAN_ELITESERIEN, "nor.1", false),
-            new EspnLeagueSource(Competition.SWEDISH_ALLSVENSKAN, "swe.1", false),
-            new EspnLeagueSource(Competition.EUROPA_LEAGUE, "uefa.europa", true),
-            new EspnLeagueSource(Competition.EUROPA_LEAGUE, "uefa.europa_qual", true),
-            new EspnLeagueSource(Competition.BRAZIL_SERIE_A, "bra.1", false),
-            new EspnLeagueSource(Competition.MLS, "usa.1", false)
+            new EspnLeagueSource(Competition.NORWEGIAN_ELITESERIEN, "nor.1"),
+            new EspnLeagueSource(Competition.SWEDISH_ALLSVENSKAN, "swe.1"),
+            new EspnLeagueSource(Competition.EUROPA_LEAGUE, "uefa.europa"),
+            new EspnLeagueSource(Competition.EUROPA_LEAGUE, "uefa.europa_qual"),
+            new EspnLeagueSource(Competition.BRAZIL_SERIE_A, "bra.1"),
+            new EspnLeagueSource(Competition.MLS, "usa.1")
     );
 
     private static final List<SportsDbLeagueSource> SPORTS_DB_SOURCES = List.of(
@@ -100,8 +100,14 @@ public class ClubCompetitionScheduleUpdater {
     @Value("${club-competitions.schedule-update.target-zone:Asia/Shanghai}")
     private String targetZone;
 
-    @Value("${club-competitions.schedule-update.history-seasons:5}")
-    private int historySeasons;
+    @Value("${data-refresh.days-back:30}")
+    private int daysBack;
+
+    @Value("${data-refresh.days-forward:30}")
+    private int daysForward;
+
+    @Value("${data-refresh.target-zone:Asia/Shanghai}")
+    private String refreshTargetZone;
 
     @Value("${club-competitions.schedule-update.parallelism:12}")
     private int parallelism;
@@ -125,6 +131,9 @@ public class ClubCompetitionScheduleUpdater {
         }
 
         ZoneId zoneId = ZoneId.of(targetZone);
+        LocalDate today = LocalDate.now(ZoneId.of(refreshTargetZone));
+        LocalDate startDate = today.minusDays(normalizeWindowDays(daysBack));
+        LocalDate endDate = today.plusDays(normalizeWindowDays(daysForward));
         Duration timeout = Duration.ofSeconds(Math.max(1, timeoutSeconds));
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(timeout)
@@ -132,46 +141,40 @@ public class ClubCompetitionScheduleUpdater {
                 .build();
 
         List<MatchSchedule> cachedSchedules = new ArrayList<>(loadCachedSchedules());
-        FotMobScheduleBatch fotMobBatch = loadFotMobSchedules(client, zoneId, timeout);
-        removeReplacedCachedSchedules(cachedSchedules, fotMobBatch.loadedSeasons());
+        FotMobScheduleBatch fotMobBatch = loadFotMobSchedules(client, zoneId, timeout, startDate, endDate);
+        removeReplacedCachedSchedules(cachedSchedules, fotMobBatch.loadedSeasons(), startDate, endDate);
 
         List<MatchSchedule> remoteSchedules = new ArrayList<>(cachedSchedules);
-        remoteSchedules.addAll(loadEspnSchedules(client, zoneId, timeout));
+        remoteSchedules.addAll(loadEspnSchedules(client, zoneId, timeout, startDate, endDate));
         List<MatchSchedule> sportsDbSchedules = loadSportsDbSchedules(
                 client,
                 zoneId,
                 timeout,
-                fotMobBatch.loadedSeasons());
-        removeReplacedCachedSchedules(sportsDbSchedules, fotMobBatch.loadedSeasons());
+                fotMobBatch.loadedSeasons(),
+                startDate,
+                endDate);
+        removeReplacedCachedSchedules(sportsDbSchedules, fotMobBatch.loadedSeasons(), startDate, endDate);
         remoteSchedules.addAll(sportsDbSchedules);
         remoteSchedules.addAll(fotMobBatch.schedules());
         int updatedCount = mergeSchedules(schedules, remoteSchedules);
         saveCachedSchedules(remoteSchedules);
-        log.info("Loaded {} schedule rows for additional club competitions.", updatedCount);
+        log.info(
+                "Loaded {} cached and refreshed schedule rows for additional club competitions; refresh window {} to {}.",
+                updatedCount,
+                startDate,
+                endDate);
         return updatedCount;
     }
 
-    private List<MatchSchedule> loadEspnSchedules(HttpClient client, ZoneId zoneId, Duration timeout) {
-        LocalDate today = LocalDate.now(zoneId);
-        int seasonCount = normalizeHistorySeasons();
+    private List<MatchSchedule> loadEspnSchedules(
+            HttpClient client,
+            ZoneId zoneId,
+            Duration timeout,
+            LocalDate startDate,
+            LocalDate endDate) {
         List<Supplier<List<MatchSchedule>>> tasks = new ArrayList<>();
         for (EspnLeagueSource source : ESPN_SOURCES) {
-            if (source.crossYearSeason()) {
-                int currentSeasonStartYear = today.getMonthValue() >= 7 ? today.getYear() : today.getYear() - 1;
-                for (int offset = seasonCount - 1; offset >= 0; offset--) {
-                    int seasonStartYear = currentSeasonStartYear - offset;
-                    LocalDate startDate = LocalDate.of(seasonStartYear, 7, 1);
-                    LocalDate endDate = LocalDate.of(seasonStartYear + 1, 6, 30);
-                    tasks.add(() -> loadEspnScheduleRange(client, source, startDate, endDate, zoneId, timeout));
-                }
-            } else {
-                for (int offset = seasonCount - 1; offset >= 0; offset--) {
-                    int year = today.getYear() - offset;
-                    LocalDate startDate = LocalDate.of(year, 1, 1);
-                    LocalDate endDate = LocalDate.of(year, 12, 31);
-                    tasks.add(() -> loadEspnScheduleRange(client, source, startDate, endDate, zoneId, timeout));
-                }
-            }
+            tasks.add(() -> loadEspnScheduleRange(client, source, startDate, endDate, zoneId, timeout));
         }
         List<MatchSchedule> result = executeTasks(tasks);
         if (result.isEmpty()) {
@@ -180,22 +183,25 @@ public class ClubCompetitionScheduleUpdater {
         return result;
     }
 
-    private FotMobScheduleBatch loadFotMobSchedules(HttpClient client, ZoneId zoneId, Duration timeout) {
-        int currentYear = LocalDate.now(zoneId).getYear();
-        int seasonCount = normalizeHistorySeasons();
+    private FotMobScheduleBatch loadFotMobSchedules(
+            HttpClient client,
+            ZoneId zoneId,
+            Duration timeout,
+            LocalDate startDate,
+            LocalDate endDate) {
         List<MatchSchedule> result = new ArrayList<>();
         Set<CompetitionSeason> loadedSeasons = new HashSet<>();
         for (FotMobLeagueSource source : FOTMOB_SOURCES) {
-            for (int offset = seasonCount - 1; offset >= 0; offset--) {
-                int season = currentYear - offset;
+            for (int season = startDate.getYear(); season <= endDate.getYear(); season++) {
                 List<MatchSchedule> seasonSchedules = loadFotMobSeason(
                         client,
                         source,
                         season,
                         zoneId,
                         timeout);
-                if (!seasonSchedules.isEmpty()) {
-                    result.addAll(seasonSchedules);
+                List<MatchSchedule> windowSchedules = filterSchedulesByDate(seasonSchedules, startDate, endDate);
+                if (!windowSchedules.isEmpty()) {
+                    result.addAll(windowSchedules);
                     loadedSeasons.add(new CompetitionSeason(source.competition(), season));
                 }
             }
@@ -313,15 +319,35 @@ public class ClubCompetitionScheduleUpdater {
 
     private void removeReplacedCachedSchedules(
             List<MatchSchedule> schedules,
-            Set<CompetitionSeason> replacedSeasons) {
+            Set<CompetitionSeason> replacedSeasons,
+            LocalDate startDate,
+            LocalDate endDate) {
         if (replacedSeasons.isEmpty()) {
             return;
         }
         schedules.removeIf(schedule -> schedule.getCompetition() != null
                 && schedule.getMatchDate() != null
+                && !schedule.getMatchDate().isBefore(startDate)
+                && !schedule.getMatchDate().isAfter(endDate)
                 && replacedSeasons.contains(new CompetitionSeason(
                         schedule.getCompetition(),
                         schedule.getMatchDate().getYear())));
+    }
+
+    private List<MatchSchedule> filterSchedulesByDate(
+            List<MatchSchedule> schedules,
+            LocalDate startDate,
+            LocalDate endDate) {
+        List<MatchSchedule> result = new ArrayList<>();
+        for (MatchSchedule schedule : schedules) {
+            if (schedule.getMatchDate() == null
+                    || schedule.getMatchDate().isBefore(startDate)
+                    || schedule.getMatchDate().isAfter(endDate)) {
+                continue;
+            }
+            result.add(schedule);
+        }
+        return result;
     }
 
     private List<MatchSchedule> loadEspnScheduleRange(
@@ -390,18 +416,13 @@ public class ClubCompetitionScheduleUpdater {
         JsonNode statusType = event.path("status").path("type");
         boolean completed = statusType.path("completed").asBoolean(false);
         boolean live = "in".equalsIgnoreCase(statusType.path("state").asText(""));
+        boolean beyondRegulation = isBeyondRegulationStatus(event.path("status"));
         String eventId = event.path("id").asText("");
         String homeTeamId = readEspnTeamId(homeCompetitor);
         String awayTeamId = readEspnTeamId(awayCompetitor);
         Integer fullHomeScore = parseInteger(homeCompetitor.path("score").asText(""));
         Integer fullAwayScore = parseInteger(awayCompetitor.path("score").asText(""));
         ScorePair regulationScore = parseRegulationScore(
-                eventCompetition,
-                homeTeamId,
-                awayTeamId,
-                fullHomeScore,
-                fullAwayScore);
-        ScorePair halfTimeScore = parseHalfTimeScore(
                 eventCompetition,
                 homeTeamId,
                 awayTeamId,
@@ -425,13 +446,9 @@ public class ClubCompetitionScheduleUpdater {
             if (regulationScore != null) {
                 schedule.setHomeScore(regulationScore.homeScore);
                 schedule.setAwayScore(regulationScore.awayScore);
-            } else {
+            } else if (!beyondRegulation) {
                 schedule.setHomeScore(fullHomeScore);
                 schedule.setAwayScore(fullAwayScore);
-            }
-            if (halfTimeScore != null) {
-                schedule.setHalfTimeHomeScore(halfTimeScore.homeScore);
-                schedule.setHalfTimeAwayScore(halfTimeScore.awayScore);
             }
         }
         return schedule;
@@ -493,59 +510,10 @@ public class ClubCompetitionScheduleUpdater {
         return new ScorePair(homeScore, awayScore);
     }
 
-    private ScorePair parseHalfTimeScore(
-            JsonNode competition,
-            String homeTeamId,
-            String awayTeamId,
-            Integer fullHomeScore,
-            Integer fullAwayScore) {
-        JsonNode details = competition.path("details");
-        if (!details.isArray() || details.isEmpty()) {
-            return scoreTotal(fullHomeScore, fullAwayScore) == 0 ? new ScorePair(0, 0) : null;
-        }
-
-        int homeScore = 0;
-        int awayScore = 0;
-        boolean sawGoal = false;
-        for (JsonNode detail : details) {
-            if (!isScoringPlay(detail)) {
-                continue;
-            }
-
-            sawGoal = true;
-            if (!isFirstHalf(detail)) {
-                continue;
-            }
-
-            String scoringTeamId = detail.path("team").path("id").asText("");
-            int scoreValue = detail.path("scoreValue").asInt(1);
-            if (scoringTeamId.equals(homeTeamId)) {
-                homeScore += scoreValue;
-            } else if (scoringTeamId.equals(awayTeamId)) {
-                awayScore += scoreValue;
-            }
-        }
-
-        if (!sawGoal && scoreTotal(fullHomeScore, fullAwayScore) > 0) {
-            return null;
-        }
-        return new ScorePair(homeScore, awayScore);
-    }
-
     private boolean isScoringPlay(JsonNode detail) {
         return detail.path("scoringPlay").asBoolean(false)
                 && !detail.path("shootout").asBoolean(false)
                 && detail.path("scoreValue").asInt(0) > 0;
-    }
-
-    private boolean isFirstHalf(JsonNode detail) {
-        Integer displayMinute = readDisplayMinute(detail);
-        if (displayMinute != null) {
-            return displayMinute <= 45;
-        }
-
-        JsonNode clockValue = detail.path("clock").path("value");
-        return clockValue.isNumber() && clockValue.asDouble() <= REGULATION_SECONDS / 2.0D;
     }
 
     private boolean isAfterRegulation(JsonNode detail) {
@@ -556,6 +524,18 @@ public class ClubCompetitionScheduleUpdater {
 
         JsonNode clockValue = detail.path("clock").path("value");
         return clockValue.isNumber() && clockValue.asDouble() > REGULATION_SECONDS;
+    }
+
+    private boolean isBeyondRegulationStatus(JsonNode status) {
+        if (status.path("period").asInt(0) > 2) {
+            return true;
+        }
+        JsonNode type = status.path("type");
+        String statusText = (type.path("description").asText("") + " "
+                + type.path("detail").asText("") + " "
+                + type.path("shortDetail").asText(""))
+                .toLowerCase(Locale.ROOT);
+        return statusText.contains("extra time") || statusText.contains("penalt");
     }
 
     private Integer readDisplayMinute(JsonNode detail) {
@@ -575,13 +555,13 @@ public class ClubCompetitionScheduleUpdater {
             HttpClient client,
             ZoneId zoneId,
             Duration timeout,
-            Set<CompetitionSeason> replacedSeasons) {
+            Set<CompetitionSeason> replacedSeasons,
+            LocalDate startDate,
+            LocalDate endDate) {
         int currentYear = LocalDate.now(zoneId).getYear();
-        int seasonCount = normalizeHistorySeasons();
         List<MatchSchedule> result = new ArrayList<>();
         for (SportsDbLeagueSource source : SPORTS_DB_SOURCES) {
-            for (int offset = seasonCount - 1; offset >= 0; offset--) {
-                int season = currentYear - offset;
+            for (int season = startDate.getYear(); season <= endDate.getYear(); season++) {
                 if (!replacedSeasons.contains(new CompetitionSeason(source.competition(), season))) {
                     result.addAll(loadSportsDbSeason(client, source, season, zoneId, timeout));
                 }
@@ -619,7 +599,7 @@ public class ClubCompetitionScheduleUpdater {
         if (result.isEmpty()) {
             log.warn("No Finnish or Korean league schedules were returned by TheSportsDB.");
         }
-        return result;
+        return filterSchedulesByDate(result, startDate, endDate);
     }
 
     private List<MatchSchedule> loadSportsDbRound(
@@ -942,8 +922,6 @@ public class ClubCompetitionScheduleUpdater {
         target.setStatus(source.getStatus());
         target.setHomeScore(source.getHomeScore());
         target.setAwayScore(source.getAwayScore());
-        target.setHalfTimeHomeScore(source.getHalfTimeHomeScore());
-        target.setHalfTimeAwayScore(source.getHalfTimeAwayScore());
     }
 
     private String buildMatchId(
@@ -990,11 +968,11 @@ public class ClubCompetitionScheduleUpdater {
         }
     }
 
-    private int normalizeHistorySeasons() {
-        return Math.max(1, Math.min(5, historySeasons));
+    private int normalizeWindowDays(int value) {
+        return Math.max(0, Math.min(365, value));
     }
 
-    private record EspnLeagueSource(Competition competition, String leagueSlug, boolean crossYearSeason) {
+    private record EspnLeagueSource(Competition competition, String leagueSlug) {
 
     }
 

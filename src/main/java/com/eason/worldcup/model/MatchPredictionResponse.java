@@ -31,8 +31,6 @@ public class MatchPredictionResponse {
 
     private String scoreText;
 
-    private String actualHalfFullResult;
-
     private String sportteryMatchId;
 
     private String sportteryMatchNumber;
@@ -57,8 +55,6 @@ public class MatchPredictionResponse {
 
     private List<ScoreProbability> scoreProbabilities = new ArrayList<>();
 
-    private List<HalfFullProbability> halfFullProbabilities = new ArrayList<>();
-
     private List<TotalGoalsProbability> totalGoalsProbabilities = new ArrayList<>();
 
     private double adjustedExpectedHomeGoals;
@@ -70,8 +66,6 @@ public class MatchPredictionResponse {
     private List<HandicapProbability> adjustedHandicapProbabilities = new ArrayList<>();
 
     private List<ScoreProbability> adjustedScoreProbabilities = new ArrayList<>();
-
-    private List<HalfFullProbability> adjustedHalfFullProbabilities = new ArrayList<>();
 
     private List<TotalGoalsProbability> adjustedTotalGoalsProbabilities = new ArrayList<>();
 
@@ -175,14 +169,6 @@ public class MatchPredictionResponse {
         this.scoreText = scoreText;
     }
 
-    public String getActualHalfFullResult() {
-        return actualHalfFullResult;
-    }
-
-    public void setActualHalfFullResult(String actualHalfFullResult) {
-        this.actualHalfFullResult = actualHalfFullResult;
-    }
-
     public String getSportteryMatchId() {
         return sportteryMatchId;
     }
@@ -279,14 +265,6 @@ public class MatchPredictionResponse {
         this.scoreProbabilities = scoreProbabilities;
     }
 
-    public List<HalfFullProbability> getHalfFullProbabilities() {
-        return halfFullProbabilities;
-    }
-
-    public void setHalfFullProbabilities(List<HalfFullProbability> halfFullProbabilities) {
-        this.halfFullProbabilities = halfFullProbabilities;
-    }
-
     public List<TotalGoalsProbability> getTotalGoalsProbabilities() {
         return totalGoalsProbabilities;
     }
@@ -333,14 +311,6 @@ public class MatchPredictionResponse {
 
     public void setAdjustedScoreProbabilities(List<ScoreProbability> adjustedScoreProbabilities) {
         this.adjustedScoreProbabilities = adjustedScoreProbabilities;
-    }
-
-    public List<HalfFullProbability> getAdjustedHalfFullProbabilities() {
-        return adjustedHalfFullProbabilities;
-    }
-
-    public void setAdjustedHalfFullProbabilities(List<HalfFullProbability> adjustedHalfFullProbabilities) {
-        this.adjustedHalfFullProbabilities = adjustedHalfFullProbabilities;
     }
 
     public List<TotalGoalsProbability> getAdjustedTotalGoalsProbabilities() {

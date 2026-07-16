@@ -54,11 +54,14 @@ public class EspnScheduleUpdater {
     @Value("${worldcup.espn-update.target-zone:America/New_York}")
     private String targetZone;
 
-    @Value("${worldcup.espn-update.days-back:30}")
+    @Value("${data-refresh.days-back:30}")
     private int daysBack;
 
-    @Value("${worldcup.espn-update.days-forward:21}")
+    @Value("${data-refresh.days-forward:30}")
     private int daysForward;
+
+    @Value("${data-refresh.target-zone:Asia/Shanghai}")
+    private String refreshTargetZone;
 
     @Value("${champions-league.espn-update.enabled:true}")
     private boolean championsLeagueEnabled;
@@ -75,9 +78,6 @@ public class EspnScheduleUpdater {
     @Value("${champions-league.espn-update.target-zone:Asia/Shanghai}")
     private String championsLeagueTargetZone;
 
-    @Value("${champions-league.espn-update.history-seasons:5}")
-    private int championsLeagueHistorySeasons;
-
     public EspnScheduleUpdater(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
@@ -89,13 +89,17 @@ public class EspnScheduleUpdater {
         }
         try {
             ZoneId zoneId = ZoneId.of(targetZone);
-            LocalDate today = LocalDate.now(zoneId);
-            LocalDate startDate = today.minusDays(Math.max(0, daysBack));
-            LocalDate endDate = today.plusDays(Math.max(0, daysForward));
+            LocalDate today = LocalDate.now(ZoneId.of(refreshTargetZone));
+            LocalDate startDate = today.minusDays(normalizeWindowDays(daysBack));
+            LocalDate endDate = today.plusDays(normalizeWindowDays(daysForward));
             String content = downloadContent(buildScoreboardUrl(startDate, endDate));
             List<RemoteMatch> remoteMatches = parseMatches(content, zoneId);
             int updatedCount = mergeSchedules(schedules, remoteMatches);
-            log.info("Updated {} World Cup schedule rows from ESPN scoreboard.", updatedCount);
+            log.info(
+                    "Updated {} World Cup schedule rows from ESPN scoreboard for {} to {}.",
+                    updatedCount,
+                    startDate,
+                    endDate);
             return updatedCount;
         } catch (Exception ex) {
             log.warn("Failed to update World Cup schedule from ESPN scoreboard.", ex);
@@ -110,32 +114,34 @@ public class EspnScheduleUpdater {
         }
 
         ZoneId zoneId = ZoneId.of(championsLeagueTargetZone);
-        int currentSeasonStartYear = resolveChampionsLeagueSeasonStartYear(LocalDate.now(zoneId));
-        int seasonCount = Math.max(1, Math.min(5, championsLeagueHistorySeasons));
+        LocalDate today = LocalDate.now(ZoneId.of(refreshTargetZone));
+        LocalDate startDate = today.minusDays(normalizeWindowDays(daysBack));
+        LocalDate endDate = today.plusDays(normalizeWindowDays(daysForward));
         List<RemoteMatch> remoteMatches = new ArrayList<>();
-        for (int offset = seasonCount - 1; offset >= 0; offset--) {
-            int seasonStartYear = currentSeasonStartYear - offset;
-            addRemoteMatches(
-                    remoteMatches,
-                    championsLeagueQualifyingScoreboardUrlTemplate,
-                    LocalDate.of(seasonStartYear, 7, 1),
-                    LocalDate.of(seasonStartYear, 8, 31),
-                    zoneId);
-            addRemoteMatches(
-                    remoteMatches,
-                    championsLeagueScoreboardUrlTemplate,
-                    LocalDate.of(seasonStartYear, 9, 1),
-                    LocalDate.of(seasonStartYear + 1, 6, 30),
-                    zoneId);
-        }
+        addRemoteMatches(
+                remoteMatches,
+                championsLeagueQualifyingScoreboardUrlTemplate,
+                startDate,
+                endDate,
+                zoneId);
+        addRemoteMatches(
+                remoteMatches,
+                championsLeagueScoreboardUrlTemplate,
+                startDate,
+                endDate,
+                zoneId);
 
         int updatedCount = mergeChampionsLeagueSchedules(schedules, remoteMatches);
-        log.info("Updated {} Champions League schedule rows from ESPN scoreboard.", updatedCount);
+        log.info(
+                "Updated {} Champions League schedule rows from ESPN scoreboard for {} to {}.",
+                updatedCount,
+                startDate,
+                endDate);
         return updatedCount;
     }
 
-    private int resolveChampionsLeagueSeasonStartYear(LocalDate today) {
-        return today.getMonthValue() >= 7 ? today.getYear() : today.getYear() - 1;
+    private int normalizeWindowDays(int value) {
+        return Math.max(0, Math.min(365, value));
     }
 
     private void addRemoteMatches(
@@ -228,6 +234,7 @@ public class EspnScheduleUpdater {
         JsonNode statusType = event.path("status").path("type");
         String state = statusType.path("state").asText("");
         boolean completed = statusType.path("completed").asBoolean(false);
+        boolean beyondRegulation = isBeyondRegulationStatus(event.path("status"));
 
         RemoteMatch match = new RemoteMatch();
         match.eventId = event.path("id").asText("");
@@ -245,17 +252,12 @@ public class EspnScheduleUpdater {
         Integer fullHomeScore = parseScore(homeCompetitor.path("score").asText(""));
         Integer fullAwayScore = parseScore(awayCompetitor.path("score").asText(""));
         ScorePair regulationScore = parseRegulationScore(competition, homeTeamId, awayTeamId, fullHomeScore, fullAwayScore);
-        ScorePair halfTimeScore = parseHalfTimeScore(competition, homeTeamId, awayTeamId, fullHomeScore, fullAwayScore);
         if (regulationScore != null) {
             match.homeScore = regulationScore.homeScore;
             match.awayScore = regulationScore.awayScore;
-        } else {
+        } else if (!beyondRegulation) {
             match.homeScore = fullHomeScore;
             match.awayScore = fullAwayScore;
-        }
-        if (halfTimeScore != null) {
-            match.halfTimeHomeScore = halfTimeScore.homeScore;
-            match.halfTimeAwayScore = halfTimeScore.awayScore;
         }
         return match;
     }
@@ -325,57 +327,6 @@ public class EspnScheduleUpdater {
         return new ScorePair(homeScore, awayScore);
     }
 
-    private ScorePair parseHalfTimeScore(
-            JsonNode competition,
-            String homeTeamId,
-            String awayTeamId,
-            Integer fullHomeScore,
-            Integer fullAwayScore) {
-        JsonNode details = competition.path("details");
-        if (!details.isArray() || details.size() == 0) {
-            return scoreTotal(fullHomeScore, fullAwayScore) == 0 ? new ScorePair(0, 0) : null;
-        }
-
-        int homeScore = 0;
-        int awayScore = 0;
-        boolean sawGoal = false;
-        for (JsonNode detail : details) {
-            if (!detail.path("scoringPlay").asBoolean(false)
-                    || detail.path("shootout").asBoolean(false)
-                    || detail.path("scoreValue").asInt(0) <= 0) {
-                continue;
-            }
-
-            sawGoal = true;
-            if (!isFirstHalf(detail)) {
-                continue;
-            }
-
-            String scoringTeamId = detail.path("team").path("id").asText("");
-            int scoreValue = detail.path("scoreValue").asInt(1);
-            if (scoringTeamId.equals(homeTeamId)) {
-                homeScore += scoreValue;
-            } else if (scoringTeamId.equals(awayTeamId)) {
-                awayScore += scoreValue;
-            }
-        }
-
-        if (!sawGoal && scoreTotal(fullHomeScore, fullAwayScore) > 0) {
-            return null;
-        }
-        return new ScorePair(homeScore, awayScore);
-    }
-
-    private boolean isFirstHalf(JsonNode detail) {
-        Integer displayMinute = readDisplayMinute(detail);
-        if (displayMinute != null) {
-            return displayMinute <= 45;
-        }
-
-        JsonNode clockValue = detail.path("clock").path("value");
-        return clockValue.isNumber() && clockValue.asDouble() <= REGULATION_SECONDS / 2.0D;
-    }
-
     private boolean isAfterRegulation(JsonNode detail) {
         Integer displayMinute = readDisplayMinute(detail);
         if (displayMinute != null) {
@@ -384,6 +335,18 @@ public class EspnScheduleUpdater {
 
         JsonNode clockValue = detail.path("clock").path("value");
         return clockValue.isNumber() && clockValue.asDouble() > REGULATION_SECONDS;
+    }
+
+    private boolean isBeyondRegulationStatus(JsonNode status) {
+        if (status.path("period").asInt(0) > 2) {
+            return true;
+        }
+        JsonNode type = status.path("type");
+        String statusText = (type.path("description").asText("") + " "
+                + type.path("detail").asText("") + " "
+                + type.path("shortDetail").asText(""))
+                .toLowerCase(Locale.ROOT);
+        return statusText.contains("extra time") || statusText.contains("penalt");
     }
 
     private Integer readDisplayMinute(JsonNode detail) {
@@ -497,20 +460,14 @@ public class EspnScheduleUpdater {
             schedule.setStatus("COMPLETED");
             schedule.setHomeScore(remoteMatch.homeScore);
             schedule.setAwayScore(remoteMatch.awayScore);
-            schedule.setHalfTimeHomeScore(remoteMatch.halfTimeHomeScore);
-            schedule.setHalfTimeAwayScore(remoteMatch.halfTimeAwayScore);
         } else if ("LIVE".equals(remoteMatch.status)) {
             schedule.setStatus("LIVE");
             schedule.setHomeScore(remoteMatch.homeScore);
             schedule.setAwayScore(remoteMatch.awayScore);
-            schedule.setHalfTimeHomeScore(remoteMatch.halfTimeHomeScore);
-            schedule.setHalfTimeAwayScore(remoteMatch.halfTimeAwayScore);
         } else if (!"COMPLETED".equalsIgnoreCase(schedule.getStatus())) {
             schedule.setStatus("SCHEDULED");
             schedule.setHomeScore(null);
             schedule.setAwayScore(null);
-            schedule.setHalfTimeHomeScore(null);
-            schedule.setHalfTimeAwayScore(null);
         }
     }
 
@@ -760,10 +717,6 @@ public class EspnScheduleUpdater {
         private Integer homeScore;
 
         private Integer awayScore;
-
-        private Integer halfTimeHomeScore;
-
-        private Integer halfTimeAwayScore;
 
     }
 

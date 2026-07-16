@@ -94,8 +94,17 @@ public class SportteryMarketSelectionService {
     @Value("${sporttery.result-update.refresh-minutes:30}")
     private int refreshMinutes;
 
+    @Value("${sporttery.result-update.odds-lookback-days:30}")
+    private int oddsLookbackDays;
+
+    @Value("${sporttery.result-update.recent-days-back:1}")
+    private int recentDaysBack;
+
     @Value("${sporttery.result-update.future-days:2}")
     private int futureDays;
+
+    @Value("${sporttery.result-update.force-future-days:4}")
+    private int forceFutureDays;
 
     @Value("${sporttery.result-update.target-zone:Asia/Shanghai}")
     private String targetZone;
@@ -117,7 +126,11 @@ public class SportteryMarketSelectionService {
 
         ensureCacheLoaded();
         if (enabled) {
-            refreshMarketEntries(buildLookupDates(supportedSchedules), false, containsUpcomingSchedule(supportedSchedules));
+            refreshMarketEntries(
+                    buildLookupDates(supportedSchedules),
+                    false,
+                    containsUpcomingSchedule(supportedSchedules),
+                    normalizedFutureDays());
         }
         int matchedCount = applyMarketEntries(supportedSchedules, true);
         log.debug("Matched {} of {} displayed schedules with Sporttery market data", matchedCount, supportedSchedules.size());
@@ -144,7 +157,17 @@ public class SportteryMarketSelectionService {
         LocalDate effectiveReferenceDate = referenceDate == null
                 ? LocalDate.now(resolveTargetZone())
                 : referenceDate;
-        refreshMarketEntries(buildLookupDates(effectiveReferenceDate), true, true);
+        refreshMarketEntries(
+                buildMissingOddsLookupDates(effectiveReferenceDate),
+                false,
+                false,
+                normalizedFutureDays());
+        refreshMarketEntries(
+                buildForceLookupDates(effectiveReferenceDate),
+                true,
+                true,
+                normalizedForceFutureDays());
+        refreshOddsForWindow(effectiveReferenceDate);
         return entriesByMatchId.size();
     }
 
@@ -170,7 +193,8 @@ public class SportteryMarketSelectionService {
     private void refreshMarketEntries(
             TreeSet<LocalDate> lookupDates,
             boolean force,
-            boolean refreshCalculator) {
+            boolean refreshCalculator,
+            int calculatorFutureDays) {
         ZoneId zoneId = resolveTargetZone();
         LocalDateTime now = LocalDateTime.now(zoneId);
         TreeSet<LocalDate> datesToRefresh = new TreeSet<>();
@@ -193,7 +217,10 @@ public class SportteryMarketSelectionService {
         if (shouldRefreshCalculator) {
             try {
                 List<SportteryMarketEntry> calculatorEntries = downloadCalculator(client, timeout);
-                int storedCount = replaceUpcomingEntries(calculatorEntries, now.toLocalDate());
+                int storedCount = replaceUpcomingEntries(
+                        calculatorEntries,
+                        now.toLocalDate(),
+                        calculatorFutureDays);
                 calculatorQueriedAt = now;
                 cacheChanged = true;
                 log.info("Loaded {} current and upcoming Sporttery market rows", storedCount);
@@ -256,14 +283,44 @@ public class SportteryMarketSelectionService {
 
     private TreeSet<LocalDate> buildLookupDates(LocalDate referenceDate) {
         TreeSet<LocalDate> dates = new TreeSet<>();
-        for (int offset = -1; offset <= normalizedFutureDays(); offset++) {
+        for (int offset = -normalizedRecentDaysBack(); offset <= normalizedFutureDays(); offset++) {
             dates.add(referenceDate.plusDays(offset));
         }
         return dates;
     }
 
+    private TreeSet<LocalDate> buildForceLookupDates(LocalDate referenceDate) {
+        TreeSet<LocalDate> dates = new TreeSet<>();
+        for (int offset = -normalizedRecentDaysBack(); offset <= normalizedForceFutureDays(); offset++) {
+            dates.add(referenceDate.plusDays(offset));
+        }
+        return dates;
+    }
+
+    private TreeSet<LocalDate> buildMissingOddsLookupDates(LocalDate referenceDate) {
+        TreeSet<LocalDate> dates = new TreeSet<>();
+        int firstOffset = -normalizedOddsLookbackDays();
+        int lastOffset = -normalizedRecentDaysBack() - 1;
+        for (int offset = firstOffset; offset <= lastOffset; offset++) {
+            dates.add(referenceDate.plusDays(offset));
+        }
+        return dates;
+    }
+
+    private int normalizedOddsLookbackDays() {
+        return Math.max(normalizedRecentDaysBack(), Math.min(90, oddsLookbackDays));
+    }
+
+    private int normalizedRecentDaysBack() {
+        return Math.max(0, Math.min(7, recentDaysBack));
+    }
+
     private int normalizedFutureDays() {
         return Math.max(0, Math.min(7, futureDays));
+    }
+
+    private int normalizedForceFutureDays() {
+        return Math.max(normalizedFutureDays(), Math.min(7, forceFutureDays));
     }
 
     private boolean shouldRefresh(LocalDate date, LocalDateTime now) {
@@ -369,6 +426,78 @@ public class SportteryMarketSelectionService {
             }
         }
         entry.setOddsLookupCompleted(true);
+    }
+
+    private void refreshOddsForWindow(LocalDate referenceDate) {
+        LocalDate missingOddsStartDate = referenceDate.minusDays(normalizedOddsLookbackDays());
+        LocalDate refreshAllStartDate = referenceDate.minusDays(normalizedRecentDaysBack());
+        LocalDate refreshEndDate = referenceDate.plusDays(normalizedForceFutureDays());
+        List<SportteryMarketEntry> candidates = entriesByMatchId.values().stream()
+                .filter(entry -> entry.getMatchDate() != null)
+                .filter(entry -> !entry.getMatchDate().isBefore(missingOddsStartDate))
+                .filter(entry -> !entry.getMatchDate().isAfter(refreshEndDate))
+                .sorted(Comparator
+                        .comparing(SportteryMarketEntry::getMatchDate)
+                        .thenComparing(SportteryMarketEntry::getSportteryMatchId))
+                .toList();
+        if (candidates.isEmpty()) {
+            return;
+        }
+
+        Duration timeout = Duration.ofSeconds(Math.max(1, timeoutSeconds));
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(timeout)
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+        int missingOddsQueriedCount = 0;
+        int recentQueriedCount = 0;
+        int failedCount = 0;
+        boolean cacheChanged = false;
+        for (SportteryMarketEntry entry : candidates) {
+            boolean refreshAll = !entry.getMatchDate().isBefore(refreshAllStartDate);
+            boolean refreshMissingOdds = entry.getMatchDate().isBefore(refreshAllStartDate)
+                    && hasNoOdds(entry);
+            if (!refreshAll && !refreshMissingOdds) {
+                continue;
+            }
+
+            try {
+                downloadLatestOdds(client, entry, timeout);
+                cacheChanged = true;
+                if (refreshAll) {
+                    recentQueriedCount++;
+                } else {
+                    missingOddsQueriedCount++;
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                log.warn("Sporttery odds window refresh was interrupted at match {}", entry.getSportteryMatchId());
+                break;
+            } catch (Exception ex) {
+                failedCount++;
+                log.warn(
+                        "Unable to refresh Sporttery odds for match {}: {}",
+                        entry.getSportteryMatchId(),
+                        ex.getMessage());
+            }
+        }
+        if (cacheChanged) {
+            saveCache(LocalDateTime.now(resolveTargetZone()));
+        }
+        log.info(
+                "Refreshed Sporttery odds: {} missing-odds matches for {} to {}, "
+                        + "{} all matches for {} to {}, {} failed.",
+                missingOddsQueriedCount,
+                missingOddsStartDate,
+                refreshAllStartDate.minusDays(1),
+                recentQueriedCount,
+                refreshAllStartDate,
+                refreshEndDate,
+                failedCount);
+    }
+
+    private boolean hasNoOdds(SportteryMarketEntry entry) {
+        return entry.getNormalOdds() == null && entry.getHandicapOdds() == null;
     }
 
     private LatestMarketOdds parseLatestMarketOdds(JsonNode oddsList) {
@@ -640,9 +769,12 @@ public class SportteryMarketSelectionService {
         }
     }
 
-    private int replaceUpcomingEntries(List<SportteryMarketEntry> downloadedEntries, LocalDate today) {
+    private int replaceUpcomingEntries(
+            List<SportteryMarketEntry> downloadedEntries,
+            LocalDate today,
+            int calculatorFutureDays) {
         entriesByMatchId.entrySet().removeIf(item -> Boolean.TRUE.equals(item.getValue().getCurrentSale()));
-        LocalDate lastDate = today.plusDays(normalizedFutureDays());
+        LocalDate lastDate = today.plusDays(Math.max(0, Math.min(7, calculatorFutureDays)));
         int storedCount = 0;
         for (SportteryMarketEntry entry : downloadedEntries) {
             if (entry.getMatchDate().isBefore(today) || entry.getMatchDate().isAfter(lastDate)) {

@@ -219,7 +219,17 @@
         <div class="match-head">
           <div class="match-info">
             <div class="match-time">{{ match.matchDate }} {{ match.kickoffTime }} · {{ match.groupName }}</div>
-            <h2>{{ match.homeTeamCn }} <span>vs</span> {{ match.awayTeamCn }}</h2>
+            <h2>
+              <button
+                type="button"
+                class="match-title-button"
+                :aria-label="'查看' + match.homeTeamCn + '与' + match.awayTeamCn + '的历史交战数据'"
+                title="点击查看历史交战数据"
+                @click="openHeadToHeadDialog(match)"
+              >
+                {{ match.homeTeamCn }} <span>vs</span> {{ match.awayTeamCn }}
+              </button>
+            </h2>
             <p class="match-score-line">
               <span class="match-score-text">
                 比分：{{ match.scoreText }}
@@ -233,16 +243,10 @@
               </span>
             </p>
           </div>
-          <button
-            type="button"
-            class="goal-box"
-            :aria-label="'查看' + match.homeTeamCn + '与' + match.awayTeamCn + '的历史交战数据'"
-            title="点击查看历史交战数据"
-            @click="openHeadToHeadDialog(match)"
-          >
+          <div class="goal-box">
             <div>期望进球</div>
             <strong>{{ activeExpectedHomeGoals(match) }} : {{ activeExpectedAwayGoals(match) }}</strong>
-          </button>
+          </div>
         </div>
 
         <div class="match-summary-row">
@@ -277,20 +281,6 @@
                   :class="{ 'is-winning-prediction': isWinningTotalGoalsPrediction(match, item) }"
                 >
                   {{ item.totalGoals }}球
-                  <span>{{ formatProbability(item.probability) }}</span>
-                </span>
-              </span>
-            </div>
-            <div v-if="activeHalfFullProbabilities(match).length" class="score-prob-row score-prob-summary" :title="halfFullProbabilityTitle(match)">
-              <span class="score-prob-label">半全场</span>
-              <span class="score-prob-items">
-                <span
-                  v-for="item in activeHalfFullProbabilities(match)"
-                  :key="match.matchId + '-half-full-' + item.halfTimeResult + '-' + item.fullTimeResult"
-                  class="score-prob-pill half-full-prob-pill"
-                  :class="{ 'is-winning-prediction': isWinningHalfFullPrediction(match, item) }"
-                >
-                  {{ item.label }}
                   <span>{{ formatProbability(item.probability) }}</span>
                 </span>
               </span>
@@ -381,7 +371,6 @@
       >
         <header class="head-to-head-dialog-header">
           <div>
-            <span class="dialog-eyebrow">历史交战</span>
             <h3 id="head-to-head-dialog-title">{{ headToHeadTitle }}</h3>
           </div>
           <button type="button" class="dialog-close" aria-label="关闭历史交战弹窗" @click="closeHeadToHeadDialog">×</button>
@@ -1565,12 +1554,6 @@ export default {
         : match.scoreProbabilities
       return (scores || []).slice(0, 3)
     },
-    activeHalfFullProbabilities(match) {
-      const probabilities = this.modelMode === 'after' && match.adjustedHalfFullProbabilities
-        ? match.adjustedHalfFullProbabilities
-        : match.halfFullProbabilities
-      return (probabilities || []).slice(0, 3)
-    },
     activeTotalGoalsProbabilities(match) {
       const probabilities = this.modelMode === 'after' && match.adjustedTotalGoalsProbabilities
         ? match.adjustedTotalGoalsProbabilities
@@ -1585,15 +1568,6 @@ export default {
       return actualScore !== null &&
         actualScore.home === Number(score.homeScore) &&
         actualScore.away === Number(score.awayScore)
-    },
-    isWinningHalfFullPrediction(match, item) {
-      if (!match || match.status !== '已完赛' || !item) {
-        return false
-      }
-      const actualResult = String(match.actualHalfFullResult || '').trim()
-      const predictionResult = String(item.label ||
-        ((item.halfTimeResult || '') + (item.fullTimeResult || ''))).trim()
-      return actualResult !== '' && actualResult === predictionResult
     },
     isWinningTotalGoalsPrediction(match, item) {
       if (!match || match.status !== '已完赛') {
@@ -1613,11 +1587,6 @@ export default {
     scoreProbabilityTitle(match) {
       return this.activeScoreProbabilities(match)
         .map(score => score.homeScore + '-' + score.awayScore + ' ' + this.formatProbability(score.probability))
-        .join('，')
-    },
-    halfFullProbabilityTitle(match) {
-      return this.activeHalfFullProbabilities(match)
-        .map(item => item.label + ' ' + this.formatProbability(item.probability))
         .join('，')
     },
     totalGoalsProbabilityTitle(match) {
@@ -2152,6 +2121,9 @@ h1 {
 }
 
 .match-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -2161,7 +2133,7 @@ h1 {
 }
 
 .match-card h2 {
-  margin: 4px 0;
+  margin: 0;
   font-size: 16px;
   line-height: 1.25;
 }
@@ -2169,6 +2141,30 @@ h1 {
 .match-card h2 span {
   color: #94a3b8;
   font-size: 12px;
+}
+
+.match-title-button {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-align: left;
+}
+
+.match-title-button:hover {
+  color: #1d4ed8;
+}
+
+.match-title-button:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
 }
 
 .match-card p {
@@ -2189,7 +2185,9 @@ h1 {
 }
 
 .match-score-text {
+  display: inline-flex;
   flex: 0 0 auto;
+  align-items: center;
 }
 
 .score-prob-row {
@@ -2255,7 +2253,6 @@ h1 {
   font-size: 11px;
   font-weight: 800;
   line-height: 1;
-  vertical-align: 1px;
 }
 
 .result-badge.is-hit {
@@ -2269,34 +2266,29 @@ h1 {
 }
 
 .goal-box {
+  display: flex;
   flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   min-width: 78px;
+  min-height: 44px;
   padding: 2px 6px;
-  border: 1px solid #bfdbfe;
+  border: 0;
   border-radius: 6px;
   background: #eff6ff;
   color: #1d4ed8;
-  cursor: pointer;
+  box-sizing: border-box;
   font-family: inherit;
   font-size: 10px;
+  line-height: 1;
   text-align: center;
-  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
-}
-
-.goal-box:hover {
-  border-color: #60a5fa;
-  background: #dbeafe;
-  transform: translateY(-1px);
-}
-
-.goal-box:focus-visible {
-  outline: 2px solid #60a5fa;
-  outline-offset: 2px;
 }
 
 .goal-box strong {
   display: block;
-  margin-top: 0;
+  margin: 0;
   font-size: 12px;
   line-height: 1;
   white-space: nowrap;
@@ -2307,7 +2299,7 @@ h1 {
   grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   align-items: end;
   gap: 8px 12px;
-  margin-top: -20px;
+  margin-top: -22px;
   margin-bottom: 4px;
   min-height: 50px;
 }
@@ -2551,15 +2543,6 @@ body.dialog-open {
   justify-content: space-between;
   gap: 20px;
   padding: 20px 22px 10px;
-}
-
-.dialog-eyebrow {
-  display: block;
-  margin-bottom: 5px;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
 }
 
 .head-to-head-dialog h3 {

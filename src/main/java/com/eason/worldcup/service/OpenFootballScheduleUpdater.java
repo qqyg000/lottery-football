@@ -60,6 +60,15 @@ public class OpenFootballScheduleUpdater {
     @Value("${worldcup.schedule-update.target-zone:America/New_York}")
     private String targetZone;
 
+    @Value("${data-refresh.days-back:30}")
+    private int daysBack;
+
+    @Value("${data-refresh.days-forward:30}")
+    private int daysForward;
+
+    @Value("${data-refresh.target-zone:Asia/Shanghai}")
+    private String refreshTargetZone;
+
     public int updateSchedules(List<MatchSchedule> schedules) {
         if (!enabled) {
             log.info("OpenFootball schedule update is disabled.");
@@ -67,9 +76,20 @@ public class OpenFootballScheduleUpdater {
         }
         try {
             String content = downloadContent();
-            List<RemoteMatch> remoteMatches = parseMatches(content);
+            LocalDate today = LocalDate.now(ZoneId.of(refreshTargetZone));
+            LocalDate startDate = today.minusDays(normalizeWindowDays(daysBack));
+            LocalDate endDate = today.plusDays(normalizeWindowDays(daysForward));
+            List<RemoteMatch> remoteMatches = parseMatches(content).stream()
+                    .filter(match -> !match.matchDate.isBefore(startDate))
+                    .filter(match -> !match.matchDate.isAfter(endDate))
+                    .toList();
             int updatedCount = mergeSchedules(schedules, remoteMatches);
-            log.info("Updated {} World Cup schedule rows from OpenFootball source {}.", updatedCount, sourceUrl);
+            log.info(
+                    "Updated {} World Cup schedule rows from OpenFootball source {} for {} to {}.",
+                    updatedCount,
+                    sourceUrl,
+                    startDate,
+                    endDate);
             return updatedCount;
         } catch (Exception ex) {
             log.warn("Failed to update World Cup schedule from OpenFootball; using bundled CSV data. Source: {}", sourceUrl, ex);
@@ -262,6 +282,10 @@ public class OpenFootballScheduleUpdater {
     private String normalizeOffset(String offsetText) {
         int hours = Integer.parseInt(offsetText);
         return String.format(Locale.ROOT, "%+03d:00", hours);
+    }
+
+    private int normalizeWindowDays(int value) {
+        return Math.max(0, Math.min(365, value));
     }
 
     private String buildTeamKey(String homeTeam, String awayTeam) {

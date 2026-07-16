@@ -8,7 +8,7 @@
     "handicapSmoothingFactor" : 0.185
   },
   "globalParameters" : {
-    "recommendationOdds" : 2.33
+    "recommendationOdds" : 1.5
   },
   "selectedRows" : { }
 }

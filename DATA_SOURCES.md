@@ -15,6 +15,15 @@
 
 `src/main/resources/data/history_matches.csv` 内置部分世界杯历史比赛和本届已完赛比分，用于演示建模流程。
 
+`src/main/resources/data/club_history_matches.csv` 来自 `his-data.xlsx` 中可解析的体彩历史全场比分，仅保留当前系统支持的欧冠、挪超、瑞超、芬超、欧罗巴、巴甲、美职和韩职：
+
+- 数据日期：2014-10-22 至 2026-04-20
+- 合并记录：15,526 场
+- 比分口径：仅保留可解析为具体数字的全场比分
+- `胜其他`、`平其他`、`负其他`等不能还原准确比分的记录不进入模型
+- 球队简称先映射为项目统一中文名，未能可靠确认的旧球队保留体彩源名称
+- 与动态赛程出现同日同队记录时，动态赛程覆盖本地历史记录
+
 建议生产使用时替换为完整国际比赛数据集，例如：
 
 - Kaggle: International football results from 1872
@@ -36,11 +45,11 @@ match_date,tournament,home_team,away_team,home_score,away_score,neutral
 - `uefa.champions_qual`：资格赛与附加赛
 - `uefa.champions`：联赛阶段与淘汰赛
 
-应用默认加载当前赛季和此前两个赛季，目标时区为 `Asia/Shanghai`。相关地址、超时时间和赛季数量配置位于 `src/main/resources/application.yml` 的 `champions-league.espn-update` 节点。
+应用只动态加载当前日期前 30 天至后 30 天，历史样本直接使用本地 `club_history_matches.csv`。目标时区为 `Asia/Shanghai`，相关地址和超时时间配置位于 `src/main/resources/application.yml` 的 `champions-league.espn-update` 节点，日期窗口和计算时区配置位于 `data-refresh` 节点。
 
 ## 其他俱乐部赛事
 
-以下赛事由 ESPN Scoreboard 动态加载当前赛季和此前两个赛季：
+以下赛事由 ESPN Scoreboard 动态加载当前日期前 30 天至后 30 天：
 
 - `nor.1`：挪超
 - `swe.1`：瑞超
@@ -48,29 +57,22 @@ match_date,tournament,home_team,away_team,home_score,away_score,neutral
 - `bra.1`：巴甲
 - `usa.1`：美职
 
-芬超使用 TheSportsDB：
+芬超和韩职优先使用 FotMob：
+
+- 联赛 `51`：芬超
+- 联赛 `9080`：韩职
+- 只保留当前日期前 30 天至后 30 天的赛程和全场比分
+
+TheSportsDB 作为兜底：
 
 - 联赛 `4636`：芬超
+- 联赛 `4689`：韩职
 
-韩职使用 FotMob：
+TheSportsDB 免费赛季接口存在返回条数和每分钟请求次数限制，不能作为主数据源。所有成功结果都会缓存到 `config/club-competition-schedules.json`；每次只替换日期窗口内的数据，窗口外历史缓存继续保留。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 和 `data-refresh` 节点。
 
-- 联赛 `9080`：韩职
-- 读取当前赛季及此前两个赛季的完整赛程和全场比分
-- TheSportsDB 联赛 `4689` 仅在 FotMob 不可用时作为兜底
+## 全场比分口径
 
-TheSportsDB 免费赛季接口存在返回条数和每分钟请求次数限制，不能作为韩职完整赛季的主数据源。所有成功结果都会缓存到 `config/club-competition-schedules.json`。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 节点。
-
-## 半场比分补充
-
-ESPN 赛事从 Scoreboard 的进球明细直接计算半场比分。TheSportsDB 和 FotMob 联赛赛程接口只返回全场比分，不包含历史半场比分，因此程序会对所有已完赛但缺少半场比分的赛事使用 FotMob 比赛详情进行补充：
-
-- 按比赛日期读取 `https://www.fotmob.com/api/data/matches?date={date}`
-- 按主客队、全场比分、开球时间和赛事名称匹配比赛
-- 从 `https://www.fotmob.com/api/data/matchDetails?matchId={matchId}` 的 `HT` 事件读取半场比分
-- 韩职赛程本身来自 FotMob 时直接复用比赛 ID，避免再次按日期匹配
-- 校验半场比分不大于全场比分后写入 `config/half-time-scores.json`
-
-缓存会优先回填，只有新增完赛且缺少半场比分的比赛才访问 FotMob。相关配置位于 `application.yml` 的 `half-time-score.fotmob-update` 节点。
+系统只保存 90 分钟加伤停补时的全场比分，不抓取半场比分。ESPN 赛事会根据进球明细排除加时赛和点球大战；OpenFootball 标记为加时赛的最终比分不会直接写入常规时间赛果。
 
 ## 体彩玩法开售状态与让球数
 
@@ -90,7 +92,7 @@ ESPN 赛事从 Scoreboard 的进球明细直接计算半场比分。TheSportsDB 
 - `matchId`、`matchDate`、`leagueId`、`allHomeTeam`、`allAwayTeam` 用于关联本地赛程
 - `sectionsNo999` 用于已完赛场次的比分复核
 
-体彩日期和外部赛程数据转换后的日期可能相差一天，因此程序从目标日期前一天查询到后两天，并同时校验赛事、主客队和比分，避免仅按队名误关联。结果写入 `config/sporttery-market-selections.json`；默认采用体彩结果，用户可逐场手工覆盖。点击“更新数据”时会跳过缓存刷新间隔并重新查询。相关配置位于 `application.yml` 的 `sporttery.result-update` 节点。
+体彩日期和外部赛程数据转换后的日期可能相差一天，因此常规查询从目标日期前一天查询到后两天，并同时校验赛事、主客队和比分，避免仅按队名误关联。结果写入 `config/sporttery-market-selections.json`；默认采用体彩结果，用户可逐场手工覆盖。点击“更新数据”时会补查目标日期前 30 天内尚无赔率的比赛，并强制刷新目标日期前 1 天至后 4 天的全部比赛。相关配置位于 `application.yml` 的 `sporttery.result-update` 节点。
 
 ## 俱乐部中文名
 

@@ -8,12 +8,14 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -179,10 +181,7 @@ public class TeamStrengthService {
         if (!effectiveCompetition.isClubCompetition()) {
             return dataRepository.getHistoricalMatches().size();
         }
-        return (int) dataRepository.getSchedules(effectiveCompetition)
-                .stream()
-                .filter(this::isCompletedWithScore)
-                .count();
+        return buildClubMatchesBefore(effectiveCompetition, LocalDate.MAX).size();
     }
 
     public int countCompletedScheduleMatches() {
@@ -197,14 +196,16 @@ public class TeamStrengthService {
     }
 
     private ExpectedGoals calculateExpectedGoals(MatchSchedule schedule, StrengthModel model, Double hostTeamGoalFactorOverride, Double seedTeamGoalFactorOverride) {
-        TeamStrength homeStrength = getStrength(model, schedule.getHomeTeamEn());
-        TeamStrength awayStrength = getStrength(model, schedule.getAwayTeamEn());
+        String homeModelTeam = getModelTeamName(schedule, true);
+        String awayModelTeam = getModelTeamName(schedule, false);
+        TeamStrength homeStrength = getStrength(model, homeModelTeam);
+        TeamStrength awayStrength = getStrength(model, awayModelTeam);
         double homeAdvantage = schedule.isNeutral() ? 1.0D : 1.08D;
         double effectiveHostTeamGoalFactor = normalizeTournamentFactor(hostTeamGoalFactorOverride, hostTeamGoalFactor);
         double effectiveSeedTeamGoalFactor = normalizeTournamentFactor(seedTeamGoalFactorOverride, seedTeamGoalFactor);
         double homeTournamentFactor = getTournamentTeamFactor(schedule, schedule.getHomeTeamEn(), effectiveHostTeamGoalFactor, effectiveSeedTeamGoalFactor);
         double awayTournamentFactor = getTournamentTeamFactor(schedule, schedule.getAwayTeamEn(), effectiveHostTeamGoalFactor, effectiveSeedTeamGoalFactor);
-        double h2hFactor = calculateHeadToHeadFactor(schedule.getHomeTeamEn(), schedule.getAwayTeamEn(), model);
+        double h2hFactor = calculateHeadToHeadFactor(homeModelTeam, awayModelTeam, model);
         double homeLambda = model.getBaselineGoals() * homeStrength.getAttackStrength() * awayStrength.getDefenseWeakness() * homeAdvantage * homeTournamentFactor * h2hFactor;
         double awayLambda = model.getBaselineGoals() * awayStrength.getAttackStrength() * homeStrength.getDefenseWeakness() * awayTournamentFactor / h2hFactor;
         return new ExpectedGoals(round(clamp(homeLambda), 4), round(clamp(awayLambda), 4));
@@ -337,7 +338,16 @@ public class TeamStrengthService {
     }
 
     private List<HistoricalMatch> buildClubMatchesBefore(Competition competition, LocalDate cutoffDate) {
-        List<HistoricalMatch> result = new ArrayList<>();
+        Map<String, HistoricalMatch> matchesByFixture = new LinkedHashMap<>();
+        for (HistoricalMatch historicalMatch : dataRepository.getClubHistoricalMatches(competition)) {
+            LocalDate matchDate = historicalMatch.getMatchDate();
+            if (matchDate == null
+                    || !matchDate.isBefore(cutoffDate)
+                    || isCurrentModelExcludedDate(matchDate)) {
+                continue;
+            }
+            matchesByFixture.put(buildClubFixtureKey(historicalMatch), historicalMatch);
+        }
         for (MatchSchedule schedule : dataRepository.getSchedules(competition)) {
             LocalDate trainingDate = getScheduleTrainingDate(schedule);
             if (!isCompletedWithScore(schedule)
@@ -345,9 +355,25 @@ public class TeamStrengthService {
                     || isCurrentModelExcludedDate(trainingDate)) {
                 continue;
             }
-            result.add(toHistoricalMatch(schedule));
+            HistoricalMatch historicalMatch = toHistoricalMatch(schedule);
+            matchesByFixture.put(buildClubFixtureKey(historicalMatch), historicalMatch);
         }
-        return result;
+        return new ArrayList<>(matchesByFixture.values());
+    }
+
+    private String buildClubFixtureKey(HistoricalMatch match) {
+        String homeTeam = normalizeClubTeamName(match.getHomeTeam());
+        String awayTeam = normalizeClubTeamName(match.getAwayTeam());
+        if (homeTeam.compareTo(awayTeam) <= 0) {
+            return match.getMatchDate() + "|" + homeTeam + "|" + awayTeam;
+        }
+        return match.getMatchDate() + "|" + awayTeam + "|" + homeTeam;
+    }
+
+    private String normalizeClubTeamName(String teamName) {
+        return Normalizer.normalize(teamName == null ? "" : teamName, Normalizer.Form.NFKC)
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}]", "");
     }
 
     private LocalDate getClubSeasonStartDate(Competition competition, LocalDate matchDate) {
@@ -392,12 +418,22 @@ public class TeamStrengthService {
         match.setTournament(schedule.getCompetition() == Competition.WORLD_CUP
                 ? WORLD_CUP_2026
                 : schedule.getCompetition().getDisplayName());
-        match.setHomeTeam(schedule.getHomeTeamEn());
-        match.setAwayTeam(schedule.getAwayTeamEn());
+        match.setHomeTeam(getModelTeamName(schedule, true));
+        match.setAwayTeam(getModelTeamName(schedule, false));
         match.setHomeScore(schedule.getHomeScore());
         match.setAwayScore(schedule.getAwayScore());
         match.setNeutral(schedule.isNeutral());
         return match;
+    }
+
+    private String getModelTeamName(MatchSchedule schedule, boolean homeTeam) {
+        if (schedule.getCompetition().isClubCompetition()) {
+            String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
+            if (chineseName != null && !chineseName.isBlank()) {
+                return chineseName;
+            }
+        }
+        return homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
     }
 
     private LocalDate getScheduleTrainingDate(MatchSchedule schedule) {

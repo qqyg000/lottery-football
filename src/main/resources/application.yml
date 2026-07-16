@@ -8,6 +8,11 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
 
+data-refresh:
+  days-back: 30
+  days-forward: 30
+  target-zone: Asia/Shanghai
+
 worldcup:
   simulation-count: 50000
   history-path: classpath:data/history_matches.csv
@@ -23,8 +28,6 @@ worldcup:
     scoreboard-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?limit=200&dates={start}-{end}
     timeout-seconds: 10
     target-zone: America/New_York
-    days-back: 30
-    days-forward: 21
   max-goals-lambda: 4.5
   min-goals-lambda: 0.2
   base-match-weight: 1.0
@@ -42,9 +45,9 @@ champions-league:
     qualifying-scoreboard-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions_qual/scoreboard?limit=500&dates={start}-{end}
     timeout-seconds: 10
     target-zone: Asia/Shanghai
-    history-seasons: 5
 
 club-competitions:
+  history-path: classpath:data/club_history_matches.csv
   schedule-update:
     enabled: true
     espn-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard?limit=1000&dates={start}-{end}
@@ -55,20 +58,9 @@ club-competitions:
     fotmob-league-url-template: https://www.fotmob.com/api/data/leagues?id={leagueId}&ccode3=CHN&season={season}
     timeout-seconds: 15
     target-zone: Asia/Shanghai
-    history-seasons: 5
     parallelism: 12
     sportsdb-future-rounds: 6
     cache-path: config/club-competition-schedules.json
-
-half-time-score:
-  fotmob-update:
-    enabled: true
-    matches-url-template: https://www.fotmob.com/api/data/matches?date={date}
-    details-url-template: https://www.fotmob.com/api/data/matchDetails?matchId={matchId}
-    timeout-seconds: 12
-    parallelism: 8
-    target-zone: Asia/Shanghai
-    cache-path: config/half-time-scores.json
 
 sporttery:
   result-update:
@@ -81,6 +73,9 @@ sporttery:
     timeout-seconds: 12
     page-size: 100
     refresh-minutes: 30
+    odds-lookback-days: 30
+    recent-days-back: 1
     future-days: 2
+    force-future-days: 4
     target-zone: Asia/Shanghai
     cache-path: config/sporttery-market-selections.json

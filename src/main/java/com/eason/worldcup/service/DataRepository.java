@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,15 +42,27 @@ public class DataRepository {
 
     private final ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater;
 
-    private final FotMobHalfTimeScoreUpdater fotMobHalfTimeScoreUpdater;
-
     @Value("${worldcup.history-path:classpath:data/history_matches.csv}")
     private String historyPath;
 
     @Value("${worldcup.schedule-path:classpath:data/schedule_2026.csv}")
     private String schedulePath;
 
+    @Value("${club-competitions.history-path:classpath:data/club_history_matches.csv}")
+    private String clubHistoryPath;
+
+    @Value("${data-refresh.days-back:30}")
+    private int refreshDaysBack;
+
+    @Value("${data-refresh.days-forward:30}")
+    private int refreshDaysForward;
+
+    @Value("${data-refresh.target-zone:Asia/Shanghai}")
+    private String refreshTargetZone;
+
     private volatile List<HistoricalMatch> historicalMatches = Collections.emptyList();
+
+    private volatile List<HistoricalMatch> clubHistoricalMatches = Collections.emptyList();
 
     private volatile List<MatchSchedule> schedules = Collections.emptyList();
 
@@ -57,13 +70,11 @@ public class DataRepository {
             ResourceLoader resourceLoader,
             OpenFootballScheduleUpdater scheduleUpdater,
             EspnScheduleUpdater espnScheduleUpdater,
-            ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater,
-            FotMobHalfTimeScoreUpdater fotMobHalfTimeScoreUpdater) {
+            ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater) {
         this.resourceLoader = resourceLoader;
         this.scheduleUpdater = scheduleUpdater;
         this.espnScheduleUpdater = espnScheduleUpdater;
         this.clubCompetitionScheduleUpdater = clubCompetitionScheduleUpdater;
-        this.fotMobHalfTimeScoreUpdater = fotMobHalfTimeScoreUpdater;
     }
 
     @PostConstruct
@@ -73,13 +84,43 @@ public class DataRepository {
 
     public synchronized void reloadData() {
         List<HistoricalMatch> reloadedHistoricalMatches = Collections.unmodifiableList(loadHistoricalMatches());
+        List<HistoricalMatch> reloadedClubHistoricalMatches = Collections.unmodifiableList(loadClubHistoricalMatches());
         List<MatchSchedule> reloadedSchedules = Collections.unmodifiableList(loadSchedules(reloadedHistoricalMatches));
         this.historicalMatches = reloadedHistoricalMatches;
+        this.clubHistoricalMatches = reloadedClubHistoricalMatches;
         this.schedules = reloadedSchedules;
+    }
+
+    public synchronized void refreshSchedules() {
+        if (historicalMatches.isEmpty() || clubHistoricalMatches.isEmpty()) {
+            reloadData();
+            return;
+        }
+
+        List<MatchSchedule> refreshedSchedules = loadSchedules(historicalMatches);
+        preserveSchedulesOutsideRefreshWindow(refreshedSchedules, schedules);
+        refreshedSchedules.sort(Comparator
+                .comparing(MatchSchedule::getMatchDate)
+                .thenComparing(MatchSchedule::getKickoffTime));
+        this.schedules = Collections.unmodifiableList(refreshedSchedules);
     }
 
     public List<HistoricalMatch> getHistoricalMatches() {
         return historicalMatches;
+    }
+
+    public List<HistoricalMatch> getClubHistoricalMatches() {
+        return clubHistoricalMatches;
+    }
+
+    public List<HistoricalMatch> getClubHistoricalMatches(Competition competition) {
+        if (competition == null || !competition.isClubCompetition()) {
+            return Collections.emptyList();
+        }
+        String tournament = competition.getDisplayName();
+        return clubHistoricalMatches.stream()
+                .filter(match -> tournament.equals(match.getTournament()))
+                .collect(Collectors.toList());
     }
 
     public List<MatchSchedule> getSchedules() {
@@ -169,6 +210,43 @@ public class DataRepository {
         return result;
     }
 
+    private List<HistoricalMatch> loadClubHistoricalMatches() {
+        Resource resource = resourceLoader.getResource(clubHistoryPath);
+        List<HistoricalMatch> result = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            boolean first = true;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+                if (first) {
+                    first = false;
+                    continue;
+                }
+                List<String> row = CsvUtils.parseLine(line);
+                Competition competition = Competition.valueOf(CsvUtils.get(row, 1));
+                if (!competition.isClubCompetition()) {
+                    log.warn("Ignored non-club historical row for competition {}", competition);
+                    continue;
+                }
+                HistoricalMatch match = new HistoricalMatch();
+                match.setMatchDate(LocalDate.parse(CsvUtils.get(row, 0)));
+                match.setTournament(competition.getDisplayName());
+                match.setHomeTeam(CsvUtils.get(row, 2));
+                match.setAwayTeam(CsvUtils.get(row, 3));
+                match.setHomeScore(Integer.parseInt(CsvUtils.get(row, 4)));
+                match.setAwayScore(Integer.parseInt(CsvUtils.get(row, 5)));
+                match.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, 6)));
+                result.add(match);
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("读取俱乐部历史战绩数据失败：" + clubHistoryPath, ex);
+        }
+        log.info("Loaded {} club historical match rows from {}", result.size(), clubHistoryPath);
+        return result;
+    }
+
     private List<MatchSchedule> loadSchedules(List<HistoricalMatch> sourceHistoricalMatches) {
         Resource resource = resourceLoader.getResource(schedulePath);
         List<MatchSchedule> result = new ArrayList<>();
@@ -221,12 +299,61 @@ public class DataRepository {
         if (clubCompetitionUpdatedCount > 0) {
             log.info("Loaded {} additional club competition schedule rows.", clubCompetitionUpdatedCount);
         }
-        int halfTimeUpdatedCount = fotMobHalfTimeScoreUpdater.updateSchedules(result);
-        if (halfTimeUpdatedCount > 0) {
-            log.info("Backfilled {} schedule rows with cached or FotMob half-time scores.", halfTimeUpdatedCount);
-        }
         result.sort(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getKickoffTime));
         return result;
+    }
+
+    private void preserveSchedulesOutsideRefreshWindow(
+            List<MatchSchedule> refreshedSchedules,
+            List<MatchSchedule> previousSchedules) {
+        if (previousSchedules == null || previousSchedules.isEmpty()) {
+            return;
+        }
+
+        LocalDate today = LocalDate.now(ZoneId.of(refreshTargetZone));
+        LocalDate startDate = today.minusDays(normalizeRefreshDays(refreshDaysBack));
+        LocalDate endDate = today.plusDays(normalizeRefreshDays(refreshDaysForward));
+        Map<String, MatchSchedule> refreshedById = new HashMap<>();
+        for (MatchSchedule schedule : refreshedSchedules) {
+            refreshedById.put(buildScheduleIdentity(schedule), schedule);
+        }
+
+        int preservedCount = 0;
+        for (MatchSchedule schedule : previousSchedules) {
+            if (schedule.getMatchDate() == null
+                    || (!schedule.getMatchDate().isBefore(startDate)
+                    && !schedule.getMatchDate().isAfter(endDate))) {
+                continue;
+            }
+            String identity = buildScheduleIdentity(schedule);
+            if (refreshedById.containsKey(identity)) {
+                continue;
+            }
+            refreshedSchedules.add(schedule);
+            refreshedById.put(identity, schedule);
+            preservedCount++;
+        }
+        if (preservedCount > 0) {
+            log.info(
+                    "Preserved {} existing schedule rows outside refresh window {} to {}.",
+                    preservedCount,
+                    startDate,
+                    endDate);
+        }
+    }
+
+    private String buildScheduleIdentity(MatchSchedule schedule) {
+        if (schedule.getMatchId() != null && !schedule.getMatchId().isBlank()) {
+            return schedule.getCompetition() + "|" + schedule.getMatchId();
+        }
+        return schedule.getCompetition()
+                + "|" + schedule.getMatchDate()
+                + "|" + normalizeTeamName(schedule.getHomeTeamEn())
+                + "|" + normalizeTeamName(schedule.getAwayTeamEn());
+    }
+
+    private int normalizeRefreshDays(int value) {
+        return Math.max(0, Math.min(365, value));
     }
 
     private int backfillScheduleResultsFromHistory(List<MatchSchedule> schedules, List<HistoricalMatch> sourceHistoricalMatches) {

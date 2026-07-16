@@ -33,10 +33,6 @@ public class MatchSchedule {
 
     private Integer awayScore;
 
-    private Integer halfTimeHomeScore;
-
-    private Integer halfTimeAwayScore;
-
     private String sportteryMatchId;
 
     private String sportteryMatchNumber;
@@ -159,22 +155,6 @@ public class MatchSchedule {
 
     public void setAwayScore(Integer awayScore) {
         this.awayScore = awayScore;
-    }
-
-    public Integer getHalfTimeHomeScore() {
-        return halfTimeHomeScore;
-    }
-
-    public void setHalfTimeHomeScore(Integer halfTimeHomeScore) {
-        this.halfTimeHomeScore = halfTimeHomeScore;
-    }
-
-    public Integer getHalfTimeAwayScore() {
-        return halfTimeAwayScore;
-    }
-
-    public void setHalfTimeAwayScore(Integer halfTimeAwayScore) {
-        this.halfTimeAwayScore = halfTimeAwayScore;
     }
 
     public String getSportteryMatchId() {
