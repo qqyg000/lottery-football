@@ -137,6 +137,9 @@
               </label>
             </div>
             <div class="factor-actions">
+              <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting" @click="toggleParameterPreset">
+                {{ parameterPresetToggleText }}
+              </button>
               <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting || !queryDate" @click="commitModelFactors">
                 {{ loading ? '计算中' : '重新计算' }}
               </button>
@@ -445,6 +448,32 @@ const MODEL_FACTOR_MIN = 0.1
 const MODEL_FACTOR_MAX = 3
 const HANDICAP_SMOOTHING_MIN = 0
 const HANDICAP_SMOOTHING_MAX = 0.8
+const STABLE_PARAMETER_PRESET = {
+  modelFactors: {
+    hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR,
+    seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR,
+    handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR
+  },
+  globalParameters: {
+    recommendationOdds: DEFAULT_RECOMMENDATION_ODDS,
+    handicapRecommendationThreshold: DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD,
+    handicapReverseThreshold: DEFAULT_HANDICAP_REVERSE_THRESHOLD,
+    singleRecommendationThreshold: DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+  }
+}
+const AGGRESSIVE_PARAMETER_PRESET = {
+  modelFactors: {
+    hostTeamGoalFactor: 1.32,
+    seedTeamGoalFactor: 1.57,
+    handicapSmoothingFactor: 0.245
+  },
+  globalParameters: {
+    recommendationOdds: 1.70,
+    handicapRecommendationThreshold: 55.00,
+    handicapReverseThreshold: 50.14,
+    singleRecommendationThreshold: 71.00
+  }
+}
 const MODEL_FACTOR_KEYS = [
   'hostTeamGoalFactor',
   'seedTeamGoalFactor',
@@ -482,14 +511,15 @@ export default {
       queryDate: '',
       modelMode: 'after',
       modelFactors: {
-        hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR,
-        seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR,
-        handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR
+        hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR.toFixed(2),
+        seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR.toFixed(2),
+        handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR.toFixed(3)
       },
-      recommendationOdds: DEFAULT_RECOMMENDATION_ODDS,
-      handicapRecommendationThreshold: DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD,
-      handicapReverseThreshold: DEFAULT_HANDICAP_REVERSE_THRESHOLD,
-      singleRecommendationThreshold: DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD,
+      recommendationOdds: DEFAULT_RECOMMENDATION_ODDS.toFixed(2),
+      handicapRecommendationThreshold: DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD.toFixed(2),
+      handicapReverseThreshold: DEFAULT_HANDICAP_REVERSE_THRESHOLD.toFixed(2),
+      singleRecommendationThreshold: DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD.toFixed(2),
+      activeParameterPreset: 'stable',
       selectedRows: {},
       backtesting: false,
       backtestActive: false,
@@ -528,6 +558,9 @@ export default {
     },
     backtestOddsIncludingMissesText() {
       return this.formatBacktestOdds(this.backtestSummary.averageOddsIncludingMisses)
+    },
+    parameterPresetToggleText() {
+      return this.activeParameterPreset === 'aggressive' ? '切换稳健方案' : '切换激进方案'
     },
     matchColumns() {
       const matchCount = this.matches.length || 1
@@ -613,6 +646,7 @@ export default {
     async initializeUserConfig() {
       this.loadModelFactors()
       this.loadGlobalParameters()
+      this.syncActiveParameterPreset()
       this.loadRecommendationSelections()
       await this.loadUserConfig()
       this.loadOverview()
@@ -635,21 +669,21 @@ export default {
       }
       if (config.modelFactors && typeof config.modelFactors === 'object' && !Array.isArray(config.modelFactors)) {
         MODEL_FACTOR_KEYS.forEach(key => {
-          this.$set(this.modelFactors, key, this.normalizeModelFactor(config.modelFactors[key], this.getDefaultModelFactor(key), key))
+          this.$set(this.modelFactors, key, this.formatModelFactorValue(config.modelFactors[key], this.getDefaultModelFactor(key), key))
         })
         this.saveModelFactorsToCookie()
       }
       if (config.globalParameters && typeof config.globalParameters === 'object' && !Array.isArray(config.globalParameters)) {
-        this.recommendationOdds = this.normalizeRecommendationOdds(config.globalParameters.recommendationOdds)
-        this.handicapRecommendationThreshold = this.normalizeRecommendationThreshold(
+        this.recommendationOdds = this.formatRecommendationOddsValue(config.globalParameters.recommendationOdds)
+        this.handicapRecommendationThreshold = this.formatRecommendationThresholdValue(
           config.globalParameters.handicapRecommendationThreshold,
           DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
         )
-        this.handicapReverseThreshold = this.normalizeRecommendationThreshold(
+        this.handicapReverseThreshold = this.formatRecommendationThresholdValue(
           config.globalParameters.handicapReverseThreshold,
           DEFAULT_HANDICAP_REVERSE_THRESHOLD
         )
-        this.singleRecommendationThreshold = this.normalizeRecommendationThreshold(
+        this.singleRecommendationThreshold = this.formatRecommendationThresholdValue(
           config.globalParameters.singleRecommendationThreshold,
           DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
         )
@@ -659,6 +693,7 @@ export default {
         this.selectedRows = this.normalizeSelectedRows(config.selectedRows)
         this.saveRecommendationSelectionsToCookie()
       }
+      this.syncActiveParameterPreset()
     },
     async loadOverview(preferredDate) {
       this.errorMessage = ''
@@ -824,7 +859,7 @@ export default {
       if (this.backtesting) {
         return
       }
-      this.recommendationOdds = this.normalizeRecommendationOdds(this.recommendationOdds)
+      this.recommendationOdds = this.formatRecommendationOddsValue(this.recommendationOdds)
       this.normalizeRecommendationThresholdInputs()
       this.saveGlobalParametersToCookie()
       this.backtesting = true
@@ -1105,25 +1140,25 @@ export default {
       try {
         const parsedValue = JSON.parse(cookieValue)
         if (parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue)) {
-          this.recommendationOdds = this.normalizeRecommendationOdds(parsedValue.recommendationOdds)
-          this.handicapRecommendationThreshold = this.normalizeRecommendationThreshold(
+          this.recommendationOdds = this.formatRecommendationOddsValue(parsedValue.recommendationOdds)
+          this.handicapRecommendationThreshold = this.formatRecommendationThresholdValue(
             parsedValue.handicapRecommendationThreshold,
             DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
           )
-          this.handicapReverseThreshold = this.normalizeRecommendationThreshold(
+          this.handicapReverseThreshold = this.formatRecommendationThresholdValue(
             parsedValue.handicapReverseThreshold,
             DEFAULT_HANDICAP_REVERSE_THRESHOLD
           )
-          this.singleRecommendationThreshold = this.normalizeRecommendationThreshold(
+          this.singleRecommendationThreshold = this.formatRecommendationThresholdValue(
             parsedValue.singleRecommendationThreshold,
             DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
           )
         }
       } catch (error) {
-        this.recommendationOdds = DEFAULT_RECOMMENDATION_ODDS
-        this.handicapRecommendationThreshold = DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
-        this.handicapReverseThreshold = DEFAULT_HANDICAP_REVERSE_THRESHOLD
-        this.singleRecommendationThreshold = DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+        this.recommendationOdds = DEFAULT_RECOMMENDATION_ODDS.toFixed(2)
+        this.handicapRecommendationThreshold = DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD.toFixed(2)
+        this.handicapReverseThreshold = DEFAULT_HANDICAP_REVERSE_THRESHOLD.toFixed(2)
+        this.singleRecommendationThreshold = DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD.toFixed(2)
       }
     },
     saveGlobalParametersToCookie() {
@@ -1158,7 +1193,7 @@ export default {
       return Number(Math.max(RECOMMENDATION_ODDS_MIN, Math.min(RECOMMENDATION_ODDS_MAX, numberValue)).toFixed(2))
     },
     normalizeRecommendationOddsInput() {
-      this.recommendationOdds = this.normalizeRecommendationOdds(this.recommendationOdds)
+      this.recommendationOdds = this.formatRecommendationOddsValue(this.recommendationOdds)
       this.saveGlobalParametersToCookie()
       this.saveUserConfig()
       if (this.backtestActive) {
@@ -1173,16 +1208,22 @@ export default {
       const clampedValue = Math.max(RECOMMENDATION_THRESHOLD_MIN, Math.min(RECOMMENDATION_THRESHOLD_MAX, numberValue))
       return Number(clampedValue.toFixed(2))
     },
+    formatRecommendationOddsValue(value) {
+      return this.normalizeRecommendationOdds(value).toFixed(2)
+    },
+    formatRecommendationThresholdValue(value, fallback) {
+      return this.normalizeRecommendationThreshold(value, fallback).toFixed(2)
+    },
     normalizeRecommendationThresholdInputs() {
-      this.handicapRecommendationThreshold = this.normalizeRecommendationThreshold(
+      this.handicapRecommendationThreshold = this.formatRecommendationThresholdValue(
         this.handicapRecommendationThreshold,
         DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
       )
-      this.handicapReverseThreshold = this.normalizeRecommendationThreshold(
+      this.handicapReverseThreshold = this.formatRecommendationThresholdValue(
         this.handicapReverseThreshold,
         DEFAULT_HANDICAP_REVERSE_THRESHOLD
       )
-      this.singleRecommendationThreshold = this.normalizeRecommendationThreshold(
+      this.singleRecommendationThreshold = this.formatRecommendationThresholdValue(
         this.singleRecommendationThreshold,
         DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
       )
@@ -1206,15 +1247,15 @@ export default {
           return
         }
         this.modelFactors = {
-          hostTeamGoalFactor: this.normalizeModelFactor(parsedValue.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'),
-          seedTeamGoalFactor: this.normalizeModelFactor(parsedValue.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'),
-          handicapSmoothingFactor: this.normalizeModelFactor(parsedValue.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor')
+          hostTeamGoalFactor: this.formatModelFactorValue(parsedValue.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'),
+          seedTeamGoalFactor: this.formatModelFactorValue(parsedValue.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'),
+          handicapSmoothingFactor: this.formatModelFactorValue(parsedValue.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor')
         }
       } catch (error) {
         this.modelFactors = {
-          hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR,
-          seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR,
-          handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR
+          hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR.toFixed(2),
+          seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR.toFixed(2),
+          handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR.toFixed(3)
         }
       }
     },
@@ -1259,17 +1300,64 @@ export default {
     },
     saveModelFactorInput(key) {
       const fallback = this.getDefaultModelFactor(key)
-      this.$set(this.modelFactors, key, this.normalizeModelFactor(this.modelFactors[key], fallback, key))
+      this.$set(this.modelFactors, key, this.formatModelFactorValue(this.modelFactors[key], fallback, key))
       this.saveModelFactors()
     },
     commitModelFactors() {
       MODEL_FACTOR_KEYS.forEach(key => {
-        this.$set(this.modelFactors, key, this.normalizeModelFactor(this.modelFactors[key], this.getDefaultModelFactor(key), key))
+        this.$set(this.modelFactors, key, this.formatModelFactorValue(this.modelFactors[key], this.getDefaultModelFactor(key), key))
       })
       this.saveModelFactors()
       if (this.queryDate) {
         this.loadPredictions()
       }
+    },
+    async toggleParameterPreset() {
+      const targetPresetName = this.activeParameterPreset === 'aggressive' ? 'stable' : 'aggressive'
+      const targetPreset = targetPresetName === 'aggressive' ? AGGRESSIVE_PARAMETER_PRESET : STABLE_PARAMETER_PRESET
+      this.applyParameterPreset(targetPreset)
+      this.activeParameterPreset = targetPresetName
+      this.saveModelFactorsToCookie()
+      this.saveGlobalParametersToCookie()
+      this.saveUserConfig()
+      if (this.backtestActive) {
+        await this.runRecommendationOddsBacktest()
+        return
+      }
+      if (this.queryDate) {
+        await this.loadPredictions()
+      }
+    },
+    applyParameterPreset(preset) {
+      MODEL_FACTOR_KEYS.forEach(key => {
+        this.$set(
+          this.modelFactors,
+          key,
+          this.formatModelFactorValue(preset.modelFactors[key], this.getDefaultModelFactor(key), key)
+        )
+      })
+      this.recommendationOdds = this.formatRecommendationOddsValue(preset.globalParameters.recommendationOdds)
+      this.handicapRecommendationThreshold = this.formatRecommendationThresholdValue(
+        preset.globalParameters.handicapRecommendationThreshold,
+        DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
+      )
+      this.handicapReverseThreshold = this.formatRecommendationThresholdValue(
+        preset.globalParameters.handicapReverseThreshold,
+        DEFAULT_HANDICAP_REVERSE_THRESHOLD
+      )
+      this.singleRecommendationThreshold = this.formatRecommendationThresholdValue(
+        preset.globalParameters.singleRecommendationThreshold,
+        DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+      )
+    },
+    syncActiveParameterPreset() {
+      this.activeParameterPreset = this.matchesParameterPreset(AGGRESSIVE_PARAMETER_PRESET) ? 'aggressive' : 'stable'
+    },
+    matchesParameterPreset(preset) {
+      const currentModelFactors = this.buildModelFactorPayload()
+      const currentGlobalParameters = this.buildGlobalParameterPayload()
+      return MODEL_FACTOR_KEYS.every(key => currentModelFactors[key] === preset.modelFactors[key]) &&
+        Object.keys(preset.globalParameters).every(key => currentGlobalParameters[key] === preset.globalParameters[key])
     },
     getDefaultModelFactor(key) {
       if (key === 'seedTeamGoalFactor') {
@@ -1820,11 +1908,11 @@ h1 {
 .hero-card {
   align-self: stretch;
   display: grid;
-  grid-template-columns: 230px 460px;
+  grid-template-columns: 230px 504px;
   align-items: end;
   gap: 14px;
   justify-content: center;
-  width: 730px;
+  width: 774px;
   min-width: 0;
   max-width: 100%;
   padding: 4px 12px;
@@ -1893,13 +1981,25 @@ h1 {
 }
 
 .factor-controls {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
+  gap: 8px 29px;
   min-width: 0;
   padding-left: 14px;
   border-left: 1px solid rgba(255, 255, 255, 0.2);
   text-align: left;
+}
+
+.factor-controls::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% + 7px);
+  width: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  content: '';
+  pointer-events: none;
 }
 
 .factor-control-column {
@@ -1907,6 +2007,7 @@ h1 {
   align-content: end;
   gap: 8px;
   min-width: 0;
+  padding: 0 12px;
 }
 
 .factor-control {
@@ -1980,7 +2081,8 @@ h1 {
 
 .factor-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 29px;
   grid-column: 1 / -1;
   margin-bottom: 3px;
 }
@@ -2847,6 +2949,14 @@ body.dialog-open {
     border-top: 1px solid rgba(255, 255, 255, 0.2);
   }
 
+  .factor-controls::after {
+    display: none;
+  }
+
+  .factor-control-column {
+    padding: 0;
+  }
+
   .factor-control {
     grid-template-columns: minmax(0, 1fr);
     gap: 4px;
@@ -2863,6 +2973,7 @@ body.dialog-open {
   .factor-actions {
     grid-column: auto;
     grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
   }
 
   .percentage-input {
