@@ -1,5 +1,7 @@
 package com.eason.worldcup.model;
 
+import com.eason.worldcup.util.ApplicationTime;
+
 import java.time.LocalDate;
 import java.util.Locale;
 
@@ -40,7 +42,7 @@ public enum Competition {
     }
 
     public LocalDate getSeasonStartDate(LocalDate referenceDate) {
-        LocalDate effectiveDate = referenceDate == null ? LocalDate.now() : referenceDate;
+        LocalDate effectiveDate = referenceDate == null ? ApplicationTime.today() : referenceDate;
         if (!crossYearSeason) {
             return LocalDate.of(effectiveDate.getYear(), 1, 1);
         }

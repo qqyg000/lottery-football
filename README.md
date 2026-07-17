@@ -213,6 +213,8 @@ src/main/resources/data/schedule_2026.csv
 | home_score | 主队实际进球，未开赛留空 |
 | away_score | 客队实际进球，未开赛留空 |
 
+内置 CSV 的日期和时间按 `worldcup.schedule-source-zone` 解释，加载时统一转换为 `data-refresh.target-zone`。OpenFootball、ESPN、欧冠、其他俱乐部赛事和体彩刷新也共用该目标时区，当前统一为 `Asia/Shanghai`（UTC+8）；接口查询日期、返回日期和开球时间均使用转换后的北京时间。
+
 ### 2. 历史战绩
 
 文件：

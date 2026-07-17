@@ -4,6 +4,7 @@ import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.TeamStrength;
+import com.eason.worldcup.util.ApplicationTime;
 import com.eason.worldcup.util.DixonColesWeightModel;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,6 +84,7 @@ public class TeamStrengthService {
 
     public synchronized void rebuildModels() {
         List<HistoricalMatch> historicalMatches = dataRepository.getHistoricalMatches();
+        LocalDate today = ApplicationTime.today();
         currentModelExcludedDates = parseExcludedDates(currentModelExcludedDateText);
         currentModelByPredictionDate.clear();
         clubPreSeasonModelByStartDate.clear();
@@ -92,8 +93,8 @@ public class TeamStrengthService {
                 filterPreTournamentMatches(historicalMatches),
                 TOURNAMENT_START_DATE);
         currentModel = buildStrengthModel(
-                buildCurrentMatches(historicalMatches, LocalDate.now()),
-                LocalDate.now());
+                buildCurrentMatches(historicalMatches, today),
+                today);
     }
 
     public AdjustedExpectedGoals calculatePreTournamentExpectedGoals(MatchSchedule schedule) {
@@ -135,7 +136,7 @@ public class TeamStrengthService {
     public double getBaselineGoals(Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         StrengthModel model = effectiveCompetition.isClubCompetition()
-                ? getClubModelForPredictionDate(effectiveCompetition, LocalDate.now().plusDays(1))
+                ? getClubModelForPredictionDate(effectiveCompetition, ApplicationTime.today().plusDays(1))
                 : currentModel;
         return round(model.getBaselineGoals(), 4);
     }
@@ -270,7 +271,7 @@ public class TeamStrengthService {
     private StrengthModel getClubPreSeasonModel(
             Competition competition,
             LocalDate matchDate) {
-        LocalDate effectiveMatchDate = matchDate == null ? LocalDate.now() : matchDate;
+        LocalDate effectiveMatchDate = matchDate == null ? ApplicationTime.today() : matchDate;
         LocalDate seasonStartDate = competition.getSeasonStartDate(effectiveMatchDate);
         CompetitionDateKey key = new CompetitionDateKey(competition, effectiveMatchDate);
         return clubPreSeasonModelByStartDate.computeIfAbsent(
@@ -283,7 +284,7 @@ public class TeamStrengthService {
     private StrengthModel getClubModelForPredictionDate(
             Competition competition,
             LocalDate predictionDate) {
-        LocalDate cutoffDate = predictionDate == null ? LocalDate.now().plusDays(1) : predictionDate;
+        LocalDate cutoffDate = predictionDate == null ? ApplicationTime.today().plusDays(1) : predictionDate;
         CompetitionDateKey key = new CompetitionDateKey(competition, cutoffDate);
         return clubModelByPredictionDate.computeIfAbsent(
                 key,
@@ -381,10 +382,6 @@ public class TeamStrengthService {
     }
 
     private LocalDate getScheduleTrainingDate(MatchSchedule schedule) {
-        if (schedule.getCompetition() == Competition.WORLD_CUP
-                && LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())) {
-            return schedule.getMatchDate().minusDays(1);
-        }
         return schedule.getMatchDate();
     }
 
@@ -401,7 +398,7 @@ public class TeamStrengthService {
         LocalDate latestMatchDate = matches.stream()
                 .map(HistoricalMatch::getMatchDate)
                 .max(LocalDate::compareTo)
-                .orElse(LocalDate.now());
+                .orElse(ApplicationTime.today());
         LocalDate effectiveReferenceDate = referenceDate != null && referenceDate.isAfter(latestMatchDate)
                 ? referenceDate
                 : latestMatchDate;
@@ -512,7 +509,7 @@ public class TeamStrengthService {
         }
 
         private static StrengthModel empty() {
-            return new StrengthModel(Collections.emptyMap(), 1.25D, Collections.emptyList(), LocalDate.now());
+            return new StrengthModel(Collections.emptyMap(), 1.25D, Collections.emptyList(), ApplicationTime.today());
         }
 
         private Map<String, TeamStrength> getStrengthMap() {

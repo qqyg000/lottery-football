@@ -20,9 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.Normalizer;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,10 +33,6 @@ import java.util.SplittableRandom;
 public class PredictionService {
 
     private static final int[] HANDICAPS = {-3, -2, -1, 1, 2, 3};
-
-    private static final ZoneId UTC_PLUS_EIGHT_ZONE = ZoneId.of("Asia/Shanghai");
-
-    private static final ZoneId WORLD_CUP_SCHEDULE_ZONE = ZoneId.of("America/New_York");
 
     private final DataRepository dataRepository;
 
@@ -294,14 +288,9 @@ public class PredictionService {
     }
 
     private HeadToHeadMatchResponse toHeadToHeadResponse(MatchSchedule schedule) {
-        LocalDateTime displayKickoffDateTime = toUtcPlusEight(schedule);
         HeadToHeadMatchResponse response = new HeadToHeadMatchResponse();
-        response.setMatchDate(displayKickoffDateTime == null
-                ? schedule.getMatchDate()
-                : displayKickoffDateTime.toLocalDate());
-        response.setKickoffTime(displayKickoffDateTime == null
-                ? schedule.getKickoffTime()
-                : displayKickoffDateTime.toLocalTime());
+        response.setMatchDate(schedule.getMatchDate());
+        response.setKickoffTime(schedule.getKickoffTime());
         response.setCompetitionName(buildHeadToHeadCompetitionName(schedule));
         response.setHomeTeamCn(readableTeamName(schedule.getHomeTeamCn(), schedule.getHomeTeamEn()));
         response.setAwayTeamCn(readableTeamName(schedule.getAwayTeamCn(), schedule.getAwayTeamEn()));
@@ -414,12 +403,11 @@ public class PredictionService {
                 hostTeamGoalFactor,
                 seedTeamGoalFactor);
         SimulationCounter postMatchCounter = runMonteCarlo(schedule, postMatchExpectedGoals, simulationCount, effectiveHandicapSmoothingFactor);
-        LocalDateTime displayKickoffDateTime = toUtcPlusEight(schedule);
         MatchPredictionResponse response = new MatchPredictionResponse();
         response.setCompetition(schedule.getCompetition());
         response.setMatchId(schedule.getMatchId());
-        response.setMatchDate(displayKickoffDateTime == null ? schedule.getMatchDate() : displayKickoffDateTime.toLocalDate());
-        response.setKickoffTime(displayKickoffDateTime == null ? schedule.getKickoffTime() : displayKickoffDateTime.toLocalTime());
+        response.setMatchDate(schedule.getMatchDate());
+        response.setKickoffTime(schedule.getKickoffTime());
         response.setGroupName(schedule.getGroupName());
         response.setHomeTeamCn(schedule.getHomeTeamCn());
         response.setAwayTeamCn(schedule.getAwayTeamCn());
@@ -452,19 +440,6 @@ public class PredictionService {
         response.setCorrectionMatchCount(postMatchExpectedGoals.getCorrectionMatchCount());
         response.setModelRemark(buildModelRemark(schedule));
         return response;
-    }
-
-    private LocalDateTime toUtcPlusEight(MatchSchedule schedule) {
-        if (schedule.getMatchDate() == null || schedule.getKickoffTime() == null) {
-            return null;
-        }
-        ZoneId sourceZone = schedule.getCompetition() == Competition.WORLD_CUP
-                ? WORLD_CUP_SCHEDULE_ZONE
-                : UTC_PLUS_EIGHT_ZONE;
-        return LocalDateTime.of(schedule.getMatchDate(), schedule.getKickoffTime())
-                .atZone(sourceZone)
-                .withZoneSameInstant(UTC_PLUS_EIGHT_ZONE)
-                .toLocalDateTime();
     }
 
     private SimulationCounter runMonteCarlo(MatchSchedule schedule, TeamStrengthService.ExpectedGoals expectedGoals, int simulationCount, double effectiveHandicapSmoothingFactor) {

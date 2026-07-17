@@ -415,6 +415,7 @@
 <script>
 const FIXED_SIMULATIONS = 50000
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
+const UTC_PLUS_EIGHT_TIME_ZONE = 'Asia/Shanghai'
 const COMPETITIONS = [
   { code: 'ALL', name: 'ALL' },
   { code: 'WORLD_CUP', name: '世界杯' },
@@ -494,6 +495,17 @@ function createEmptyBacktestSummary() {
     averageOddsExcludingMisses: null,
     averageOddsIncludingMisses: null
   }
+}
+
+function getUtcPlusEightDate() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: UTC_PLUS_EIGHT_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date())
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]))
+  return values.year + '-' + values.month + '-' + values.day
 }
 
 export default {
@@ -764,7 +776,9 @@ export default {
       this.overview = data
       this.scheduleDates = nextScheduleDates
       this.queryDate = nextDate
-      this.calendarMonth = this.queryDate ? this.getMonthKey(this.parseDate(this.queryDate)) : this.getMonthKey(new Date())
+      this.calendarMonth = this.queryDate
+        ? this.getMonthKey(this.parseDate(this.queryDate))
+        : this.getMonthKey(this.parseDate(getUtcPlusEightDate()))
     },
     async refreshData() {
       if (this.updatingData || this.backtesting) {
@@ -952,7 +966,7 @@ export default {
       if (!dates || dates.length === 0) {
         return ''
       }
-      const today = new Date().toISOString().slice(0, 10)
+      const today = getUtcPlusEightDate()
       if (dates.includes(today)) {
         return today
       }
@@ -970,7 +984,7 @@ export default {
     shiftCalendarMonth(offset) {
       const baseDate = this.calendarMonth
         ? this.parseDate(this.calendarMonth + '-01')
-        : new Date()
+        : this.parseDate(getUtcPlusEightDate())
       baseDate.setMonth(baseDate.getMonth() + offset)
       this.calendarMonth = this.getMonthKey(baseDate)
     },

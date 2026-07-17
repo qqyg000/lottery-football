@@ -6,7 +6,7 @@ spring:
     name: lottery-football
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: GMT+8
+    time-zone: Asia/Shanghai
 
 data-refresh:
   days-back: 30
@@ -17,17 +17,18 @@ worldcup:
   simulation-count: 50000
   history-path: classpath:data/history_matches.csv
   schedule-path: classpath:data/schedule_2026.csv
+  schedule-source-zone: America/New_York
   user-config-path: config/user-config.json
   schedule-update:
     enabled: true
     source-url: https://raw.githubusercontent.com/openfootball/worldcup/master/2026--usa/cup.txt
     timeout-seconds: 10
-    target-zone: America/New_York
+    target-zone: ${data-refresh.target-zone}
   espn-update:
     enabled: true
     scoreboard-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?limit=200&dates={start}-{end}
     timeout-seconds: 10
-    target-zone: America/New_York
+    target-zone: ${data-refresh.target-zone}
   max-goals-lambda: 4.5
   min-goals-lambda: 0.2
   host-team-goal-factor: 1.22
@@ -41,7 +42,7 @@ champions-league:
     scoreboard-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard?limit=1000&dates={start}-{end}
     qualifying-scoreboard-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions_qual/scoreboard?limit=500&dates={start}-{end}
     timeout-seconds: 10
-    target-zone: Asia/Shanghai
+    target-zone: ${data-refresh.target-zone}
 
 club-competitions:
   history-path: classpath:data/club_history_matches.csv
@@ -54,7 +55,7 @@ club-competitions:
     sportsdb-past-url-template: https://www.thesportsdb.com/api/v1/json/123/eventspastleague.php?id={leagueId}
     fotmob-league-url-template: https://www.fotmob.com/api/data/leagues?id={leagueId}&ccode3=CHN&season={season}
     timeout-seconds: 15
-    target-zone: Asia/Shanghai
+    target-zone: ${data-refresh.target-zone}
     parallelism: 12
     sportsdb-future-rounds: 6
     cache-path: config/club-competition-schedules.json
@@ -74,5 +75,5 @@ sporttery:
     recent-days-back: 1
     future-days: 2
     force-future-days: 4
-    target-zone: Asia/Shanghai
+    target-zone: ${data-refresh.target-zone}
     cache-path: config/sporttery-market-selections.json

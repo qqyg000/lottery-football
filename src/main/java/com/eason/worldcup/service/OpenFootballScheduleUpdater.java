@@ -57,7 +57,7 @@ public class OpenFootballScheduleUpdater {
     @Value("${worldcup.schedule-update.timeout-seconds:10}")
     private int timeoutSeconds;
 
-    @Value("${worldcup.schedule-update.target-zone:America/New_York}")
+    @Value("${worldcup.schedule-update.target-zone:Asia/Shanghai}")
     private String targetZone;
 
     @Value("${data-refresh.days-back:30}")

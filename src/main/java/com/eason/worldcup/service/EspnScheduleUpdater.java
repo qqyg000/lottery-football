@@ -51,7 +51,7 @@ public class EspnScheduleUpdater {
     @Value("${worldcup.espn-update.timeout-seconds:10}")
     private int timeoutSeconds;
 
-    @Value("${worldcup.espn-update.target-zone:America/New_York}")
+    @Value("${worldcup.espn-update.target-zone:Asia/Shanghai}")
     private String targetZone;
 
     @Value("${data-refresh.days-back:30}")

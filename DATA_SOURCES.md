@@ -6,6 +6,8 @@
 
 `src/main/resources/data/schedule_2026.csv` 使用 2026 世界杯小组赛赛程作为种子数据。
 
+种子数据按 `worldcup.schedule-source-zone` 解释，程序加载时会将日期和开球时间转换为 `data-refresh.target-zone`。OpenFootball 和 ESPN 的时间戳也在解析时转换，当前目标时区统一为 `Asia/Shanghai`（UTC+8）。
+
 建议生产使用时以 FIFA 官方赛程页面为准，并定期更新本地 CSV：
 
 - FIFA World Cup 2026 fixtures and results

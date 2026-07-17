@@ -3,6 +3,7 @@ package com.eason.worldcup.service;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.MatchSchedule;
+import com.eason.worldcup.util.ApplicationTime;
 import com.eason.worldcup.util.CsvUtils;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -47,6 +49,9 @@ public class DataRepository {
 
     @Value("${worldcup.schedule-path:classpath:data/schedule_2026.csv}")
     private String schedulePath;
+
+    @Value("${worldcup.schedule-source-zone:America/New_York}")
+    private String scheduleSourceZone;
 
     @Value("${club-competitions.history-path:classpath:data/club_history_matches.csv}")
     private String clubHistoryPath;
@@ -136,7 +141,7 @@ public class DataRepository {
 
     public List<MatchSchedule> getCurrentSeasonSchedules(Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
-        LocalDate today = LocalDate.now();
+        LocalDate today = ApplicationTime.today();
         return schedules.stream()
                 .filter(item -> item.getCompetition() == effectiveCompetition)
                 .filter(item -> effectiveCompetition.isDateInSeason(item.getMatchDate(), today))
@@ -146,7 +151,7 @@ public class DataRepository {
     public boolean isCurrentSeasonSchedule(MatchSchedule schedule) {
         return schedule != null
                 && schedule.getCompetition() != null
-                && schedule.getCompetition().isDateInSeason(schedule.getMatchDate(), LocalDate.now());
+                && schedule.getCompetition().isDateInSeason(schedule.getMatchDate(), ApplicationTime.today());
     }
 
     public List<MatchSchedule> findSchedulesByDate(LocalDate date) {
@@ -178,18 +183,10 @@ public class DataRepository {
     }
 
     private LocalDate getScheduleQueryDate(MatchSchedule schedule) {
-        if (schedule.getCompetition() == Competition.WORLD_CUP
-                && LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())) {
-            return schedule.getMatchDate().minusDays(1);
-        }
         return schedule.getMatchDate();
     }
 
     private int getScheduleSortSeconds(MatchSchedule schedule) {
-        if (schedule.getCompetition() == Competition.WORLD_CUP
-                && LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())) {
-            return 24 * 60 * 60;
-        }
         return schedule.getKickoffTime().toSecondOfDay();
     }
 
@@ -276,11 +273,14 @@ public class DataRepository {
                     continue;
                 }
                 List<String> row = CsvUtils.parseLine(line);
+                LocalDateTime kickoffDateTime = convertScheduleDateTimeToTargetZone(
+                        LocalDate.parse(CsvUtils.get(row, 1)),
+                        LocalTime.parse(CsvUtils.get(row, 2)));
                 MatchSchedule schedule = new MatchSchedule();
                 schedule.setCompetition(Competition.WORLD_CUP);
                 schedule.setMatchId(CsvUtils.get(row, 0));
-                schedule.setMatchDate(LocalDate.parse(CsvUtils.get(row, 1)));
-                schedule.setKickoffTime(LocalTime.parse(CsvUtils.get(row, 2)));
+                schedule.setMatchDate(kickoffDateTime.toLocalDate());
+                schedule.setKickoffTime(kickoffDateTime.toLocalTime());
                 schedule.setGroupName(CsvUtils.get(row, 3));
                 schedule.setHomeTeamCn(CsvUtils.get(row, 4));
                 schedule.setAwayTeamCn(CsvUtils.get(row, 5));
@@ -356,6 +356,24 @@ public class DataRepository {
         }
     }
 
+    private LocalDateTime convertScheduleDateTimeToTargetZone(LocalDate date, LocalTime time) {
+        ZoneId sourceZone = resolveZone(scheduleSourceZone, "America/New_York");
+        ZoneId targetZone = resolveZone(refreshTargetZone, ApplicationTime.UTC_PLUS_EIGHT_ZONE.getId());
+        return LocalDateTime.of(date, time)
+                .atZone(sourceZone)
+                .withZoneSameInstant(targetZone)
+                .toLocalDateTime();
+    }
+
+    private ZoneId resolveZone(String zoneText, String fallbackZone) {
+        try {
+            return ZoneId.of(zoneText);
+        } catch (Exception ex) {
+            log.warn("Invalid time zone {}, using {}", zoneText, fallbackZone);
+            return ZoneId.of(fallbackZone);
+        }
+    }
+
     private String buildScheduleIdentity(MatchSchedule schedule) {
         if (schedule.getMatchId() != null && !schedule.getMatchId().isBlank()) {
             return schedule.getCompetition() + "|" + schedule.getMatchId();
@@ -383,7 +401,7 @@ public class DataRepository {
 
         int updatedCount = 0;
         for (MatchSchedule schedule : schedules) {
-            LocalDate queryDate = getScheduleQueryDate(schedule);
+            LocalDate queryDate = convertScheduleDateTimeToSourceZone(schedule).toLocalDate();
             HistoricalMatch match = resultsByFixture.get(
                     buildFixtureKey(queryDate, schedule.getHomeTeamEn(), schedule.getAwayTeamEn()));
             boolean reversed = false;
@@ -407,6 +425,15 @@ public class DataRepository {
             updatedCount++;
         }
         return updatedCount;
+    }
+
+    private LocalDateTime convertScheduleDateTimeToSourceZone(MatchSchedule schedule) {
+        ZoneId sourceZone = resolveZone(scheduleSourceZone, "America/New_York");
+        ZoneId targetZone = resolveZone(refreshTargetZone, ApplicationTime.UTC_PLUS_EIGHT_ZONE.getId());
+        return LocalDateTime.of(schedule.getMatchDate(), schedule.getKickoffTime())
+                .atZone(targetZone)
+                .withZoneSameInstant(sourceZone)
+                .toLocalDateTime();
     }
 
     private boolean isWorldCup2026Result(HistoricalMatch match) {
