@@ -167,6 +167,10 @@
                 <span>场均赔率</span>
               </div>
               <div>
+                <strong>{{ backtestAverageRecommendationText }}</strong>
+                <span>场均推荐数</span>
+              </div>
+              <div>
                 <strong>{{ backtestHitRateText }}</strong>
                 <span>命中率</span>
               </div>
@@ -592,6 +596,7 @@ function createEmptyBacktestSummary() {
     sportteryCompletedMatchCount: 0,
     oddsMatchCount: 0,
     recommendedMatchCount: 0,
+    recommendedSelectionCount: 0,
     hitMatchCount: 0,
     missMatchCount: 0,
     winningSelectionCount: 0,
@@ -687,6 +692,17 @@ export default {
     },
     backtestAverageOddsText() {
       return this.formatBacktestOdds(this.backtestSummary.averageOddsIncludingMisses)
+    },
+    backtestAverageRecommendationText() {
+      if (!this.backtestActive) {
+        return '--'
+      }
+      const recommendedMatchCount = Number(this.backtestSummary.recommendedMatchCount) || 0
+      if (recommendedMatchCount <= 0) {
+        return '0.00'
+      }
+      const recommendedSelectionCount = Number(this.backtestSummary.recommendedSelectionCount) || 0
+      return (recommendedSelectionCount / recommendedMatchCount).toFixed(2)
     },
     backtestHitRateText() {
       if (!this.backtestActive) {
@@ -1092,6 +1108,7 @@ export default {
       const recommendedMatches = []
       const hitMatches = []
       const settledMatchOdds = []
+      let recommendedSelectionCount = 0
       let winningSelectionCount = 0
       this.backtestSourceMatches.forEach(match => {
         const recommendationKeys = this.getRecommendationKeys(match)
@@ -1099,6 +1116,7 @@ export default {
           return
         }
         recommendedMatches.push(match)
+        recommendedSelectionCount += recommendationKeys.size
         if (this.recommendationResult(match) !== 'hit') {
           settledMatchOdds.push(0)
           return
@@ -1119,6 +1137,7 @@ export default {
       this.backtestSummary = {
         ...this.backtestSummary,
         recommendedMatchCount: recommendedMatches.length,
+        recommendedSelectionCount,
         hitMatchCount: hitMatches.length,
         missMatchCount,
         winningSelectionCount,
@@ -2336,7 +2355,7 @@ h1 {
 
 .backtest-average-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 5px;
 }
 
