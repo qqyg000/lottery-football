@@ -31,11 +31,11 @@ worldcup:
     target-zone: ${data-refresh.target-zone}
   max-goals-lambda: 4.5
   min-goals-lambda: 0.2
-  host-team-goal-factor: 1.22
-  home-team-goal-factor: 1.08
-  seed-team-goal-factor: 1.57
-  handicap-smoothing-factor: 0.225
-  handicap-max-smoothing: 0.225
+  host-team-goal-factor: 1.21
+  home-team-goal-factor: 1.05
+  seed-team-goal-factor: 1.80
+  handicap-smoothing-factor: 0.200
+  handicap-max-smoothing: 0.200
 
 champions-league:
   espn-update:
@@ -79,4 +79,4 @@ sporttery:
     target-zone: ${data-refresh.target-zone}
     cache-path: config/sporttery-market-selections.json
     historical-odds-path: classpath:data/historical_odds.csv
-    backtest-start-date: 2022-11-20
+    backtest-start-date: 2026-06-11

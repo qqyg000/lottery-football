@@ -271,7 +271,7 @@ src/main/resources/data/club_history_matches.csv
 - 没有体彩数据的场次仍可手工勾选，兼容非竞彩场次和接口异常
 - 查询结果缓存到 `config/sporttery-market-selections.json`，近期日期默认每 30 分钟更新
 - 点击“更新数据”会补查所选日期前 30 天内尚无赔率的比赛，并强制刷新所选日期前 1 天至后 4 天的全部比赛，不受已有赔率和缓存间隔影响
-- `historical_odds.csv` 内置从 2022-11-20 起的历史初盘赔率，回测不再受当前赛季范围限制
+- `historical_odds.csv` 内置从 2022-11-20 起的历史初盘赔率，回测默认使用本届世界杯开赛日（2026-06-11）至北京时间今天的已完赛比赛
 
 历史赔率通过以下命令从原始文件重新生成，俱乐部名称复用 `club_history_matches.csv` 已核验的球队映射，世界杯球队使用固定中英文映射：
 
@@ -279,7 +279,14 @@ src/main/resources/data/club_history_matches.csv
 powershell -ExecutionPolicy Bypass -File scripts/import-historical-odds.ps1 -SourcePath "C:\path\to\his-data.csv"
 ```
 
-相关开关、接口地址、历史赔率路径、回测起始日期和缓存位置位于 `application.yml` 的 `sporttery.result-update` 节点。
+也可以先调用 `/api/football/data/refresh-historical-odds` 按日期范围补取官方赔率，再将缓存中成功匹配的比赛合并到内置文件：
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://localhost:8080/api/football/data/refresh-historical-odds?startDate=2026-04-21&endDate=2026-06-10"
+powershell -ExecutionPolicy Bypass -File scripts/merge-sporttery-cache-odds.ps1 -StartDate "2026-04-21" -EndDate "2026-06-10"
+```
+
+单次补取范围最多 366 天。相关开关、接口地址、历史赔率路径、回测年数和缓存位置位于 `application.yml` 的 `sporttery.result-update` 节点。
 
 ## 七、模型说明
 

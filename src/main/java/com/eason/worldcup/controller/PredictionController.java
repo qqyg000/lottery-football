@@ -6,6 +6,7 @@ import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
 import com.eason.worldcup.model.RecommendationBacktestJobResponse;
 import com.eason.worldcup.model.RecommendationBacktestResponse;
+import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
 import com.eason.worldcup.model.UserConfig;
 import com.eason.worldcup.service.PredictionService;
 import com.eason.worldcup.service.RecommendationBacktestJobService;
@@ -24,8 +25,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping({"/api/football", "/api/worldcup"})
@@ -75,7 +78,7 @@ public class PredictionController {
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
             @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
         return recommendationBacktestJobService.start(
-                parseBacktestCompetition(competition),
+                parseBacktestCompetitions(competition),
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
@@ -101,7 +104,7 @@ public class PredictionController {
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
             @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
         return predictionService.queryRecommendationBacktest(
-                parseBacktestCompetition(competition),
+                parseBacktestCompetitions(competition),
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
@@ -131,6 +134,17 @@ public class PredictionController {
         return predictionService.refreshData(parseCompetition(competition), date);
     }
 
+    @PostMapping("/data/refresh-historical-odds")
+    public SportteryHistoricalOddsRefreshResponse refreshHistoricalOdds(
+            @RequestParam("startDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+        try {
+            return predictionService.refreshHistoricalOdds(startDate, endDate);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
     @GetMapping("/user-config")
     public UserConfig userConfig() {
         return userConfigService.load();
@@ -154,11 +168,21 @@ public class PredictionController {
         }
     }
 
-    private Competition parseBacktestCompetition(String value) {
+    private Set<Competition> parseBacktestCompetitions(String value) {
         if (value == null || value.isBlank() || "ALL".equalsIgnoreCase(value.trim())) {
-            return null;
+            return Set.of();
         }
-        return parseCompetition(value);
+        Set<Competition> competitions = new LinkedHashSet<>();
+        for (String code : value.split(",")) {
+            if (code == null || code.isBlank()) {
+                continue;
+            }
+            if ("ALL".equalsIgnoreCase(code.trim())) {
+                return Set.of();
+            }
+            competitions.add(parseCompetition(code));
+        }
+        return Set.copyOf(competitions);
     }
 
 }

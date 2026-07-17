@@ -4,18 +4,53 @@
       <div>
         <p class="eyebrow">Monte Carlo + Poisson</p>
         <h1>彩票预测-竞彩足球</h1>
-        <nav class="competition-tabs" aria-label="赛事切换">
+        <div ref="competitionSelect" class="competition-select" @keydown.esc.stop="closeCompetitionDropdown">
           <button
-            v-for="competition in competitions"
-            :key="competition.code"
             type="button"
-            :class="{ 'is-active': activeCompetition === competition.code }"
+            class="competition-select-trigger"
+            aria-haspopup="listbox"
+            :aria-expanded="competitionDropdownOpen ? 'true' : 'false'"
             :disabled="loading || updatingData || backtesting"
-            @click="switchCompetition(competition.code)"
+            @click="toggleCompetitionDropdown"
           >
-            {{ competition.name }}
+            <span>联赛</span>
+            <strong>{{ activeCompetitionLabel }}</strong>
+            <span class="competition-select-arrow" :class="{ 'is-open': competitionDropdownOpen }" aria-hidden="true"></span>
           </button>
-        </nav>
+          <div v-if="competitionDropdownOpen" class="competition-select-dropdown">
+            <label class="competition-search">
+              <span aria-hidden="true">⌕</span>
+              <input
+                ref="competitionSearchInput"
+                v-model.trim="competitionSearch"
+                type="search"
+                placeholder="输入联赛名称"
+                aria-label="模糊查询联赛"
+              >
+            </label>
+            <div class="competition-option-list" role="listbox" aria-label="联赛多选" aria-multiselectable="true">
+              <button
+                v-for="competition in filteredCompetitionOptions"
+                :key="competition.code"
+                type="button"
+                class="competition-option"
+                role="option"
+                :aria-selected="isDraftCompetitionSelected(competition.code) ? 'true' : 'false'"
+                @click="toggleDraftCompetition(competition.code)"
+              >
+                <span class="competition-checkbox" :class="{ 'is-checked': isDraftCompetitionSelected(competition.code) }">
+                  {{ isDraftCompetitionSelected(competition.code) ? '✓' : '' }}
+                </span>
+                <span>{{ competition.name }}</span>
+              </button>
+              <div v-if="filteredCompetitionOptions.length === 0" class="competition-option-empty">未找到匹配联赛</div>
+            </div>
+            <div class="competition-select-footer">
+              <span>已选 {{ draftCompetitions.length }} 项</span>
+              <button type="button" :disabled="draftCompetitions.length === 0" @click="applyCompetitionSelection">确定</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="hero-card-group">
         <div class="hero-card">
@@ -555,14 +590,14 @@ const GLOBAL_PARAMETER_COOKIE = 'worldcup_global_parameters'
 const GLOBAL_PARAMETER_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const ACTIVE_COMPETITION_COOKIE = 'football_active_competition'
 const ACTIVE_COMPETITION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
-const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.22
-const DEFAULT_HOME_TEAM_GOAL_FACTOR = 1.08
-const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.57
-const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.225
-const DEFAULT_RECOMMENDATION_ODDS = 1.5
-const DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD = 54
-const DEFAULT_HANDICAP_REVERSE_THRESHOLD = 52
-const DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD = 70
+const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.21
+const DEFAULT_HOME_TEAM_GOAL_FACTOR = 1.05
+const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.80
+const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.200
+const DEFAULT_RECOMMENDATION_ODDS = 1.62
+const DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD = 58.00
+const DEFAULT_HANDICAP_REVERSE_THRESHOLD = 52.00
+const DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD = 73.00
 const RECOMMENDATION_ODDS_MIN = 1
 const RECOMMENDATION_ODDS_MAX = 100
 const RECOMMENDATION_THRESHOLD_MIN = 0
@@ -587,15 +622,15 @@ const STABLE_PARAMETER_PRESET = {
 }
 const AGGRESSIVE_PARAMETER_PRESET = {
   modelFactors: {
-    hostTeamGoalFactor: 1.32,
-    homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR,
-    seedTeamGoalFactor: 1.57,
-    handicapSmoothingFactor: 0.245
+    hostTeamGoalFactor: 1.21,
+    homeTeamGoalFactor: 1.05,
+    seedTeamGoalFactor: 1.80,
+    handicapSmoothingFactor: 0.200
   },
   globalParameters: {
-    recommendationOdds: 1.70,
-    handicapRecommendationThreshold: 55.00,
-    handicapReverseThreshold: 50.14,
+    recommendationOdds: 2.42,
+    handicapRecommendationThreshold: 58.00,
+    handicapReverseThreshold: 52.00,
     singleRecommendationThreshold: 71.00
   }
 }
@@ -646,7 +681,10 @@ export default {
       competitionOverviews: {},
       response: {},
       competitions: COMPETITIONS,
-      activeCompetition: 'WORLD_CUP',
+      activeCompetitions: ['WORLD_CUP'],
+      draftCompetitions: ['WORLD_CUP'],
+      competitionDropdownOpen: false,
+      competitionSearch: '',
       scheduleDates: [],
       weekdays: WEEKDAYS,
       calendarMonth: '',
@@ -685,6 +723,29 @@ export default {
     }
   },
   computed: {
+    activeCompetition() {
+      const selectedCodes = this.getSelectedCompetitionCodes()
+      if (selectedCodes.length === this.getConcreteCompetitions().length) {
+        return 'ALL'
+      }
+      return selectedCodes.length === 1 ? selectedCodes[0] : 'MULTIPLE'
+    },
+    activeCompetitionLabel() {
+      const selectedCompetitions = this.getSelectedCompetitions()
+      if (selectedCompetitions.length <= 3) {
+        return selectedCompetitions.map(item => item.name).join('、')
+      }
+      return '已选 ' + selectedCompetitions.length + ' 项'
+    },
+    filteredCompetitionOptions() {
+      const keyword = this.competitionSearch.trim().toLocaleLowerCase('zh-CN')
+      if (!keyword) {
+        return this.competitions
+      }
+      return this.competitions.filter(competition => {
+        return competition.name.toLocaleLowerCase('zh-CN').includes(keyword)
+      })
+    },
     matches() {
       const sourceMatches = this.backtestActive ? this.backtestMatches : (this.response.matches || [])
       return sourceMatches.filter(match => this.hasSportteryOdds(match))
@@ -795,10 +856,90 @@ export default {
   created() {
     this.initializeUserConfig()
   },
+  mounted() {
+    document.addEventListener('click', this.handleCompetitionOutsideClick)
+  },
   beforeDestroy() {
+    document.removeEventListener('click', this.handleCompetitionOutsideClick)
     document.body.classList.remove('dialog-open')
   },
   methods: {
+    toggleCompetitionDropdown() {
+      if (this.loading || this.updatingData || this.backtesting) {
+        return
+      }
+      if (this.competitionDropdownOpen) {
+        this.closeCompetitionDropdown()
+        return
+      }
+      this.draftCompetitions = this.getSelectedCompetitionCodes()
+      this.competitionSearch = ''
+      this.competitionDropdownOpen = true
+      this.$nextTick(() => {
+        if (this.$refs.competitionSearchInput) {
+          this.$refs.competitionSearchInput.focus()
+        }
+      })
+    },
+    closeCompetitionDropdown() {
+      this.competitionDropdownOpen = false
+      this.competitionSearch = ''
+      this.draftCompetitions = this.getSelectedCompetitionCodes()
+    },
+    handleCompetitionOutsideClick(event) {
+      if (!this.competitionDropdownOpen || !this.$refs.competitionSelect) {
+        return
+      }
+      if (!this.$refs.competitionSelect.contains(event.target)) {
+        this.closeCompetitionDropdown()
+      }
+    },
+    isDraftCompetitionSelected(code) {
+      if (code === 'ALL') {
+        return this.draftCompetitions.length === this.getConcreteCompetitions().length
+      }
+      return this.draftCompetitions.includes(code)
+    },
+    toggleDraftCompetition(code) {
+      if (code === 'ALL') {
+        this.draftCompetitions = this.isDraftCompetitionSelected('ALL')
+          ? []
+          : this.getConcreteCompetitions().map(item => item.code)
+        return
+      }
+      if (this.draftCompetitions.includes(code)) {
+        this.draftCompetitions = this.draftCompetitions.filter(item => item !== code)
+      } else {
+        const selectedCodes = new Set([...this.draftCompetitions, code])
+        this.draftCompetitions = this.getConcreteCompetitions()
+          .map(item => item.code)
+          .filter(item => selectedCodes.has(item))
+      }
+    },
+    async applyCompetitionSelection() {
+      if (this.draftCompetitions.length === 0 || this.loading || this.updatingData || this.backtesting) {
+        return
+      }
+      const selectedCodes = new Set(this.draftCompetitions)
+      const nextCompetitions = this.getConcreteCompetitions()
+        .map(item => item.code)
+        .filter(code => selectedCodes.has(code))
+      const selectionChanged = nextCompetitions.join(',') !== this.getSelectedCompetitionCodes().join(',')
+      this.competitionDropdownOpen = false
+      this.competitionSearch = ''
+      if (!selectionChanged) {
+        return
+      }
+      const currentDate = this.queryDate
+      this.clearBacktestResults()
+      this.activeCompetitions = nextCompetitions
+      this.draftCompetitions = [...nextCompetitions]
+      this.saveActiveCompetition()
+      this.overview = {}
+      this.response = {}
+      this.scheduleDates = []
+      await this.loadOverview(currentDate)
+    },
     openRecommendationDialog() {
       this.recommendationDialogVisible = true
       document.body.classList.add('dialog-open')
@@ -964,19 +1105,14 @@ export default {
     async loadOverview(preferredDate) {
       this.errorMessage = ''
       try {
-        let data
-        if (this.activeCompetition === 'ALL') {
-          const overviewEntries = await Promise.all(this.getConcreteCompetitions().map(async competition => {
-            return [competition.code, await this.fetchCompetitionOverview(competition.code)]
-          }))
-          this.competitionOverviews = Object.fromEntries(overviewEntries)
-          data = this.mergeCompetitionOverviews(overviewEntries.map(entry => entry[1]))
-        } else {
-          data = await this.fetchCompetitionOverview(this.activeCompetition)
-          this.competitionOverviews = {
-            [this.activeCompetition]: data
-          }
-        }
+        const selectedCompetitions = this.getSelectedCompetitions()
+        const overviewEntries = await Promise.all(selectedCompetitions.map(async competition => {
+          return [competition.code, await this.fetchCompetitionOverview(competition.code)]
+        }))
+        this.competitionOverviews = Object.fromEntries(overviewEntries)
+        const data = overviewEntries.length === 1
+          ? overviewEntries[0][1]
+          : this.mergeCompetitionOverviews(overviewEntries.map(entry => entry[1]))
         this.applyOverview(data, preferredDate)
         if (this.queryDate) {
           await this.loadPredictions()
@@ -987,6 +1123,16 @@ export default {
     },
     getConcreteCompetitions() {
       return this.competitions.filter(competition => competition.code !== 'ALL')
+    },
+    getSelectedCompetitionCodes() {
+      const selectedCodes = new Set(this.activeCompetitions)
+      return this.getConcreteCompetitions()
+        .map(competition => competition.code)
+        .filter(code => selectedCodes.has(code))
+    },
+    getSelectedCompetitions() {
+      const selectedCodes = new Set(this.getSelectedCompetitionCodes())
+      return this.getConcreteCompetitions().filter(competition => selectedCodes.has(competition.code))
     },
     async fetchCompetitionOverview(competition) {
       const params = new URLSearchParams()
@@ -1003,27 +1149,14 @@ export default {
         return sum + (Number(item.baselineGoals) || 0) * (Number(item.historicalMatchCount) || 0)
       }, 0)
       return {
-        competition: 'ALL',
-        competitionName: '全部赛事',
+        competition: this.activeCompetition,
+        competitionName: this.activeCompetitionLabel,
         historicalMatchCount,
         scheduleMatchCount: overviews.reduce((sum, item) => sum + (Number(item.scheduleMatchCount) || 0), 0),
         completedMatchCount: overviews.reduce((sum, item) => sum + (Number(item.completedMatchCount) || 0), 0),
         baselineGoals: historicalMatchCount > 0 ? weightedBaselineGoals / historicalMatchCount : 0,
         scheduleDates: Array.from(new Set(overviews.flatMap(item => item.scheduleDates || []))).sort()
       }
-    },
-    async switchCompetition(competition) {
-      if (competition === this.activeCompetition || this.loading || this.updatingData || this.backtesting) {
-        return
-      }
-      const currentDate = this.queryDate
-      this.clearBacktestResults()
-      this.activeCompetition = competition
-      this.saveActiveCompetition()
-      this.overview = {}
-      this.response = {}
-      this.scheduleDates = []
-      await this.loadOverview(currentDate)
     },
     applyOverview(data, preferredDate) {
       const nextScheduleDates = data.scheduleDates || []
@@ -1044,7 +1177,7 @@ export default {
       try {
         const currentDate = this.queryDate
         const params = new URLSearchParams()
-        params.append('competition', this.activeCompetition === 'ALL' ? 'WORLD_CUP' : this.activeCompetition)
+        params.append('competition', this.getSelectedCompetitionCodes()[0] || 'WORLD_CUP')
         if (currentDate) {
           params.append('date', currentDate)
         }
@@ -1097,10 +1230,7 @@ export default {
       }
     },
     getPredictionCompetitions() {
-      if (this.activeCompetition !== 'ALL') {
-        return [this.activeCompetition]
-      }
-      return this.getConcreteCompetitions()
+      return this.getSelectedCompetitions()
         .filter(competition => {
           const overview = this.competitionOverviews[competition.code]
           return !overview || !Array.isArray(overview.scheduleDates) || overview.scheduleDates.includes(this.queryDate)
@@ -1139,7 +1269,13 @@ export default {
         await this.persistUserConfig()
         const params = new URLSearchParams()
         params.append('simulations', FIXED_SIMULATIONS)
-        params.append('competition', this.activeCompetition)
+        const selectedCompetitions = this.getSelectedCompetitionCodes()
+        params.append(
+          'competition',
+          selectedCompetitions.length === this.getConcreteCompetitions().length
+            ? 'ALL'
+            : selectedCompetitions.join(',')
+        )
         this.appendModelFactorParams(params)
         const res = await fetch('/api/football/recommendation-backtest/jobs?' + params.toString(), {
           method: 'POST'
@@ -1453,13 +1589,27 @@ export default {
       document.cookie = name + '=' + encodeURIComponent(value) + '; max-age=' + maxAge + '; path=/; SameSite=Lax'
     },
     loadActiveCompetition() {
-      const competition = this.getCookie(ACTIVE_COMPETITION_COOKIE)
-      if (this.competitions.some(item => item.code === competition)) {
-        this.activeCompetition = competition
+      const value = this.getCookie(ACTIVE_COMPETITION_COOKIE)
+      if (!value) {
+        return
       }
+      const concreteCompetitions = this.getConcreteCompetitions()
+      const validCodes = new Set(concreteCompetitions.map(item => item.code))
+      const selectedCodes = value.split(',').map(code => code.trim()).filter(code => validCodes.has(code))
+      this.activeCompetitions = value === 'ALL'
+        ? concreteCompetitions.map(item => item.code)
+        : concreteCompetitions.map(item => item.code).filter(code => selectedCodes.includes(code))
+      if (this.activeCompetitions.length === 0) {
+        this.activeCompetitions = ['WORLD_CUP']
+      }
+      this.draftCompetitions = [...this.activeCompetitions]
     },
     saveActiveCompetition() {
-      this.setCookie(ACTIVE_COMPETITION_COOKIE, this.activeCompetition, ACTIVE_COMPETITION_COOKIE_MAX_AGE)
+      const selectedCodes = this.getSelectedCompetitionCodes()
+      const value = selectedCodes.length === this.getConcreteCompetitions().length
+        ? 'ALL'
+        : selectedCodes.join(',')
+      this.setCookie(ACTIVE_COMPETITION_COOKIE, value, ACTIVE_COMPETITION_COOKIE_MAX_AGE)
     },
     loadGlobalParameters() {
       const cookieValue = this.getCookie(GLOBAL_PARAMETER_COOKIE)
@@ -2206,37 +2356,174 @@ h1 {
   margin-left: auto;
 }
 
-.competition-tabs {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 7px;
-  width: 430px;
+.competition-select {
+  position: relative;
+  z-index: 30;
+  width: 210px;
   max-width: 100%;
   margin-top: 16px;
 }
 
-.competition-tabs button {
-  min-width: 0;
-  height: 28px;
-  padding: 0 8px;
+.competition-select-trigger {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
   border: 1px solid rgba(255, 255, 255, 0.38);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.84);
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.78);
   background: rgba(15, 23, 42, 0.2);
   cursor: pointer;
   font-size: 12px;
+  text-align: left;
+}
+
+.competition-select-trigger strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competition-select-trigger:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.competition-select-arrow {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.16s ease;
+}
+
+.competition-select-arrow.is-open {
+  transform: rotate(225deg);
+}
+
+.competition-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 11px;
+  color: #0f172a;
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24);
+}
+
+.competition-search {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  margin: 9px;
+  padding: 0 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.competition-search input {
+  min-width: 0;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: #0f172a;
+  background: transparent;
+  font-size: 12px;
+}
+
+.competition-option-list {
+  max-height: 270px;
+  overflow-y: auto;
+  padding: 0 6px 6px;
+}
+
+.competition-option {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 7px;
+  color: #0f172a;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+
+.competition-option:hover,
+.competition-option[aria-selected="true"] {
+  background: #eff6ff;
+}
+
+.competition-checkbox {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.competition-checkbox.is-checked {
+  border-color: #2563eb;
+  background: #2563eb;
+}
+
+.competition-option-empty {
+  padding: 18px 8px;
+  color: #94a3b8;
+  font-size: 12px;
+  text-align: center;
+}
+
+.competition-select-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-top: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 11px;
+  background: #f8fafc;
+}
+
+.competition-select-footer button {
+  height: 26px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  color: #ffffff;
+  background: #2563eb;
+  cursor: pointer;
+  font-size: 11px;
   font-weight: 800;
 }
 
-.competition-tabs button.is-active {
-  border-color: #ffffff;
-  color: #1d4ed8;
-  background: #ffffff;
-}
-
-.competition-tabs button:disabled {
-  cursor: wait;
-  opacity: 0.7;
+.competition-select-footer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .hero-card {

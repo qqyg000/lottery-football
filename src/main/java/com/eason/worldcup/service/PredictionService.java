@@ -10,8 +10,10 @@ import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
 import com.eason.worldcup.model.RecommendationBacktestResponse;
 import com.eason.worldcup.model.ScoreProbability;
+import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
 import com.eason.worldcup.model.ThreeWayProbability;
 import com.eason.worldcup.model.TotalGoalsProbability;
+import com.eason.worldcup.util.ApplicationTime;
 import com.eason.worldcup.util.PoissonRandom;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,12 +23,14 @@ import java.math.RoundingMode;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.function.BiConsumer;
 
@@ -35,8 +39,10 @@ public class PredictionService {
 
     private static final int[] HANDICAPS = {-3, -2, -1, 1, 2, 3};
 
-    @Value("${sporttery.result-update.backtest-start-date:2022-11-20}")
-    private LocalDate recommendationBacktestStartDate;
+    private static final LocalDate DEFAULT_RECOMMENDATION_BACKTEST_START_DATE = LocalDate.of(2026, 6, 11);
+
+    @Value("${sporttery.result-update.backtest-start-date:2026-06-11}")
+    private String recommendationBacktestStartDateText;
 
     private final DataRepository dataRepository;
 
@@ -47,10 +53,10 @@ public class PredictionService {
     @Value("${worldcup.simulation-count:50000}")
     private int defaultSimulationCount;
 
-    @Value("${worldcup.handicap-smoothing-factor:0.225}")
+    @Value("${worldcup.handicap-smoothing-factor:0.200}")
     private double handicapSmoothingFactor;
 
-    @Value("${worldcup.handicap-max-smoothing:0.225}")
+    @Value("${worldcup.handicap-max-smoothing:0.200}")
     private double handicapMaxSmoothing;
 
     public PredictionService(
@@ -126,13 +132,13 @@ public class PredictionService {
     }
 
     public RecommendationBacktestResponse queryRecommendationBacktest(
-            Competition competition,
+            Set<Competition> competitions,
             Integer simulations,
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
             Double handicapSmoothingFactor) {
         return queryRecommendationBacktest(
-                competition,
+                competitions,
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
@@ -141,14 +147,14 @@ public class PredictionService {
     }
 
     public RecommendationBacktestResponse queryRecommendationBacktest(
-            Competition competition,
+            Set<Competition> competitions,
             Integer simulations,
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
             Double homeTeamGoalFactor,
             Double handicapSmoothingFactor) {
         return queryRecommendationBacktest(
-                competition,
+                competitions,
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
@@ -158,7 +164,7 @@ public class PredictionService {
     }
 
     RecommendationBacktestResponse queryRecommendationBacktest(
-            Competition competition,
+            Set<Competition> competitions,
             Integer simulations,
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
@@ -167,10 +173,15 @@ public class PredictionService {
             BiConsumer<Integer, Integer> progressConsumer) {
         int simulationCount = normalizeSimulationCount(simulations);
         double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
+        LocalDate backtestEndDate = ApplicationTime.today();
+        LocalDate backtestStartDate = resolveBacktestStartDate(backtestEndDate);
         List<MatchSchedule> completedSchedules = dataRepository.getSchedules().stream()
-                .filter(schedule -> competition == null || schedule.getCompetition() == competition)
+                .filter(schedule -> competitions == null
+                        || competitions.isEmpty()
+                        || competitions.contains(schedule.getCompetition()))
                 .filter(schedule -> schedule.getMatchDate() != null
-                        && !schedule.getMatchDate().isBefore(recommendationBacktestStartDate))
+                        && !schedule.getMatchDate().isBefore(backtestStartDate)
+                        && !schedule.getMatchDate().isAfter(backtestEndDate))
                 .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
                 .filter(schedule -> schedule.getHomeScore() != null && schedule.getAwayScore() != null)
                 .toList();
@@ -219,6 +230,38 @@ public class PredictionService {
         if (progressConsumer != null) {
             progressConsumer.accept(processedMatchCount, totalMatchCount);
         }
+    }
+
+    public SportteryHistoricalOddsRefreshResponse refreshHistoricalOdds(
+            LocalDate startDate,
+            LocalDate endDate) {
+        SportteryHistoricalOddsRefreshResponse response =
+                sportteryMarketSelectionService.refreshHistoricalRange(startDate, endDate);
+        List<MatchSchedule> schedules = dataRepository.getSchedules().stream()
+                .filter(schedule -> schedule.getMatchDate() != null)
+                .filter(schedule -> !schedule.getMatchDate().isBefore(startDate))
+                .filter(schedule -> !schedule.getMatchDate().isAfter(endDate))
+                .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
+                .toList();
+        int matchedScheduleCount = sportteryMarketSelectionService.applyCachedSelections(schedules);
+        int matchedOddsScheduleCount = (int) schedules.stream()
+                .filter(schedule -> schedule.getSportteryNormalOdds() != null
+                        || schedule.getSportteryHandicapOdds() != null)
+                .count();
+        response.setScheduleCount(schedules.size());
+        response.setMatchedScheduleCount(matchedScheduleCount);
+        response.setMatchedOddsScheduleCount(matchedOddsScheduleCount);
+        return response;
+    }
+
+    private LocalDate resolveBacktestStartDate(LocalDate backtestEndDate) {
+        LocalDate configuredStartDate = DEFAULT_RECOMMENDATION_BACKTEST_START_DATE;
+        try {
+            configuredStartDate = LocalDate.parse(recommendationBacktestStartDateText.trim());
+        } catch (DateTimeParseException | NullPointerException ignored) {
+            // 使用本届世界杯开赛日作为无效配置的回退值
+        }
+        return configuredStartDate.isAfter(backtestEndDate) ? backtestEndDate : configuredStartDate;
     }
 
     public ModelOverviewResponse overview() {

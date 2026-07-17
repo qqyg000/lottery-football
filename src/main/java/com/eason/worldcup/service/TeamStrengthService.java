@@ -52,13 +52,13 @@ public class TeamStrengthService {
     @Value("${worldcup.min-goals-lambda:0.2}")
     private double minGoalsLambda;
 
-    @Value("${worldcup.host-team-goal-factor:1.22}")
+    @Value("${worldcup.host-team-goal-factor:1.21}")
     private double hostTeamGoalFactor;
 
-    @Value("${worldcup.home-team-goal-factor:1.08}")
+    @Value("${worldcup.home-team-goal-factor:1.05}")
     private double homeTeamGoalFactor;
 
-    @Value("${worldcup.seed-team-goal-factor:1.57}")
+    @Value("${worldcup.seed-team-goal-factor:1.80}")
     private double seedTeamGoalFactor;
 
     @Value("${worldcup.current-model-excluded-dates:}")

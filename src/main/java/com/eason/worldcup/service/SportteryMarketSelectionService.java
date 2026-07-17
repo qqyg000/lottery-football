@@ -3,6 +3,7 @@ package com.eason.worldcup.service;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.SportteryOdds;
+import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
 import com.eason.worldcup.util.ClubTeamNameTranslator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -169,6 +170,87 @@ public class SportteryMarketSelectionService {
                 normalizedForceFutureDays());
         refreshOddsForWindow(effectiveReferenceDate);
         return entriesByMatchId.size();
+    }
+
+    public synchronized SportteryHistoricalOddsRefreshResponse refreshHistoricalRange(
+            LocalDate startDate,
+            LocalDate endDate) {
+        validateHistoricalRange(startDate, endDate);
+        ensureCacheLoaded();
+        TreeSet<LocalDate> lookupDates = new TreeSet<>();
+        LocalDate date = startDate;
+        while (!date.isAfter(endDate)) {
+            lookupDates.add(date);
+            date = date.plusDays(1);
+        }
+        refreshMarketEntries(lookupDates, true, false, 0);
+
+        List<SportteryMarketEntry> candidates = entriesByMatchId.values().stream()
+                .filter(entry -> entry.getMatchDate() != null)
+                .filter(entry -> !entry.getMatchDate().isBefore(startDate))
+                .filter(entry -> !entry.getMatchDate().isAfter(endDate))
+                .sorted(Comparator
+                        .comparing(SportteryMarketEntry::getMatchDate)
+                        .thenComparing(SportteryMarketEntry::getSportteryMatchId))
+                .toList();
+        int failedOddsQueryCount = refreshHistoricalOdds(candidates);
+
+        SportteryHistoricalOddsRefreshResponse response = new SportteryHistoricalOddsRefreshResponse();
+        response.setStartDate(startDate);
+        response.setEndDate(endDate);
+        response.setOfficialMatchCount(candidates.size());
+        response.setNormalOddsMatchCount((int) candidates.stream()
+                .filter(entry -> entry.getNormalOdds() != null)
+                .count());
+        response.setHandicapOddsMatchCount((int) candidates.stream()
+                .filter(entry -> entry.getHandicapOdds() != null)
+                .count());
+        response.setCompleteOddsMatchCount((int) candidates.stream()
+                .filter(entry -> entry.getNormalOdds() != null && entry.getHandicapOdds() != null)
+                .count());
+        response.setFailedOddsQueryCount(failedOddsQueryCount);
+        return response;
+    }
+
+    private int refreshHistoricalOdds(List<SportteryMarketEntry> candidates) {
+        if (candidates.isEmpty()) {
+            return 0;
+        }
+        Duration timeout = Duration.ofSeconds(Math.max(1, timeoutSeconds));
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(timeout)
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+        int failedCount = 0;
+        for (SportteryMarketEntry entry : candidates) {
+            try {
+                downloadLatestOdds(client, entry, timeout);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                failedCount++;
+                break;
+            } catch (Exception ex) {
+                failedCount++;
+                log.warn(
+                        "Unable to refresh historical Sporttery odds for match {}: {}",
+                        entry.getSportteryMatchId(),
+                        ex.getMessage());
+            }
+        }
+        saveCache(LocalDateTime.now(resolveTargetZone()));
+        return failedCount;
+    }
+
+    private void validateHistoricalRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("历史赔率起止日期不能为空");
+        }
+        if (endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("历史赔率结束日期不能早于开始日期");
+        }
+        if (ChronoUnit.DAYS.between(startDate, endDate) > 366L) {
+            throw new IllegalArgumentException("单次历史赔率刷新范围不能超过366天");
+        }
     }
 
     private List<MatchSchedule> filterSupportedSchedules(List<MatchSchedule> schedules) {

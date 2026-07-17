@@ -107,6 +107,7 @@ public final class ClubTeamNameTranslator {
         teamNames.put("FC Cincinnati", "辛辛那提FC");
         teamNames.put("FC Dallas", "达拉斯FC");
         teamNames.put("FC Haka", "哈卡");
+        teamNames.put("FC Inter Turku", "国际图尔库");
         teamNames.put("FC Ilves", "坦佩雷山猫");
         teamNames.put("FC Lahti", "拉赫蒂");
         teamNames.put("FC Lugano", "卢加诺");
@@ -121,6 +122,7 @@ public final class ClubTeamNameTranslator {
         teamNames.put("Fenerbahce", "费内巴切");
         teamNames.put("Ferencvaros", "费伦茨瓦罗斯");
         teamNames.put("Feyenoord Rotterdam", "费耶诺德");
+        teamNames.put("FF Jaro", "雅罗");
         teamNames.put("FK Qarabag", "卡拉巴赫");
         teamNames.put("FK Sutjeska", "苏捷斯卡");
         teamNames.put("FK TSC", "巴奇卡托波拉TSC");
@@ -150,11 +152,13 @@ public final class ClubTeamNameTranslator {
         teamNames.put("Haugesund", "海于格松");
         teamNames.put("Heart of Midlothian", "哈茨");
         teamNames.put("Hibernian", "希伯尼安");
+        teamNames.put("HJK", "赫尔辛基");
         teamNames.put("HJK Helsinki", "赫尔辛基");
         teamNames.put("Houston Dynamo FC", "休斯敦迪纳摩");
         teamNames.put("Iberia 1999", "伊比利亚1999");
         teamNames.put("IF Brommapojkarna", "布鲁马波卡纳");
         teamNames.put("IF Elfsborg", "埃尔夫斯堡");
+        teamNames.put("IF Gnistan", "赫尔辛基火花");
         teamNames.put("IFK Göteborg", "IFK哥德堡");
         teamNames.put("IFK Mariehamn", "玛丽港");
         teamNames.put("IFK Norrköping", "北雪平");
@@ -284,6 +288,7 @@ public final class ClubTeamNameTranslator {
         teamNames.put("Sheriff Tiraspol", "谢里夫");
         teamNames.put("Sigma Olomouc", "奥洛穆茨西格玛");
         teamNames.put("Silkeborg IF", "锡尔克堡");
+        teamNames.put("SJK", "塞伊奈约基");
         teamNames.put("SJK Seinajoki", "塞伊奈约基");
         teamNames.put("SK Brann", "布兰");
         teamNames.put("SK Sturm Graz", "格拉茨风暴");

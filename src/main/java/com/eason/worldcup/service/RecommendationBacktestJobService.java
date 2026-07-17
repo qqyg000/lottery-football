@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -46,7 +47,7 @@ public class RecommendationBacktestJobService {
     }
 
     public RecommendationBacktestJobResponse start(
-            Competition competition,
+            Set<Competition> competitions,
             Integer simulations,
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
@@ -55,9 +56,10 @@ public class RecommendationBacktestJobService {
         removeExpiredJobs();
         BacktestJob job = new BacktestJob(UUID.randomUUID().toString());
         jobs.put(job.getJobId(), job);
+        Set<Competition> selectedCompetitions = competitions == null ? Set.of() : Set.copyOf(competitions);
         executorService.submit(() -> execute(
                 job,
-                competition,
+                selectedCompetitions,
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
@@ -78,7 +80,7 @@ public class RecommendationBacktestJobService {
 
     private void execute(
             BacktestJob job,
-            Competition competition,
+            Set<Competition> competitions,
             Integer simulations,
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
@@ -87,7 +89,7 @@ public class RecommendationBacktestJobService {
         job.start();
         try {
             RecommendationBacktestResponse result = predictionService.queryRecommendationBacktest(
-                    competition,
+                    competitions,
                     simulations,
                     hostTeamGoalFactor,
                     seedTeamGoalFactor,
