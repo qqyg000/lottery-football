@@ -506,11 +506,33 @@
         </div>
       </section>
     </div>
+
+    <div v-if="backtesting" class="backtest-mask" role="status" aria-live="polite" aria-busy="true">
+      <div class="backtest-mask-card">
+        <div class="backtest-mask-heading">
+          <strong>正在回测</strong>
+          <span>{{ backtestProgressText }}</span>
+        </div>
+        <span>{{ backtestProgressDetail }}</span>
+        <div
+          class="backtest-progress"
+          role="progressbar"
+          aria-label="回测进度"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          :aria-valuenow="backtestProgress"
+          :aria-valuetext="backtestProgressDetail"
+        >
+          <span class="backtest-progress-bar" :style="{ width: backtestProgress + '%' }"></span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 const FIXED_SIMULATIONS = 50000
+const BACKTEST_PROGRESS_POLL_INTERVAL = 300
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
 const UTC_PLUS_EIGHT_TIME_ZONE = 'Asia/Shanghai'
 const COMPETITIONS = [
@@ -643,6 +665,9 @@ export default {
       activeParameterPreset: 'stable',
       selectedRows: {},
       backtesting: false,
+      backtestProgress: 0,
+      backtestProcessedMatchCount: 0,
+      backtestTotalMatchCount: 0,
       backtestActive: false,
       backtestSourceMatches: [],
       backtestMatches: [],
@@ -733,6 +758,18 @@ export default {
       const hitRate = hitMatchCount / recommendedMatchCount
       const netRoi = Math.pow((hitRate * averageOddsIncludingMisses) / averageRecommendations, 2) - 1
       return (netRoi * 100).toFixed(1) + '%'
+    },
+    backtestProgressText() {
+      return Number(this.backtestProgress).toFixed(1) + '%'
+    },
+    backtestProgressDetail() {
+      const processedMatchCount = Number(this.backtestProcessedMatchCount) || 0
+      const totalMatchCount = Number(this.backtestTotalMatchCount) || 0
+      if (totalMatchCount <= 0) {
+        return '正在准备历史赔率样本...'
+      }
+      return '已完成 ' + processedMatchCount.toLocaleString('zh-CN') +
+        ' / ' + totalMatchCount.toLocaleString('zh-CN') + ' 场'
     },
     parameterPresetToggleText() {
       return this.activeParameterPreset === 'aggressive' ? '切换稳健方案' : '切换激进方案'
@@ -1095,6 +1132,7 @@ export default {
       this.recommendationOdds = this.formatRecommendationOddsValue(this.recommendationOdds)
       this.normalizeRecommendationThresholdInputs()
       this.saveGlobalParametersToCookie()
+      this.resetBacktestProgress()
       this.backtesting = true
       this.errorMessage = ''
       try {
@@ -1103,11 +1141,14 @@ export default {
         params.append('simulations', FIXED_SIMULATIONS)
         params.append('competition', this.activeCompetition)
         this.appendModelFactorParams(params)
-        const res = await fetch('/api/football/recommendation-backtest?' + params.toString())
+        const res = await fetch('/api/football/recommendation-backtest/jobs?' + params.toString(), {
+          method: 'POST'
+        })
         if (!res.ok) {
-          throw new Error('服务响应异常')
+          throw new Error('创建回测任务失败')
         }
-        const data = await res.json()
+        const job = await res.json()
+        const data = await this.waitForRecommendationBacktestJob(job)
         this.backtestSourceMatches = Array.isArray(data.matches) ? data.matches : []
         this.backtestSummary = {
           ...createEmptyBacktestSummary(),
@@ -1122,6 +1163,50 @@ export default {
       } finally {
         this.backtesting = false
       }
+    },
+    async waitForRecommendationBacktestJob(initialJob) {
+      let job = initialJob
+      while (job && (job.status === 'QUEUED' || job.status === 'RUNNING')) {
+        this.applyBacktestProgress(job)
+        await this.wait(BACKTEST_PROGRESS_POLL_INTERVAL)
+        const res = await fetch(
+          '/api/football/recommendation-backtest/jobs/' + encodeURIComponent(job.jobId),
+          { cache: 'no-store' }
+        )
+        if (!res.ok) {
+          throw new Error('读取回测进度失败')
+        }
+        job = await res.json()
+      }
+      this.applyBacktestProgress(job)
+      if (job && job.status === 'COMPLETED' && job.result) {
+        return job.result
+      }
+      throw new Error(job && job.message ? job.message : '回测任务执行失败')
+    },
+    applyBacktestProgress(job) {
+      if (!job) {
+        return
+      }
+      const totalMatchCount = Math.max(0, Number(job.totalMatchCount) || 0)
+      const processedMatchCount = Math.max(
+        0,
+        Math.min(Number(job.processedMatchCount) || 0, totalMatchCount)
+      )
+      const progress = Number(job.progress)
+      this.backtestTotalMatchCount = totalMatchCount
+      this.backtestProcessedMatchCount = processedMatchCount
+      this.backtestProgress = Number.isFinite(progress)
+        ? Math.max(0, Math.min(100, progress))
+        : (totalMatchCount > 0 ? processedMatchCount * 100 / totalMatchCount : 0)
+    },
+    resetBacktestProgress() {
+      this.backtestProgress = 0
+      this.backtestProcessedMatchCount = 0
+      this.backtestTotalMatchCount = 0
+    },
+    wait(milliseconds) {
+      return new Promise(resolve => window.setTimeout(resolve, milliseconds))
     },
     refreshBacktestResults() {
       const recommendedMatches = []
@@ -1567,10 +1652,6 @@ export default {
       this.saveModelFactorsToCookie()
       this.saveGlobalParametersToCookie()
       this.saveUserConfig()
-      if (this.backtestActive) {
-        await this.runRecommendationOddsBacktest()
-        return
-      }
       if (this.queryDate) {
         await this.loadPredictions()
       }
@@ -3046,6 +3127,74 @@ body.dialog-open {
   padding: 24px;
   background: rgba(15, 23, 42, 0.58);
   backdrop-filter: blur(3px);
+}
+
+.backtest-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.32);
+  backdrop-filter: blur(3px);
+}
+
+.backtest-mask-card {
+  display: grid;
+  gap: 12px;
+  width: min(360px, calc(100vw - 48px));
+  padding: 24px;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  color: #0f172a;
+  background: linear-gradient(145deg, #ffffff, #eff6ff);
+  box-shadow: 0 22px 52px rgba(30, 64, 175, 0.2);
+  text-align: left;
+}
+
+.backtest-mask-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.backtest-mask-heading strong {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.backtest-mask-heading span {
+  color: #2563eb;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.backtest-mask-card > span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.backtest-progress {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dbeafe;
+}
+
+.backtest-progress-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  transition: width 0.28s ease;
 }
 
 .head-to-head-dialog {

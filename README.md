@@ -271,8 +271,15 @@ src/main/resources/data/club_history_matches.csv
 - 没有体彩数据的场次仍可手工勾选，兼容非竞彩场次和接口异常
 - 查询结果缓存到 `config/sporttery-market-selections.json`，近期日期默认每 30 分钟更新
 - 点击“更新数据”会补查所选日期前 30 天内尚无赔率的比赛，并强制刷新所选日期前 1 天至后 4 天的全部比赛，不受已有赔率和缓存间隔影响
+- `historical_odds.csv` 内置从 2022-11-20 起的历史初盘赔率，回测不再受当前赛季范围限制
 
-相关开关、接口地址、超时、刷新间隔和缓存位置位于 `application.yml` 的 `sporttery.result-update` 节点。
+历史赔率通过以下命令从原始文件重新生成，俱乐部名称复用 `club_history_matches.csv` 已核验的球队映射，世界杯球队使用固定中英文映射：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/import-historical-odds.ps1 -SourcePath "C:\path\to\his-data.csv"
+```
+
+相关开关、接口地址、历史赔率路径、回测起始日期和缓存位置位于 `application.yml` 的 `sporttery.result-update` 节点。
 
 ## 七、模型说明
 

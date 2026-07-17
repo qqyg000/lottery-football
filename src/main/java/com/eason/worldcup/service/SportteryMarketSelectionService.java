@@ -799,14 +799,17 @@ public class SportteryMarketSelectionService {
         boolean oddsCacheChanged = false;
         boolean oddsLookupInterrupted = false;
         for (MatchSchedule schedule : schedules) {
-            clearSelection(schedule);
             SportteryMarketEntry entry = findBestEntry(
                     schedule,
                     entriesByCompetition.getOrDefault(schedule.getCompetition(), List.of()),
                     usedMatchIds);
             if (entry == null) {
+                if (!hasBundledHistoricalOdds(schedule)) {
+                    clearSelection(schedule);
+                }
                 continue;
             }
+            clearSelection(schedule);
             if (lookupMissingOdds && enabled && !oddsLookupInterrupted && needsOddsLookup(entry)) {
                 if (oddsClient == null) {
                     oddsClient = HttpClient.newBuilder()
@@ -841,6 +844,13 @@ public class SportteryMarketSelectionService {
             saveCache(LocalDateTime.now(resolveTargetZone()));
         }
         return matchedCount;
+    }
+
+    private boolean hasBundledHistoricalOdds(MatchSchedule schedule) {
+        String matchId = schedule.getSportteryMatchId();
+        return matchId != null
+                && matchId.startsWith("HIS-")
+                && (schedule.getSportteryNormalOdds() != null || schedule.getSportteryHandicapOdds() != null);
     }
 
     private boolean needsOddsLookup(SportteryMarketEntry entry) {

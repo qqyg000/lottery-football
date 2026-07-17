@@ -28,11 +28,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SplittableRandom;
+import java.util.function.BiConsumer;
 
 @Service
 public class PredictionService {
 
     private static final int[] HANDICAPS = {-3, -2, -1, 1, 2, 3};
+
+    @Value("${sporttery.result-update.backtest-start-date:2022-11-20}")
+    private LocalDate recommendationBacktestStartDate;
 
     private final DataRepository dataRepository;
 
@@ -143,11 +147,30 @@ public class PredictionService {
             Double seedTeamGoalFactor,
             Double homeTeamGoalFactor,
             Double handicapSmoothingFactor) {
+        return queryRecommendationBacktest(
+                competition,
+                simulations,
+                hostTeamGoalFactor,
+                seedTeamGoalFactor,
+                homeTeamGoalFactor,
+                handicapSmoothingFactor,
+                null);
+    }
+
+    RecommendationBacktestResponse queryRecommendationBacktest(
+            Competition competition,
+            Integer simulations,
+            Double hostTeamGoalFactor,
+            Double seedTeamGoalFactor,
+            Double homeTeamGoalFactor,
+            Double handicapSmoothingFactor,
+            BiConsumer<Integer, Integer> progressConsumer) {
         int simulationCount = normalizeSimulationCount(simulations);
         double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
         List<MatchSchedule> completedSchedules = dataRepository.getSchedules().stream()
                 .filter(schedule -> competition == null || schedule.getCompetition() == competition)
-                .filter(dataRepository::isCurrentSeasonSchedule)
+                .filter(schedule -> schedule.getMatchDate() != null
+                        && !schedule.getMatchDate().isBefore(recommendationBacktestStartDate))
                 .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
                 .filter(schedule -> schedule.getHomeScore() != null && schedule.getAwayScore() != null)
                 .toList();
@@ -163,18 +186,23 @@ public class PredictionService {
                                 Comparator.nullsLast(Comparator.reverseOrder()))
                         .thenComparing(
                                 MatchSchedule::getKickoffTime,
-                                Comparator.nullsLast(Comparator.reverseOrder())))
+                                 Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
-        List<MatchPredictionResponse> matches = oddsSchedules.stream()
-                .map(schedule -> predict(
-                        schedule,
-                        simulationCount,
-                        schedule.getMatchDate(),
-                        hostTeamGoalFactor,
-                        seedTeamGoalFactor,
-                        homeTeamGoalFactor,
-                        effectiveHandicapSmoothingFactor))
-                .toList();
+        int totalMatchCount = oddsSchedules.size();
+        notifyBacktestProgress(progressConsumer, 0, totalMatchCount);
+        List<MatchPredictionResponse> matches = new ArrayList<>(totalMatchCount);
+        for (int index = 0; index < totalMatchCount; index++) {
+            MatchSchedule schedule = oddsSchedules.get(index);
+            matches.add(predict(
+                    schedule,
+                    simulationCount,
+                    schedule.getMatchDate(),
+                    hostTeamGoalFactor,
+                    seedTeamGoalFactor,
+                    homeTeamGoalFactor,
+                    effectiveHandicapSmoothingFactor));
+            notifyBacktestProgress(progressConsumer, index + 1, totalMatchCount);
+        }
 
         RecommendationBacktestResponse response = new RecommendationBacktestResponse();
         response.setCompletedMatchCount(completedSchedules.size());
@@ -184,12 +212,22 @@ public class PredictionService {
         return response;
     }
 
+    private void notifyBacktestProgress(
+            BiConsumer<Integer, Integer> progressConsumer,
+            int processedMatchCount,
+            int totalMatchCount) {
+        if (progressConsumer != null) {
+            progressConsumer.accept(processedMatchCount, totalMatchCount);
+        }
+    }
+
     public ModelOverviewResponse overview() {
         return overview(Competition.WORLD_CUP);
     }
 
     public ModelOverviewResponse overview(Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
+        sportteryMarketSelectionService.applyCachedSelections(dataRepository.getSchedules(effectiveCompetition));
         ModelOverviewResponse response = new ModelOverviewResponse();
         response.setCompetition(effectiveCompetition);
         response.setCompetitionName(effectiveCompetition.getDisplayName());

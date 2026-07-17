@@ -3,6 +3,7 @@ package com.eason.worldcup.service;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.MatchSchedule;
+import com.eason.worldcup.model.SportteryOdds;
 import com.eason.worldcup.util.ApplicationTime;
 import com.eason.worldcup.util.CsvUtils;
 import jakarta.annotation.PostConstruct;
@@ -44,6 +45,8 @@ public class DataRepository {
 
     private final ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater;
 
+    private final HistoricalOddsScheduleLoader historicalOddsScheduleLoader;
+
     @Value("${worldcup.history-path:classpath:data/history_matches.csv}")
     private String historyPath;
 
@@ -75,11 +78,13 @@ public class DataRepository {
             ResourceLoader resourceLoader,
             OpenFootballScheduleUpdater scheduleUpdater,
             EspnScheduleUpdater espnScheduleUpdater,
-            ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater) {
+            ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater,
+            HistoricalOddsScheduleLoader historicalOddsScheduleLoader) {
         this.resourceLoader = resourceLoader;
         this.scheduleUpdater = scheduleUpdater;
         this.espnScheduleUpdater = espnScheduleUpdater;
         this.clubCompetitionScheduleUpdater = clubCompetitionScheduleUpdater;
+        this.historicalOddsScheduleLoader = historicalOddsScheduleLoader;
     }
 
     @PostConstruct
@@ -175,11 +180,28 @@ public class DataRepository {
 
     public List<String> findScheduleDates(Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
-        return getCurrentSeasonSchedules(effectiveCompetition).stream()
+        return schedules.stream()
+                .filter(item -> item.getCompetition() == effectiveCompetition)
+                .filter(item -> item.getMatchDate() != null)
+                .filter(this::hasSportteryOdds)
                 .map(item -> getScheduleQueryDate(item).toString())
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
+    }
+
+    private boolean hasSportteryOdds(MatchSchedule schedule) {
+        return hasPositiveOdds(schedule.getSportteryNormalOdds())
+                || hasPositiveOdds(schedule.getSportteryHandicapOdds());
+    }
+
+    private boolean hasPositiveOdds(SportteryOdds odds) {
+        return odds != null
+                && (isPositive(odds.getWin()) || isPositive(odds.getDraw()) || isPositive(odds.getLose()));
+    }
+
+    private boolean isPositive(Double value) {
+        return value != null && Double.isFinite(value) && value > 0;
     }
 
     private LocalDate getScheduleQueryDate(MatchSchedule schedule) {
@@ -313,6 +335,7 @@ public class DataRepository {
         if (clubCompetitionUpdatedCount > 0) {
             log.info("Loaded {} additional club competition schedule rows.", clubCompetitionUpdatedCount);
         }
+        historicalOddsScheduleLoader.mergeInto(result);
         result.sort(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getKickoffTime));
         return result;
     }

@@ -78,3 +78,5 @@ sporttery:
     force-future-days: 4
     target-zone: ${data-refresh.target-zone}
     cache-path: config/sporttery-market-selections.json
+    historical-odds-path: classpath:data/historical_odds.csv
+    backtest-start-date: 2022-11-20

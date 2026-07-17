@@ -4,18 +4,22 @@ import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HeadToHeadMatchResponse;
 import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
+import com.eason.worldcup.model.RecommendationBacktestJobResponse;
 import com.eason.worldcup.model.RecommendationBacktestResponse;
 import com.eason.worldcup.model.UserConfig;
 import com.eason.worldcup.service.PredictionService;
+import com.eason.worldcup.service.RecommendationBacktestJobService;
 import com.eason.worldcup.service.UserConfigService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -29,10 +33,16 @@ public class PredictionController {
 
     private final PredictionService predictionService;
 
+    private final RecommendationBacktestJobService recommendationBacktestJobService;
+
     private final UserConfigService userConfigService;
 
-    public PredictionController(PredictionService predictionService, UserConfigService userConfigService) {
+    public PredictionController(
+            PredictionService predictionService,
+            RecommendationBacktestJobService recommendationBacktestJobService,
+            UserConfigService userConfigService) {
         this.predictionService = predictionService;
+        this.recommendationBacktestJobService = recommendationBacktestJobService;
         this.userConfigService = userConfigService;
     }
 
@@ -53,6 +63,33 @@ public class PredictionController {
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
                 handicapSmoothingFactor);
+    }
+
+    @PostMapping("/recommendation-backtest/jobs")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public RecommendationBacktestJobResponse startRecommendationBacktest(
+            @RequestParam(value = "simulations", required = false) Integer simulations,
+            @RequestParam(value = "hostTeamGoalFactor", required = false) Double hostTeamGoalFactor,
+            @RequestParam(value = "homeTeamGoalFactor", required = false) Double homeTeamGoalFactor,
+            @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
+            @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
+            @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
+        return recommendationBacktestJobService.start(
+                parseBacktestCompetition(competition),
+                simulations,
+                hostTeamGoalFactor,
+                seedTeamGoalFactor,
+                homeTeamGoalFactor,
+                handicapSmoothingFactor);
+    }
+
+    @GetMapping("/recommendation-backtest/jobs/{jobId}")
+    public RecommendationBacktestJobResponse recommendationBacktestProgress(@PathVariable("jobId") String jobId) {
+        RecommendationBacktestJobResponse response = recommendationBacktestJobService.find(jobId);
+        if (response == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "回测任务不存在或已过期");
+        }
+        return response;
     }
 
     @GetMapping("/recommendation-backtest")
