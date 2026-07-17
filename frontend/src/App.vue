@@ -163,12 +163,12 @@
             <small v-else>{{ backtestScopeLabel }}</small>
             <div class="backtest-average-grid">
               <div>
-                <strong>{{ backtestOddsIncludingMissesText }}</strong>
-                <span>含未中奖场次</span>
+                <strong>{{ backtestAverageOddsText }}</strong>
+                <span>场均赔率</span>
               </div>
               <div>
-                <strong>{{ backtestOddsExcludingMissesText }}</strong>
-                <span>仅中奖场次</span>
+                <strong>{{ backtestHitRateText }}</strong>
+                <span>命中率</span>
               </div>
             </div>
           </div>
@@ -426,7 +426,7 @@ const FIXED_SIMULATIONS = 50000
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
 const UTC_PLUS_EIGHT_TIME_ZONE = 'Asia/Shanghai'
 const COMPETITIONS = [
-  { code: 'ALL', name: 'ALL' },
+  { code: 'ALL', name: '全部' },
   { code: 'WORLD_CUP', name: '世界杯' },
   { code: 'CHAMPIONS_LEAGUE', name: '欧冠' },
   { code: 'EUROPA_LEAGUE', name: '欧罗巴' },
@@ -506,8 +506,6 @@ function createEmptyBacktestSummary() {
     hitMatchCount: 0,
     missMatchCount: 0,
     winningSelectionCount: 0,
-    averageWinningOdds: null,
-    averageOddsExcludingMisses: null,
     averageOddsIncludingMisses: null
   }
 }
@@ -581,11 +579,19 @@ export default {
       }
       return this.headToHeadMatch.homeTeamCn + ' vs ' + this.headToHeadMatch.awayTeamCn
     },
-    backtestOddsExcludingMissesText() {
-      return this.formatBacktestOdds(this.backtestSummary.averageOddsExcludingMisses)
-    },
-    backtestOddsIncludingMissesText() {
+    backtestAverageOddsText() {
       return this.formatBacktestOdds(this.backtestSummary.averageOddsIncludingMisses)
+    },
+    backtestHitRateText() {
+      if (!this.backtestActive) {
+        return '--'
+      }
+      const recommendedMatchCount = Number(this.backtestSummary.recommendedMatchCount) || 0
+      if (recommendedMatchCount <= 0) {
+        return '0.000'
+      }
+      const hitMatchCount = Number(this.backtestSummary.hitMatchCount) || 0
+      return (hitMatchCount / recommendedMatchCount).toFixed(3)
     },
     parameterPresetToggleText() {
       return this.activeParameterPreset === 'aggressive' ? '切换稳健方案' : '切换激进方案'
@@ -926,7 +932,6 @@ export default {
     refreshBacktestResults() {
       const recommendedMatches = []
       const hitMatches = []
-      const winningMatchOdds = []
       const settledMatchOdds = []
       let winningSelectionCount = 0
       this.backtestSourceMatches.forEach(match => {
@@ -948,7 +953,6 @@ export default {
           return
         }
         const winningOdds = matchWinningOdds.reduce((sum, odds) => sum + odds, 0)
-        winningMatchOdds.push(winningOdds)
         settledMatchOdds.push(winningOdds)
       })
       const missMatchCount = recommendedMatches.length - hitMatches.length
@@ -959,8 +963,6 @@ export default {
         hitMatchCount: hitMatches.length,
         missMatchCount,
         winningSelectionCount,
-        averageWinningOdds: this.calculateAverageOdds(winningMatchOdds),
-        averageOddsExcludingMisses: this.calculateAverageOdds(winningMatchOdds),
         averageOddsIncludingMisses: this.calculateAverageOdds(settledMatchOdds)
       }
     },
