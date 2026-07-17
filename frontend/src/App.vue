@@ -157,10 +157,6 @@
         </div>
         <div class="global-parameter-card" aria-label="全局参数">
           <div class="backtest-result" :class="{ 'is-empty': !backtestActive }">
-            <small v-if="backtestActive">
-              命中 {{ backtestSummary.hitMatchCount }} 场 · 未中 {{ backtestSummary.missMatchCount }} 场 · 推荐 {{ backtestSummary.recommendedMatchCount }} 场
-            </small>
-            <small v-else>{{ backtestScopeLabel }}</small>
             <div class="backtest-average-grid">
               <div>
                 <strong>{{ backtestAverageOddsText }}</strong>
@@ -173,6 +169,10 @@
               <div>
                 <strong>{{ backtestHitRateText }}</strong>
                 <span>命中率</span>
+              </div>
+              <div title="ROI = [((命中率 × 场均中奖赔率) ÷ 场均推荐数)² - 1] × 100%">
+                <strong>{{ backtestRoiText }}</strong>
+                <span>ROI</span>
               </div>
             </div>
           </div>
@@ -600,6 +600,7 @@ function createEmptyBacktestSummary() {
     hitMatchCount: 0,
     missMatchCount: 0,
     winningSelectionCount: 0,
+    averageWinningOdds: null,
     averageOddsIncludingMisses: null
   }
 }
@@ -679,11 +680,6 @@ export default {
     recommendationDialogItemCount() {
       return this.recommendationDialogRows.reduce((count, row) => count + row.recommendations.length, 0)
     },
-    backtestScopeLabel() {
-      const competition = this.competitions.find(item => item.code === this.activeCompetition)
-      const competitionName = competition ? competition.name : '当前赛事'
-      return '回测' + competitionName + '已结束比赛'
-    },
     headToHeadTitle() {
       if (!this.headToHeadMatch) {
         return ''
@@ -710,10 +706,33 @@ export default {
       }
       const recommendedMatchCount = Number(this.backtestSummary.recommendedMatchCount) || 0
       if (recommendedMatchCount <= 0) {
-        return '0.000'
+        return '0.0%'
       }
       const hitMatchCount = Number(this.backtestSummary.hitMatchCount) || 0
-      return (hitMatchCount / recommendedMatchCount).toFixed(3)
+      return ((hitMatchCount / recommendedMatchCount) * 100).toFixed(1) + '%'
+    },
+    backtestRoiText() {
+      if (!this.backtestActive) {
+        return '--'
+      }
+      const recommendedMatchCount = Number(this.backtestSummary.recommendedMatchCount) || 0
+      if (recommendedMatchCount <= 0) {
+        return '0.0%'
+      }
+      const hitMatchCount = Number(this.backtestSummary.hitMatchCount) || 0
+      if (hitMatchCount <= 0) {
+        return '-100.0%'
+      }
+      const recommendedSelectionCount = Number(this.backtestSummary.recommendedSelectionCount) || 0
+      const averageRecommendations = recommendedSelectionCount / recommendedMatchCount
+      const averageWinningOdds = Number(this.backtestSummary.averageWinningOdds)
+      if (!Number.isFinite(averageRecommendations) || averageRecommendations <= 0 ||
+        !Number.isFinite(averageWinningOdds) || averageWinningOdds <= 0) {
+        return '--'
+      }
+      const hitRate = hitMatchCount / recommendedMatchCount
+      const netRoi = Math.pow((hitRate * averageWinningOdds) / averageRecommendations, 2) - 1
+      return (netRoi * 100).toFixed(1) + '%'
     },
     parameterPresetToggleText() {
       return this.activeParameterPreset === 'aggressive' ? '切换稳健方案' : '切换激进方案'
@@ -1107,6 +1126,7 @@ export default {
     refreshBacktestResults() {
       const recommendedMatches = []
       const hitMatches = []
+      const winningMatchOdds = []
       const settledMatchOdds = []
       let recommendedSelectionCount = 0
       let winningSelectionCount = 0
@@ -1126,10 +1146,11 @@ export default {
           .filter(item => item.winning)
           .map(item => item.odds)
         winningSelectionCount += matchWinningOdds.length
+        const winningOdds = matchWinningOdds.reduce((sum, odds) => sum + odds, 0)
+        winningMatchOdds.push(winningOdds)
         if (recommendationKeys.size === 1) {
           return
         }
-        const winningOdds = matchWinningOdds.reduce((sum, odds) => sum + odds, 0)
         settledMatchOdds.push(winningOdds)
       })
       const missMatchCount = recommendedMatches.length - hitMatches.length
@@ -1141,6 +1162,7 @@ export default {
         hitMatchCount: hitMatches.length,
         missMatchCount,
         winningSelectionCount,
+        averageWinningOdds: this.calculateAverageOdds(winningMatchOdds),
         averageOddsIncludingMisses: this.calculateAverageOdds(settledMatchOdds)
       }
     },
@@ -2355,35 +2377,39 @@ h1 {
 
 .backtest-average-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 5px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
 }
 
 .backtest-average-grid > div {
   display: grid;
-  gap: 2px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px;
+  align-items: center;
   min-width: 0;
-  padding: 5px 3px;
-  border-radius: 6px;
+  height: 30px;
+  padding: 2px 8px;
+  border-radius: 5px;
   background: rgba(255, 255, 255, 0.08);
 }
 
 .backtest-result strong {
+  grid-column: 2;
+  grid-row: 1;
   color: #ffffff;
-  font-size: 20px;
+  font-size: 14px;
   line-height: 1;
+  text-align: right;
 }
 
 .backtest-result span {
+  grid-column: 1;
+  grid-row: 1;
   color: rgba(255, 255, 255, 0.88);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.backtest-result small {
-  color: rgba(255, 255, 255, 0.68);
   font-size: 10px;
-  line-height: 1.3;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: left;
 }
 
 .backtest-result.is-empty strong {
