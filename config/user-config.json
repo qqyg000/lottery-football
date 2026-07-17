@@ -1,6 +1,7 @@
 {
   "modelFactors" : {
     "hostTeamGoalFactor" : 1.22,
+    "homeTeamGoalFactor" : 1.08,
     "seedTeamGoalFactor" : 1.57,
     "handicapSmoothingFactor" : 0.225
   },

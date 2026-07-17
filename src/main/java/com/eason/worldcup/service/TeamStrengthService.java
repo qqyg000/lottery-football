@@ -55,6 +55,9 @@ public class TeamStrengthService {
     @Value("${worldcup.host-team-goal-factor:1.22}")
     private double hostTeamGoalFactor;
 
+    @Value("${worldcup.home-team-goal-factor:1.08}")
+    private double homeTeamGoalFactor;
+
     @Value("${worldcup.seed-team-goal-factor:1.57}")
     private double seedTeamGoalFactor;
 
@@ -102,10 +105,23 @@ public class TeamStrengthService {
     }
 
     public AdjustedExpectedGoals calculatePreTournamentExpectedGoals(MatchSchedule schedule, Double hostTeamGoalFactorOverride, Double seedTeamGoalFactorOverride) {
+        return calculatePreTournamentExpectedGoals(schedule, hostTeamGoalFactorOverride, seedTeamGoalFactorOverride, null);
+    }
+
+    public AdjustedExpectedGoals calculatePreTournamentExpectedGoals(
+            MatchSchedule schedule,
+            Double hostTeamGoalFactorOverride,
+            Double seedTeamGoalFactorOverride,
+            Double homeTeamGoalFactorOverride) {
         StrengthModel model = schedule.getCompetition().isClubCompetition()
                 ? getClubPreSeasonModel(schedule.getCompetition(), schedule.getMatchDate())
                 : preTournamentModel;
-        ExpectedGoals expectedGoals = calculateExpectedGoals(schedule, model, hostTeamGoalFactorOverride, seedTeamGoalFactorOverride);
+        ExpectedGoals expectedGoals = calculateExpectedGoals(
+                schedule,
+                model,
+                hostTeamGoalFactorOverride,
+                seedTeamGoalFactorOverride,
+                homeTeamGoalFactorOverride);
         return new AdjustedExpectedGoals(expectedGoals.getHomeGoals(), expectedGoals.getAwayGoals(), model.getSampleCount());
     }
 
@@ -122,10 +138,24 @@ public class TeamStrengthService {
     }
 
     public AdjustedExpectedGoals calculateCurrentExpectedGoals(MatchSchedule schedule, LocalDate predictionDate, Double hostTeamGoalFactorOverride, Double seedTeamGoalFactorOverride) {
+        return calculateCurrentExpectedGoals(schedule, predictionDate, hostTeamGoalFactorOverride, seedTeamGoalFactorOverride, null);
+    }
+
+    public AdjustedExpectedGoals calculateCurrentExpectedGoals(
+            MatchSchedule schedule,
+            LocalDate predictionDate,
+            Double hostTeamGoalFactorOverride,
+            Double seedTeamGoalFactorOverride,
+            Double homeTeamGoalFactorOverride) {
         StrengthModel model = schedule.getCompetition().isClubCompetition()
                 ? getClubModelForPredictionDate(schedule.getCompetition(), predictionDate)
                 : getCurrentModelForPredictionDate(predictionDate);
-        ExpectedGoals expectedGoals = calculateExpectedGoals(schedule, model, hostTeamGoalFactorOverride, seedTeamGoalFactorOverride);
+        ExpectedGoals expectedGoals = calculateExpectedGoals(
+                schedule,
+                model,
+                hostTeamGoalFactorOverride,
+                seedTeamGoalFactorOverride,
+                homeTeamGoalFactorOverride);
         return new AdjustedExpectedGoals(expectedGoals.getHomeGoals(), expectedGoals.getAwayGoals(), model.getSampleCount());
     }
 
@@ -160,14 +190,19 @@ public class TeamStrengthService {
                 .count();
     }
 
-    private ExpectedGoals calculateExpectedGoals(MatchSchedule schedule, StrengthModel model, Double hostTeamGoalFactorOverride, Double seedTeamGoalFactorOverride) {
+    private ExpectedGoals calculateExpectedGoals(
+            MatchSchedule schedule,
+            StrengthModel model,
+            Double hostTeamGoalFactorOverride,
+            Double seedTeamGoalFactorOverride,
+            Double homeTeamGoalFactorOverride) {
         String homeModelTeam = getModelTeamName(schedule, true);
         String awayModelTeam = getModelTeamName(schedule, false);
         TeamStrength homeStrength = getStrength(model, homeModelTeam);
         TeamStrength awayStrength = getStrength(model, awayModelTeam);
-        double homeAdvantage = schedule.isNeutral() ? 1.0D : 1.08D;
-        double effectiveHostTeamGoalFactor = normalizeTournamentFactor(hostTeamGoalFactorOverride, hostTeamGoalFactor);
-        double effectiveSeedTeamGoalFactor = normalizeTournamentFactor(seedTeamGoalFactorOverride, seedTeamGoalFactor);
+        double homeAdvantage = getHomeAdvantage(schedule, homeTeamGoalFactorOverride);
+        double effectiveHostTeamGoalFactor = normalizeGoalFactor(hostTeamGoalFactorOverride, hostTeamGoalFactor);
+        double effectiveSeedTeamGoalFactor = normalizeGoalFactor(seedTeamGoalFactorOverride, seedTeamGoalFactor);
         double homeTournamentFactor = getTournamentTeamFactor(schedule, schedule.getHomeTeamEn(), effectiveHostTeamGoalFactor, effectiveSeedTeamGoalFactor);
         double awayTournamentFactor = getTournamentTeamFactor(schedule, schedule.getAwayTeamEn(), effectiveHostTeamGoalFactor, effectiveSeedTeamGoalFactor);
         double h2hFactor = calculateHeadToHeadFactor(homeModelTeam, awayModelTeam, model);
@@ -193,7 +228,17 @@ public class TeamStrengthService {
         return 1.0D;
     }
 
-    private double normalizeTournamentFactor(Double value, double defaultValue) {
+    private double getHomeAdvantage(MatchSchedule schedule, Double homeTeamGoalFactorOverride) {
+        if (schedule.isNeutral()) {
+            return 1.0D;
+        }
+        if (schedule.getCompetition() == Competition.WORLD_CUP) {
+            return normalizeGoalFactor(null, homeTeamGoalFactor);
+        }
+        return normalizeGoalFactor(homeTeamGoalFactorOverride, homeTeamGoalFactor);
+    }
+
+    private double normalizeGoalFactor(Double value, double defaultValue) {
         if (value == null || !Double.isFinite(value)) {
             return defaultValue;
         }

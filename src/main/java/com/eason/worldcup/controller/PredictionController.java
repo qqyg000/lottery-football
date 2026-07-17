@@ -41,6 +41,7 @@ public class PredictionController {
             @RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
             @RequestParam(value = "simulations", required = false) Integer simulations,
             @RequestParam(value = "hostTeamGoalFactor", required = false) Double hostTeamGoalFactor,
+            @RequestParam(value = "homeTeamGoalFactor", required = false) Double homeTeamGoalFactor,
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
             @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition) {
@@ -50,6 +51,7 @@ public class PredictionController {
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
+                homeTeamGoalFactor,
                 handicapSmoothingFactor);
     }
 
@@ -57,6 +59,7 @@ public class PredictionController {
     public RecommendationBacktestResponse recommendationBacktest(
             @RequestParam(value = "simulations", required = false) Integer simulations,
             @RequestParam(value = "hostTeamGoalFactor", required = false) Double hostTeamGoalFactor,
+            @RequestParam(value = "homeTeamGoalFactor", required = false) Double homeTeamGoalFactor,
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
             @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
@@ -65,6 +68,7 @@ public class PredictionController {
                 simulations,
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
+                homeTeamGoalFactor,
                 handicapSmoothingFactor);
     }
 

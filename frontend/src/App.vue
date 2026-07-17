@@ -52,11 +52,7 @@
                   @keyup.enter="commitModelFactors"
                 >
               </label>
-              <label
-                class="factor-control"
-                :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
-                :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
-              >
+              <label v-if="activeCompetition === 'WORLD_CUP'" class="factor-control">
                 <span>东道主进球系数</span>
                 <input
                   type="number"
@@ -64,8 +60,21 @@
                   max="3"
                   step="0.01"
                   v-model.number="modelFactors.hostTeamGoalFactor"
-                  :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
+                  :disabled="loading || updatingData || backtesting"
                   @change="saveModelFactorInput('hostTeamGoalFactor')"
+                  @keyup.enter="commitModelFactors"
+                >
+              </label>
+              <label v-else class="factor-control">
+                <span>主场进球系数</span>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="3"
+                  step="0.01"
+                  v-model.number="modelFactors.homeTeamGoalFactor"
+                  :disabled="loading || updatingData || backtesting"
+                  @change="saveModelFactorInput('homeTeamGoalFactor')"
                   @keyup.enter="commitModelFactors"
                 >
               </label>
@@ -434,7 +443,10 @@ const MODEL_FACTOR_COOKIE = 'worldcup_model_factors'
 const MODEL_FACTOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const GLOBAL_PARAMETER_COOKIE = 'worldcup_global_parameters'
 const GLOBAL_PARAMETER_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
+const ACTIVE_COMPETITION_COOKIE = 'football_active_competition'
+const ACTIVE_COMPETITION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.22
+const DEFAULT_HOME_TEAM_GOAL_FACTOR = 1.08
 const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.57
 const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.225
 const DEFAULT_RECOMMENDATION_ODDS = 1.5
@@ -452,6 +464,7 @@ const HANDICAP_SMOOTHING_MAX = 0.8
 const STABLE_PARAMETER_PRESET = {
   modelFactors: {
     hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR,
+    homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR,
     seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR,
     handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR
   },
@@ -465,6 +478,7 @@ const STABLE_PARAMETER_PRESET = {
 const AGGRESSIVE_PARAMETER_PRESET = {
   modelFactors: {
     hostTeamGoalFactor: 1.32,
+    homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR,
     seedTeamGoalFactor: 1.57,
     handicapSmoothingFactor: 0.245
   },
@@ -477,6 +491,7 @@ const AGGRESSIVE_PARAMETER_PRESET = {
 }
 const MODEL_FACTOR_KEYS = [
   'hostTeamGoalFactor',
+  'homeTeamGoalFactor',
   'seedTeamGoalFactor',
   'handicapSmoothingFactor'
 ]
@@ -524,6 +539,7 @@ export default {
       modelMode: 'after',
       modelFactors: {
         hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR.toFixed(2),
+        homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR.toFixed(2),
         seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR.toFixed(2),
         handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR.toFixed(3)
       },
@@ -656,6 +672,7 @@ export default {
       return ' ' + String(value).slice(0, 5)
     },
     async initializeUserConfig() {
+      this.loadActiveCompetition()
       this.loadModelFactors()
       this.loadGlobalParameters()
       this.syncActiveParameterPreset()
@@ -765,6 +782,7 @@ export default {
       const currentDate = this.queryDate
       this.clearBacktestResults()
       this.activeCompetition = competition
+      this.saveActiveCompetition()
       this.overview = {}
       this.response = {}
       this.scheduleDates = []
@@ -866,6 +884,7 @@ export default {
     },
     appendModelFactorParams(params) {
       params.append('hostTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'))
+      params.append('homeTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.homeTeamGoalFactor, DEFAULT_HOME_TEAM_GOAL_FACTOR, 'homeTeamGoalFactor'))
       params.append('seedTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'))
       params.append('handicapSmoothingFactor', this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
     },
@@ -1146,6 +1165,15 @@ export default {
     setCookie(name, value, maxAge) {
       document.cookie = name + '=' + encodeURIComponent(value) + '; max-age=' + maxAge + '; path=/; SameSite=Lax'
     },
+    loadActiveCompetition() {
+      const competition = this.getCookie(ACTIVE_COMPETITION_COOKIE)
+      if (this.competitions.some(item => item.code === competition)) {
+        this.activeCompetition = competition
+      }
+    },
+    saveActiveCompetition() {
+      this.setCookie(ACTIVE_COMPETITION_COOKIE, this.activeCompetition, ACTIVE_COMPETITION_COOKIE_MAX_AGE)
+    },
     loadGlobalParameters() {
       const cookieValue = this.getCookie(GLOBAL_PARAMETER_COOKIE)
       if (!cookieValue) {
@@ -1262,12 +1290,14 @@ export default {
         }
         this.modelFactors = {
           hostTeamGoalFactor: this.formatModelFactorValue(parsedValue.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'),
+          homeTeamGoalFactor: this.formatModelFactorValue(parsedValue.homeTeamGoalFactor, DEFAULT_HOME_TEAM_GOAL_FACTOR, 'homeTeamGoalFactor'),
           seedTeamGoalFactor: this.formatModelFactorValue(parsedValue.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'),
           handicapSmoothingFactor: this.formatModelFactorValue(parsedValue.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor')
         }
       } catch (error) {
         this.modelFactors = {
           hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR.toFixed(2),
+          homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR.toFixed(2),
           seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR.toFixed(2),
           handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR.toFixed(3)
         }
@@ -1283,6 +1313,7 @@ export default {
     buildModelFactorPayload() {
       return {
         hostTeamGoalFactor: Number(this.formatModelFactorValue(this.modelFactors.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor')),
+        homeTeamGoalFactor: Number(this.formatModelFactorValue(this.modelFactors.homeTeamGoalFactor, DEFAULT_HOME_TEAM_GOAL_FACTOR, 'homeTeamGoalFactor')),
         seedTeamGoalFactor: Number(this.formatModelFactorValue(this.modelFactors.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor')),
         handicapSmoothingFactor: Number(this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
       }
@@ -1374,6 +1405,9 @@ export default {
         Object.keys(preset.globalParameters).every(key => currentGlobalParameters[key] === preset.globalParameters[key])
     },
     getDefaultModelFactor(key) {
+      if (key === 'homeTeamGoalFactor') {
+        return DEFAULT_HOME_TEAM_GOAL_FACTOR
+      }
       if (key === 'seedTeamGoalFactor') {
         return DEFAULT_SEED_TEAM_GOAL_FACTOR
       }
@@ -1648,7 +1682,7 @@ export default {
         this.handicapReverseThreshold,
         DEFAULT_HANDICAP_REVERSE_THRESHOLD
       )
-      if (applyHandicapThreshold && maxCell.row.handicap !== 0 && maxCell.value < reverseThreshold) {
+      if (applyHandicapThreshold && maxCell.row.handicap !== 0 && maxCell.probabilityKey !== 'draw' && maxCell.value < reverseThreshold) {
         return new Set(
           PROBABILITY_KEYS
             .filter(key => key !== maxCell.probabilityKey)
@@ -1695,6 +1729,9 @@ export default {
       return maxCell
     },
     getAdjacentProbabilityKeys(probabilityKey) {
+      if (probabilityKey === 'draw') {
+        return ['draw']
+      }
       const index = PROBABILITY_KEYS.indexOf(probabilityKey)
       if (index < 0) {
         return []

@@ -32,6 +32,7 @@ worldcup:
   max-goals-lambda: 4.5
   min-goals-lambda: 0.2
   host-team-goal-factor: 1.22
+  home-team-goal-factor: 1.08
   seed-team-goal-factor: 1.57
   handicap-smoothing-factor: 0.225
   handicap-max-smoothing: 0.225

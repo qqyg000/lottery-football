@@ -92,6 +92,8 @@ public class UserConfig {
 
         private Double hostTeamGoalFactor;
 
+        private Double homeTeamGoalFactor;
+
         private Double seedTeamGoalFactor;
 
         private Double handicapSmoothingFactor;
@@ -99,6 +101,7 @@ public class UserConfig {
         public static ModelFactors defaults() {
             ModelFactors factors = new ModelFactors();
             factors.setHostTeamGoalFactor(1.22D);
+            factors.setHomeTeamGoalFactor(1.08D);
             factors.setSeedTeamGoalFactor(1.57D);
             factors.setHandicapSmoothingFactor(0.225D);
             return factors;
@@ -110,6 +113,14 @@ public class UserConfig {
 
         public void setHostTeamGoalFactor(Double hostTeamGoalFactor) {
             this.hostTeamGoalFactor = hostTeamGoalFactor;
+        }
+
+        public Double getHomeTeamGoalFactor() {
+            return homeTeamGoalFactor;
+        }
+
+        public void setHomeTeamGoalFactor(Double homeTeamGoalFactor) {
+            this.homeTeamGoalFactor = homeTeamGoalFactor;
         }
 
         public Double getSeedTeamGoalFactor() {
