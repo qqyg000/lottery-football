@@ -170,7 +170,7 @@
                 <strong>{{ backtestHitRateText }}</strong>
                 <span>命中率</span>
               </div>
-              <div title="ROI = [((命中率 × 场均中奖赔率) ÷ 场均推荐数)² - 1] × 100%">
+              <div title="ROI = [((命中率 × 含未中奖场次的场均赔率) ÷ 场均推荐数)² - 1] × 100%">
                 <strong>{{ backtestRoiText }}</strong>
                 <span>ROI</span>
               </div>
@@ -725,13 +725,13 @@ export default {
       }
       const recommendedSelectionCount = Number(this.backtestSummary.recommendedSelectionCount) || 0
       const averageRecommendations = recommendedSelectionCount / recommendedMatchCount
-      const averageWinningOdds = Number(this.backtestSummary.averageWinningOdds)
+      const averageOddsIncludingMisses = Number(this.backtestSummary.averageOddsIncludingMisses)
       if (!Number.isFinite(averageRecommendations) || averageRecommendations <= 0 ||
-        !Number.isFinite(averageWinningOdds) || averageWinningOdds <= 0) {
+        !Number.isFinite(averageOddsIncludingMisses) || averageOddsIncludingMisses <= 0) {
         return '--'
       }
       const hitRate = hitMatchCount / recommendedMatchCount
-      const netRoi = Math.pow((hitRate * averageWinningOdds) / averageRecommendations, 2) - 1
+      const netRoi = Math.pow((hitRate * averageOddsIncludingMisses) / averageRecommendations, 2) - 1
       return (netRoi * 100).toFixed(1) + '%'
     },
     parameterPresetToggleText() {
