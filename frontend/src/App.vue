@@ -373,6 +373,90 @@
       </article>
     </section>
 
+    <button
+      type="button"
+      class="recommendation-fab"
+      :disabled="loading || updatingData || backtesting"
+      aria-label="查看选中日期的推荐比赛"
+      title="查看选中日期的推荐比赛"
+      @click="openRecommendationDialog"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6h10M9 12h10M9 18h10M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+      </svg>
+      <span v-if="recommendationDialogMatchCount > 0" class="recommendation-fab-badge">
+        {{ recommendationDialogMatchCount > 99 ? '99+' : recommendationDialogMatchCount }}
+      </span>
+    </button>
+
+    <div
+      v-if="recommendationDialogVisible"
+      class="dialog-backdrop"
+      @click.self="closeRecommendationDialog"
+      @keydown.esc="closeRecommendationDialog"
+    >
+      <section
+        ref="recommendationDialog"
+        class="recommendation-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recommendation-dialog-title"
+        tabindex="-1"
+      >
+        <header class="head-to-head-dialog-header">
+          <div>
+            <h3 id="recommendation-dialog-title">{{ recommendationDialogTitle }}</h3>
+          </div>
+          <button type="button" class="dialog-close" aria-label="关闭推荐汇总弹窗" @click="closeRecommendationDialog">×</button>
+        </header>
+        <p class="head-to-head-description">
+          推荐 {{ recommendationDialogMatchCount }} 场 · 共 {{ recommendationDialogItemCount }} 项
+        </p>
+
+        <div v-if="recommendationDialogRows.length === 0" class="dialog-state">
+          当前日期暂无符合条件的推荐比赛
+        </div>
+        <div v-else class="recommendation-table-wrap">
+          <table class="recommendation-table" aria-label="选中日期推荐比赛汇总">
+            <thead>
+            <tr>
+              <th>时间</th>
+              <th>赛事</th>
+              <th>对阵</th>
+              <th>推荐项</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="row in recommendationDialogRows" :key="row.key">
+              <td class="recommendation-time-cell">
+                <strong>{{ row.kickoffTime }}</strong>
+                <span v-if="row.matchNumber">{{ row.matchNumber }}</span>
+              </td>
+              <td>{{ row.competitionName }}</td>
+              <td class="recommendation-fixture-cell">
+                <strong>{{ row.homeTeamCn }}</strong>
+                <span>vs</span>
+                <strong>{{ row.awayTeamCn }}</strong>
+              </td>
+              <td class="recommendation-items-cell">
+                <div class="recommendation-item-list">
+                  <div v-for="item in row.recommendations" :key="item.key" class="recommendation-item">
+                    <span class="recommendation-market-name">{{ item.marketName }}</span>
+                    <span class="recommendation-result-pill" :class="'is-' + item.probabilityKey">
+                      {{ item.resultName }}
+                    </span>
+                    <span class="recommendation-item-probability">{{ item.probabilityText }}</span>
+                    <span class="recommendation-item-odds">{{ item.oddsText }}</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
     <div
       v-if="headToHeadDialogVisible"
       class="dialog-backdrop"
@@ -496,6 +580,11 @@ const MODEL_FACTOR_KEYS = [
   'handicapSmoothingFactor'
 ]
 const PROBABILITY_KEYS = ['win', 'draw', 'lose']
+const PROBABILITY_LABELS = {
+  win: '胜',
+  draw: '平',
+  lose: '负'
+}
 
 function createEmptyBacktestSummary() {
   return {
@@ -552,6 +641,7 @@ export default {
       backtestSourceMatches: [],
       backtestMatches: [],
       backtestSummary: createEmptyBacktestSummary(),
+      recommendationDialogVisible: false,
       headToHeadDialogVisible: false,
       headToHeadLoading: false,
       headToHeadError: '',
@@ -567,6 +657,22 @@ export default {
     matches() {
       const sourceMatches = this.backtestActive ? this.backtestMatches : (this.response.matches || [])
       return sourceMatches.filter(match => this.hasSportteryOdds(match))
+    },
+    recommendationDialogTitle() {
+      return (this.queryDate || '当前日期') + ' 推荐汇总'
+    },
+    recommendationDialogRows() {
+      const matches = Array.isArray(this.response.matches) ? this.response.matches : []
+      return matches
+        .filter(match => !this.queryDate || match.matchDate === this.queryDate)
+        .map(match => this.buildRecommendationDialogRow(match))
+        .filter(Boolean)
+    },
+    recommendationDialogMatchCount() {
+      return this.recommendationDialogRows.length
+    },
+    recommendationDialogItemCount() {
+      return this.recommendationDialogRows.reduce((count, row) => count + row.recommendations.length, 0)
     },
     backtestScopeLabel() {
       const competition = this.competitions.find(item => item.code === this.activeCompetition)
@@ -621,6 +727,59 @@ export default {
     document.body.classList.remove('dialog-open')
   },
   methods: {
+    openRecommendationDialog() {
+      this.recommendationDialogVisible = true
+      document.body.classList.add('dialog-open')
+      this.$nextTick(() => {
+        if (this.$refs.recommendationDialog) {
+          this.$refs.recommendationDialog.focus()
+        }
+      })
+    },
+    closeRecommendationDialog() {
+      this.recommendationDialogVisible = false
+      document.body.classList.remove('dialog-open')
+    },
+    buildRecommendationDialogRow(match) {
+      if (!match) {
+        return null
+      }
+      const recommendationKeys = this.getRecommendationKeys(match)
+      if (recommendationKeys.size === 0) {
+        return null
+      }
+      const competition = this.competitions.find(item => item.code === match.competition)
+      const matchKey = (match.competition || '') + '-' + match.matchId
+      const recommendations = []
+      this.probabilityRows(match).forEach(item => {
+        PROBABILITY_KEYS.forEach(probabilityKey => {
+          const recommendationKey = this.getRecommendationCellKey(item, probabilityKey)
+          if (!recommendationKeys.has(recommendationKey)) {
+            return
+          }
+          recommendations.push({
+            key: matchKey + '-' + recommendationKey,
+            marketName: item.handicap === 0 ? '不让球' : '让球 ' + this.formatHandicap(item.handicap),
+            probabilityKey,
+            resultName: PROBABILITY_LABELS[probabilityKey],
+            probabilityText: this.formatProbability(item.probability[probabilityKey]),
+            oddsText: this.formatSportteryOdds(this.sportteryOddsValue(match, item, probabilityKey))
+          })
+        })
+      })
+      if (recommendations.length === 0) {
+        return null
+      }
+      return {
+        key: matchKey,
+        kickoffTime: match.kickoffTime ? String(match.kickoffTime).slice(0, 5) : '--',
+        matchNumber: match.sportteryMatchNumber || '',
+        competitionName: competition ? competition.name : (match.competition || '--'),
+        homeTeamCn: match.homeTeamCn,
+        awayTeamCn: match.awayTeamCn,
+        recommendations
+      }
+    },
     async openHeadToHeadDialog(match) {
       if (!match || !match.matchId) {
         return
@@ -2768,6 +2927,70 @@ body.dialog-open {
   overflow: hidden;
 }
 
+.recommendation-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.38);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.recommendation-fab:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(37, 99, 235, 0.46);
+}
+
+.recommendation-fab:focus-visible {
+  outline: 3px solid rgba(147, 197, 253, 0.9);
+  outline-offset: 3px;
+}
+
+.recommendation-fab:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.recommendation-fab svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.recommendation-fab-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #ef4444;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .dialog-backdrop {
   position: fixed;
   inset: 0;
@@ -2792,7 +3015,20 @@ body.dialog-open {
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
 }
 
-.head-to-head-dialog:focus {
+.recommendation-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(880px, calc(100vw - 48px));
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: hidden;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+}
+
+.head-to-head-dialog:focus,
+.recommendation-dialog:focus {
   outline: none;
 }
 
@@ -2804,7 +3040,8 @@ body.dialog-open {
   padding: 20px 22px 10px;
 }
 
-.head-to-head-dialog h3 {
+.head-to-head-dialog h3,
+.recommendation-dialog h3 {
   margin: 0;
   color: #0f172a;
   font-size: 21px;
@@ -2851,6 +3088,138 @@ body.dialog-open {
 
 .dialog-state.is-error {
   color: #b91c1c;
+}
+
+.recommendation-table-wrap {
+  padding: 16px 22px 22px;
+  overflow: auto;
+}
+
+.recommendation-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.recommendation-table th,
+.recommendation-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.recommendation-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.recommendation-table tbody tr:hover td {
+  background: #f8fbff;
+}
+
+.recommendation-time-cell strong,
+.recommendation-time-cell span {
+  display: block;
+}
+
+.recommendation-time-cell strong {
+  color: #0f172a;
+}
+
+.recommendation-time-cell span {
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 10px;
+}
+
+.recommendation-fixture-cell {
+  min-width: 230px;
+}
+
+.recommendation-fixture-cell strong {
+  color: #0f172a;
+}
+
+.recommendation-fixture-cell span {
+  margin: 0 6px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.recommendation-table td.recommendation-items-cell {
+  min-width: 370px;
+  white-space: normal;
+}
+
+.recommendation-item-list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 7px;
+}
+
+.recommendation-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  white-space: nowrap;
+}
+
+.recommendation-market-name {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.recommendation-item-probability {
+  color: #334155;
+  font-weight: 800;
+}
+
+.recommendation-item-odds {
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #475569;
+  background: #e2e8f0;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.recommendation-result-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 22px;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.recommendation-result-pill.is-win {
+  background: #16a34a;
+}
+
+.recommendation-result-pill.is-draw {
+  background: #d97706;
+}
+
+.recommendation-result-pill.is-lose {
+  background: #dc2626;
 }
 
 .head-to-head-list {
@@ -3079,6 +3448,19 @@ body.dialog-open {
     border-radius: 14px;
   }
 
+  .recommendation-dialog {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    border-radius: 14px;
+  }
+
+  .recommendation-fab {
+    right: 18px;
+    bottom: 18px;
+    width: 42px;
+    height: 42px;
+  }
+
   .head-to-head-dialog-header {
     padding: 17px 17px 9px;
   }
@@ -3088,6 +3470,10 @@ body.dialog-open {
   }
 
   .head-to-head-list {
+    padding: 13px 15px 17px;
+  }
+
+  .recommendation-table-wrap {
     padding: 13px 15px 17px;
   }
 
