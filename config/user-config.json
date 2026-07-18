@@ -6,10 +6,10 @@
     "handicapSmoothingFactor" : 0.2
   },
   "globalParameters" : {
-    "recommendationOdds" : 2.42,
+    "recommendationOdds" : 1.62,
     "handicapRecommendationThreshold" : 58.0,
     "handicapReverseThreshold" : 52.0,
-    "singleRecommendationThreshold" : 71.0
+    "singleRecommendationThreshold" : 73.0
   },
   "selectedRows" : { }
 }

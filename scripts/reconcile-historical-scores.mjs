@@ -7,6 +7,29 @@ const historicalMatchesPath = path.join(root, 'src/main/resources/data/historica
 const historicalOddsPath = path.join(root, 'src/main/resources/data/historical_odds_data.csv')
 const shouldWrite = process.argv.includes('--write')
 const compactOutput = process.argv.includes('--compact')
+const MINIMUM_HISTORY_DATE = '2014-06-12'
+
+const competitionNames = new Map(Object.entries({
+  WORLD_CUP: '世界杯',
+  EUROPEAN_CHAMPIONSHIP: '欧洲杯',
+  COPA_AMERICA: '美洲杯',
+  INTERNATIONAL_OFFICIAL: '国家队其他正式比赛',
+  INTERNATIONAL_FRIENDLY: '国家队国际窗口友谊赛',
+  CLUB_WORLD_CUP: '世俱杯',
+  CLUB_OFFICIAL_OTHER: '俱乐部其他正式比赛',
+  CLUB_FRIENDLY: '俱乐部正常阵容友谊赛',
+  EUROPA_LEAGUE: '欧罗巴',
+  CHAMPIONS_LEAGUE: '欧冠',
+  PREMIER_LEAGUE: '英超',
+  LA_LIGA: '西甲',
+  SERIE_A: '意甲',
+  BUNDESLIGA: '德甲',
+  LIGUE_1: '法甲',
+  BRAZIL_SERIE_A: '巴甲',
+  PRIMEIRA_LIGA: '葡超',
+  EREDIVISIE: '荷甲',
+  ARGENTINE_PRIMERA_DIVISION: '阿甲'
+}))
 
 const verifiedOddsOverrides = new Map([
   ['HIS-2843', { home_score: '4', away_score: '3' }],
@@ -94,6 +117,22 @@ function toCsv(rows, headers) {
   ].join('\n') + '\n'
 }
 
+function normalizeHistoricalRow(row) {
+  const competition = String(row.competition ?? '').trim()
+  const defaultType = competition === 'INTERNATIONAL_FRIENDLY'
+    ? 'INTERNATIONAL_FRIENDLY'
+    : competition === 'CLUB_FRIENDLY'
+      ? 'CLUB_FRIENDLY'
+      : 'OFFICIAL'
+  return {
+    ...row,
+    match_type: String(row.match_type ?? '').trim() || defaultType,
+    source_competition: String(row.source_competition ?? '').trim()
+      || competitionNames.get(competition)
+      || competition
+  }
+}
+
 function canonicalChineseName(value) {
   return String(value ?? '')
     .normalize('NFKC')
@@ -179,7 +218,8 @@ const [historicalMatchesText, historicalOddsText] = await Promise.all([
   fs.readFile(historicalMatchesPath, 'utf8'),
   fs.readFile(historicalOddsPath, 'utf8')
 ])
-const historicalRows = parseCsv(historicalMatchesText)
+const originalHistoricalRows = parseCsv(historicalMatchesText).map(normalizeHistoricalRow)
+const historicalRows = originalHistoricalRows.filter(row => row.match_date >= MINIMUM_HISTORY_DATE)
 const oddsRows = parseCsv(historicalOddsText)
 let verifiedOverrideCount = 0
 for (const row of oddsRows) {
@@ -190,7 +230,7 @@ for (const row of oddsRows) {
   Object.assign(row, override)
   verifiedOverrideCount += 1
 }
-const verifiedRows = historicalRows.filter(row => row.match_id.startsWith('FM-'))
+const verifiedRows = historicalRows.filter(row => !row.match_id.startsWith('ODDS-'))
 const mappings = latestChineseMappings(oddsRows)
 const verifiedByFixture = new Map()
 for (const row of verifiedRows) {
@@ -312,7 +352,9 @@ for (const row of unmatchedRows) {
     away_team_cn: row.away_team_cn,
     home_score: row.home_score,
     away_score: row.away_score,
-    neutral: row.neutral
+    neutral: row.neutral,
+    match_type: 'OFFICIAL',
+    source_competition: competitionNames.get(row.competition) ?? row.competition
   }
   const key = fixtureKey(
     historyRow.competition,
@@ -335,6 +377,9 @@ const rebuiltHistoryRows = [
 ))
 
 const summary = {
+  minimumHistoryDate: MINIMUM_HISTORY_DATE,
+  originalHistoricalRows: originalHistoricalRows.length,
+  removedBeforeMinimumDate: originalHistoricalRows.length - historicalRows.length,
   verifiedHistoricalRows: verifiedRows.length,
   oddsRows: oddsRows.length,
   verifiedOddsOverrides: verifiedOverrideCount,
@@ -362,7 +407,9 @@ if (shouldWrite) {
     'away_team_cn',
     'home_score',
     'away_score',
-    'neutral'
+    'neutral',
+    'match_type',
+    'source_competition'
   ]
   const oddsHeaders = [
     'match_id',

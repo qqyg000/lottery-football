@@ -8,6 +8,10 @@ public class HistoricalMatch {
 
     private String tournament;
 
+    private String sourceCompetition;
+
+    private HistoricalMatchType matchType = HistoricalMatchType.OFFICIAL;
+
     private String homeTeam;
 
     private String awayTeam;
@@ -32,6 +36,22 @@ public class HistoricalMatch {
 
     public void setTournament(String tournament) {
         this.tournament = tournament;
+    }
+
+    public String getSourceCompetition() {
+        return sourceCompetition;
+    }
+
+    public void setSourceCompetition(String sourceCompetition) {
+        this.sourceCompetition = sourceCompetition;
+    }
+
+    public HistoricalMatchType getMatchType() {
+        return matchType;
+    }
+
+    public void setMatchType(HistoricalMatchType matchType) {
+        this.matchType = matchType == null ? HistoricalMatchType.OFFICIAL : matchType;
     }
 
     public String getHomeTeam() {

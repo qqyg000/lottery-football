@@ -4,13 +4,34 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 2014-10-22 起系统 15 类赛事的已完赛历史比赛。字段为：
+`src/main/resources/data/historical_matches.csv` 保存系统 15 类可查询赛事及其参赛球队的补充比赛，当前共 56,809 场，日期范围为 2014-06-12 至 2026-07-18。字段为：
 
 ```text
-match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral
+match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
 ```
 
-历史比分统一使用 90 分钟加伤停补时口径。主要比赛源为 FotMob 各赛事赛季接口；没有竞彩赔率的比赛也会保留，FotMob 赛季接口未覆盖且不重复的竞彩场次会作为补充。中文球队名优先复用 `historical_odds_data.csv`，赔率表未出现过的球队采用已核验兜底名称。
+历史比分统一使用 90 分钟加伤停补时口径。数据源包括：
+
+- [OpenFootball worldcup.json](https://github.com/openfootball/worldcup.json)：1930 年起世界杯决赛圈，直接使用 `score.ft`
+- [Mart Jürisoo international_results](https://github.com/martj42/international_results)：成年男子国家队正式比赛和国际友谊赛，结合进球分钟剔除加时赛进球
+- [FootballCSV europe-champions-league](https://github.com/footballcsv/europe-champions-league)：1955-56 至 2015-16 赛季欧冠，使用 `FT` 常规时间比分
+- [OpenFootball club-world-cup](https://github.com/openfootball/club-world-cup)：2000 年起世俱杯，点球和加时场次读取括号中的 90 分钟比分
+- FotMob 各赛事赛季接口，以及上述来源未覆盖且不重复的竞彩场次
+- ESPN Scoreboard：国内杯赛、超级杯、洲际俱乐部赛事和俱乐部友谊赛
+
+上述四个公共仓库均采用 CC0 公共领域许可。中文球队名优先复用 `historical_odds_data.csv`；赔率表未出现过的国家队采用已核验兜底名称，无法可靠映射的俱乐部比赛不导入。
+
+公共历史源通过 `scripts/import-public-history.mjs` 导入。脚本默认只检查增量，传入 `--write` 才会写文件；下载缓存位于 `target/public-history-cache`。公共源比赛使用 `OPEN-{source}-{hash}` ID，比分重建脚本会保留这些记录。
+
+参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-06-12 之前的记录，并按比赛 ID、同日对阵及相邻日期同比分三层去重。ESPN 比赛使用 `ESPN-{id}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。
+
+历史比赛使用以下内部类型和回测权重：
+
+- `OFFICIAL`：正式比赛，权重 1.0
+- `INTERNATIONAL_FRIENDLY`：国家队国际窗口友谊赛，权重 0.5
+- `CLUB_FRIENDLY`：俱乐部正常阵容友谊赛，权重 0.3
+
+类型权重会与 Dixon-Coles 时间衰减权重相乘。`source_competition` 保存原始赛事名，用于历史交手弹窗；内部 `competition` 分类不会加入前端赛事下拉框。
 
 程序启动和点击“更新数据”时会动态加载近期赛程，因此赛程、开球时间、场地、状态等易变字段不再存入历史比赛 CSV。
 
@@ -21,7 +42,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - `uefa.champions_qual`：资格赛与附加赛
 - `uefa.champions`：联赛阶段与淘汰赛
 
-应用只动态加载当前日期前 30 天至后 30 天，历史样本直接使用本地 `historical_matches.csv` 中 `competition=CHAMPIONS_LEAGUE` 的记录。目标时区为 `Asia/Shanghai`，相关地址和超时时间配置位于 `src/main/resources/application.yml` 的 `champions-league.espn-update` 节点，日期窗口和计算时区配置位于 `data-refresh` 节点。
+应用只动态加载当前日期前 30 天至后 30 天，历史样本直接使用本地 `historical_matches.csv` 中 `competition=CHAMPIONS_LEAGUE` 的记录，其中可映射球队的样本已扩展到 1955-56 赛季。目标时区为 `Asia/Shanghai`，相关地址和超时时间配置位于 `src/main/resources/application.yml` 的 `champions-league.espn-update` 节点，日期窗口和计算时区配置位于 `data-refresh` 节点。
 
 ## 其他赛事
 
@@ -41,7 +62,16 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - `ned.1`：荷甲
 - `arg.1`：阿甲
 
-所有成功结果都会缓存到 `config/club-competition-schedules.json`；每次只替换日期窗口内的数据，窗口外历史缓存继续保留。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 和 `data-refresh` 节点。
+为补足上述 15 类赛事参赛球队的近期样本，同一刷新流程还会加载：
+
+- `fifa.friendly`：国家队国际友谊赛
+- 世界杯各大洲预选赛、欧预赛、欧国联、金杯赛、非洲杯和亚洲杯：国家队其他正式比赛
+- 国内杯赛、超级杯、欧协联、解放者杯、南美杯等：俱乐部其他正式比赛
+- `club.friendly`、国际冠军杯、酋长杯、英超亚洲杯和甘伯杯：俱乐部正常阵容友谊赛
+
+俱乐部补充源只有在双方都能映射到 `historical_odds_data.csv` 的球队时才会进入运行时缓存，避免青年队、预备队和未知球队混入模型。国家队和俱乐部补充源使用内部赛事代码，不会改变前端 15 类赛事加“全部”的下拉选项。
+
+所有成功结果都会缓存到 `config/club-competition-schedules.json`；每次只替换日期窗口内的数据，窗口外历史缓存继续保留。服务启动时读取已有补充缓存，只有点击“更新数据”或调用刷新接口时才主动请求补充远程源。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 和 `data-refresh` 节点。
 
 ## 全场比分口径
 

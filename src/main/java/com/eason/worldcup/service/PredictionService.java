@@ -4,6 +4,7 @@ import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HandicapProbability;
 import com.eason.worldcup.model.HeadToHeadMatchResponse;
 import com.eason.worldcup.model.HistoricalMatch;
+import com.eason.worldcup.model.HistoricalMatchType;
 import com.eason.worldcup.model.MatchPredictionResponse;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.ModelOverviewResponse;
@@ -23,7 +24,6 @@ import java.math.RoundingMode;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -39,10 +39,22 @@ public class PredictionService {
 
     private static final int[] HANDICAPS = {-3, -2, -1, 1, 2, 3};
 
-    private static final LocalDate DEFAULT_RECOMMENDATION_BACKTEST_START_DATE = LocalDate.of(2026, 6, 11);
-
-    @Value("${sporttery.result-update.backtest-start-date:2026-06-11}")
-    private String recommendationBacktestStartDateText;
+    private static final Map<Competition, LocalDate> RECOMMENDATION_BACKTEST_START_DATES = Map.ofEntries(
+            Map.entry(Competition.WORLD_CUP, LocalDate.of(2026, 6, 11)),
+            Map.entry(Competition.EUROPEAN_CHAMPIONSHIP, LocalDate.of(2028, 6, 9)),
+            Map.entry(Competition.COPA_AMERICA, LocalDate.of(2028, 6, 9)),
+            Map.entry(Competition.CLUB_WORLD_CUP, LocalDate.of(2028, 6, 9)),
+            Map.entry(Competition.EUROPA_LEAGUE, LocalDate.of(2026, 9, 16)),
+            Map.entry(Competition.CHAMPIONS_LEAGUE, LocalDate.of(2026, 9, 8)),
+            Map.entry(Competition.PREMIER_LEAGUE, LocalDate.of(2026, 8, 21)),
+            Map.entry(Competition.LA_LIGA, LocalDate.of(2026, 8, 15)),
+            Map.entry(Competition.SERIE_A, LocalDate.of(2026, 8, 21)),
+            Map.entry(Competition.BUNDESLIGA, LocalDate.of(2026, 8, 28)),
+            Map.entry(Competition.LIGUE_1, LocalDate.of(2026, 8, 21)),
+            Map.entry(Competition.BRAZIL_SERIE_A, LocalDate.of(2026, 1, 28)),
+            Map.entry(Competition.PRIMEIRA_LIGA, LocalDate.of(2026, 8, 8)),
+            Map.entry(Competition.EREDIVISIE, LocalDate.of(2026, 8, 7)),
+            Map.entry(Competition.ARGENTINE_PRIMERA_DIVISION, LocalDate.of(2026, 1, 22)));
 
     private final DataRepository dataRepository;
 
@@ -174,14 +186,11 @@ public class PredictionService {
         int simulationCount = normalizeSimulationCount(simulations);
         double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
         LocalDate backtestEndDate = ApplicationTime.today();
-        LocalDate backtestStartDate = resolveBacktestStartDate(backtestEndDate);
         List<MatchSchedule> completedSchedules = dataRepository.getSchedules().stream()
                 .filter(schedule -> competitions == null
                         || competitions.isEmpty()
                         || competitions.contains(schedule.getCompetition()))
-                .filter(schedule -> schedule.getMatchDate() != null
-                        && !schedule.getMatchDate().isBefore(backtestStartDate)
-                        && !schedule.getMatchDate().isAfter(backtestEndDate))
+                .filter(schedule -> isWithinRecommendationBacktestRange(schedule, backtestEndDate))
                 .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
                 .filter(schedule -> schedule.getHomeScore() != null && schedule.getAwayScore() != null)
                 .toList();
@@ -254,14 +263,17 @@ public class PredictionService {
         return response;
     }
 
-    private LocalDate resolveBacktestStartDate(LocalDate backtestEndDate) {
-        LocalDate configuredStartDate = DEFAULT_RECOMMENDATION_BACKTEST_START_DATE;
-        try {
-            configuredStartDate = LocalDate.parse(recommendationBacktestStartDateText.trim());
-        } catch (DateTimeParseException | NullPointerException ignored) {
-            // 使用本届世界杯开赛日作为无效配置的回退值
+    private boolean isWithinRecommendationBacktestRange(
+            MatchSchedule schedule,
+            LocalDate backtestEndDate) {
+        if (schedule.getCompetition() == null || schedule.getMatchDate() == null) {
+            return false;
         }
-        return configuredStartDate.isAfter(backtestEndDate) ? backtestEndDate : configuredStartDate;
+        LocalDate backtestStartDate = RECOMMENDATION_BACKTEST_START_DATES.get(schedule.getCompetition());
+        return backtestStartDate != null
+                && !backtestStartDate.isAfter(backtestEndDate)
+                && !schedule.getMatchDate().isBefore(backtestStartDate)
+                && !schedule.getMatchDate().isAfter(backtestEndDate);
     }
 
     public ModelOverviewResponse overview() {
@@ -291,10 +303,32 @@ public class PredictionService {
     }
 
     public ModelOverviewResponse refreshData(Competition competition, LocalDate date) {
+        return refreshData(competition, date, null);
+    }
+
+    ModelOverviewResponse refreshData(
+            Competition competition,
+            LocalDate date,
+            BiConsumer<Integer, String> progressConsumer) {
+        notifyDataRefreshProgress(progressConsumer, 5, "正在刷新15类赛事赛程与补充数据");
         dataRepository.refreshSchedules();
+        notifyDataRefreshProgress(progressConsumer, 55, "赛程数据已更新，正在重建球队模型");
         teamStrengthService.rebuildModels();
+        notifyDataRefreshProgress(progressConsumer, 70, "球队模型已重建，正在刷新竞彩数据");
         sportteryMarketSelectionService.forceRefresh(date);
-        return overview(competition);
+        notifyDataRefreshProgress(progressConsumer, 90, "竞彩数据已刷新，正在加载赛事概览");
+        ModelOverviewResponse response = overview(competition);
+        notifyDataRefreshProgress(progressConsumer, 100, "数据更新完成");
+        return response;
+    }
+
+    private void notifyDataRefreshProgress(
+            BiConsumer<Integer, String> progressConsumer,
+            int progress,
+            String message) {
+        if (progressConsumer != null) {
+            progressConsumer.accept(progress, message);
+        }
     }
 
     public List<HeadToHeadMatchResponse> queryHeadToHead(
@@ -338,7 +372,7 @@ public class PredictionService {
         }
 
         List<HistoricalMatch> historicalMatches = effectiveCompetition.isClubCompetition()
-                ? dataRepository.getClubHistoricalMatches(effectiveCompetition)
+                ? dataRepository.getClubHistoricalMatches()
                 : dataRepository.getHistoricalMatches();
         for (HistoricalMatch historicalMatch : historicalMatches) {
             if (historicalMatch.getMatchDate() == null
@@ -405,10 +439,13 @@ public class PredictionService {
     }
 
     private HeadToHeadMatchResponse toHeadToHeadResponse(MatchSchedule schedule) {
+        HistoricalMatchType matchType = HistoricalMatchType.fromCompetition(schedule.getCompetition());
         HeadToHeadMatchResponse response = new HeadToHeadMatchResponse();
         response.setMatchDate(schedule.getMatchDate());
         response.setKickoffTime(schedule.getKickoffTime());
         response.setCompetitionName(buildHeadToHeadCompetitionName(schedule));
+        response.setMatchTypeName(matchType.getDisplayName());
+        response.setModelWeight(matchType.getModelWeight());
         response.setHomeTeamCn(readableTeamName(schedule.getHomeTeamCn(), schedule.getHomeTeamEn()));
         response.setAwayTeamCn(readableTeamName(schedule.getAwayTeamCn(), schedule.getAwayTeamEn()));
         response.setHomeScore(schedule.getHomeScore());
@@ -420,7 +457,9 @@ public class PredictionService {
     private HeadToHeadMatchResponse toHeadToHeadResponse(HistoricalMatch historicalMatch, MatchSchedule target) {
         HeadToHeadMatchResponse response = new HeadToHeadMatchResponse();
         response.setMatchDate(historicalMatch.getMatchDate());
-        response.setCompetitionName(historicalMatch.getTournament());
+        response.setCompetitionName(historicalMatch.getSourceCompetition());
+        response.setMatchTypeName(historicalMatch.getMatchType().getDisplayName());
+        response.setModelWeight(historicalMatch.getMatchType().getModelWeight());
         response.setHomeTeamCn(resolveHistoricalTeamName(historicalMatch.getHomeTeam(), target));
         response.setAwayTeamCn(resolveHistoricalTeamName(historicalMatch.getAwayTeam(), target));
         response.setHomeScore(historicalMatch.getHomeScore());
@@ -450,11 +489,9 @@ public class PredictionService {
     }
 
     private String getScheduleComparisonTeamName(MatchSchedule schedule, boolean homeTeam) {
-        if (schedule.getCompetition().isClubCompetition()) {
-            String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
-            if (chineseName != null && !chineseName.isBlank()) {
-                return chineseName;
-            }
+        String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
+        if (chineseName != null && !chineseName.isBlank()) {
+            return chineseName;
         }
         return homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
     }

@@ -14,6 +14,7 @@
 - 展示比赛状态、比分、分组、开球时间和场地
 - 从中国体彩网读取胜平负开售状态、让球数和最新赔率
 - 使用历史赔率数据统一映射接口返回的英文球队名
+- 点击球队名称查看双方最多 50 场正式比赛和降权友谊赛
 - 提供推荐结果回测、模型参数调整和用户配置持久化
 
 模型统一使用 90 分钟加伤停补时的全场比分，不把加时赛和点球大战计入常规赛果。
@@ -44,10 +45,12 @@
 
 以下行数不含 CSV 表头：
 
-| 文件 | 行数 | 日期范围 | 赛事数 | 列数 |
+| 文件 | 行数 | 日期范围 | 赛事分类数 | 列数 |
 |---|---:|---|---:|---:|
-| `historical_matches.csv` | 42,914 | 2014-10-22 至 2026-07-18 | 15 | 8 |
+| `historical_matches.csv` | 56,809 | 2014-06-12 至 2026-07-18 | 19 | 10 |
 | `historical_odds_data.csv` | 30,942 | 2014-10-22 至 2026-07-17 | 15 | 18 |
+
+历史比赛的 19 个分类由 15 个前端可选赛事和 4 个内部补充分类组成：国家队其他正式比赛、国家队国际窗口友谊赛、俱乐部其他正式比赛、俱乐部正常阵容友谊赛。内部分类只用于补充参赛球队样本，不会出现在赛事下拉框中。
 
 当前两个文件均保证 `match_id` 在各自文件内唯一，中文主客队名和完场比分不为空。赔率记录中的英文队名只有在能够确定映射时才填写，无法可靠映射时允许留空。
 
@@ -68,7 +71,12 @@
 
 数据来源：
 
-- 历史完场比分：FotMob 已核验赛事赛季数据，以及未被其覆盖的唯一竞彩场次
+- 现代赛事历史比分：FotMob 已核验赛事赛季数据，以及未被其覆盖的唯一竞彩场次
+- 世界杯历史比分：OpenFootball `worldcup.json`
+- 国家队正式比赛和国际友谊赛：Mart Jürisoo `international_results`
+- 1955-56 至 2015-16 赛季欧冠历史比分：FootballCSV `europe-champions-league`
+- 世俱杯历史比分：OpenFootball `club-world-cup`
+- 俱乐部杯赛、洲际赛和友谊赛：ESPN Scoreboard
 - 世界杯近期赛程：OpenFootball，ESPN 作为补充和回退来源
 - 欧冠近期赛程：ESPN `uefa.champions_qual` 和 `uefa.champions`
 - 其余 13 类赛事近期赛程：ESPN Scoreboard
@@ -93,6 +101,8 @@ lottery-football
 │     └─ main.js
 ├─ scripts
 │  ├─ import-historical-odds.ps1
+│  ├─ import-public-history.mjs
+│  ├─ import-supplemental-history.mjs
 │  ├─ merge-sporttery-cache-odds.ps1
 │  ├─ reconcile-historical-scores.mjs
 │  ├─ update-history-data.ps1
@@ -180,6 +190,8 @@ Invoke-RestMethod "http://127.0.0.1:8080/api/football/health"
 | GET | `/api/football/predictions` | 查询指定赛事、日期的概率预测 |
 | GET | `/api/football/head-to-head` | 查询某场比赛双方的历史交锋 |
 | POST | `/api/football/data/refresh` | 刷新近期赛程、模型和体彩数据 |
+| POST | `/api/football/data/refresh/jobs` | 创建带进度的异步数据更新任务 |
+| GET | `/api/football/data/refresh/jobs/{jobId}` | 查询数据更新进度 |
 | POST | `/api/football/data/refresh-historical-odds` | 按日期范围补取官方历史赔率 |
 | GET | `/api/football/recommendation-backtest` | 同步执行推荐回测 |
 | POST | `/api/football/recommendation-backtest/jobs` | 创建异步推荐回测任务 |
@@ -227,13 +239,39 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 | `sportteryNormalOdds` | 最新不让球胜平负赔率，包含 `win`、`draw`、`lose`、`updatedAt` |
 | `sportteryHandicapOdds` | 最新让球胜平负赔率，包含 `win`、`draw`、`lose`、`updatedAt` |
 
-### 3. 刷新运行时数据
+### 3. 推荐回测
+
+推荐回测按赛事使用独立的起始日期，结束日期统一为 `Asia/Shanghai` 时区的当天，起始日和结束日都包含在回测范围内。
+
+| 赛事 | 赛事代码 | 回测起始日期 |
+|---|---|---|
+| 世界杯 | `WORLD_CUP` | `2026-06-11` |
+| 欧洲杯 | `EUROPEAN_CHAMPIONSHIP` | `2028-06-09` |
+| 美洲杯 | `COPA_AMERICA` | `2028-06-09` |
+| 世俱杯 | `CLUB_WORLD_CUP` | `2028-06-09` |
+| 欧罗巴 | `EUROPA_LEAGUE` | `2026-09-16` |
+| 欧冠 | `CHAMPIONS_LEAGUE` | `2026-09-08` |
+| 英超 | `PREMIER_LEAGUE` | `2026-08-21` |
+| 西甲 | `LA_LIGA` | `2026-08-15` |
+| 意甲 | `SERIE_A` | `2026-08-21` |
+| 德甲 | `BUNDESLIGA` | `2026-08-28` |
+| 法甲 | `LIGUE_1` | `2026-08-21` |
+| 巴甲 | `BRAZIL_SERIE_A` | `2026-01-28` |
+| 葡超 | `PRIMEIRA_LIGA` | `2026-08-08` |
+| 荷甲 | `EREDIVISIE` | `2026-08-07` |
+| 阿甲 | `ARGENTINE_PRIMERA_DIVISION` | `2026-01-22` |
+
+选择“全部”时，每场比赛按自身赛事的起始日期过滤，不会使用全局统一起始日期。起始日期晚于当天的未开始赛事不参与回测。只有已完赛且有完整比分、竞彩比赛 ID 和至少一类胜平负赔率的场次才进入最终回测。每场回测仅使用该场比赛日期之前的历史比赛建模。
+
+### 4. 刷新运行时数据
 
 ```http
 POST /api/football/data/refresh?competition=CHAMPIONS_LEAGUE&date=2026-07-18
 ```
 
-刷新会重新加载系统配置的 15 类赛事近期赛程、重建模型，并强制刷新目标日期附近的体彩数据。`competition` 决定接口最终返回哪一类赛事的概览，但不会刷新这 15 类之外的赛事。
+刷新会重新加载系统配置的 15 类赛事近期赛程，并为这些赛事的参赛球队补充近期国家队正式赛、国际窗口友谊赛、俱乐部杯赛、洲际赛和一线队友谊赛，然后重建模型并强制刷新目标日期附近的体彩数据。`competition` 只决定接口最终返回哪一类赛事的概览；前端下拉仍只显示 15 类赛事和“全部”。
+
+页面“更新数据”使用异步任务接口，按“赛程与补充数据→球队模型→竞彩数据→赛事概览”四个实际阶段更新进度，并复用回测的全屏蒙版和进度条样式。原同步接口保留用于兼容现有调用。
 
 ## 八、CSV 数据说明
 
@@ -245,7 +283,7 @@ POST /api/football/data/refresh?competition=CHAMPIONS_LEAGUE&date=2026-07-18
 src/main/resources/data/historical_matches.csv
 ```
 
-该文件合并国家队历史比赛、2026 世界杯赛程中的已完赛结果和俱乐部赛事历史比分，只保存模型需要的 8 列：
+该文件合并公共历史赛事数据、FotMob 已核验赛果、ESPN 补充比赛和未重复的竞彩完场场次，只保留 2014-06-12 至当前数据快照日的比赛，并保存模型需要的 10 列：
 
 | 字段 | 说明 |
 |---|---|
@@ -257,17 +295,28 @@ src/main/resources/data/historical_matches.csv
 | `home_score` | 主队 90 分钟全场进球 |
 | `away_score` | 客队 90 分钟全场进球 |
 | `neutral` | 是否为中立场，值为 `true` 或 `false` |
+| `match_type` | 模型比赛类型：`OFFICIAL`、`INTERNATIONAL_FRIENDLY` 或 `CLUB_FRIENDLY` |
+| `source_competition` | 原始赛事中文名，用于历史交手弹窗展示 |
 
 固定字段顺序：
 
 ```text
-match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral
+match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
 ```
 
 `match_id` 的来源规则：
 
 - `FM-{id}`：FotMob 的原始比赛 ID
+- `OPEN-{source}-{hash}`：OpenFootball、FootballCSV 或 `international_results` 的确定性比赛 ID
+- `ESPN-{id}`：ESPN Scoreboard 的原始比赛 ID
 - `ODDS-{id}`：未在 FotMob 历史中匹配到、但赔率数据中唯一且比分完整的补充场次
+
+`competition` 除前端可选的 15 类赛事外，还允许以下内部分类：
+
+- `INTERNATIONAL_OFFICIAL`：15 类赛事参赛国家队参加的其他正式比赛
+- `INTERNATIONAL_FRIENDLY`：国家队国际窗口友谊赛
+- `CLUB_OFFICIAL_OTHER`：15 类赛事参赛俱乐部参加的杯赛和其他洲际正式比赛
+- `CLUB_FRIENDLY`：双方均能映射到赔率球队名的一线队友谊赛
 
 ### 2. 历史赔率数据
 
@@ -325,9 +374,12 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_team_en,away_team
 
 ### 1. 页面“更新数据”与运行时刷新
 
-点击页面“更新数据”只会使用本项目配置的 15 类赛事数据源：
+点击页面“更新数据”时，前端查询和体彩更新范围仍严格限制为 15 类赛事，同时为其参赛球队加载补充比赛：
 
 - 近期赛程窗口为当前日期前 30 天至后 30 天
+- 同时补取这些参赛球队的国家队正式赛、国际窗口友谊赛、俱乐部杯赛、洲际赛和一线队友谊赛
+- 俱乐部补充比赛双方都必须能映射到 `historical_odds_data.csv`，避免青年队、预备队和未知球队混入模型
+- 服务启动时直接使用本地历史和已有补充缓存，补充远程源只在手动更新时主动刷新，避免拖慢启动
 - 目标日期前 30 天内缺失的体彩赔率会补查
 - 目标日期前 1 天至后 4 天的体彩比赛会强制刷新
 - 新接口球队名会按 `historical_odds_data.csv` 的最新中文名映射
@@ -376,7 +428,43 @@ powershell -ExecutionPolicy Bypass -File scripts\merge-sporttery-cache-odds.ps1 
 
 单次接口补取范围最多 366 天。脚本只合并 15 类赛事，并使用赔率历史中更新时间最早的完整记录作为初盘；写入默认正式文件后自动执行比分校正。
 
-### 4. 校正比分并重建历史比赛文件
+### 4. 导入公共历史比赛
+
+只检查可导入增量，不写文件：
+
+```powershell
+node scripts\import-public-history.mjs
+```
+
+确认后写入正式历史比赛文件：
+
+```powershell
+node scripts\import-public-history.mjs --write
+node scripts\reconcile-historical-scores.mjs --write --compact
+```
+
+脚本会下载并缓存公共数据到 `target/public-history-cache`，处理世界杯、欧洲杯、美洲杯、欧冠和世俱杯。国家队历史名称会先映射到赔率文件中的现用中文名；赔率文件没有对应英文名的老国家队使用已核验兜底名称。俱乐部队名无法可靠映射时会跳过该场并在汇总中列出，不使用模糊匹配。重复执行不会重复新增比赛。
+
+如需固定截止日期，可增加 `--max-date yyyy-MM-dd`。开发时也可用 `--source-root` 指向已解压的四个源仓库目录。
+
+### 5. 导入参赛球队补充比赛
+
+只检查增量，不写文件：
+
+```powershell
+node scripts\import-supplemental-history.mjs --compact
+```
+
+确认后写入正式历史比赛文件：
+
+```powershell
+node scripts\import-supplemental-history.mjs --write --compact
+node scripts\reconcile-historical-scores.mjs --write --compact
+```
+
+脚本默认保留 2014-06-12 至今天的数据。国家队比赛来自 `international_results`，其中 `Friendly` 归为国际窗口友谊赛；俱乐部比赛来自 ESPN Scoreboard，包含系统 15 类主赛事、国内杯赛、超级杯、欧协联、南美洲俱乐部赛事及友谊赛。只有至少一方属于 15 类赛事参赛球队且双方球队名均可可靠映射的俱乐部比赛才会导入。重复执行不会重复新增比赛。
+
+### 6. 校正比分并重建历史比赛文件
 
 只检查、不写文件：
 
@@ -392,17 +480,17 @@ node scripts\reconcile-historical-scores.mjs --write --compact
 
 校正规则：
 
-- 以已核验的 FotMob 完场记录为比分基准
+- 以 FotMob 和公共历史源的已核验完场记录为比分基准
 - 自动修正原始赔率文件对高比分比赛的压缩或错误记录
 - 对无法自动关联的高比分场次使用已核验人工覆盖
-- `historical_matches.csv` 保留 FotMob 历史，并补入赔率文件中未重复的唯一完场场次
+- `historical_matches.csv` 保留 FotMob 与公共历史源数据，并补入赔率文件中未重复的唯一完场场次
 - 重复执行不会继续产生新变更
 
 `import-historical-odds.ps1` 和 `merge-sporttery-cache-odds.ps1` 在写入默认正式路径时已经自动调用该校正脚本，通常不需要再手工执行 `--write`。
 
 ## 十、模型说明
 
-每类赛事独立计算球队强度，不跨赛事混合样本。每支球队根据历史比赛计算：
+模型按前端选择的赛事建立参赛球队集合，并把这些球队参加的正式比赛和降权友谊赛纳入同一个时间截面。每支球队根据历史比赛计算：
 
 - 平均进球
 - 平均失球
@@ -411,6 +499,16 @@ node scripts\reconcile-historical-scores.mjs --write --compact
 - 样本权重
 
 为避免小样本导致结果过激，强度会向 1.0 收缩平滑。
+
+比赛类型权重为：
+
+| 比赛类型 | `match_type` | 权重 |
+|---|---|---:|
+| 正式比赛 | `OFFICIAL` | 1.0 |
+| 国家队国际窗口友谊赛 | `INTERNATIONAL_FRIENDLY` | 0.5 |
+| 俱乐部正常阵容友谊赛 | `CLUB_FRIENDLY` | 0.3 |
+
+最终样本权重等于 Dixon-Coles 时间衰减权重乘以比赛类型权重。正常预测、历史交手修正和回测都经过同一条权重计算链路，并且回测只读取预测日期之前的比赛，避免未来数据泄漏。
 
 主队期望进球：
 

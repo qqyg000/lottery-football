@@ -1,6 +1,7 @@
 package com.eason.worldcup.controller;
 
 import com.eason.worldcup.model.Competition;
+import com.eason.worldcup.model.DataRefreshJobResponse;
 import com.eason.worldcup.model.HeadToHeadMatchResponse;
 import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
@@ -8,6 +9,7 @@ import com.eason.worldcup.model.RecommendationBacktestJobResponse;
 import com.eason.worldcup.model.RecommendationBacktestResponse;
 import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
 import com.eason.worldcup.model.UserConfig;
+import com.eason.worldcup.service.DataRefreshJobService;
 import com.eason.worldcup.service.PredictionService;
 import com.eason.worldcup.service.RecommendationBacktestJobService;
 import com.eason.worldcup.service.UserConfigService;
@@ -36,15 +38,19 @@ public class PredictionController {
 
     private final PredictionService predictionService;
 
+    private final DataRefreshJobService dataRefreshJobService;
+
     private final RecommendationBacktestJobService recommendationBacktestJobService;
 
     private final UserConfigService userConfigService;
 
     public PredictionController(
             PredictionService predictionService,
+            DataRefreshJobService dataRefreshJobService,
             RecommendationBacktestJobService recommendationBacktestJobService,
             UserConfigService userConfigService) {
         this.predictionService = predictionService;
+        this.dataRefreshJobService = dataRefreshJobService;
         this.recommendationBacktestJobService = recommendationBacktestJobService;
         this.userConfigService = userConfigService;
     }
@@ -132,6 +138,24 @@ public class PredictionController {
             @RequestParam(value = "date", required = false)
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
         return predictionService.refreshData(parseCompetition(competition), date);
+    }
+
+    @PostMapping("/data/refresh/jobs")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public DataRefreshJobResponse startDataRefreshJob(
+            @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition,
+            @RequestParam(value = "date", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+        return dataRefreshJobService.start(parseCompetition(competition), date);
+    }
+
+    @GetMapping("/data/refresh/jobs/{jobId}")
+    public DataRefreshJobResponse dataRefreshProgress(@PathVariable("jobId") String jobId) {
+        DataRefreshJobResponse response = dataRefreshJobService.find(jobId);
+        if (response == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "数据更新任务不存在或已过期");
+        }
+        return response;
     }
 
     @PostMapping("/data/refresh-historical-odds")

@@ -79,4 +79,3 @@ sporttery:
     target-zone: ${data-refresh.target-zone}
     cache-path: config/sporttery-market-selections.json
     historical-odds-data-path: classpath:data/historical_odds_data.csv
-    backtest-start-date: 2026-06-11

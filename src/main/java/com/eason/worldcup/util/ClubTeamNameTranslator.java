@@ -39,7 +39,71 @@ public final class ClubTeamNameTranslator {
             Map.entry(canonicalName("Olympique Marseille"), "Marseille"),
             Map.entry(canonicalName("Paris SG"), "Paris Saint-Germain"),
             Map.entry(canonicalName("PSV"), "PSV Eindhoven"),
-            Map.entry(canonicalName("AZ"), "AZ Alkmaar"));
+            Map.entry(canonicalName("AZ"), "AZ Alkmaar"),
+            Map.entry(canonicalName("AC Sparta Praha"), "Sparta Prague"),
+            Map.entry(canonicalName("ACF Fiorentina"), "Fiorentina"),
+            Map.entry(canonicalName("Aalborg BK"), "AaB"),
+            Map.entry(canonicalName("AJ Auxerre"), "Auxerre"),
+            Map.entry(canonicalName("Al Jazira Club"), "Al-Jazira"),
+            Map.entry(canonicalName("APOEL Nikosia"), "APOEL Nicosia"),
+            Map.entry(canonicalName("Atlético Mineiro"), "Atletico MG"),
+            Map.entry(canonicalName("Beşiktaş İstanbul JK"), "Beşiktaş"),
+            Map.entry(canonicalName("Brondby IF"), "Brøndby IF"),
+            Map.entry(canonicalName("BSC Young Boys"), "Young Boys"),
+            Map.entry(canonicalName("Corinthians SP"), "Corinthians"),
+            Map.entry(canonicalName("CSKA Moskva"), "CSKA Moscow"),
+            Map.entry(canonicalName("Deportivo La Coruna"), "Deportivo A Coruña"),
+            Map.entry(canonicalName("Dinamo Kiev"), "Dynamo Kyiv"),
+            Map.entry(canonicalName("Espérance de Tunis"), "Espérance"),
+            Map.entry(canonicalName("FC RB Salzburg"), "Salzburg"),
+            Map.entry(canonicalName("Fenerbahçe İstanbul SK"), "Fenerbahçe"),
+            Map.entry(canonicalName("Feyenoord Rotterdam"), "Feyenoord"),
+            Map.entry(canonicalName("Flamengo RJ"), "Flamengo"),
+            Map.entry(canonicalName("Fluminense RJ"), "Fluminense"),
+            Map.entry(canonicalName("Galatasaray İstanbul AŞ"), "Galatasaray"),
+            Map.entry(canonicalName("Girondins Bordeaux"), "Bordeaux"),
+            Map.entry(canonicalName("Grêmio Porto Alegre"), "Gremio"),
+            Map.entry(canonicalName("Guangzhou Evergrande"), "Guangzhou FC"),
+            Map.entry(canonicalName("HJK Helsinki"), "HJK"),
+            Map.entry(canonicalName("Kobenhavn"), "FC København"),
+            Map.entry(canonicalName("Koln"), "1. FC Köln"),
+            Map.entry(canonicalName("KRC Genk"), "Genk"),
+            Map.entry(canonicalName("Legia Warsaw"), "Legia Warszawa"),
+            Map.entry(canonicalName("Lille OSC"), "Lille"),
+            Map.entry(canonicalName("Lokomotiv Moskva"), "Lokomotiv Moscow"),
+            Map.entry(canonicalName("Olympique Lyon"), "Lyon"),
+            Map.entry(canonicalName("PAOK FC"), "PAOK Thessaloniki"),
+            Map.entry(canonicalName("Partizan Belgrade"), "Partizan Beograd"),
+            Map.entry(canonicalName("RB Salzburg"), "Salzburg"),
+            Map.entry(canonicalName("Rosenborg BK"), "Rosenborg"),
+            Map.entry(canonicalName("RSC Anderlecht"), "Anderlecht"),
+            Map.entry(canonicalName("Servette Geneve"), "Servette"),
+            Map.entry(canonicalName("Sheriff Tiraspol"), "FC Sheriff"),
+            Map.entry(canonicalName("SK Slovan Bratislava"), "Slovan Bratislava"),
+            Map.entry(canonicalName("SK Sturm Graz"), "Sturm Graz"),
+            Map.entry(canonicalName("SL Benfica"), "Benfica"),
+            Map.entry(canonicalName("Slavia Praha"), "Slavia Prague"),
+            Map.entry(canonicalName("Sparta Praha"), "Sparta Prague"),
+            Map.entry(canonicalName("Spartak Moskva"), "Spartak Moscow"),
+            Map.entry(canonicalName("Spartak TAZ Trnava"), "Spartak Trnava"),
+            Map.entry(canonicalName("Sporting Braga"), "Braga"),
+            Map.entry(canonicalName("SS Lazio"), "Lazio"),
+            Map.entry(canonicalName("SSC Napoli"), "Napoli"),
+            Map.entry(canonicalName("Stade Reims"), "Reims"),
+            Map.entry(canonicalName("Steaua Bucuresti"), "FCSB"),
+            Map.entry(canonicalName("UANL Tigres"), "Tigres"),
+            Map.entry(canonicalName("Vasco da Gama RJ"), "Vasco da Gama"),
+            Map.entry(canonicalName("Wydad AC"), "Wydad Casablanca"),
+            Map.entry(canonicalName("United States"), "USA"),
+            Map.entry(canonicalName("Turkey"), "Turkiye"),
+            Map.entry(canonicalName("Republic of Ireland"), "Ireland"),
+            Map.entry(canonicalName("Czech Republic"), "Czechia"),
+            Map.entry(canonicalName("West Germany"), "Germany"),
+            Map.entry(canonicalName("Soviet Union"), "Russia"),
+            Map.entry(canonicalName("Côte d'Ivoire"), "Ivory Coast"),
+            Map.entry(canonicalName("Bosnia & Herzegovina"), "Bosnia and Herzegovina"),
+            Map.entry(canonicalName("Serbia and Montenegro"), "Serbia"),
+            Map.entry(canonicalName("Zaire"), "DR Congo"));
 
     private static final Map<String, String> FALLBACK_TEAM_NAMES = Map.ofEntries(
             Map.entry(canonicalName("Central Cordoba de Santiago"), "科尔多瓦中央"),
@@ -63,7 +127,25 @@ public final class ClubTeamNameTranslator {
             Map.entry(canonicalName("Pirae"), "皮莱"),
             Map.entry(canonicalName("AS Pirae"), "皮莱"),
             Map.entry(canonicalName("Cuba"), "古巴"),
-            Map.entry(canonicalName("Trinidad and Tobago"), "特立尼达和多巴哥"));
+            Map.entry(canonicalName("Trinidad and Tobago"), "特立尼达和多巴哥"),
+            Map.entry(canonicalName("Angola"), "安哥拉"),
+            Map.entry(canonicalName("Bulgaria"), "保加利亚"),
+            Map.entry(canonicalName("China"), "中国"),
+            Map.entry(canonicalName("Czechoslovakia"), "捷克斯洛伐克"),
+            Map.entry(canonicalName("Dutch East Indies"), "印度尼西亚"),
+            Map.entry(canonicalName("East Germany"), "东德"),
+            Map.entry(canonicalName("El Salvador"), "萨尔瓦多"),
+            Map.entry(canonicalName("German DR"), "东德"),
+            Map.entry(canonicalName("Greece"), "希腊"),
+            Map.entry(canonicalName("Honduras"), "洪都拉斯"),
+            Map.entry(canonicalName("Indonesia"), "印度尼西亚"),
+            Map.entry(canonicalName("Israel"), "以色列"),
+            Map.entry(canonicalName("Kuwait"), "科威特"),
+            Map.entry(canonicalName("Latvia"), "拉脱维亚"),
+            Map.entry(canonicalName("North Korea"), "朝鲜"),
+            Map.entry(canonicalName("Togo"), "多哥"),
+            Map.entry(canonicalName("United Arab Emirates"), "阿联酋"),
+            Map.entry(canonicalName("Yugoslavia"), "南斯拉夫"));
 
     private static final MappingData MAPPINGS = loadMappings();
 
@@ -94,6 +176,18 @@ public final class ClubTeamNameTranslator {
         }
 
         return FALLBACK_TEAM_NAMES.getOrDefault(canonicalName(normalized), normalized);
+    }
+
+    public static boolean hasHistoricalOddsMapping(String teamName) {
+        String normalized = teamName == null ? "" : teamName.trim();
+        if (normalized.isBlank()) {
+            return false;
+        }
+        if (findMappedName(null, normalized) != null) {
+            return true;
+        }
+        String sourceAlias = SOURCE_NAME_ALIASES.get(canonicalName(normalized));
+        return sourceAlias != null && findMappedName(null, sourceAlias) != null;
     }
 
     private static String findMappedName(Competition competition, String teamName) {

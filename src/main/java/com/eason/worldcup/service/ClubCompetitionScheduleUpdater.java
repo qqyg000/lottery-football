@@ -52,7 +52,7 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final Pattern SCORE_PATTERN = Pattern.compile("^\\s*(\\d+)\\s*-\\s*(\\d+)\\s*$");
 
-    private static final List<EspnLeagueSource> ESPN_SOURCES = List.of(
+    private static final List<EspnLeagueSource> BASE_ESPN_SOURCES = List.of(
             new EspnLeagueSource(Competition.EUROPEAN_CHAMPIONSHIP, "uefa.euro"),
             new EspnLeagueSource(Competition.COPA_AMERICA, "conmebol.america"),
             new EspnLeagueSource(Competition.CLUB_WORLD_CUP, "fifa.cwc"),
@@ -67,6 +67,51 @@ public class ClubCompetitionScheduleUpdater {
             new EspnLeagueSource(Competition.PRIMEIRA_LIGA, "por.1"),
             new EspnLeagueSource(Competition.EREDIVISIE, "ned.1"),
             new EspnLeagueSource(Competition.ARGENTINE_PRIMERA_DIVISION, "arg.1")
+    );
+
+    private static final List<EspnLeagueSource> SUPPLEMENTAL_ESPN_SOURCES = List.of(
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "uefa.euroq"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "uefa.nations"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "fifa.worldq.uefa"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "fifa.worldq.conmebol"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "fifa.worldq.concacaf"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "fifa.worldq.afc"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "fifa.worldq.caf"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "fifa.worldq.ofc"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "concacaf.gold"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "concacaf.nations.league"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "caf.nations"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "caf.nations_qual"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "afc.asian.cup"),
+            new EspnLeagueSource(Competition.INTERNATIONAL_FRIENDLY, "fifa.friendly"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "uefa.europa.conf"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "uefa.europa.conf_qual"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "uefa.super_cup"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "eng.fa"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "eng.league_cup"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "eng.charity"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "esp.copa_del_rey"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "esp.super_cup"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ger.dfb_pokal"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ger.super_cup"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ita.coppa_italia"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ita.super_cup"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "fra.coupe_de_france"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "fra.super_cup"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "por.taca.portugal"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ned.cup"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ned.supercup"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "bra.copa_do_brazil"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "arg.copa"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "conmebol.libertadores"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "conmebol.sudamericana"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "conmebol.recopa"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "fifa.intercontinental_cup"),
+            new EspnLeagueSource(Competition.CLUB_FRIENDLY, "club.friendly"),
+            new EspnLeagueSource(Competition.CLUB_FRIENDLY, "global.champs_cup"),
+            new EspnLeagueSource(Competition.CLUB_FRIENDLY, "friendly.emirates_cup"),
+            new EspnLeagueSource(Competition.CLUB_FRIENDLY, "eng.asia_trophy"),
+            new EspnLeagueSource(Competition.CLUB_FRIENDLY, "esp.joan_gamper")
     );
 
     private static final List<SportsDbLeagueSource> SPORTS_DB_SOURCES = List.of();
@@ -127,6 +172,10 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     public int updateSchedules(List<MatchSchedule> schedules) {
+        return updateSchedules(schedules, false);
+    }
+
+    public int updateSchedules(List<MatchSchedule> schedules, boolean includeSupplementalSources) {
         if (!enabled) {
             log.info("Club competition schedule update is disabled.");
             return 0;
@@ -147,7 +196,13 @@ public class ClubCompetitionScheduleUpdater {
         removeReplacedCachedSchedules(cachedSchedules, fotMobBatch.loadedSeasons(), startDate, endDate);
 
         List<MatchSchedule> remoteSchedules = new ArrayList<>(cachedSchedules);
-        remoteSchedules.addAll(loadEspnSchedules(client, zoneId, timeout, startDate, endDate));
+        remoteSchedules.addAll(loadEspnSchedules(
+                client,
+                zoneId,
+                timeout,
+                startDate,
+                endDate,
+                includeSupplementalSources));
         List<MatchSchedule> sportsDbSchedules = loadSportsDbSchedules(
                 client,
                 zoneId,
@@ -173,9 +228,14 @@ public class ClubCompetitionScheduleUpdater {
             ZoneId zoneId,
             Duration timeout,
             LocalDate startDate,
-            LocalDate endDate) {
+            LocalDate endDate,
+            boolean includeSupplementalSources) {
         List<Supplier<List<MatchSchedule>>> tasks = new ArrayList<>();
-        for (EspnLeagueSource source : ESPN_SOURCES) {
+        List<EspnLeagueSource> sources = new ArrayList<>(BASE_ESPN_SOURCES);
+        if (includeSupplementalSources) {
+            sources.addAll(SUPPLEMENTAL_ESPN_SOURCES);
+        }
+        for (EspnLeagueSource source : sources) {
             tasks.add(() -> loadEspnScheduleRange(client, source, startDate, endDate, zoneId, timeout));
         }
         List<MatchSchedule> result = executeTasks(tasks);
@@ -417,6 +477,11 @@ public class ClubCompetitionScheduleUpdater {
         if (homeTeam.isBlank() || awayTeam.isBlank()) {
             return null;
         }
+        if (requiresHistoricalOddsTeamMapping(competition)
+                && (!ClubTeamNameTranslator.hasHistoricalOddsMapping(homeTeam)
+                || !ClubTeamNameTranslator.hasHistoricalOddsMapping(awayTeam))) {
+            return null;
+        }
 
         JsonNode statusType = event.path("status").path("type");
         boolean completed = statusType.path("completed").asBoolean(false);
@@ -457,6 +522,11 @@ public class ClubCompetitionScheduleUpdater {
             }
         }
         return schedule;
+    }
+
+    private boolean requiresHistoricalOddsTeamMapping(Competition competition) {
+        return competition == Competition.CLUB_OFFICIAL_OTHER
+                || competition == Competition.CLUB_FRIENDLY;
     }
 
     private String readEspnTeamId(JsonNode competitor) {

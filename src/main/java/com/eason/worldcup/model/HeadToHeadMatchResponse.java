@@ -11,6 +11,10 @@ public class HeadToHeadMatchResponse {
 
     private String competitionName;
 
+    private String matchTypeName;
+
+    private double modelWeight;
+
     private String homeTeamCn;
 
     private String awayTeamCn;
@@ -43,6 +47,22 @@ public class HeadToHeadMatchResponse {
 
     public void setCompetitionName(String competitionName) {
         this.competitionName = competitionName;
+    }
+
+    public String getMatchTypeName() {
+        return matchTypeName;
+    }
+
+    public void setMatchTypeName(String matchTypeName) {
+        this.matchTypeName = matchTypeName;
+    }
+
+    public double getModelWeight() {
+        return modelWeight;
+    }
+
+    public void setModelWeight(double modelWeight) {
+        this.modelWeight = modelWeight;
     }
 
     public String getHomeTeamCn() {

@@ -516,7 +516,7 @@
           </div>
           <button type="button" class="dialog-close" aria-label="关闭历史交战弹窗" @click="closeHeadToHeadDialog">×</button>
         </header>
-        <p class="head-to-head-description">仅展示本场开赛前已结束的交锋，最多显示最近 10 场</p>
+        <p class="head-to-head-description">展示本场开赛前的正式比赛及降权友谊赛，最多显示最近 50 场</p>
 
         <div v-if="headToHeadLoading" class="dialog-state" role="status">正在读取历史交战数据...</div>
         <div v-else-if="headToHeadError" class="dialog-state is-error">{{ headToHeadError }}</div>
@@ -542,23 +542,23 @@
       </section>
     </div>
 
-    <div v-if="backtesting" class="backtest-mask" role="status" aria-live="polite" aria-busy="true">
+    <div v-if="backtesting || updatingData" class="backtest-mask" role="status" aria-live="polite" aria-busy="true">
       <div class="backtest-mask-card">
         <div class="backtest-mask-heading">
-          <strong>正在回测</strong>
-          <span>{{ backtestProgressText }}</span>
+          <strong>{{ updatingData ? '正在更新数据' : '正在回测' }}</strong>
+          <span>{{ operationProgressText }}</span>
         </div>
-        <span>{{ backtestProgressDetail }}</span>
+        <span>{{ operationProgressDetail }}</span>
         <div
           class="backtest-progress"
           role="progressbar"
-          aria-label="回测进度"
+          :aria-label="updatingData ? '数据更新进度' : '回测进度'"
           aria-valuemin="0"
           aria-valuemax="100"
-          :aria-valuenow="backtestProgress"
-          :aria-valuetext="backtestProgressDetail"
+          :aria-valuenow="operationProgress"
+          :aria-valuetext="operationProgressDetail"
         >
-          <span class="backtest-progress-bar" :style="{ width: backtestProgress + '%' }"></span>
+          <span class="backtest-progress-bar" :style="{ width: operationProgress + '%' }"></span>
         </div>
       </div>
     </div>
@@ -568,6 +568,7 @@
 <script>
 const FIXED_SIMULATIONS = 50000
 const BACKTEST_PROGRESS_POLL_INTERVAL = 300
+const DATA_REFRESH_PROGRESS_POLL_INTERVAL = 300
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
 const UTC_PLUS_EIGHT_TIME_ZONE = 'Asia/Shanghai'
 const COMPETITIONS = [
@@ -725,6 +726,8 @@ export default {
       headToHeadRequestId: 0,
       loading: false,
       updatingData: false,
+      dataRefreshProgress: 0,
+      dataRefreshMessage: '正在准备更新数据...',
       errorMessage: ''
     }
   },
@@ -826,8 +829,17 @@ export default {
       const netRoi = Math.pow((hitRate * averageOddsIncludingMisses) / averageRecommendations, 2) - 1
       return (netRoi * 100).toFixed(1) + '%'
     },
-    backtestProgressText() {
-      return Number(this.backtestProgress).toFixed(1) + '%'
+    operationProgress() {
+      return this.updatingData ? this.dataRefreshProgress : this.backtestProgress
+    },
+    operationProgressText() {
+      return Number(this.operationProgress).toFixed(1) + '%'
+    },
+    operationProgressDetail() {
+      if (this.updatingData) {
+        return this.dataRefreshMessage || '正在准备更新数据...'
+      }
+      return this.backtestProgressDetail
     },
     backtestProgressDetail() {
       const processedMatchCount = Number(this.backtestProcessedMatchCount) || 0
@@ -1020,7 +1032,7 @@ export default {
         const params = new URLSearchParams()
         params.append('competition', match.competition || this.activeCompetition)
         params.append('matchId', match.matchId)
-        params.append('limit', '10')
+        params.append('limit', '50')
         const res = await fetch('/api/football/head-to-head?' + params.toString())
         if (!res.ok) {
           throw new Error('服务响应异常')
@@ -1178,6 +1190,7 @@ export default {
       if (this.updatingData || this.backtesting) {
         return
       }
+      this.resetDataRefreshProgress()
       this.updatingData = true
       this.errorMessage = ''
       try {
@@ -1187,19 +1200,56 @@ export default {
         if (currentDate) {
           params.append('date', currentDate)
         }
-        const res = await fetch('/api/football/data/refresh?' + params.toString(), {
+        const res = await fetch('/api/football/data/refresh/jobs?' + params.toString(), {
           method: 'POST'
         })
         if (!res.ok) {
-          throw new Error('服务响应异常')
+          throw new Error('创建数据更新任务失败')
         }
-        await res.json()
+        const job = await res.json()
+        await this.waitForDataRefreshJob(job)
+        this.dataRefreshProgress = 100
+        this.dataRefreshMessage = '数据更新完成，正在刷新页面数据'
         await this.loadOverview(currentDate)
       } catch (error) {
         this.errorMessage = '更新数据失败：' + error.message
       } finally {
         this.updatingData = false
       }
+    },
+    async waitForDataRefreshJob(initialJob) {
+      let job = initialJob
+      while (job && (job.status === 'QUEUED' || job.status === 'RUNNING')) {
+        this.applyDataRefreshProgress(job)
+        await this.wait(DATA_REFRESH_PROGRESS_POLL_INTERVAL)
+        const res = await fetch(
+          '/api/football/data/refresh/jobs/' + encodeURIComponent(job.jobId),
+          { cache: 'no-store' }
+        )
+        if (!res.ok) {
+          throw new Error('读取数据更新进度失败')
+        }
+        job = await res.json()
+      }
+      this.applyDataRefreshProgress(job)
+      if (job && job.status === 'COMPLETED' && job.result) {
+        return job.result
+      }
+      throw new Error(job && job.message ? job.message : '数据更新任务失败')
+    },
+    applyDataRefreshProgress(job) {
+      if (!job) {
+        return
+      }
+      const progress = Number(job.progress)
+      this.dataRefreshProgress = Number.isFinite(progress)
+        ? Math.max(0, Math.min(100, progress))
+        : 0
+      this.dataRefreshMessage = job.message || '正在准备更新数据...'
+    },
+    resetDataRefreshProgress() {
+      this.dataRefreshProgress = 0
+      this.dataRefreshMessage = '正在准备更新数据...'
     },
     async loadPredictions() {
       if (!this.queryDate) {

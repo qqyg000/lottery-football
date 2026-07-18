@@ -2,6 +2,7 @@ package com.eason.worldcup.service;
 
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HistoricalMatch;
+import com.eason.worldcup.model.HistoricalMatchType;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.SportteryOdds;
 import com.eason.worldcup.util.ApplicationTime;
@@ -25,9 +26,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +51,10 @@ public class DataRepository {
     private static final int AWAY_SCORE_COLUMN = 6;
 
     private static final int NEUTRAL_COLUMN = 7;
+
+    private static final int MATCH_TYPE_COLUMN = 8;
+
+    private static final int SOURCE_COMPETITION_COLUMN = 9;
 
     private final ResourceLoader resourceLoader;
 
@@ -96,9 +103,13 @@ public class DataRepository {
     }
 
     public synchronized void reloadData() {
+        reloadData(false);
+    }
+
+    private void reloadData(boolean includeSupplementalSources) {
         List<HistoricalMatch> reloadedHistoricalMatches = Collections.unmodifiableList(loadHistoricalMatches());
         List<HistoricalMatch> reloadedClubHistoricalMatches = Collections.unmodifiableList(loadClubHistoricalMatches());
-        List<MatchSchedule> reloadedSchedules = Collections.unmodifiableList(loadSchedules());
+        List<MatchSchedule> reloadedSchedules = Collections.unmodifiableList(loadSchedules(includeSupplementalSources));
         this.historicalMatches = reloadedHistoricalMatches;
         this.clubHistoricalMatches = reloadedClubHistoricalMatches;
         this.schedules = reloadedSchedules;
@@ -106,11 +117,11 @@ public class DataRepository {
 
     public synchronized void refreshSchedules() {
         if (historicalMatches.isEmpty() || clubHistoricalMatches.isEmpty()) {
-            reloadData();
+            reloadData(true);
             return;
         }
 
-        List<MatchSchedule> refreshedSchedules = loadSchedules();
+        List<MatchSchedule> refreshedSchedules = loadSchedules(true);
         preserveSchedulesOutsideRefreshWindow(refreshedSchedules, schedules);
         refreshedSchedules.sort(Comparator
                 .comparing(MatchSchedule::getMatchDate)
@@ -131,8 +142,21 @@ public class DataRepository {
             return Collections.emptyList();
         }
         String tournament = competition.getDisplayName();
+        Set<String> competitionTeams = new HashSet<>();
+        for (HistoricalMatch match : clubHistoricalMatches) {
+            if (!tournament.equals(match.getTournament())) {
+                continue;
+            }
+            competitionTeams.add(normalizeTeamName(match.getHomeTeam()));
+            competitionTeams.add(normalizeTeamName(match.getAwayTeam()));
+        }
+        if (competitionTeams.isEmpty()) {
+            return Collections.emptyList();
+        }
         return clubHistoricalMatches.stream()
-                .filter(match -> tournament.equals(match.getTournament()))
+                .filter(match -> tournament.equals(match.getTournament())
+                        || competitionTeams.contains(normalizeTeamName(match.getHomeTeam()))
+                        || competitionTeams.contains(normalizeTeamName(match.getAwayTeam())))
                 .collect(Collectors.toList());
     }
 
@@ -250,6 +274,11 @@ public class DataRepository {
                 match.setHomeScore(Integer.parseInt(CsvUtils.get(row, HOME_SCORE_COLUMN)));
                 match.setAwayScore(Integer.parseInt(CsvUtils.get(row, AWAY_SCORE_COLUMN)));
                 match.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, NEUTRAL_COLUMN)));
+                match.setMatchType(HistoricalMatchType.fromCode(CsvUtils.get(row, MATCH_TYPE_COLUMN)));
+                String sourceCompetition = CsvUtils.get(row, SOURCE_COMPETITION_COLUMN);
+                match.setSourceCompetition(sourceCompetition.isBlank()
+                        ? competition.getDisplayName()
+                        : sourceCompetition);
                 result.add(match);
             }
         } catch (IOException ex) {
@@ -263,7 +292,7 @@ public class DataRepository {
         return result;
     }
 
-    private List<MatchSchedule> loadSchedules() {
+    private List<MatchSchedule> loadSchedules(boolean includeSupplementalSources) {
         List<MatchSchedule> result = new ArrayList<>();
         scheduleUpdater.updateSchedules(result);
         int espnUpdatedCount = espnScheduleUpdater.updateSchedules(result);
@@ -274,7 +303,9 @@ public class DataRepository {
         if (championsLeagueUpdatedCount > 0) {
             log.info("Loaded {} Champions League schedule rows from ESPN scoreboard.", championsLeagueUpdatedCount);
         }
-        int clubCompetitionUpdatedCount = clubCompetitionScheduleUpdater.updateSchedules(result);
+        int clubCompetitionUpdatedCount = clubCompetitionScheduleUpdater.updateSchedules(
+                result,
+                includeSupplementalSources);
         if (clubCompetitionUpdatedCount > 0) {
             log.info("Loaded {} additional club competition schedule rows.", clubCompetitionUpdatedCount);
         }
