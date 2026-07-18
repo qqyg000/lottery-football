@@ -82,6 +82,7 @@ public class PredictionController {
             @RequestParam(value = "homeTeamGoalFactor", required = false) Double homeTeamGoalFactor,
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
+            @RequestParam(value = "includePreviousEdition", defaultValue = "false") boolean includePreviousEdition,
             @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
         return recommendationBacktestJobService.start(
                 parseBacktestCompetitions(competition),
@@ -89,7 +90,8 @@ public class PredictionController {
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
-                handicapSmoothingFactor);
+                handicapSmoothingFactor,
+                includePreviousEdition);
     }
 
     @GetMapping("/recommendation-backtest/jobs/{jobId}")
@@ -108,6 +110,7 @@ public class PredictionController {
             @RequestParam(value = "homeTeamGoalFactor", required = false) Double homeTeamGoalFactor,
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
+            @RequestParam(value = "includePreviousEdition", defaultValue = "false") boolean includePreviousEdition,
             @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
         return predictionService.queryRecommendationBacktest(
                 parseBacktestCompetitions(competition),
@@ -115,7 +118,8 @@ public class PredictionController {
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
-                handicapSmoothingFactor);
+                handicapSmoothingFactor,
+                includePreviousEdition);
     }
 
     @GetMapping("/head-to-head")

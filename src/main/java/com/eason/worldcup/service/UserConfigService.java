@@ -84,6 +84,7 @@ public class UserConfigService {
 
     private UserConfig normalize(UserConfig config) {
         UserConfig normalized = config == null ? UserConfigDefaults.newConfig() : config;
+        normalized.setModelMode("after");
         normalized.setModelFactors(normalizeModelFactors(normalized.getModelFactors()));
         normalized.setGlobalParameters(normalizeGlobalParameters(normalized.getGlobalParameters()));
         normalized.setSelectedRows(normalizeSelectedRows(normalized.getSelectedRows()));
@@ -171,6 +172,8 @@ public class UserConfigService {
 
         private static UserConfig newConfig() {
             UserConfig config = new UserConfig();
+            config.setModelMode("after");
+            config.setIncludePreviousEdition(false);
             config.setModelFactors(UserConfig.ModelFactors.defaults());
             config.setGlobalParameters(UserConfig.GlobalParameters.defaults());
             config.setSelectedRows(new LinkedHashMap<>());

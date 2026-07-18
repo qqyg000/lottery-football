@@ -39,7 +39,7 @@ public class PredictionService {
 
     private static final int[] HANDICAPS = {-3, -2, -1, 1, 2, 3};
 
-    private static final Map<Competition, LocalDate> RECOMMENDATION_BACKTEST_START_DATES = Map.ofEntries(
+    private static final Map<Competition, LocalDate> CURRENT_EDITION_BACKTEST_START_DATES = Map.ofEntries(
             Map.entry(Competition.WORLD_CUP, LocalDate.of(2026, 6, 11)),
             Map.entry(Competition.EUROPEAN_CHAMPIONSHIP, LocalDate.of(2028, 6, 9)),
             Map.entry(Competition.COPA_AMERICA, LocalDate.of(2028, 6, 9)),
@@ -56,6 +56,23 @@ public class PredictionService {
             Map.entry(Competition.EREDIVISIE, LocalDate.of(2026, 8, 7)),
             Map.entry(Competition.ARGENTINE_PRIMERA_DIVISION, LocalDate.of(2026, 1, 22)));
 
+    private static final Map<Competition, LocalDate> PREVIOUS_EDITION_BACKTEST_START_DATES = Map.ofEntries(
+            Map.entry(Competition.WORLD_CUP, LocalDate.of(2022, 11, 20)),
+            Map.entry(Competition.EUROPEAN_CHAMPIONSHIP, LocalDate.of(2024, 6, 14)),
+            Map.entry(Competition.COPA_AMERICA, LocalDate.of(2024, 6, 20)),
+            Map.entry(Competition.CLUB_WORLD_CUP, LocalDate.of(2025, 6, 14)),
+            Map.entry(Competition.EUROPA_LEAGUE, LocalDate.of(2025, 9, 24)),
+            Map.entry(Competition.CHAMPIONS_LEAGUE, LocalDate.of(2025, 9, 16)),
+            Map.entry(Competition.PREMIER_LEAGUE, LocalDate.of(2025, 8, 15)),
+            Map.entry(Competition.LA_LIGA, LocalDate.of(2025, 8, 15)),
+            Map.entry(Competition.SERIE_A, LocalDate.of(2025, 8, 23)),
+            Map.entry(Competition.BUNDESLIGA, LocalDate.of(2025, 8, 22)),
+            Map.entry(Competition.LIGUE_1, LocalDate.of(2025, 8, 15)),
+            Map.entry(Competition.BRAZIL_SERIE_A, LocalDate.of(2025, 3, 29)),
+            Map.entry(Competition.PRIMEIRA_LIGA, LocalDate.of(2025, 8, 8)),
+            Map.entry(Competition.EREDIVISIE, LocalDate.of(2025, 8, 8)),
+            Map.entry(Competition.ARGENTINE_PRIMERA_DIVISION, LocalDate.of(2025, 1, 23)));
+
     private final DataRepository dataRepository;
 
     private final TeamStrengthService teamStrengthService;
@@ -65,10 +82,10 @@ public class PredictionService {
     @Value("${worldcup.simulation-count:50000}")
     private int defaultSimulationCount;
 
-    @Value("${worldcup.handicap-smoothing-factor:0.200}")
+    @Value("${worldcup.handicap-smoothing-factor:0.685}")
     private double handicapSmoothingFactor;
 
-    @Value("${worldcup.handicap-max-smoothing:0.200}")
+    @Value("${worldcup.handicap-max-smoothing:0.685}")
     private double handicapMaxSmoothing;
 
     public PredictionService(
@@ -172,6 +189,25 @@ public class PredictionService {
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
                 handicapSmoothingFactor,
+                false);
+    }
+
+    public RecommendationBacktestResponse queryRecommendationBacktest(
+            Set<Competition> competitions,
+            Integer simulations,
+            Double hostTeamGoalFactor,
+            Double seedTeamGoalFactor,
+            Double homeTeamGoalFactor,
+            Double handicapSmoothingFactor,
+            boolean includePreviousEdition) {
+        return queryRecommendationBacktest(
+                competitions,
+                simulations,
+                hostTeamGoalFactor,
+                seedTeamGoalFactor,
+                homeTeamGoalFactor,
+                handicapSmoothingFactor,
+                includePreviousEdition,
                 null);
     }
 
@@ -182,6 +218,7 @@ public class PredictionService {
             Double seedTeamGoalFactor,
             Double homeTeamGoalFactor,
             Double handicapSmoothingFactor,
+            boolean includePreviousEdition,
             BiConsumer<Integer, Integer> progressConsumer) {
         int simulationCount = normalizeSimulationCount(simulations);
         double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
@@ -190,7 +227,10 @@ public class PredictionService {
                 .filter(schedule -> competitions == null
                         || competitions.isEmpty()
                         || competitions.contains(schedule.getCompetition()))
-                .filter(schedule -> isWithinRecommendationBacktestRange(schedule, backtestEndDate))
+                .filter(schedule -> isWithinRecommendationBacktestRange(
+                        schedule,
+                        backtestEndDate,
+                        includePreviousEdition))
                 .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
                 .filter(schedule -> schedule.getHomeScore() != null && schedule.getAwayScore() != null)
                 .toList();
@@ -265,11 +305,15 @@ public class PredictionService {
 
     private boolean isWithinRecommendationBacktestRange(
             MatchSchedule schedule,
-            LocalDate backtestEndDate) {
+            LocalDate backtestEndDate,
+            boolean includePreviousEdition) {
         if (schedule.getCompetition() == null || schedule.getMatchDate() == null) {
             return false;
         }
-        LocalDate backtestStartDate = RECOMMENDATION_BACKTEST_START_DATES.get(schedule.getCompetition());
+        Map<Competition, LocalDate> backtestStartDates = includePreviousEdition
+                ? PREVIOUS_EDITION_BACKTEST_START_DATES
+                : CURRENT_EDITION_BACKTEST_START_DATES;
+        LocalDate backtestStartDate = backtestStartDates.get(schedule.getCompetition());
         return backtestStartDate != null
                 && !backtestStartDate.isAfter(backtestEndDate)
                 && !schedule.getMatchDate().isBefore(backtestStartDate)

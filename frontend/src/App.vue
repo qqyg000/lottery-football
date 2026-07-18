@@ -58,9 +58,19 @@
           <div class="hero-number">{{ overview.historicalMatchCount || 0 }}</div>
           <div class="hero-label">历史战绩样本</div>
           <div class="hero-small">赛程：{{ overview.scheduleMatchCount || 0 }} 场 · 已完赛：{{ overview.completedMatchCount || 0 }} 场</div>
-          <div class="model-toggle" aria-label="模型口径">
-            <button type="button" :class="{ 'is-active': modelMode === 'before' }" @click="setModelMode('before')">开赛前</button>
-            <button type="button" :class="{ 'is-active': modelMode === 'after' }" @click="setModelMode('after')">开赛后</button>
+          <div class="backtest-range-toggle" aria-label="回测范围">
+            <button
+              type="button"
+              :class="{ 'is-active': includePreviousEdition }"
+              :disabled="loading || updatingData || backtesting"
+              @click="setIncludePreviousEdition(true)"
+            >含上届赛事</button>
+            <button
+              type="button"
+              :class="{ 'is-active': !includePreviousEdition }"
+              :disabled="loading || updatingData || backtesting"
+              @click="setIncludePreviousEdition(false)"
+            >仅本届赛事</button>
           </div>
           <div class="hero-actions">
             <button type="button" class="factor-recalculate factor-reset refresh-data-button" :disabled="loading || updatingData || backtesting" @click="refreshData">
@@ -256,7 +266,12 @@
           :key="cell.key"
           type="button"
           class="calendar-day"
-          :class="{ 'is-empty': cell.empty, 'is-selected': cell.date === queryDate, 'is-loading': cell.date === queryDate && loading, 'has-schedule': cell.hasSchedule }"
+          :class="{
+            'is-empty': cell.empty,
+            'is-selected': !cell.empty && !!queryDate && cell.date === queryDate,
+            'is-loading': !cell.empty && !!queryDate && cell.date === queryDate && loading,
+            'has-schedule': cell.hasSchedule
+          }"
           :disabled="cell.empty || loading || updatingData || backtesting"
           @click="selectDate(cell.date)"
         >
@@ -268,7 +283,7 @@
     <section v-if="errorMessage" class="error-box">{{ errorMessage }}</section>
 
     <section v-if="!loading && !backtesting && matches.length === 0" class="empty-box">
-      {{ backtestActive ? '当前推荐赔率下没有中奖场次' : '当前日期暂无带赔率的赛程，请切换日期后查询' }}
+      {{ backtestActive ? '当前回测参数下没有推荐场次' : '当前日期暂无带赔率的赛程，请切换日期后查询' }}
     </section>
 
     <section class="match-list" :class="{ 'is-backtest': backtestActive }" :style="{ '--match-columns': matchColumns }">
@@ -413,6 +428,7 @@
     </section>
 
     <button
+      v-if="queryDate"
       type="button"
       class="recommendation-fab"
       :disabled="loading || updatingData || backtesting"
@@ -597,14 +613,14 @@ const GLOBAL_PARAMETER_COOKIE = 'worldcup_global_parameters'
 const GLOBAL_PARAMETER_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const ACTIVE_COMPETITION_COOKIE = 'football_active_competition'
 const ACTIVE_COMPETITION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
-const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.21
+const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.00
 const DEFAULT_HOME_TEAM_GOAL_FACTOR = 1.05
-const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.80
-const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.200
-const DEFAULT_RECOMMENDATION_ODDS = 1.62
-const DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD = 58.00
-const DEFAULT_HANDICAP_REVERSE_THRESHOLD = 52.00
-const DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD = 73.00
+const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.85
+const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.685
+const DEFAULT_RECOMMENDATION_ODDS = 1.56
+const DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD = 94.00
+const DEFAULT_HANDICAP_REVERSE_THRESHOLD = 43.75
+const DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD = 77.50
 const RECOMMENDATION_ODDS_MIN = 1
 const RECOMMENDATION_ODDS_MAX = 100
 const RECOMMENDATION_THRESHOLD_MIN = 0
@@ -629,16 +645,16 @@ const STABLE_PARAMETER_PRESET = {
 }
 const AGGRESSIVE_PARAMETER_PRESET = {
   modelFactors: {
-    hostTeamGoalFactor: 1.21,
-    homeTeamGoalFactor: 1.05,
-    seedTeamGoalFactor: 1.80,
-    handicapSmoothingFactor: 0.200
+    hostTeamGoalFactor: 1.25,
+    homeTeamGoalFactor: 2.65,
+    seedTeamGoalFactor: 2.05,
+    handicapSmoothingFactor: 0.128
   },
   globalParameters: {
-    recommendationOdds: 2.42,
-    handicapRecommendationThreshold: 58.00,
-    handicapReverseThreshold: 52.00,
-    singleRecommendationThreshold: 71.00
+    recommendationOdds: 2.53,
+    handicapRecommendationThreshold: 78.00,
+    handicapReverseThreshold: 53.15,
+    singleRecommendationThreshold: 82.50
   }
 }
 const MODEL_FACTOR_KEYS = [
@@ -697,6 +713,7 @@ export default {
       calendarMonth: '',
       queryDate: '',
       modelMode: 'after',
+      includePreviousEdition: false,
       modelFactors: {
         hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR.toFixed(2),
         homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR.toFixed(2),
@@ -1092,6 +1109,8 @@ export default {
       if (!config || typeof config !== 'object' || Array.isArray(config)) {
         return
       }
+      this.modelMode = 'after'
+      this.includePreviousEdition = config.includePreviousEdition === true
       if (config.modelFactors && typeof config.modelFactors === 'object' && !Array.isArray(config.modelFactors)) {
         MODEL_FACTOR_KEYS.forEach(key => {
           this.$set(this.modelFactors, key, this.formatModelFactorValue(config.modelFactors[key], this.getDefaultModelFactor(key), key))
@@ -1319,6 +1338,9 @@ export default {
       this.normalizeRecommendationThresholdInputs()
       this.saveGlobalParametersToCookie()
       this.resetBacktestProgress()
+      this.queryDate = ''
+      this.response = {}
+      this.closeRecommendationDialog()
       this.backtesting = true
       this.errorMessage = ''
       try {
@@ -1332,6 +1354,7 @@ export default {
             ? 'ALL'
             : selectedCompetitions.join(',')
         )
+        params.append('includePreviousEdition', String(this.includePreviousEdition))
         this.appendModelFactorParams(params)
         const res = await fetch('/api/football/recommendation-backtest/jobs?' + params.toString(), {
           method: 'POST'
@@ -1431,7 +1454,7 @@ export default {
         settledMatchOdds.push(winningOdds)
       })
       const missMatchCount = recommendedMatches.length - hitMatches.length
-      this.backtestMatches = hitMatches
+      this.backtestMatches = recommendedMatches
       this.backtestSummary = {
         ...this.backtestSummary,
         recommendedMatchCount: recommendedMatches.length,
@@ -1533,11 +1556,17 @@ export default {
       const month = String(date.getMonth() + 1).padStart(2, '0')
       return year + '-' + month
     },
-    setModelMode(mode) {
-      this.modelMode = mode
-      if (this.backtestActive) {
-        this.refreshBacktestResults()
+    setIncludePreviousEdition(includePreviousEdition) {
+      const nextValue = includePreviousEdition === true
+      if (this.includePreviousEdition === nextValue) {
+        return
       }
+      this.includePreviousEdition = nextValue
+      if (this.backtestActive) {
+        this.clearBacktestResults()
+        this.response = {}
+      }
+      this.saveUserConfig()
     },
     loadRecommendationSelections() {
       const cookieValue = this.getCookie(SELECTION_COOKIE)
@@ -1813,6 +1842,8 @@ export default {
     },
     buildUserConfigPayload() {
       return {
+        modelMode: 'after',
+        includePreviousEdition: this.includePreviousEdition,
         modelFactors: this.buildModelFactorPayload(),
         globalParameters: this.buildGlobalParameterPayload(),
         selectedRows: this.normalizeSelectedRows(this.selectedRows)
@@ -2620,7 +2651,7 @@ h1 {
   opacity: 0.78;
 }
 
-.model-toggle {
+.backtest-range-toggle {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
@@ -2630,7 +2661,7 @@ h1 {
   background: rgba(15, 23, 42, 0.22);
 }
 
-.model-toggle button {
+.backtest-range-toggle button {
   height: 24px;
   border: 0;
   border-radius: 6px;
@@ -2642,9 +2673,14 @@ h1 {
   white-space: nowrap;
 }
 
-.model-toggle button.is-active {
+.backtest-range-toggle button.is-active {
   color: #1d4ed8;
   background: #ffffff;
+}
+
+.backtest-range-toggle button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .hero-actions {

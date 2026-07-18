@@ -52,7 +52,8 @@ public class RecommendationBacktestJobService {
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
             Double homeTeamGoalFactor,
-            Double handicapSmoothingFactor) {
+            Double handicapSmoothingFactor,
+            boolean includePreviousEdition) {
         removeExpiredJobs();
         BacktestJob job = new BacktestJob(UUID.randomUUID().toString());
         jobs.put(job.getJobId(), job);
@@ -64,7 +65,8 @@ public class RecommendationBacktestJobService {
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
-                handicapSmoothingFactor));
+                handicapSmoothingFactor,
+                includePreviousEdition));
         return toResponse(job);
     }
 
@@ -85,7 +87,8 @@ public class RecommendationBacktestJobService {
             Double hostTeamGoalFactor,
             Double seedTeamGoalFactor,
             Double homeTeamGoalFactor,
-            Double handicapSmoothingFactor) {
+            Double handicapSmoothingFactor,
+            boolean includePreviousEdition) {
         job.start();
         try {
             RecommendationBacktestResponse result = predictionService.queryRecommendationBacktest(
@@ -95,6 +98,7 @@ public class RecommendationBacktestJobService {
                     seedTeamGoalFactor,
                     homeTeamGoalFactor,
                     handicapSmoothingFactor,
+                    includePreviousEdition,
                     job::updateProgress);
             job.complete(result);
         } catch (Exception ex) {

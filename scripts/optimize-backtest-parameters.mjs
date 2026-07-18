@@ -18,24 +18,26 @@ const PROBABILITY_MASKS = [1, 2, 4]
 
 const PRESETS = {
   stable: {
-    hostTeamGoalFactor: 1.21,
+    modelMode: 'after',
+    hostTeamGoalFactor: 1.00,
     homeTeamGoalFactor: 1.05,
-    seedTeamGoalFactor: 1.80,
-    handicapSmoothingFactor: 0.200,
-    recommendationOdds: 1.62,
-    handicapRecommendationThreshold: 58.00,
-    handicapReverseThreshold: 52.00,
-    singleRecommendationThreshold: 73.00
+    seedTeamGoalFactor: 1.85,
+    handicapSmoothingFactor: 0.685,
+    recommendationOdds: 1.56,
+    handicapRecommendationThreshold: 94.00,
+    handicapReverseThreshold: 43.75,
+    singleRecommendationThreshold: 77.50
   },
   aggressive: {
-    hostTeamGoalFactor: 1.21,
-    homeTeamGoalFactor: 1.05,
-    seedTeamGoalFactor: 1.80,
-    handicapSmoothingFactor: 0.200,
-    recommendationOdds: 2.42,
-    handicapRecommendationThreshold: 58.00,
-    handicapReverseThreshold: 52.00,
-    singleRecommendationThreshold: 71.00
+    modelMode: 'before',
+    hostTeamGoalFactor: 1.25,
+    homeTeamGoalFactor: 2.65,
+    seedTeamGoalFactor: 2.05,
+    handicapSmoothingFactor: 0.128,
+    recommendationOdds: 2.53,
+    handicapRecommendationThreshold: 78.00,
+    handicapReverseThreshold: 53.15,
+    singleRecommendationThreshold: 82.50
   }
 }
 
@@ -47,6 +49,7 @@ const argumentsMap = new Map(
 )
 const simulations = Math.max(1000, Number(argumentsMap.get('simulations')) || 1000)
 const phase = argumentsMap.get('phase') || 'baseline'
+const modelMode = argumentsMap.get('model') === 'before' ? 'before' : 'after'
 const responseCache = new Map()
 
 function roundToTwo(value) {
@@ -57,10 +60,13 @@ function toProbabilityArray(probability) {
   return PROBABILITY_KEYS.map(key => Number(probability?.[key]) || 0)
 }
 
-function findHandicapProbability(match) {
+function findHandicapProbability(match, effectiveModelMode = modelMode) {
   const handicap = Number(match.sportteryHandicap)
-  const source = Array.isArray(match.adjustedHandicapProbabilities)
-    ? match.adjustedHandicapProbabilities
+  const probabilities = effectiveModelMode === 'before'
+    ? match.handicapProbabilities
+    : match.adjustedHandicapProbabilities
+  const source = Array.isArray(probabilities)
+    ? probabilities
     : []
   const probability = source.find(item => Number(item.handicap) === handicap)?.probability
   return probability ? toProbabilityArray(probability) : [0, 0, 0]
@@ -89,19 +95,23 @@ function toOddsArray(odds) {
   })
 }
 
-function prepareMatches(matches) {
+function prepareMatches(matches, effectiveModelMode = modelMode) {
   return (matches || []).map(match => {
     const handicap = Number(match.sportteryHandicap)
     const score = parseScore(match.scoreText)
     return {
+      matchId: match.matchId,
+      matchDate: match.matchDate,
       competition: match.competition,
       homeTeamEn: match.homeTeamEn,
       awayTeamEn: match.awayTeamEn,
       normalAvailable: match.sportteryNormalAvailable === true,
       handicapAvailable: Number.isInteger(handicap) && handicap !== 0,
       handicap,
-      normalProbability: toProbabilityArray(match.adjustedNormalProbability),
-      rawHandicapProbability: findHandicapProbability(match),
+      normalProbability: toProbabilityArray(
+        effectiveModelMode === 'before' ? match.normalProbability : match.adjustedNormalProbability
+      ),
+      rawHandicapProbability: findHandicapProbability(match, effectiveModelMode),
       normalOdds: toOddsArray(match.sportteryNormalOdds),
       handicapOdds: toOddsArray(match.sportteryHandicapOdds),
       normalActualIndex: actualProbabilityIndex(score, 0),
@@ -289,8 +299,8 @@ function evaluate(matches, parameters) {
   }
 }
 
-async function fetchBacktest(competition, factors) {
-  const key = [competition, factors.hostTeamGoalFactor, factors.homeTeamGoalFactor, factors.seedTeamGoalFactor].join('|')
+async function fetchBacktest(competition, factors, effectiveModelMode = modelMode) {
+  const key = [effectiveModelMode, competition, factors.hostTeamGoalFactor, factors.homeTeamGoalFactor, factors.seedTeamGoalFactor].join('|')
   if (responseCache.has(key)) {
     return responseCache.get(key)
   }
@@ -323,16 +333,16 @@ async function fetchBacktest(competition, factors) {
   if (!data) {
     throw lastError || new Error('回测接口未返回数据')
   }
-  const result = prepareMatches(data.matches)
+  const result = prepareMatches(data.matches, effectiveModelMode)
   responseCache.set(key, result)
   process.stderr.write(`读取 ${competition} ${result.length} 场，${((Date.now() - startedAt) / 1000).toFixed(1)} 秒\n`)
   return result
 }
 
-async function loadPresetMatches(preset) {
+async function loadPresetMatches(preset, effectiveModelMode = modelMode) {
   const [worldCupMatches, clubMatches] = await Promise.all([
-    fetchBacktest('WORLD_CUP', preset),
-    fetchBacktest(CLUB_COMPETITIONS, preset)
+    fetchBacktest('WORLD_CUP', preset, effectiveModelMode),
+    fetchBacktest(CLUB_COMPETITIONS, preset, effectiveModelMode)
   ])
   return worldCupMatches.concat(clubMatches)
 }
@@ -353,7 +363,7 @@ function printableMetrics(metrics) {
 async function runBaselines() {
   const result = {}
   for (const [name, preset] of Object.entries(PRESETS)) {
-    const matches = await loadPresetMatches(preset)
+    const matches = await loadPresetMatches(preset, preset.modelMode || modelMode)
     const smoothedMatches = withSmoothing(matches, preset.handicapSmoothingFactor)
     result[name] = {
       parameters: preset,
@@ -387,29 +397,70 @@ function addRankedResult(results, candidate, metrics, limit = 10) {
 
 const SEARCH_DEFINITIONS = {
   stable: {
-    minimumRecommendedMatches: 120,
+    minimumRecommendedMatches: 35,
     minimumAverageOdds: 1.60,
-    odds: [1.00, 1.70],
-    handicapRecommendation: [35, 75],
-    handicapReverse: [35, 75],
-    singleRecommendation: [55, 85]
+    odds: [1.00, 2.50],
+    handicapRecommendation: [0, 100],
+    handicapReverse: [0, 100],
+    singleRecommendation: [0, 100]
   },
   aggressive: {
-    minimumRecommendedMatches: 80,
+    minimumRecommendedMatches: 12,
     minimumAverageOdds: 1.90,
-    odds: [1.30, 2.30],
-    handicapRecommendation: [35, 75],
-    handicapReverse: [35, 75],
-    singleRecommendation: [55, 85]
+    odds: [1.30, 4.00],
+    handicapRecommendation: [0, 100],
+    handicapReverse: [0, 100],
+    singleRecommendation: [0, 100]
   }
 }
 
 const TARGETED_CANDIDATES = {
   stable: {
-    ...PRESETS.stable
+    modelMode: 'after',
+    hostTeamGoalFactor: 1.00,
+    homeTeamGoalFactor: 1.05,
+    seedTeamGoalFactor: 1.85,
+    handicapSmoothingFactor: 0.685,
+    recommendationOdds: 1.56,
+    handicapRecommendationThreshold: 94.00,
+    handicapReverseThreshold: 43.75,
+    singleRecommendationThreshold: 77.50
   },
   aggressive: {
-    ...PRESETS.aggressive
+    modelMode: 'before',
+    hostTeamGoalFactor: 1.25,
+    homeTeamGoalFactor: 2.65,
+    seedTeamGoalFactor: 2.05,
+    handicapSmoothingFactor: 0.128,
+    recommendationOdds: 2.53,
+    handicapRecommendationThreshold: 78.00,
+    handicapReverseThreshold: 53.15,
+    singleRecommendationThreshold: 82.50
+  }
+}
+
+const VERIFICATION_CANDIDATES = {
+  stable: {
+    modelMode: 'after',
+    hostTeamGoalFactor: 1.00,
+    homeTeamGoalFactor: 1.05,
+    seedTeamGoalFactor: 1.85,
+    handicapSmoothingFactor: 0.685,
+    recommendationOdds: 1.56,
+    handicapRecommendationThreshold: 94.00,
+    handicapReverseThreshold: 43.75,
+    singleRecommendationThreshold: 77.50
+  },
+  aggressive: {
+    modelMode: 'before',
+    hostTeamGoalFactor: 1.25,
+    homeTeamGoalFactor: 2.65,
+    seedTeamGoalFactor: 2.05,
+    handicapSmoothingFactor: 0.128,
+    recommendationOdds: 2.53,
+    handicapRecommendationThreshold: 78.00,
+    handicapReverseThreshold: 53.15,
+    singleRecommendationThreshold: 82.50
   }
 }
 
@@ -539,10 +590,10 @@ function combinedMatches(clubGrid, worldCupGrid, factors) {
 }
 
 async function runCoarseModelSearch() {
-  const homeValues = [0.96, 1.00, 1.04, 1.08, 1.12, 1.16, 1.20]
-  const hostValues = [1.10, 1.18, 1.26, 1.34, 1.42]
-  const seedValues = [1.41, 1.49, 1.57, 1.65, 1.73]
-  const smoothingValues = [0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.61, 0.645, 0.70, 0.75, 0.80]
+  const homeValues = [0.10, 0.40, 0.70, 1.00, 1.30, 1.60, 2.00, 2.50, 3.00]
+  const hostValues = [0.10, 0.40, 0.70, 1.00, 1.30, 1.60, 2.00, 2.50, 3.00]
+  const seedValues = [0.10, 0.40, 0.70, 1.00, 1.30, 1.60, 2.00, 2.50, 3.00]
+  const smoothingValues = [0.00, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80]
   const [clubGrid, worldCupGrid] = await Promise.all([
     loadClubFactorGrid(homeValues),
     loadWorldCupFactorGrid(hostValues, seedValues)
@@ -552,7 +603,7 @@ async function runCoarseModelSearch() {
     const definition = SEARCH_DEFINITIONS[name]
     const thresholdCandidates = buildThresholdCandidates(
       name,
-      70,
+      300,
       name === 'stable' ? 20260719 : 20260720
     )
     const ranked = []
@@ -597,7 +648,7 @@ async function refineCandidate(name, initial) {
     true
   )
 
-  const homeValues = factorRange(current.candidate.homeTeamGoalFactor, 0.04, 0.02, 0.90, 1.30)
+  const homeValues = factorRange(current.candidate.homeTeamGoalFactor, 0.35, 0.05, 0.10, 3.00)
   const clubGrid = await loadClubFactorGrid(homeValues)
   const initialHostValues = [current.candidate.hostTeamGoalFactor]
   const initialSeedValues = [current.candidate.seedTeamGoalFactor]
@@ -620,8 +671,8 @@ async function refineCandidate(name, initial) {
     }
   }
 
-  const hostValues = factorRange(current.candidate.hostTeamGoalFactor, 0.04, 0.02, 1.00, 1.60)
-  const seedValues = factorRange(current.candidate.seedTeamGoalFactor, 0.04, 0.02, 1.30, 1.90)
+  const hostValues = factorRange(current.candidate.hostTeamGoalFactor, 0.35, 0.05, 0.10, 3.00)
+  const seedValues = factorRange(current.candidate.seedTeamGoalFactor, 0.35, 0.05, 0.10, 3.00)
   worldCupGrid = await loadWorldCupFactorGrid(hostValues, seedValues)
   const currentClubGrid = await loadClubFactorGrid([current.candidate.homeTeamGoalFactor])
   for (const hostTeamGoalFactor of hostValues) {
@@ -649,7 +700,7 @@ async function refineCandidate(name, initial) {
     hostTeamGoalFactor: current.candidate.hostTeamGoalFactor,
     seedTeamGoalFactor: current.candidate.seedTeamGoalFactor
   })
-  const smoothingValues = factorRange(current.candidate.handicapSmoothingFactor, 0.025, 0.005, 0, 0.8)
+  const smoothingValues = factorRange(current.candidate.handicapSmoothingFactor, 0.10, 0.01, 0, 0.8)
   for (const smoothingFactor of smoothingValues) {
     const best = findBestThresholds(
       finalMatches,
@@ -669,7 +720,7 @@ async function refineCandidate(name, initial) {
 
   const finalThresholds = buildThresholdCandidates(
     name,
-    30000,
+    200000,
     name === 'stable' ? 20260723 : 20260724,
     current.candidate,
     true
@@ -710,7 +761,7 @@ async function runFullSearch() {
 async function runTargetedSearch() {
   const result = {}
   for (const [name, initial] of Object.entries(TARGETED_CANDIDATES)) {
-    const matches = await loadPresetMatches(initial)
+    const matches = await loadPresetMatches(initial, initial.modelMode || modelMode)
     const definition = SEARCH_DEFINITIONS[name]
     const smoothingThresholds = buildThresholdCandidates(
       name,
@@ -773,26 +824,29 @@ async function runTargetedSearch() {
 async function runThresholdSearch() {
   const definitions = {
     stable: {
-      iterations: 30000,
-      minimumRecommendedMatches: 350,
-      odds: [1.00, 2.30],
-      handicapRecommendation: [35, 75],
-      handicapReverse: [35, 75],
-      singleRecommendation: [35, 85]
+      iterations: 300000,
+      minimumRecommendedMatches: 35,
+      odds: [1.00, 2.50],
+      handicapRecommendation: [0, 100],
+      handicapReverse: [0, 100],
+      singleRecommendation: [0, 100]
     },
     aggressive: {
-      iterations: 30000,
-      minimumRecommendedMatches: 180,
-      odds: [1.40, 3.00],
-      handicapRecommendation: [35, 75],
-      handicapReverse: [35, 75],
-      singleRecommendation: [35, 85]
+      iterations: 300000,
+      minimumRecommendedMatches: 12,
+      odds: [1.30, 4.00],
+      handicapRecommendation: [0, 100],
+      handicapReverse: [0, 100],
+      singleRecommendation: [0, 100]
     }
   }
   const result = {}
   for (const [name, preset] of Object.entries(PRESETS)) {
     const definition = definitions[name]
-    const matches = withSmoothing(await loadPresetMatches(preset), preset.handicapSmoothingFactor)
+    const matches = withSmoothing(
+      await loadPresetMatches(preset, preset.modelMode || modelMode),
+      preset.handicapSmoothingFactor
+    )
     const random = createRandom(name === 'stable' ? 20260717 : 20260718)
     const ranked = []
     for (let index = 0; index < definition.iterations; index++) {
@@ -816,7 +870,113 @@ async function runThresholdSearch() {
   console.log(JSON.stringify({ simulations, result }, null, 2))
 }
 
-if (phase === 'targeted') {
+function chronologicalFolds(matches, foldCount = 3) {
+  const sortedMatches = [...matches].sort((left, right) => {
+    const dateOrder = String(left.matchDate || '').localeCompare(String(right.matchDate || ''))
+    return dateOrder !== 0 ? dateOrder : String(left.matchId || '').localeCompare(String(right.matchId || ''))
+  })
+  return Array.from({ length: foldCount }, (_, foldIndex) => {
+    const startIndex = Math.floor(sortedMatches.length * foldIndex / foldCount)
+    const endIndex = Math.floor(sortedMatches.length * (foldIndex + 1) / foldCount)
+    return sortedMatches.slice(startIndex, endIndex)
+  })
+}
+
+function verificationMetrics(matches, parameters) {
+  const smoothedMatches = withSmoothing(matches, parameters.handicapSmoothingFactor)
+  const byCompetition = Object.fromEntries(
+    [...new Set(smoothedMatches.map(match => match.competition))]
+      .sort()
+      .map(competition => [
+        competition,
+        printableMetrics(evaluate(
+          smoothedMatches.filter(match => match.competition === competition),
+          parameters
+        ))
+      ])
+  )
+  const byPeriod = chronologicalFolds(smoothedMatches).map((foldMatches, index) => ({
+    period: index + 1,
+    startDate: foldMatches[0]?.matchDate || null,
+    endDate: foldMatches[foldMatches.length - 1]?.matchDate || null,
+    metrics: printableMetrics(evaluate(foldMatches, parameters))
+  }))
+  return {
+    full: printableMetrics(evaluate(smoothedMatches, parameters)),
+    byCompetition,
+    byPeriod
+  }
+}
+
+function localParameterVariants(parameters) {
+  const variants = []
+  const definitions = [
+    ['handicapSmoothingFactor', 0.05, 0, 0.8, 3],
+    ['recommendationOdds', 0.05, 1, 100, 2],
+    ['handicapRecommendationThreshold', 5, 0, 100, 2],
+    ['handicapReverseThreshold', 5, 0, 100, 2],
+    ['singleRecommendationThreshold', 5, 0, 100, 2]
+  ]
+  definitions.forEach(([key, delta, minimum, maximum, scale]) => {
+    for (const direction of [-1, 1]) {
+      variants.push({
+        key,
+        direction,
+        parameters: {
+          ...parameters,
+          [key]: Number(Math.max(minimum, Math.min(maximum, parameters[key] + direction * delta)).toFixed(scale))
+        }
+      })
+    }
+  })
+  return variants
+}
+
+function goalFactorVariants(parameters) {
+  return ['hostTeamGoalFactor', 'homeTeamGoalFactor', 'seedTeamGoalFactor'].flatMap(key => {
+    return [-1, 1].map(direction => ({
+      key,
+      direction,
+      parameters: {
+        ...parameters,
+        [key]: Number(Math.max(0.1, Math.min(3, parameters[key] + direction * 0.1)).toFixed(2))
+      }
+    }))
+  })
+}
+
+async function runVerification() {
+  const result = {}
+  for (const [name, parameters] of Object.entries(VERIFICATION_CANDIDATES)) {
+    const effectiveModelMode = parameters.modelMode || modelMode
+    const matches = await loadPresetMatches(parameters, effectiveModelMode)
+    const localSensitivity = localParameterVariants(parameters).map(variant => ({
+      parameter: variant.key,
+      value: variant.parameters[variant.key],
+      metrics: verificationMetrics(matches, variant.parameters).full
+    }))
+    const factorSensitivity = []
+    for (const variant of goalFactorVariants(parameters)) {
+      const variantMatches = await loadPresetMatches(variant.parameters, effectiveModelMode)
+      factorSensitivity.push({
+        parameter: variant.key,
+        value: variant.parameters[variant.key],
+        metrics: verificationMetrics(variantMatches, variant.parameters).full
+      })
+    }
+    result[name] = {
+      parameters,
+      metrics: verificationMetrics(matches, parameters),
+      localSensitivity,
+      factorSensitivity
+    }
+  }
+  console.log(JSON.stringify({ simulations, result }, null, 2))
+}
+
+if (phase === 'verify') {
+  await runVerification()
+} else if (phase === 'targeted') {
   await runTargetedSearch()
 } else if (phase === 'search') {
   await runFullSearch()

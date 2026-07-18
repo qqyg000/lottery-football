@@ -1,15 +1,17 @@
 {
+  "modelMode" : "after",
+  "includePreviousEdition" : false,
   "modelFactors" : {
-    "hostTeamGoalFactor" : 1.21,
+    "hostTeamGoalFactor" : 1.0,
     "homeTeamGoalFactor" : 1.05,
-    "seedTeamGoalFactor" : 1.8,
-    "handicapSmoothingFactor" : 0.2
+    "seedTeamGoalFactor" : 1.85,
+    "handicapSmoothingFactor" : 0.685
   },
   "globalParameters" : {
-    "recommendationOdds" : 1.62,
-    "handicapRecommendationThreshold" : 58.0,
-    "handicapReverseThreshold" : 52.0,
-    "singleRecommendationThreshold" : 73.0
+    "recommendationOdds" : 1.56,
+    "handicapRecommendationThreshold" : 94.0,
+    "handicapReverseThreshold" : 43.75,
+    "singleRecommendationThreshold" : 77.5
   },
   "selectedRows" : { }
 }
