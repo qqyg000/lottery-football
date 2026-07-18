@@ -337,9 +337,9 @@ public class PredictionService {
                     schedule.getAwayScore()), response);
         }
 
-        List<HistoricalMatch> historicalMatches = effectiveCompetition == Competition.WORLD_CUP
-                ? dataRepository.getHistoricalMatches()
-                : dataRepository.getClubHistoricalMatches();
+        List<HistoricalMatch> historicalMatches = effectiveCompetition.isClubCompetition()
+                ? dataRepository.getClubHistoricalMatches(effectiveCompetition)
+                : dataRepository.getHistoricalMatches();
         for (HistoricalMatch historicalMatch : historicalMatches) {
             if (historicalMatch.getMatchDate() == null
                     || target.getMatchDate() == null
@@ -488,18 +488,7 @@ public class PredictionService {
                 .replaceAll("\\p{M}", "")
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^\\p{L}\\p{N}]", "");
-        return switch (normalized) {
-            case "usa" -> "unitedstates";
-            case "czechrepublic" -> "czechia";
-            case "bosniaherzegovina" -> "bosniaandherzegovina";
-            case "cotedivoire" -> "ivorycoast";
-            case "korearepublic" -> "southkorea";
-            case "iriran" -> "iran";
-            case "caboverde" -> "capeverde";
-            case "congodr" -> "drcongo";
-            case "turkiye" -> "turkey";
-            default -> normalized;
-        };
+        return normalized;
     }
 
     private MatchPredictionResponse predict(

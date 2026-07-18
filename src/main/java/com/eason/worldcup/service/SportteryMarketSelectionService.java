@@ -49,16 +49,25 @@ public class SportteryMarketSelectionService {
     private static final String BROWSER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             + "AppleWebKit/537.36 Chrome/138.0.0.0 Safari/537.36";
 
-    private static final Map<Integer, Competition> COMPETITIONS_BY_LEAGUE_ID = Map.of(
-            6, Competition.BRAZIL_SERIE_A,
-            48, Competition.K_LEAGUE_1,
-            50, Competition.MLS,
-            51, Competition.NORWEGIAN_ELITESERIEN,
-            58, Competition.SWEDISH_ALLSVENSKAN,
-            69, Competition.CHAMPIONS_LEAGUE,
-            70, Competition.EUROPA_LEAGUE,
-            72, Competition.WORLD_CUP,
-            2064839, Competition.FINNISH_VEIKKAUSLIIGA);
+    private static final Map<Integer, Competition> COMPETITIONS_BY_LEAGUE_ID = Map.ofEntries(
+            Map.entry(72, Competition.WORLD_CUP),
+            Map.entry(27, Competition.EUROPEAN_CHAMPIONSHIP),
+            Map.entry(13, Competition.COPA_AMERICA),
+            Map.entry(14, Competition.CLUB_WORLD_CUP),
+            Map.entry(70, Competition.EUROPA_LEAGUE),
+            Map.entry(69, Competition.CHAMPIONS_LEAGUE),
+            Map.entry(25, Competition.PREMIER_LEAGUE),
+            Map.entry(62, Competition.LA_LIGA),
+            Map.entry(40, Competition.SERIE_A),
+            Map.entry(37, Competition.BUNDESLIGA),
+            Map.entry(32, Competition.LIGUE_1),
+            Map.entry(6, Competition.BRAZIL_SERIE_A),
+            Map.entry(55, Competition.PRIMEIRA_LIGA),
+            Map.entry(17, Competition.EREDIVISIE),
+            Map.entry(77, Competition.ARGENTINE_PRIMERA_DIVISION));
+
+    private static final Set<Competition> SUPPORTED_COMPETITIONS = Set.copyOf(
+            COMPETITIONS_BY_LEAGUE_ID.values());
 
     private final ObjectMapper objectMapper;
 
@@ -187,6 +196,7 @@ public class SportteryMarketSelectionService {
 
         List<SportteryMarketEntry> candidates = entriesByMatchId.values().stream()
                 .filter(entry -> entry.getMatchDate() != null)
+                .filter(entry -> SUPPORTED_COMPETITIONS.contains(entry.getCompetition()))
                 .filter(entry -> !entry.getMatchDate().isBefore(startDate))
                 .filter(entry -> !entry.getMatchDate().isAfter(endDate))
                 .sorted(Comparator
@@ -224,7 +234,7 @@ public class SportteryMarketSelectionService {
         int failedCount = 0;
         for (SportteryMarketEntry entry : candidates) {
             try {
-                downloadLatestOdds(client, entry, timeout);
+                downloadInitialOdds(client, entry, timeout);
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
                 failedCount++;
@@ -257,10 +267,9 @@ public class SportteryMarketSelectionService {
         if (schedules == null || schedules.isEmpty()) {
             return List.of();
         }
-        Set<Competition> supportedCompetitions = new HashSet<>(COMPETITIONS_BY_LEAGUE_ID.values());
         return schedules.stream()
                 .filter(schedule -> schedule != null && schedule.getMatchDate() != null)
-                .filter(schedule -> supportedCompetitions.contains(schedule.getCompetition()))
+                .filter(schedule -> SUPPORTED_COMPETITIONS.contains(schedule.getCompetition()))
                 .toList();
     }
 
@@ -510,12 +519,41 @@ public class SportteryMarketSelectionService {
         entry.setOddsLookupCompleted(true);
     }
 
+    private void downloadInitialOdds(
+            HttpClient client,
+            SportteryMarketEntry entry,
+            Duration timeout) throws IOException, InterruptedException {
+        String separator = oddsHistoryApiUrl.contains("?") ? "&" : "?";
+        JsonNode root = downloadJson(
+                client,
+                oddsHistoryApiUrl + separator + "matchId=" + entry.getSportteryMatchId(),
+                "https://www.sporttery.cn",
+                calculatorSourcePageUrl,
+                timeout,
+                "体彩赔率历史接口");
+        JsonNode value = root.path("value");
+        LatestMarketOdds normalOdds = parseInitialMarketOdds(value.path("hadList"));
+        LatestMarketOdds handicapOdds = parseInitialMarketOdds(value.path("hhadList"));
+        if (normalOdds != null) {
+            entry.setNormalOdds(normalOdds.odds());
+            entry.setNormalAvailable(true);
+        }
+        if (handicapOdds != null) {
+            entry.setHandicapOdds(handicapOdds.odds());
+            if (handicapOdds.handicap() != null) {
+                entry.setHandicap(handicapOdds.handicap());
+            }
+        }
+        entry.setOddsLookupCompleted(true);
+    }
+
     private void refreshOddsForWindow(LocalDate referenceDate) {
         LocalDate missingOddsStartDate = referenceDate.minusDays(normalizedOddsLookbackDays());
         LocalDate refreshAllStartDate = referenceDate.minusDays(normalizedRecentDaysBack());
         LocalDate refreshEndDate = referenceDate.plusDays(normalizedForceFutureDays());
         List<SportteryMarketEntry> candidates = entriesByMatchId.values().stream()
                 .filter(entry -> entry.getMatchDate() != null)
+                .filter(entry -> SUPPORTED_COMPETITIONS.contains(entry.getCompetition()))
                 .filter(entry -> !entry.getMatchDate().isBefore(missingOddsStartDate))
                 .filter(entry -> !entry.getMatchDate().isAfter(refreshEndDate))
                 .sorted(Comparator
@@ -599,6 +637,28 @@ public class SportteryMarketSelectionService {
             }
         }
         return latest;
+    }
+
+    private LatestMarketOdds parseInitialMarketOdds(JsonNode oddsList) {
+        LatestMarketOdds initial = null;
+        String initialUpdatedAt = "";
+        for (JsonNode item : oddsList) {
+            SportteryOdds odds = parseOdds(item);
+            if (odds == null) {
+                continue;
+            }
+            String updatedAt = odds.getUpdatedAt() == null ? "" : odds.getUpdatedAt();
+            boolean replaceBlankTimestamp = updatedAt.isBlank() && initialUpdatedAt.isBlank();
+            boolean replaceWithEarlierTimestamp = !updatedAt.isBlank()
+                    && (initialUpdatedAt.isBlank() || updatedAt.compareTo(initialUpdatedAt) < 0);
+            if (initial == null || replaceBlankTimestamp || replaceWithEarlierTimestamp) {
+                initial = new LatestMarketOdds(
+                        odds,
+                        parseHandicap(item.path("goalLine").asText("")));
+                initialUpdatedAt = updatedAt;
+            }
+        }
+        return initial;
     }
 
     private SportteryPage downloadPage(
@@ -794,14 +854,20 @@ public class SportteryMarketSelectionService {
                 match.path("leagueAbbName").asText(""));
         return switch (leagueName) {
             case "世界杯" -> Competition.WORLD_CUP;
-            case "欧冠" -> Competition.CHAMPIONS_LEAGUE;
-            case "挪超" -> Competition.NORWEGIAN_ELITESERIEN;
-            case "瑞超" -> Competition.SWEDISH_ALLSVENSKAN;
-            case "芬超" -> Competition.FINNISH_VEIKKAUSLIIGA;
+            case "欧洲杯" -> Competition.EUROPEAN_CHAMPIONSHIP;
+            case "美洲杯" -> Competition.COPA_AMERICA;
+            case "世俱杯", "俱世界杯" -> Competition.CLUB_WORLD_CUP;
             case "欧罗巴" -> Competition.EUROPA_LEAGUE;
+            case "欧冠" -> Competition.CHAMPIONS_LEAGUE;
+            case "英超" -> Competition.PREMIER_LEAGUE;
+            case "西甲" -> Competition.LA_LIGA;
+            case "意甲" -> Competition.SERIE_A;
+            case "德甲" -> Competition.BUNDESLIGA;
+            case "法甲" -> Competition.LIGUE_1;
             case "巴甲" -> Competition.BRAZIL_SERIE_A;
-            case "美职" -> Competition.MLS;
-            case "韩职" -> Competition.K_LEAGUE_1;
+            case "葡超" -> Competition.PRIMEIRA_LIGA;
+            case "荷甲" -> Competition.EREDIVISIE;
+            case "阿甲" -> Competition.ARGENTINE_PRIMERA_DIVISION;
             default -> null;
         };
     }
@@ -983,10 +1049,12 @@ public class SportteryMarketSelectionService {
 
     private int calculateMatchScore(MatchSchedule schedule, SportteryMarketEntry entry) {
         boolean homeTeamMatches = teamNamesMatch(
+                schedule.getCompetition(),
                 schedule.getHomeTeamCn(),
                 schedule.getHomeTeamEn(),
                 entry.getHomeTeam());
         boolean awayTeamMatches = teamNamesMatch(
+                schedule.getCompetition(),
                 schedule.getAwayTeamCn(),
                 schedule.getAwayTeamEn(),
                 entry.getAwayTeam());
@@ -1012,10 +1080,15 @@ public class SportteryMarketSelectionService {
                 && schedule.getAwayScore().equals(entry.getAwayScore());
     }
 
-    private boolean teamNamesMatch(String chineseName, String englishName, String sportteryName) {
+    private boolean teamNamesMatch(
+            Competition competition,
+            String chineseName,
+            String englishName,
+            String sportteryName) {
         String sportteryCanonicalName = canonicalTeamName(sportteryName);
         String chineseCanonicalName = canonicalTeamName(chineseName);
-        String translatedCanonicalName = canonicalTeamName(ClubTeamNameTranslator.translate(englishName));
+        String translatedCanonicalName = canonicalTeamName(
+                ClubTeamNameTranslator.translate(competition, englishName));
         return canonicalNamesMatch(chineseCanonicalName, sportteryCanonicalName)
                 || canonicalNamesMatch(translatedCanonicalName, sportteryCanonicalName);
     }
@@ -1039,19 +1112,7 @@ public class SportteryMarketSelectionService {
                 .replaceAll("[\\s·•.．,，'’`´()（）\\[\\]【】\\-_/&]+", "")
                 .replaceAll("^(FC|SC|CF)(?=\\p{IsHan})", "")
                 .replaceAll("(AIF|FC|SC|CF|SK|FK|IF|BK|FF)$", "");
-        return switch (normalized) {
-            case "尤尔加登", "佐加顿斯" -> "佐加顿斯";
-            case "桑德菲杰", "桑纳菲尤尔" -> "桑纳菲尤尔";
-            case "萨普斯堡", "萨尔普斯堡" -> "萨尔普斯堡";
-            case "哈伊杜克斯普利特", "斯普利特海杜克" -> "斯普利特海杜克";
-            case "杰尔ETO", "杰尔" -> "杰尔";
-            case "阿特尔特比森", "比森阿泰尔" -> "比森阿泰尔";
-            case "刚果民主共和国", "民主刚果", "刚果金" -> "刚果金";
-            case "蔚山HD", "蔚山现代" -> "蔚山现代";
-            case "浦项钢铁", "浦项制铁" -> "浦项制铁";
-            case "尚州尚武", "金泉尚武" -> "金泉尚武";
-            default -> normalized;
-        };
+        return normalized;
     }
 
     private void ensureCacheLoaded() {
@@ -1093,7 +1154,7 @@ public class SportteryMarketSelectionService {
         return entry != null
                 && hasText(entry.getSportteryMatchId())
                 && entry.getMatchDate() != null
-                && entry.getCompetition() != null
+                && SUPPORTED_COMPETITIONS.contains(entry.getCompetition())
                 && hasText(entry.getHomeTeam())
                 && hasText(entry.getAwayTeam());
     }
@@ -1104,7 +1165,9 @@ public class SportteryMarketSelectionService {
             return;
         }
         SportteryMarketCache cache = new SportteryMarketCache();
-        List<SportteryMarketEntry> entries = new ArrayList<>(entriesByMatchId.values());
+        List<SportteryMarketEntry> entries = entriesByMatchId.values().stream()
+                .filter(entry -> SUPPORTED_COMPETITIONS.contains(entry.getCompetition()))
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
         entries.sort(Comparator
                 .comparing(SportteryMarketEntry::getMatchDate)
                 .thenComparing(SportteryMarketEntry::getSportteryMatchId));

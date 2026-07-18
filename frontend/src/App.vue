@@ -573,14 +573,20 @@ const UTC_PLUS_EIGHT_TIME_ZONE = 'Asia/Shanghai'
 const COMPETITIONS = [
   { code: 'ALL', name: '全部' },
   { code: 'WORLD_CUP', name: '世界杯' },
-  { code: 'CHAMPIONS_LEAGUE', name: '欧冠' },
+  { code: 'EUROPEAN_CHAMPIONSHIP', name: '欧洲杯' },
+  { code: 'COPA_AMERICA', name: '美洲杯' },
+  { code: 'CLUB_WORLD_CUP', name: '世俱杯' },
   { code: 'EUROPA_LEAGUE', name: '欧罗巴' },
+  { code: 'CHAMPIONS_LEAGUE', name: '欧冠' },
+  { code: 'PREMIER_LEAGUE', name: '英超' },
+  { code: 'LA_LIGA', name: '西甲' },
+  { code: 'SERIE_A', name: '意甲' },
+  { code: 'BUNDESLIGA', name: '德甲' },
+  { code: 'LIGUE_1', name: '法甲' },
   { code: 'BRAZIL_SERIE_A', name: '巴甲' },
-  { code: 'MLS', name: '美职' },
-  { code: 'NORWEGIAN_ELITESERIEN', name: '挪超' },
-  { code: 'SWEDISH_ALLSVENSKAN', name: '瑞超' },
-  { code: 'K_LEAGUE_1', name: '韩职' },
-  { code: 'FINNISH_VEIKKAUSLIIGA', name: '芬超' }
+  { code: 'PRIMEIRA_LIGA', name: '葡超' },
+  { code: 'EREDIVISIE', name: '荷甲' },
+  { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲' }
 ]
 const SELECTION_COOKIE = 'worldcup_recommendation_rows'
 const SELECTION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180

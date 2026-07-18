@@ -13,10 +13,11 @@ data-refresh:
   days-forward: 30
   target-zone: Asia/Shanghai
 
+football-data:
+  historical-matches-path: classpath:data/historical_matches.csv
+
 worldcup:
   simulation-count: 50000
-  history-path: classpath:data/history_matches.csv
-  schedule-path: classpath:data/schedule_2026.csv
   schedule-source-zone: America/New_York
   user-config-path: config/user-config.json
   schedule-update:
@@ -46,7 +47,6 @@ champions-league:
     target-zone: ${data-refresh.target-zone}
 
 club-competitions:
-  history-path: classpath:data/club_history_matches.csv
   schedule-update:
     enabled: true
     espn-url-template: https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard?limit=1000&dates={start}-{end}
@@ -78,5 +78,5 @@ sporttery:
     force-future-days: 4
     target-zone: ${data-refresh.target-zone}
     cache-path: config/sporttery-market-selections.json
-    historical-odds-path: classpath:data/historical_odds.csv
+    historical-odds-data-path: classpath:data/historical_odds_data.csv
     backtest-start-date: 2026-06-11

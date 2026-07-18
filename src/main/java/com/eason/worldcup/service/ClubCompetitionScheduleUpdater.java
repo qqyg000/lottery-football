@@ -53,23 +53,25 @@ public class ClubCompetitionScheduleUpdater {
     private static final Pattern SCORE_PATTERN = Pattern.compile("^\\s*(\\d+)\\s*-\\s*(\\d+)\\s*$");
 
     private static final List<EspnLeagueSource> ESPN_SOURCES = List.of(
-            new EspnLeagueSource(Competition.NORWEGIAN_ELITESERIEN, "nor.1"),
-            new EspnLeagueSource(Competition.SWEDISH_ALLSVENSKAN, "swe.1"),
+            new EspnLeagueSource(Competition.EUROPEAN_CHAMPIONSHIP, "uefa.euro"),
+            new EspnLeagueSource(Competition.COPA_AMERICA, "conmebol.america"),
+            new EspnLeagueSource(Competition.CLUB_WORLD_CUP, "fifa.cwc"),
             new EspnLeagueSource(Competition.EUROPA_LEAGUE, "uefa.europa"),
             new EspnLeagueSource(Competition.EUROPA_LEAGUE, "uefa.europa_qual"),
+            new EspnLeagueSource(Competition.PREMIER_LEAGUE, "eng.1"),
+            new EspnLeagueSource(Competition.LA_LIGA, "esp.1"),
+            new EspnLeagueSource(Competition.SERIE_A, "ita.1"),
+            new EspnLeagueSource(Competition.BUNDESLIGA, "ger.1"),
+            new EspnLeagueSource(Competition.LIGUE_1, "fra.1"),
             new EspnLeagueSource(Competition.BRAZIL_SERIE_A, "bra.1"),
-            new EspnLeagueSource(Competition.MLS, "usa.1")
+            new EspnLeagueSource(Competition.PRIMEIRA_LIGA, "por.1"),
+            new EspnLeagueSource(Competition.EREDIVISIE, "ned.1"),
+            new EspnLeagueSource(Competition.ARGENTINE_PRIMERA_DIVISION, "arg.1")
     );
 
-    private static final List<SportsDbLeagueSource> SPORTS_DB_SOURCES = List.of(
-            new SportsDbLeagueSource(Competition.FINNISH_VEIKKAUSLIIGA, "4636", 27),
-            new SportsDbLeagueSource(Competition.K_LEAGUE_1, "4689", 38)
-    );
+    private static final List<SportsDbLeagueSource> SPORTS_DB_SOURCES = List.of();
 
-    private static final List<FotMobLeagueSource> FOTMOB_SOURCES = List.of(
-            new FotMobLeagueSource(Competition.FINNISH_VEIKKAUSLIIGA, "51"),
-            new FotMobLeagueSource(Competition.K_LEAGUE_1, "9080")
-    );
+    private static final List<FotMobLeagueSource> FOTMOB_SOURCES = List.of();
 
     private final ObjectMapper objectMapper;
 
@@ -159,7 +161,7 @@ public class ClubCompetitionScheduleUpdater {
         int updatedCount = mergeSchedules(schedules, remoteSchedules);
         saveCachedSchedules(remoteSchedules);
         log.info(
-                "Loaded {} cached and refreshed schedule rows for additional club competitions; refresh window {} to {}.",
+                "Loaded {} cached and refreshed schedule rows for configured competitions; refresh window {} to {}.",
                 updatedCount,
                 startDate,
                 endDate);
@@ -178,7 +180,7 @@ public class ClubCompetitionScheduleUpdater {
         }
         List<MatchSchedule> result = executeTasks(tasks);
         if (result.isEmpty()) {
-            log.warn("No additional club competition schedules were returned by ESPN.");
+            log.warn("No configured competition schedules were returned by ESPN.");
         }
         return result;
     }
@@ -189,6 +191,9 @@ public class ClubCompetitionScheduleUpdater {
             Duration timeout,
             LocalDate startDate,
             LocalDate endDate) {
+        if (FOTMOB_SOURCES.isEmpty()) {
+            return new FotMobScheduleBatch(List.of(), Set.of());
+        }
         List<MatchSchedule> result = new ArrayList<>();
         Set<CompetitionSeason> loadedSeasons = new HashSet<>();
         for (FotMobLeagueSource source : FOTMOB_SOURCES) {
@@ -281,8 +286,8 @@ public class ClubCompetitionScheduleUpdater {
         schedule.setMatchDate(matchDateTime.toLocalDate());
         schedule.setKickoffTime(matchDateTime.toLocalTime().withSecond(0).withNano(0));
         schedule.setGroupName(round.isBlank() ? competition.getDisplayName() : "第" + round + "轮");
-        schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(homeTeam));
-        schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(awayTeam));
+        schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(competition, homeTeam));
+        schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(competition, awayTeam));
         schedule.setHomeTeamEn(homeTeam);
         schedule.setAwayTeamEn(awayTeam);
         schedule.setVenue("");
@@ -435,8 +440,8 @@ public class ClubCompetitionScheduleUpdater {
         schedule.setMatchDate(matchDateTime.toLocalDate());
         schedule.setKickoffTime(matchDateTime.toLocalTime().withSecond(0).withNano(0));
         schedule.setGroupName(toStageName(event.path("season").path("slug").asText(""), competition));
-        schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(homeTeam));
-        schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(awayTeam));
+        schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(competition, homeTeam));
+        schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(competition, awayTeam));
         schedule.setHomeTeamEn(homeTeam);
         schedule.setAwayTeamEn(awayTeam);
         schedule.setVenue(eventCompetition.path("venue").path("fullName").asText(""));
@@ -558,6 +563,9 @@ public class ClubCompetitionScheduleUpdater {
             Set<CompetitionSeason> replacedSeasons,
             LocalDate startDate,
             LocalDate endDate) {
+        if (SPORTS_DB_SOURCES.isEmpty()) {
+            return List.of();
+        }
         int currentYear = LocalDate.now(zoneId).getYear();
         List<MatchSchedule> result = new ArrayList<>();
         for (SportsDbLeagueSource source : SPORTS_DB_SOURCES) {
@@ -722,8 +730,8 @@ public class ClubCompetitionScheduleUpdater {
         schedule.setMatchDate(matchDateTime.toLocalDate());
         schedule.setKickoffTime(matchDateTime.toLocalTime().withSecond(0).withNano(0));
         schedule.setGroupName("第" + round + "轮");
-        schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(homeTeam));
-        schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(awayTeam));
+        schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(competition, homeTeam));
+        schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(competition, awayTeam));
         schedule.setHomeTeamEn(homeTeam);
         schedule.setAwayTeamEn(awayTeam);
         schedule.setVenue(event.path("strVenue").asText(""));
@@ -887,8 +895,12 @@ public class ClubCompetitionScheduleUpdater {
     private int mergeSchedules(List<MatchSchedule> schedules, List<MatchSchedule> remoteSchedules) {
         Map<String, MatchSchedule> uniqueRemoteSchedules = new LinkedHashMap<>();
         for (MatchSchedule schedule : remoteSchedules) {
-            schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(schedule.getHomeTeamEn()));
-            schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(schedule.getAwayTeamEn()));
+            schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(
+                    schedule.getCompetition(),
+                    schedule.getHomeTeamEn()));
+            schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(
+                    schedule.getCompetition(),
+                    schedule.getAwayTeamEn()));
             uniqueRemoteSchedules.put(schedule.getMatchId(), schedule);
         }
         Map<String, MatchSchedule> existingSchedules = new LinkedHashMap<>();

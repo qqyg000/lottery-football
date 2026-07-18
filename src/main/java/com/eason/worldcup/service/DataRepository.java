@@ -20,8 +20,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +35,20 @@ public class DataRepository {
 
     private static final Logger log = LoggerFactory.getLogger(DataRepository.class);
 
+    private static final int MATCH_DATE_COLUMN = 1;
+
+    private static final int COMPETITION_COLUMN = 2;
+
+    private static final int HOME_TEAM_CN_COLUMN = 3;
+
+    private static final int AWAY_TEAM_CN_COLUMN = 4;
+
+    private static final int HOME_SCORE_COLUMN = 5;
+
+    private static final int AWAY_SCORE_COLUMN = 6;
+
+    private static final int NEUTRAL_COLUMN = 7;
+
     private final ResourceLoader resourceLoader;
 
     private final OpenFootballScheduleUpdater scheduleUpdater;
@@ -47,17 +59,8 @@ public class DataRepository {
 
     private final HistoricalOddsScheduleLoader historicalOddsScheduleLoader;
 
-    @Value("${worldcup.history-path:classpath:data/history_matches.csv}")
-    private String historyPath;
-
-    @Value("${worldcup.schedule-path:classpath:data/schedule_2026.csv}")
-    private String schedulePath;
-
-    @Value("${worldcup.schedule-source-zone:America/New_York}")
-    private String scheduleSourceZone;
-
-    @Value("${club-competitions.history-path:classpath:data/club_history_matches.csv}")
-    private String clubHistoryPath;
+    @Value("${football-data.historical-matches-path:classpath:data/historical_matches.csv}")
+    private String historicalMatchesPath;
 
     @Value("${data-refresh.days-back:30}")
     private int refreshDaysBack;
@@ -95,7 +98,7 @@ public class DataRepository {
     public synchronized void reloadData() {
         List<HistoricalMatch> reloadedHistoricalMatches = Collections.unmodifiableList(loadHistoricalMatches());
         List<HistoricalMatch> reloadedClubHistoricalMatches = Collections.unmodifiableList(loadClubHistoricalMatches());
-        List<MatchSchedule> reloadedSchedules = Collections.unmodifiableList(loadSchedules(reloadedHistoricalMatches));
+        List<MatchSchedule> reloadedSchedules = Collections.unmodifiableList(loadSchedules());
         this.historicalMatches = reloadedHistoricalMatches;
         this.clubHistoricalMatches = reloadedClubHistoricalMatches;
         this.schedules = reloadedSchedules;
@@ -107,7 +110,7 @@ public class DataRepository {
             return;
         }
 
-        List<MatchSchedule> refreshedSchedules = loadSchedules(historicalMatches);
+        List<MatchSchedule> refreshedSchedules = loadSchedules();
         preserveSchedulesOutsideRefreshWindow(refreshedSchedules, schedules);
         refreshedSchedules.sort(Comparator
                 .comparing(MatchSchedule::getMatchDate)
@@ -213,38 +216,15 @@ public class DataRepository {
     }
 
     private List<HistoricalMatch> loadHistoricalMatches() {
-        Resource resource = resourceLoader.getResource(historyPath);
-        List<HistoricalMatch> result = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            boolean first = true;
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank() || line.startsWith("#")) {
-                    continue;
-                }
-                if (first) {
-                    first = false;
-                    continue;
-                }
-                List<String> row = CsvUtils.parseLine(line);
-                HistoricalMatch match = new HistoricalMatch();
-                match.setMatchDate(LocalDate.parse(CsvUtils.get(row, 0)));
-                match.setTournament(CsvUtils.get(row, 1));
-                match.setHomeTeam(CsvUtils.get(row, 2));
-                match.setAwayTeam(CsvUtils.get(row, 3));
-                match.setHomeScore(Integer.parseInt(CsvUtils.get(row, 4)));
-                match.setAwayScore(Integer.parseInt(CsvUtils.get(row, 5)));
-                match.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, 6)));
-                result.add(match);
-            }
-        } catch (IOException ex) {
-            throw new IllegalStateException("读取历史战绩数据失败：" + historyPath, ex);
-        }
-        return result;
+        return loadHistoricalMatches(false);
     }
 
     private List<HistoricalMatch> loadClubHistoricalMatches() {
-        Resource resource = resourceLoader.getResource(clubHistoryPath);
+        return loadHistoricalMatches(true);
+    }
+
+    private List<HistoricalMatch> loadHistoricalMatches(boolean clubCompetition) {
+        Resource resource = resourceLoader.getResource(historicalMatchesPath);
         List<HistoricalMatch> result = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
@@ -258,71 +238,34 @@ public class DataRepository {
                     continue;
                 }
                 List<String> row = CsvUtils.parseLine(line);
-                Competition competition = Competition.valueOf(CsvUtils.get(row, 1));
-                if (!competition.isClubCompetition()) {
-                    log.warn("Ignored non-club historical row for competition {}", competition);
+                Competition competition = Competition.fromCode(CsvUtils.get(row, COMPETITION_COLUMN));
+                if (competition.isClubCompetition() != clubCompetition) {
                     continue;
                 }
                 HistoricalMatch match = new HistoricalMatch();
-                match.setMatchDate(LocalDate.parse(CsvUtils.get(row, 0)));
+                match.setMatchDate(LocalDate.parse(CsvUtils.get(row, MATCH_DATE_COLUMN)));
                 match.setTournament(competition.getDisplayName());
-                match.setHomeTeam(CsvUtils.get(row, 2));
-                match.setAwayTeam(CsvUtils.get(row, 3));
-                match.setHomeScore(Integer.parseInt(CsvUtils.get(row, 4)));
-                match.setAwayScore(Integer.parseInt(CsvUtils.get(row, 5)));
-                match.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, 6)));
+                match.setHomeTeam(CsvUtils.get(row, HOME_TEAM_CN_COLUMN));
+                match.setAwayTeam(CsvUtils.get(row, AWAY_TEAM_CN_COLUMN));
+                match.setHomeScore(Integer.parseInt(CsvUtils.get(row, HOME_SCORE_COLUMN)));
+                match.setAwayScore(Integer.parseInt(CsvUtils.get(row, AWAY_SCORE_COLUMN)));
+                match.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, NEUTRAL_COLUMN)));
                 result.add(match);
             }
         } catch (IOException ex) {
-            throw new IllegalStateException("读取俱乐部历史战绩数据失败：" + clubHistoryPath, ex);
+            throw new IllegalStateException("读取历史比赛数据失败：" + historicalMatchesPath, ex);
         }
-        log.info("Loaded {} club historical match rows from {}", result.size(), clubHistoryPath);
+        log.info(
+                "Loaded {} {} historical match rows from {}",
+                result.size(),
+                clubCompetition ? "club" : "national team",
+                historicalMatchesPath);
         return result;
     }
 
-    private List<MatchSchedule> loadSchedules(List<HistoricalMatch> sourceHistoricalMatches) {
-        Resource resource = resourceLoader.getResource(schedulePath);
+    private List<MatchSchedule> loadSchedules() {
         List<MatchSchedule> result = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            boolean first = true;
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank() || line.startsWith("#")) {
-                    continue;
-                }
-                if (first) {
-                    first = false;
-                    continue;
-                }
-                List<String> row = CsvUtils.parseLine(line);
-                LocalDateTime kickoffDateTime = convertScheduleDateTimeToTargetZone(
-                        LocalDate.parse(CsvUtils.get(row, 1)),
-                        LocalTime.parse(CsvUtils.get(row, 2)));
-                MatchSchedule schedule = new MatchSchedule();
-                schedule.setCompetition(Competition.WORLD_CUP);
-                schedule.setMatchId(CsvUtils.get(row, 0));
-                schedule.setMatchDate(kickoffDateTime.toLocalDate());
-                schedule.setKickoffTime(kickoffDateTime.toLocalTime());
-                schedule.setGroupName(CsvUtils.get(row, 3));
-                schedule.setHomeTeamCn(CsvUtils.get(row, 4));
-                schedule.setAwayTeamCn(CsvUtils.get(row, 5));
-                schedule.setHomeTeamEn(CsvUtils.get(row, 6));
-                schedule.setAwayTeamEn(CsvUtils.get(row, 7));
-                schedule.setVenue(CsvUtils.get(row, 8));
-                schedule.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, 9)));
-                schedule.setStatus(CsvUtils.get(row, 10));
-                schedule.setHomeScore(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, 11)));
-                schedule.setAwayScore(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, 12)));
-                result.add(schedule);
-            }
-        } catch (IOException ex) {
-            throw new IllegalStateException("读取2026世界杯赛程数据失败：" + schedulePath, ex);
-        }
         scheduleUpdater.updateSchedules(result);
-        int backfilledCount = backfillScheduleResultsFromHistory(result, sourceHistoricalMatches);
-        if (backfilledCount > 0) {
-            log.info("Backfilled {} World Cup schedule rows from historical results.", backfilledCount);
-        }
         int espnUpdatedCount = espnScheduleUpdater.updateSchedules(result);
         if (espnUpdatedCount > 0) {
             log.info("Backfilled {} World Cup schedule rows from ESPN scoreboard.", espnUpdatedCount);
@@ -379,122 +322,32 @@ public class DataRepository {
         }
     }
 
-    private LocalDateTime convertScheduleDateTimeToTargetZone(LocalDate date, LocalTime time) {
-        ZoneId sourceZone = resolveZone(scheduleSourceZone, "America/New_York");
-        ZoneId targetZone = resolveZone(refreshTargetZone, ApplicationTime.UTC_PLUS_EIGHT_ZONE.getId());
-        return LocalDateTime.of(date, time)
-                .atZone(sourceZone)
-                .withZoneSameInstant(targetZone)
-                .toLocalDateTime();
-    }
-
-    private ZoneId resolveZone(String zoneText, String fallbackZone) {
-        try {
-            return ZoneId.of(zoneText);
-        } catch (Exception ex) {
-            log.warn("Invalid time zone {}, using {}", zoneText, fallbackZone);
-            return ZoneId.of(fallbackZone);
-        }
-    }
-
     private String buildScheduleIdentity(MatchSchedule schedule) {
         if (schedule.getMatchId() != null && !schedule.getMatchId().isBlank()) {
             return schedule.getCompetition() + "|" + schedule.getMatchId();
         }
         return schedule.getCompetition()
                 + "|" + schedule.getMatchDate()
-                + "|" + normalizeTeamName(schedule.getHomeTeamEn())
-                + "|" + normalizeTeamName(schedule.getAwayTeamEn());
+                + "|" + normalizeTeamName(resolveTeamName(schedule.getHomeTeamEn(), schedule.getHomeTeamCn()))
+                + "|" + normalizeTeamName(resolveTeamName(schedule.getAwayTeamEn(), schedule.getAwayTeamCn()));
     }
 
     private int normalizeRefreshDays(int value) {
         return Math.max(0, Math.min(365, value));
     }
 
-    private int backfillScheduleResultsFromHistory(List<MatchSchedule> schedules, List<HistoricalMatch> sourceHistoricalMatches) {
-        Map<String, HistoricalMatch> resultsByFixture = new HashMap<>();
-        for (HistoricalMatch match : sourceHistoricalMatches) {
-            if (!isWorldCup2026Result(match)) {
-                continue;
-            }
-            resultsByFixture.put(
-                    buildFixtureKey(match.getMatchDate(), match.getHomeTeam(), match.getAwayTeam()),
-                    match);
+    private String resolveTeamName(String englishName, String chineseName) {
+        if (englishName != null && !englishName.isBlank()) {
+            return englishName;
         }
-
-        int updatedCount = 0;
-        for (MatchSchedule schedule : schedules) {
-            LocalDate queryDate = convertScheduleDateTimeToSourceZone(schedule).toLocalDate();
-            HistoricalMatch match = resultsByFixture.get(
-                    buildFixtureKey(queryDate, schedule.getHomeTeamEn(), schedule.getAwayTeamEn()));
-            boolean reversed = false;
-            if (match == null) {
-                match = resultsByFixture.get(
-                        buildFixtureKey(queryDate, schedule.getAwayTeamEn(), schedule.getHomeTeamEn()));
-                reversed = match != null;
-            }
-            if (match == null) {
-                continue;
-            }
-
-            schedule.setStatus("COMPLETED");
-            if (reversed) {
-                schedule.setHomeScore(match.getAwayScore());
-                schedule.setAwayScore(match.getHomeScore());
-            } else {
-                schedule.setHomeScore(match.getHomeScore());
-                schedule.setAwayScore(match.getAwayScore());
-            }
-            updatedCount++;
-        }
-        return updatedCount;
-    }
-
-    private LocalDateTime convertScheduleDateTimeToSourceZone(MatchSchedule schedule) {
-        ZoneId sourceZone = resolveZone(scheduleSourceZone, "America/New_York");
-        ZoneId targetZone = resolveZone(refreshTargetZone, ApplicationTime.UTC_PLUS_EIGHT_ZONE.getId());
-        return LocalDateTime.of(schedule.getMatchDate(), schedule.getKickoffTime())
-                .atZone(targetZone)
-                .withZoneSameInstant(sourceZone)
-                .toLocalDateTime();
-    }
-
-    private boolean isWorldCup2026Result(HistoricalMatch match) {
-        String tournament = match.getTournament();
-        if (tournament == null) {
-            return false;
-        }
-        String normalized = tournament.toLowerCase(Locale.ROOT);
-        return normalized.contains("world cup") && normalized.contains("2026");
-    }
-
-    private String buildFixtureKey(LocalDate matchDate, String homeTeam, String awayTeam) {
-        return matchDate + "|" + normalizeTeamName(homeTeam).toLowerCase(Locale.ROOT)
-                + "|" + normalizeTeamName(awayTeam).toLowerCase(Locale.ROOT);
+        return chineseName;
     }
 
     private String normalizeTeamName(String teamName) {
         String cleaned = teamName == null ? "" : teamName.trim().replaceAll("\\s+", " ");
-        String ascii = Normalizer.normalize(cleaned, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
-        Map<String, String> aliases = teamAliases();
-        return aliases.getOrDefault(ascii, ascii);
-    }
-
-    private Map<String, String> teamAliases() {
-        Map<String, String> aliases = new HashMap<>();
-        aliases.put("USA", "United States");
-        aliases.put("Czech Republic", "Czechia");
-        aliases.put("Bosnia & Herzegovina", "Bosnia and Herzegovina");
-        aliases.put("Bosnia-Herzegovina", "Bosnia and Herzegovina");
-        aliases.put("Curacao", "Curacao");
-        aliases.put("Cote d'Ivoire", "Ivory Coast");
-        aliases.put("Korea Republic", "South Korea");
-        aliases.put("IR Iran", "Iran");
-        aliases.put("Cabo Verde", "Cape Verde");
-        aliases.put("Congo DR", "DR Congo");
-        aliases.put("T眉rkiye", "Turkey");
-        aliases.put("Turkiye", "Turkey");
-        return aliases;
+        return Normalizer.normalize(cleaned, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase(Locale.ROOT);
     }
 
 }

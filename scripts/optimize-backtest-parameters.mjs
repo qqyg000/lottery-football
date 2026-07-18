@@ -1,13 +1,17 @@
 const BASE_URL = 'http://localhost:8080/api/football/recommendation-backtest'
 const CLUB_COMPETITIONS = [
-  'CHAMPIONS_LEAGUE',
+  'CLUB_WORLD_CUP',
   'EUROPA_LEAGUE',
+  'CHAMPIONS_LEAGUE',
+  'PREMIER_LEAGUE',
+  'LA_LIGA',
+  'SERIE_A',
+  'BUNDESLIGA',
+  'LIGUE_1',
   'BRAZIL_SERIE_A',
-  'MLS',
-  'NORWEGIAN_ELITESERIEN',
-  'SWEDISH_ALLSVENSKAN',
-  'K_LEAGUE_1',
-  'FINNISH_VEIKKAUSLIIGA'
+  'PRIMEIRA_LIGA',
+  'EREDIVISIE',
+  'ARGENTINE_PRIMERA_DIVISION'
 ].join(',')
 const PROBABILITY_KEYS = ['win', 'draw', 'lose']
 const PROBABILITY_MASKS = [1, 2, 4]

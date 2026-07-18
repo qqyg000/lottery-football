@@ -1,341 +1,277 @@
 package com.eason.worldcup.util;
 
+import com.eason.worldcup.model.Competition;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public final class ClubTeamNameTranslator {
 
-    private static final Map<String, String> TEAM_NAMES = createTeamNames();
+    private static final String HISTORICAL_ODDS_RESOURCE = "data/historical_odds_data.csv";
+
+    private static final Map<String, String> SOURCE_NAME_ALIASES = Map.ofEntries(
+            Map.entry(canonicalName("Bayern Munich"), "Bayern München"),
+            Map.entry(canonicalName("FC Bayern Munich"), "Bayern München"),
+            Map.entry(canonicalName("Internazionale"), "Inter"),
+            Map.entry(canonicalName("Internazionale Milano"), "Inter"),
+            Map.entry(canonicalName("Inter Milan"), "Inter"),
+            Map.entry(canonicalName("Manchester Utd"), "Manchester United"),
+            Map.entry(canonicalName("Man United"), "Manchester United"),
+            Map.entry(canonicalName("Man City"), "Manchester City"),
+            Map.entry(canonicalName("Athletic Bilbao"), "Athletic Club"),
+            Map.entry(canonicalName("Atletico de Madrid"), "Atletico Madrid"),
+            Map.entry(canonicalName("Sporting Lisbon"), "Sporting CP"),
+            Map.entry(canonicalName("FC Copenhagen"), "FC København"),
+            Map.entry(canonicalName("Bayer 04 Leverkusen"), "Bayer Leverkusen"),
+            Map.entry(canonicalName("Olympique Lyonnais"), "Lyon"),
+            Map.entry(canonicalName("Olympique Marseille"), "Marseille"),
+            Map.entry(canonicalName("Paris SG"), "Paris Saint-Germain"),
+            Map.entry(canonicalName("PSV"), "PSV Eindhoven"),
+            Map.entry(canonicalName("AZ"), "AZ Alkmaar"));
+
+    private static final Map<String, String> FALLBACK_TEAM_NAMES = Map.ofEntries(
+            Map.entry(canonicalName("Central Cordoba de Santiago"), "科尔多瓦中央"),
+            Map.entry(canonicalName("Central Cordoba de Santiago del Estero"), "科尔多瓦中央"),
+            Map.entry(canonicalName("Club Atletico Platense"), "普拉滕斯"),
+            Map.entry(canonicalName("Barracas Central"), "巴拉卡斯中央"),
+            Map.entry(canonicalName("Instituto"), "科尔多瓦学院"),
+            Map.entry(canonicalName("Instituto Atletico Central Cordoba"), "科尔多瓦学院"),
+            Map.entry(canonicalName("Deportivo Riestra"), "利斯特雷"),
+            Map.entry(canonicalName("Independiente Rivadavia"), "里瓦达维亚独立"),
+            Map.entry(canonicalName("Remo"), "瑞模贝雷"),
+            Map.entry(canonicalName("Estudiantes de Rio Cuarto"), "里奥夸尔托学生队"),
+            Map.entry(canonicalName("Gimnasia Mendoza"), "门多萨体操"),
+            Map.entry(canonicalName("Skenderbeu"), "科尔察"),
+            Map.entry(canonicalName("RFS"), "里加足校"),
+            Map.entry(canonicalName("Rigas Futbola Skola"), "里加足校"),
+            Map.entry(canonicalName("Aris Limassol"), "艾里斯利马素尔"),
+            Map.entry(canonicalName("Raków Częstochowa"), "琴斯托霍"),
+            Map.entry(canonicalName("TSC Backa Topola"), "托波拉"),
+            Map.entry(canonicalName("FK TSC"), "托波拉"),
+            Map.entry(canonicalName("Pirae"), "皮莱"),
+            Map.entry(canonicalName("AS Pirae"), "皮莱"),
+            Map.entry(canonicalName("Cuba"), "古巴"),
+            Map.entry(canonicalName("Trinidad and Tobago"), "特立尼达和多巴哥"));
+
+    private static final MappingData MAPPINGS = loadMappings();
 
     private ClubTeamNameTranslator() {
     }
 
     public static String translate(String teamName) {
-        if (teamName == null || teamName.isBlank()) {
-            return "";
-        }
-        String normalized = teamName.trim();
-        return TEAM_NAMES.getOrDefault(normalized, normalized);
+        return translate(null, teamName);
     }
 
-    private static Map<String, String> createTeamNames() {
-        Map<String, String> teamNames = new LinkedHashMap<>();
-        teamNames.put("AC Milan", "AC米兰");
-        teamNames.put("AC Oulu", "AC奥卢");
-        teamNames.put("Aalesund", "奥勒松");
-        teamNames.put("Aberdeen", "阿伯丁");
-        teamNames.put("AEK Larnaca", "AEK拉纳卡");
-        teamNames.put("AIK", "AIK索尔纳");
-        teamNames.put("Ajax Amsterdam", "阿贾克斯");
-        teamNames.put("Aktobe", "阿克托比");
-        teamNames.put("Aluminij", "亚穆尼积");
-        teamNames.put("Anderlecht", "安德莱赫特");
-        teamNames.put("Anyang", "安养");
-        teamNames.put("Apoel Nicosia", "尼科西亚希腊人竞技");
-        teamNames.put("Ararat-Armenia", "阿拉拉特亚美尼亚");
-        teamNames.put("Arsenal", "阿森纳");
-        teamNames.put("AS Monaco", "摩纳哥");
-        teamNames.put("AS Roma", "罗马");
-        teamNames.put("Aston Villa", "阿斯顿维拉");
-        teamNames.put("Atalanta", "亚特兰大");
-        teamNames.put("Athletic Club", "毕尔巴鄂竞技");
-        teamNames.put("Athletico-PR", "巴拉纳竞技");
-        teamNames.put("Atletico Madrid", "马德里竞技");
-        teamNames.put("Atlético Goianiense", "戈亚尼亚竞技");
-        teamNames.put("Atlético-MG", "米内罗竞技");
-        teamNames.put("Atlanta United FC", "亚特兰大联");
-        teamNames.put("Austin FC", "奥斯汀FC");
-        teamNames.put("AZ Alkmaar", "阿尔克马尔");
-        teamNames.put("Bahia", "巴伊亚");
-        teamNames.put("Banik Ostrava", "俄斯特拉发巴尼克");
-        teamNames.put("Barcelona", "巴塞罗那");
-        teamNames.put("Bayer Leverkusen", "勒沃库森");
-        teamNames.put("Bayern Munich", "拜仁慕尼黑");
-        teamNames.put("Benfica", "本菲卡");
-        teamNames.put("Besiktas", "贝西克塔斯");
-        teamNames.put("BK Häcken", "赫根");
-        teamNames.put("Bodo/Glimt", "博德闪耀");
-        teamNames.put("Bologna", "博洛尼亚");
-        teamNames.put("Borac Banja Luka", "巴尼亚卢卡战士");
-        teamNames.put("Borussia Dortmund", "多特蒙德");
-        teamNames.put("Botafogo", "博塔弗戈");
-        teamNames.put("Botev Plovdiv", "普罗夫迪夫博特夫");
-        teamNames.put("Braga", "布拉加");
-        teamNames.put("Breidablik", "贝雷达比历克");
-        teamNames.put("Brest", "布雷斯特");
-        teamNames.put("Bryne", "布莱尼");
-        teamNames.put("Bucheon FC 1995", "富川FC");
-        teamNames.put("Ceará", "塞阿拉");
-        teamNames.put("Celta Vigo", "塞尔塔");
-        teamNames.put("Celtic", "凯尔特人");
-        teamNames.put("Cercle Brugge KSV", "色格拉布鲁日");
-        teamNames.put("CF Montréal", "蒙特利尔CF");
-        teamNames.put("CFR Cluj-Napoca", "克卢日");
-        teamNames.put("Chapecoense", "沙佩科恩斯");
-        teamNames.put("Charlotte FC", "夏洛特FC");
-        teamNames.put("Chelsea", "切尔西");
-        teamNames.put("Chicago Fire FC", "芝加哥火焰");
-        teamNames.put("Club Brugge", "布鲁日");
-        teamNames.put("Colorado Rapids", "科罗拉多急流");
-        teamNames.put("Columbus Crew", "哥伦布机员");
-        teamNames.put("Corinthians", "科林蒂安");
-        teamNames.put("Coritiba", "科里蒂巴");
-        teamNames.put("Corvinul Hunedoara", "胡内多阿拉");
-        teamNames.put("Criciúma", "克里丘马");
-        teamNames.put("Cruzeiro", "克鲁塞罗");
-        teamNames.put("CSKA Sofia", "索菲亚中央陆军");
-        teamNames.put("CSU Craiova", "克拉约瓦大学");
-        teamNames.put("Cuiabá", "库亚巴");
-        teamNames.put("D.C. United", "华盛顿联");
-        teamNames.put("Daegu FC", "大邱FC");
-        teamNames.put("Daejeon Hana Citizen", "大田市民");
-        teamNames.put("Degerfors IF", "代格福什");
-        teamNames.put("Derry City", "德里城");
-        teamNames.put("Dinamo Minsk", "明斯克迪纳摩");
-        teamNames.put("Dinamo Zagreb", "萨格勒布迪纳摩");
-        teamNames.put("Djurgården", "佐加顿斯");
-        teamNames.put("Drita Gjilan", "德里塔");
-        teamNames.put("Dynamo Kyiv", "基辅迪纳摩");
-        teamNames.put("Egnatia", "埃格纳蒂亚");
-        teamNames.put("EIF", "埃克纳斯IF");
-        teamNames.put("Eintracht Frankfurt", "法兰克福");
-        teamNames.put("F.C. København", "哥本哈根");
-        teamNames.put("FC Anyang", "安养FC");
-        teamNames.put("FC Atert Bissen", "阿特尔特比森");
-        teamNames.put("FC Basel", "巴塞尔");
-        teamNames.put("FC Cincinnati", "辛辛那提FC");
-        teamNames.put("FC Dallas", "达拉斯FC");
-        teamNames.put("FC Haka", "哈卡");
-        teamNames.put("FC Inter Turku", "国际图尔库");
-        teamNames.put("FC Ilves", "坦佩雷山猫");
-        teamNames.put("FC Lahti", "拉赫蒂");
-        teamNames.put("FC Lugano", "卢加诺");
-        teamNames.put("FC Midtjylland", "中日德兰");
-        teamNames.put("FC Noah", "诺亚");
-        teamNames.put("FC Porto", "波尔图");
-        teamNames.put("FC Seoul", "首尔FC");
-        teamNames.put("FC Spartak Trnava", "特尔纳瓦斯巴达");
-        teamNames.put("FC Twente", "特温特");
-        teamNames.put("FC Utrecht", "乌德勒支");
-        teamNames.put("FCSB", "布加勒斯特星");
-        teamNames.put("Fenerbahce", "费内巴切");
-        teamNames.put("Ferencvaros", "费伦茨瓦罗斯");
-        teamNames.put("Feyenoord Rotterdam", "费耶诺德");
-        teamNames.put("FF Jaro", "雅罗");
-        teamNames.put("FK Qarabag", "卡拉巴赫");
-        teamNames.put("FK Sutjeska", "苏捷斯卡");
-        teamNames.put("FK TSC", "巴奇卡托波拉TSC");
-        teamNames.put("Flamengo", "弗拉门戈");
-        teamNames.put("Flora", "塔林弗洛拉");
-        teamNames.put("Floriana FC", "弗洛里亚纳");
-        teamNames.put("Fluminense", "弗鲁米嫩塞");
-        teamNames.put("Fortaleza", "福塔雷萨");
-        teamNames.put("Fredrikstad", "腓特烈斯塔");
-        teamNames.put("GAIS", "哥德堡盖斯");
-        teamNames.put("Galatasaray", "加拉塔萨雷");
-        teamNames.put("Gangwon FC", "江原FC");
-        teamNames.put("Gimcheon Sangmu", "金泉尚武");
-        teamNames.put("Girona", "赫罗纳");
-        teamNames.put("Gnistan", "赫尔辛基火花");
-        teamNames.put("Go Ahead Eagles", "前进之鹰");
-        teamNames.put("Grêmio", "格雷米奥");
-        teamNames.put("Gwangju FC", "光州FC");
-        teamNames.put("Gyori ETO FC", "杰尔ETO");
-        teamNames.put("Hajduk Split", "哈伊杜克斯普利特");
-        teamNames.put("Haka", "哈卡");
-        teamNames.put("Halmstads BK", "哈尔姆斯塔德");
-        teamNames.put("Hammarby IF", "哈马比");
-        teamNames.put("Hamarkameratene", "汉坎");
-        teamNames.put("Hamrun Spartans", "哈姆伦斯巴达人");
-        teamNames.put("Hapoel Be'er", "贝尔谢巴工人");
-        teamNames.put("Haugesund", "海于格松");
-        teamNames.put("Heart of Midlothian", "哈茨");
-        teamNames.put("Hibernian", "希伯尼安");
-        teamNames.put("HJK", "赫尔辛基");
-        teamNames.put("HJK Helsinki", "赫尔辛基");
-        teamNames.put("Houston Dynamo FC", "休斯敦迪纳摩");
-        teamNames.put("Iberia 1999", "伊比利亚1999");
-        teamNames.put("IF Brommapojkarna", "布鲁马波卡纳");
-        teamNames.put("IF Elfsborg", "埃尔夫斯堡");
-        teamNames.put("IF Gnistan", "赫尔辛基火花");
-        teamNames.put("IFK Göteborg", "IFK哥德堡");
-        teamNames.put("IFK Mariehamn", "玛丽港");
-        teamNames.put("IFK Norrköping", "北雪平");
-        teamNames.put("IFK Värnamo", "韦纳穆");
-        teamNames.put("IK Sirius", "天狼星");
-        teamNames.put("IK Start", "斯达");
-        teamNames.put("Ilves", "坦佩雷山猫");
-        teamNames.put("Incheon United", "仁川联");
-        teamNames.put("Incheon United FC", "仁川联");
-        teamNames.put("Inter D'Escaldes", "埃斯卡尔德斯国际");
-        teamNames.put("Inter Miami CF", "迈阿密国际");
-        teamNames.put("Inter Turku", "国际图尔库");
-        teamNames.put("Internacional", "巴西国际");
-        teamNames.put("Internazionale", "国际米兰");
-        teamNames.put("Jagiellonia Bialystok", "比亚韦斯托克雅盖隆");
-        teamNames.put("Jaro", "雅罗");
-        teamNames.put("Jeju SK", "济州SK");
-        teamNames.put("Jeju United FC", "济州联");
-        teamNames.put("Jeonbuk Hyundai Motors", "全北现代");
-        teamNames.put("Jeonbuk Hyundai Motors FC", "全北现代");
-        teamNames.put("Juventude", "尤文图德");
-        teamNames.put("Juventus", "尤文图斯");
-        teamNames.put("Kairat Almaty", "阿拉木图凯拉特");
-        teamNames.put("Kalmar FF", "卡尔马");
-        teamNames.put("Kauno Zalgiris", "考诺萨基列斯");
-        teamNames.put("KF Shkëndija", "斯肯迪亚");
-        teamNames.put("KFUM Oslo", "奥斯陆KFUM");
-        teamNames.put("KI Klaksvik", "克拉克斯维克");
-        teamNames.put("Kilmarnock", "基尔马诺克");
-        teamNames.put("Kristiansund BK", "克里斯蒂安松");
-        teamNames.put("Kryvbas KR", "克里夫巴斯");
-        teamNames.put("KTP", "科特卡");
-        teamNames.put("KuPS", "库奥皮奥");
-        teamNames.put("KuPS Kuopio", "库奥皮奥");
-        teamNames.put("LA Galaxy", "洛杉矶银河");
-        teamNames.put("LAFC", "洛杉矶FC");
-        teamNames.put("Lahti", "拉赫蒂");
-        teamNames.put("Larne", "拉恩");
-        teamNames.put("LASK Linz", "林茨");
-        teamNames.put("Lazio", "拉齐奥");
-        teamNames.put("Lech Poznan", "波兹南莱赫");
-        teamNames.put("Legia Warsaw", "华沙莱吉亚");
-        teamNames.put("Levski Sofia", "索菲亚列夫斯基");
-        teamNames.put("Liga MX All-Stars", "墨西哥联赛全明星");
-        teamNames.put("Lille", "里尔");
-        teamNames.put("Lillestrom", "利勒斯特罗姆");
-        teamNames.put("Lincoln Red Imps", "林肯红色小鬼");
-        teamNames.put("Liverpool", "利物浦");
-        teamNames.put("Llapi", "拉皮");
-        teamNames.put("Ludogorets Razgrad", "卢多戈雷茨");
-        teamNames.put("Lyon", "里昂");
-        teamNames.put("Maccabi Petah-Tikva", "佩塔提克瓦马卡比");
-        teamNames.put("Maccabi Tel-Aviv", "特拉维夫马卡比");
-        teamNames.put("Malmö FF", "马尔默");
-        teamNames.put("Manchester City", "曼城");
-        teamNames.put("Manchester United", "曼联");
-        teamNames.put("Mariehamn", "玛丽港");
-        teamNames.put("Marseille", "马赛");
-        teamNames.put("MFK Ruzomberok", "鲁容贝罗克");
-        teamNames.put("Minnesota United FC", "明尼苏达联");
-        teamNames.put("Mirassol", "米拉索尔");
-        teamNames.put("Mjällby AIF", "米亚尔比");
-        teamNames.put("ML Vitebsk", "维捷布斯克ML");
-        teamNames.put("MLS All-Stars", "美职联全明星");
-        teamNames.put("Molde", "莫尔德");
-        teamNames.put("MSK Zilina", "日利纳");
-        teamNames.put("Nashville SC", "纳什维尔");
-        teamNames.put("Napoli", "那不勒斯");
-        teamNames.put("New England Revolution", "新英格兰革命");
-        teamNames.put("New York City FC", "纽约城");
-        teamNames.put("Newcastle United", "纽卡斯尔联");
-        teamNames.put("Nice", "尼斯");
-        teamNames.put("NK Celje", "采列");
-        teamNames.put("NK Maribor", "马里博尔");
-        teamNames.put("Nottingham Forest", "诺丁汉森林");
-        teamNames.put("Odds BK", "奥德");
-        teamNames.put("Olympiacos", "奥林匹亚科斯");
-        teamNames.put("Orlando City SC", "奥兰多城");
-        teamNames.put("Örgryte IS", "厄尔格里特");
-        teamNames.put("Östers IF", "厄斯特什");
-        teamNames.put("Pafos", "帕福斯");
-        teamNames.put("Paksi SE", "保克什");
-        teamNames.put("Palmeiras", "帕尔梅拉斯");
-        teamNames.put("Panathinaikos", "帕纳辛奈科斯");
-        teamNames.put("Panevezys", "帕涅韦日斯");
-        teamNames.put("PAOK Salonika", "塞萨洛尼基PAOK");
-        teamNames.put("Paris Saint-Germain", "巴黎圣日耳曼");
-        teamNames.put("Partizan Belgrade", "贝尔格莱德游击");
-        teamNames.put("Petrocub", "佩特罗库布");
-        teamNames.put("Philadelphia Union", "费城联合");
-        teamNames.put("Pohang Steelers", "浦项制铁");
-        teamNames.put("Portland Timbers", "波特兰伐木工");
-        teamNames.put("Prishtina", "普里什蒂纳");
-        teamNames.put("PSV Eindhoven", "埃因霍温");
-        teamNames.put("Racing Genk", "亨克");
-        teamNames.put("Rangers", "格拉斯哥流浪者");
-        teamNames.put("Rapid Vienna", "维也纳快速");
-        teamNames.put("RB Leipzig", "RB莱比锡");
-        teamNames.put("RB Salzburg", "萨尔茨堡红牛");
-        teamNames.put("Real Betis", "皇家贝蒂斯");
-        teamNames.put("Real Madrid", "皇家马德里");
-        teamNames.put("Real Salt Lake", "皇家盐湖城");
-        teamNames.put("Real Sociedad", "皇家社会");
-        teamNames.put("Red Bull Bragantino", "布拉干蒂诺RB");
-        teamNames.put("Red Bull New York", "纽约红牛");
-        teamNames.put("Red Star Belgrade", "贝尔格莱德红星");
-        teamNames.put("Remo", "瑞模贝雷");
-        teamNames.put("Riga FC", "里加");
-        teamNames.put("Rigas Futbola Skola", "里加足球学校");
-        teamNames.put("Rijeka", "里耶卡");
-        teamNames.put("Rosenborg", "罗森博格");
-        teamNames.put("Sabah FK", "萨巴赫");
-        teamNames.put("Samsunspor", "萨姆松体育");
-        teamNames.put("Sandefjord", "桑纳菲尤尔");
-        teamNames.put("Sangju Sangmu", "尚州尚武");
-        teamNames.put("San Diego FC", "圣迭戈FC");
-        teamNames.put("San Jose Earthquakes", "圣何塞地震");
-        teamNames.put("Santos", "桑托斯");
-        teamNames.put("São Paulo", "圣保罗");
-        teamNames.put("Sarpsborg FK", "萨尔普斯堡");
-        teamNames.put("SC Freiburg", "弗赖堡");
-        teamNames.put("Seattle Sounders FC", "西雅图海湾人");
-        teamNames.put("Servette", "塞尔维特");
-        teamNames.put("Shakhtar Donetsk", "顿涅茨克矿工");
-        teamNames.put("Shamrock Rovers", "沙姆洛克流浪");
-        teamNames.put("Shelbourne", "谢尔伯恩");
-        teamNames.put("Sheriff Tiraspol", "谢里夫");
-        teamNames.put("Sigma Olomouc", "奥洛穆茨西格玛");
-        teamNames.put("Silkeborg IF", "锡尔克堡");
-        teamNames.put("SJK", "塞伊奈约基");
-        teamNames.put("SJK Seinajoki", "塞伊奈约基");
-        teamNames.put("SK Brann", "布兰");
-        teamNames.put("SK Sturm Graz", "格拉茨风暴");
-        teamNames.put("Slavia Prague", "布拉格斯拉维亚");
-        teamNames.put("Slovan Bratislava", "布拉迪斯拉发");
-        teamNames.put("Sparta Prague", "布拉格斯巴达");
-        teamNames.put("Sport", "累西腓体育");
-        teamNames.put("Sporting CP", "葡萄牙体育");
-        teamNames.put("Sporting Kansas City", "堪萨斯城竞技");
-        teamNames.put("St. Louis CITY SC", "圣路易斯城");
-        teamNames.put("Stromsgodset", "斯托姆加斯特");
-        teamNames.put("Suwon FC", "水原FC");
-        teamNames.put("The New Saints", "新圣徒");
-        teamNames.put("Tobol Kostanay", "科斯塔奈托博尔");
-        teamNames.put("Toronto FC", "多伦多FC");
-        teamNames.put("Tottenham Hotspur", "托特纳姆热刺");
-        teamNames.put("TPS", "TPS图尔库");
-        teamNames.put("Trabzonspor", "特拉布宗体育");
-        teamNames.put("Tre Fiori", "特雷菲奥里");
-        teamNames.put("Tromso", "特罗姆瑟");
-        teamNames.put("TSG Hoffenheim", "霍芬海姆");
-        teamNames.put("UE Santa Coloma", "圣科洛马联");
-        teamNames.put("Ulsan HD", "蔚山现代");
-        teamNames.put("Ulsan HD FC", "蔚山现代");
-        teamNames.put("Ulsan Hyundai FC", "蔚山现代");
-        teamNames.put("Union St.-Gilloise", "圣吉罗斯联合");
-        teamNames.put("Universitatea Cluj", "克卢日大学");
-        teamNames.put("Vancouver Whitecaps", "温哥华白帽");
-        teamNames.put("Vardar", "华达");
-        teamNames.put("Vasco da Gama", "瓦斯科达伽马");
-        teamNames.put("Vålerenga", "瓦勒伦加");
-        teamNames.put("Västerås SK", "韦斯特罗斯");
-        teamNames.put("Vestri", "维斯特里");
-        teamNames.put("VfB Stuttgart", "斯图加特");
-        teamNames.put("Viking FK", "维京");
-        teamNames.put("Vikingur Reykjavik", "雷克雅未克维京人");
-        teamNames.put("Viktoria Plzen", "比尔森胜利");
-        teamNames.put("Villarreal", "比利亚雷亚尔");
-        teamNames.put("Vitória", "维多利亚");
-        teamNames.put("Vojvodina", "伏伊伏丁那");
-        teamNames.put("VPS", "瓦萨");
-        teamNames.put("Wisla Krakow", "克拉科夫维斯瓦");
-        teamNames.put("Wolfsberger", "沃尔夫斯贝格");
-        teamNames.put("Young Boys", "伯尔尼年轻人");
-        teamNames.put("Zira FK", "兹拉");
-        teamNames.put("Zrinjski Mostar", "兹林尼斯基");
-        return Collections.unmodifiableMap(teamNames);
+    public static String translate(Competition competition, String teamName) {
+        String normalized = teamName == null ? "" : teamName.trim();
+        if (normalized.isBlank() || containsChinese(normalized)) {
+            return normalized;
+        }
+
+        String mappedName = findMappedName(competition, normalized);
+        if (mappedName != null) {
+            return mappedName;
+        }
+
+        String sourceAlias = SOURCE_NAME_ALIASES.get(canonicalName(normalized));
+        if (sourceAlias != null) {
+            mappedName = findMappedName(competition, sourceAlias);
+            if (mappedName != null) {
+                return mappedName;
+            }
+        }
+
+        return FALLBACK_TEAM_NAMES.getOrDefault(canonicalName(normalized), normalized);
+    }
+
+    private static String findMappedName(Competition competition, String teamName) {
+        if (competition != null) {
+            Map<String, String> competitionMappings = MAPPINGS.byCompetition().get(competition);
+            String mappedName = lookup(competitionMappings, teamName);
+            if (mappedName != null) {
+                return mappedName;
+            }
+        }
+        return lookup(MAPPINGS.global(), teamName);
+    }
+
+    private static String lookup(Map<String, String> mappings, String teamName) {
+        if (mappings == null || mappings.isEmpty()) {
+            return null;
+        }
+        for (String key : nameKeys(teamName)) {
+            String mappedName = mappings.get(key);
+            if (mappedName != null) {
+                return mappedName;
+            }
+        }
+        return null;
+    }
+
+    private static MappingData loadMappings() {
+        InputStream inputStream = ClubTeamNameTranslator.class.getClassLoader()
+                .getResourceAsStream(HISTORICAL_ODDS_RESOURCE);
+        if (inputStream == null) {
+            throw new IllegalStateException("找不到历史赔率数据：" + HISTORICAL_ODDS_RESOURCE);
+        }
+
+        Map<Competition, Map<String, DatedName>> byCompetition = new EnumMap<>(Competition.class);
+        Map<String, DatedName> global = new HashMap<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            String headerLine = reader.readLine();
+            if (headerLine == null) {
+                throw new IllegalStateException("历史赔率数据为空：" + HISTORICAL_ODDS_RESOURCE);
+            }
+            List<String> headers = CsvUtils.parseLine(headerLine);
+            Map<String, Integer> headerIndexes = new LinkedHashMap<>();
+            for (int index = 0; index < headers.size(); index++) {
+                headerIndexes.put(headers.get(index), index);
+            }
+
+            int matchDateColumn = requiredColumn(headerIndexes, "match_date");
+            int competitionColumn = requiredColumn(headerIndexes, "competition");
+            int homeTeamChineseColumn = requiredColumn(headerIndexes, "home_team_cn");
+            int awayTeamChineseColumn = requiredColumn(headerIndexes, "away_team_cn");
+            int homeTeamEnglishColumn = requiredColumn(headerIndexes, "home_team_en");
+            int awayTeamEnglishColumn = requiredColumn(headerIndexes, "away_team_en");
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+                List<String> row = CsvUtils.parseLine(line);
+                Competition competition = Competition.fromCode(CsvUtils.get(row, competitionColumn));
+                String matchDate = CsvUtils.get(row, matchDateColumn);
+                register(
+                        byCompetition,
+                        global,
+                        competition,
+                        CsvUtils.get(row, homeTeamEnglishColumn),
+                        CsvUtils.get(row, homeTeamChineseColumn),
+                        matchDate);
+                register(
+                        byCompetition,
+                        global,
+                        competition,
+                        CsvUtils.get(row, awayTeamEnglishColumn),
+                        CsvUtils.get(row, awayTeamChineseColumn),
+                        matchDate);
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("读取历史赔率球队名映射失败：" + HISTORICAL_ODDS_RESOURCE, ex);
+        }
+
+        Map<Competition, Map<String, String>> immutableByCompetition = new EnumMap<>(Competition.class);
+        for (Map.Entry<Competition, Map<String, DatedName>> entry : byCompetition.entrySet()) {
+            immutableByCompetition.put(entry.getKey(), toImmutableNameMap(entry.getValue()));
+        }
+        return new MappingData(
+                Collections.unmodifiableMap(immutableByCompetition),
+                toImmutableNameMap(global));
+    }
+
+    private static int requiredColumn(Map<String, Integer> headerIndexes, String columnName) {
+        Integer index = headerIndexes.get(columnName);
+        if (index == null) {
+            throw new IllegalStateException("历史赔率数据缺少列：" + columnName);
+        }
+        return index;
+    }
+
+    private static void register(
+            Map<Competition, Map<String, DatedName>> byCompetition,
+            Map<String, DatedName> global,
+            Competition competition,
+            String englishName,
+            String chineseName,
+            String matchDate) {
+        if (englishName == null || englishName.isBlank() || chineseName == null || chineseName.isBlank()) {
+            return;
+        }
+        Map<String, DatedName> competitionMappings = byCompetition.computeIfAbsent(
+                competition,
+                ignored -> new HashMap<>());
+        for (String key : nameKeys(englishName)) {
+            registerName(competitionMappings, key, chineseName, matchDate);
+            registerName(global, key, chineseName, matchDate);
+        }
+    }
+
+    private static void registerName(
+            Map<String, DatedName> mappings,
+            String key,
+            String chineseName,
+            String matchDate) {
+        DatedName current = mappings.get(key);
+        if (current == null || matchDate.compareTo(current.matchDate()) >= 0) {
+            mappings.put(key, new DatedName(chineseName, matchDate));
+        }
+    }
+
+    private static Map<String, String> toImmutableNameMap(Map<String, DatedName> source) {
+        Map<String, String> result = new HashMap<>();
+        for (Map.Entry<String, DatedName> entry : source.entrySet()) {
+            result.put(entry.getKey(), entry.getValue().name());
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    private static List<String> nameKeys(String teamName) {
+        String canonical = canonicalName(teamName);
+        String withoutClubTokens = canonicalClubName(teamName);
+        List<String> keys = new ArrayList<>();
+        if (!canonical.isBlank()) {
+            keys.add(canonical);
+        }
+        if (!withoutClubTokens.isBlank() && !withoutClubTokens.equals(canonical)) {
+            keys.add(withoutClubTokens);
+        }
+        return keys;
+    }
+
+    private static String canonicalName(String value) {
+        return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFKD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}]", "");
+    }
+
+    private static String canonicalClubName(String value) {
+        return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFKD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}]+", " ")
+                .replaceAll("^(AFC|AC|AS|CA|CD|CF|FC|FK|SC|SV|TSG)\\s+", "")
+                .replaceAll("\\s+(AFC|AC|AS|CA|CD|CF|FC|FK|SC|SV|TSG)$", "")
+                .replace(" ", "");
+    }
+
+    private static boolean containsChinese(String value) {
+        return value.codePoints().anyMatch(codePoint -> Character.UnicodeScript.of(codePoint)
+                == Character.UnicodeScript.HAN);
+    }
+
+    private record DatedName(String name, String matchDate) {
+
+    }
+
+    private record MappingData(
+            Map<Competition, Map<String, String>> byCompetition,
+            Map<String, String> global) {
+
     }
 
 }

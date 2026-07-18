@@ -4,7 +4,7 @@ import path from 'node:path'
 const ROOT = process.cwd()
 const API_BASE = process.env.WORLDCUP_API_BASE || 'http://127.0.0.1:8080'
 const CONFIG_PATH = path.join(ROOT, 'config/user-config.json')
-const SCHEDULE_PATH = path.join(ROOT, 'src/main/resources/data/schedule_2026.csv')
+const HISTORICAL_MATCHES_PATH = path.join(ROOT, 'src/main/resources/data/historical_matches.csv')
 const PROBABILITY_KEYS = ['win', 'draw', 'lose']
 
 const DEFAULT_FACTORS = {
@@ -102,13 +102,13 @@ function parseArgs(argv) {
 }
 
 async function loadState() {
-  const [configText, scheduleText] = await Promise.all([
+  const [configText, historicalMatchesText] = await Promise.all([
     fs.readFile(CONFIG_PATH, 'utf8'),
-    fs.readFile(SCHEDULE_PATH, 'utf8')
+    fs.readFile(HISTORICAL_MATCHES_PATH, 'utf8')
   ])
   const config = JSON.parse(configText)
-  const schedule = parseCsv(scheduleText)
-  const completed = schedule.filter(row => row.status === 'COMPLETED')
+  const completed = parseCsv(historicalMatchesText)
+    .filter(row => row.competition === 'WORLD_CUP')
   const globalParameters = config.globalParameters || {}
 
   return {

@@ -1,6 +1,8 @@
 package com.eason.worldcup.service;
 
+import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.MatchSchedule;
+import com.eason.worldcup.util.ClubTeamNameTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -238,7 +240,10 @@ public class OpenFootballScheduleUpdater {
         for (RemoteMatch remoteMatch : remoteMatches) {
             MatchSchedule schedule = scheduleByTeams.get(buildTeamKey(remoteMatch.homeTeam, remoteMatch.awayTeam));
             if (schedule == null) {
-                log.debug("No bundled schedule row matched OpenFootball fixture {} vs {}.", remoteMatch.homeTeam, remoteMatch.awayTeam);
+                schedule = toSchedule(remoteMatch);
+                schedules.add(schedule);
+                scheduleByTeams.put(buildTeamKey(remoteMatch.homeTeam, remoteMatch.awayTeam), schedule);
+                updatedCount++;
                 continue;
             }
             schedule.setMatchDate(remoteMatch.matchDate);
@@ -258,6 +263,28 @@ public class OpenFootballScheduleUpdater {
             updatedCount++;
         }
         return updatedCount;
+    }
+
+    private MatchSchedule toSchedule(RemoteMatch remoteMatch) {
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setCompetition(Competition.WORLD_CUP);
+        schedule.setMatchId("OPENFOOTBALL-2026-"
+                + remoteMatch.matchDate
+                + "-"
+                + buildTeamKey(remoteMatch.homeTeam, remoteMatch.awayTeam).replace('|', '-'));
+        schedule.setMatchDate(remoteMatch.matchDate);
+        schedule.setKickoffTime(remoteMatch.kickoffTime);
+        schedule.setGroupName(Competition.WORLD_CUP.getDisplayName());
+        schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(Competition.WORLD_CUP, remoteMatch.homeTeam));
+        schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(Competition.WORLD_CUP, remoteMatch.awayTeam));
+        schedule.setHomeTeamEn(remoteMatch.homeTeam);
+        schedule.setAwayTeamEn(remoteMatch.awayTeam);
+        schedule.setVenue(remoteMatch.venue);
+        schedule.setNeutral(true);
+        schedule.setStatus(remoteMatch.completed ? "COMPLETED" : "SCHEDULED");
+        schedule.setHomeScore(remoteMatch.homeScore);
+        schedule.setAwayScore(remoteMatch.awayScore);
+        return schedule;
     }
 
     private Month parseMonth(String monthText) {
@@ -305,7 +332,6 @@ public class OpenFootballScheduleUpdater {
         aliases.put("Czech Republic", "Czechia");
         aliases.put("Bosnia & Herzegovina", "Bosnia and Herzegovina");
         aliases.put("Bosnia-Herzegovina", "Bosnia and Herzegovina");
-        aliases.put("Curacao", "Curacao");
         aliases.put("Cote d'Ivoire", "Ivory Coast");
         aliases.put("Korea Republic", "South Korea");
         aliases.put("IR Iran", "Iran");

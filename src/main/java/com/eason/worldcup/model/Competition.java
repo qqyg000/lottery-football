@@ -8,14 +8,20 @@ import java.util.Locale;
 public enum Competition {
 
     WORLD_CUP("世界杯", false, false),
-    CHAMPIONS_LEAGUE("欧冠", true, true),
-    NORWEGIAN_ELITESERIEN("挪超", true, false),
-    SWEDISH_ALLSVENSKAN("瑞超", true, false),
-    FINNISH_VEIKKAUSLIIGA("芬超", true, false),
+    EUROPEAN_CHAMPIONSHIP("欧洲杯", false, false),
+    COPA_AMERICA("美洲杯", false, false),
+    CLUB_WORLD_CUP("世俱杯", true, false),
     EUROPA_LEAGUE("欧罗巴", true, true),
+    CHAMPIONS_LEAGUE("欧冠", true, true),
+    PREMIER_LEAGUE("英超", true, true),
+    LA_LIGA("西甲", true, true),
+    SERIE_A("意甲", true, true),
+    BUNDESLIGA("德甲", true, true),
+    LIGUE_1("法甲", true, true),
     BRAZIL_SERIE_A("巴甲", true, false),
-    MLS("美职", true, false),
-    K_LEAGUE_1("韩职", true, false);
+    PRIMEIRA_LIGA("葡超", true, true),
+    EREDIVISIE("荷甲", true, true),
+    ARGENTINE_PRIMERA_DIVISION("阿甲", true, false);
 
     private final String displayName;
 
@@ -69,10 +75,21 @@ public enum Competition {
             return WORLD_CUP;
         }
         String normalized = value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
-        if ("UCL".equals(normalized) || "CHAMPIONSLEAGUE".equals(normalized)) {
-            return CHAMPIONS_LEAGUE;
-        }
-        return Competition.valueOf(normalized);
+        return switch (normalized) {
+            case "UCL", "CHAMPIONSLEAGUE" -> CHAMPIONS_LEAGUE;
+            case "EURO", "UEFA_EURO" -> EUROPEAN_CHAMPIONSHIP;
+            case "COPAAMERICA" -> COPA_AMERICA;
+            case "FIFA_CWC" -> CLUB_WORLD_CUP;
+            case "EPL", "PREMIERLEAGUE" -> PREMIER_LEAGUE;
+            case "LALIGA" -> LA_LIGA;
+            case "SERIEA" -> SERIE_A;
+            case "LIGUE1" -> LIGUE_1;
+            case "BRAZILSERIEA" -> BRAZIL_SERIE_A;
+            case "PRIMEIRALIGA" -> PRIMEIRA_LIGA;
+            case "ARGENTINEPRIMERADIVISION", "ARGENTINA_PRIMERA_DIVISION" ->
+                    ARGENTINE_PRIMERA_DIVISION;
+            default -> Competition.valueOf(normalized);
+        };
     }
 
 }

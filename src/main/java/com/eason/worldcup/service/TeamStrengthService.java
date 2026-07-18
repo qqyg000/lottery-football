@@ -174,7 +174,9 @@ public class TeamStrengthService {
     public int countHistoricalMatches(Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         if (!effectiveCompetition.isClubCompetition()) {
-            return dataRepository.getHistoricalMatches().size();
+            return (int) dataRepository.getHistoricalMatches().stream()
+                    .filter(match -> effectiveCompetition.getDisplayName().equals(match.getTournament()))
+                    .count();
         }
         return buildClubMatchesBefore(effectiveCompetition, LocalDate.MAX).size();
     }
@@ -255,26 +257,27 @@ public class TeamStrengthService {
     }
 
     private List<HistoricalMatch> buildCurrentMatches(List<HistoricalMatch> matches, LocalDate today) {
-        List<HistoricalMatch> result = new ArrayList<>();
+        Map<String, HistoricalMatch> matchesByFixture = new LinkedHashMap<>();
         if (matches != null) {
             for (HistoricalMatch match : matches) {
                 if (match.getMatchDate().isAfter(today) || isWorldCup2026Match(match) || isCurrentModelExcludedDate(match.getMatchDate())) {
                     continue;
                 }
-                result.add(match);
+                matchesByFixture.put(buildFixtureKey(match), match);
             }
         }
         for (MatchSchedule schedule : dataRepository.getSchedules()) {
-            if (schedule.getCompetition() != Competition.WORLD_CUP) {
+            if (schedule.getCompetition().isClubCompetition()) {
                 continue;
             }
             LocalDate trainingDate = getScheduleTrainingDate(schedule);
             if (!isCompletedWithScore(schedule) || trainingDate.isAfter(today) || isCurrentModelExcludedDate(trainingDate)) {
                 continue;
             }
-            result.add(toHistoricalMatch(schedule));
+            HistoricalMatch historicalMatch = toHistoricalMatch(schedule);
+            matchesByFixture.put(buildFixtureKey(historicalMatch), historicalMatch);
         }
-        return result;
+        return new ArrayList<>(matchesByFixture.values());
     }
 
     private StrengthModel getCurrentModelForPredictionDate(LocalDate predictionDate) {
@@ -291,26 +294,27 @@ public class TeamStrengthService {
     }
 
     private List<HistoricalMatch> buildCurrentMatchesBefore(List<HistoricalMatch> matches, LocalDate cutoffDate) {
-        List<HistoricalMatch> result = new ArrayList<>();
+        Map<String, HistoricalMatch> matchesByFixture = new LinkedHashMap<>();
         if (matches != null) {
             for (HistoricalMatch match : matches) {
                 if (!match.getMatchDate().isBefore(cutoffDate) || isWorldCup2026Match(match) || isCurrentModelExcludedDate(match.getMatchDate())) {
                     continue;
                 }
-                result.add(match);
+                matchesByFixture.put(buildFixtureKey(match), match);
             }
         }
         for (MatchSchedule schedule : dataRepository.getSchedules()) {
-            if (schedule.getCompetition() != Competition.WORLD_CUP) {
+            if (schedule.getCompetition().isClubCompetition()) {
                 continue;
             }
             LocalDate trainingDate = getScheduleTrainingDate(schedule);
             if (!isCompletedWithScore(schedule) || !trainingDate.isBefore(cutoffDate) || isCurrentModelExcludedDate(trainingDate)) {
                 continue;
             }
-            result.add(toHistoricalMatch(schedule));
+            HistoricalMatch historicalMatch = toHistoricalMatch(schedule);
+            matchesByFixture.put(buildFixtureKey(historicalMatch), historicalMatch);
         }
-        return result;
+        return new ArrayList<>(matchesByFixture.values());
     }
 
     private StrengthModel getClubPreSeasonModel(
@@ -363,6 +367,10 @@ public class TeamStrengthService {
     }
 
     private String buildClubFixtureKey(HistoricalMatch match) {
+        return buildFixtureKey(match);
+    }
+
+    private String buildFixtureKey(HistoricalMatch match) {
         String homeTeam = normalizeClubTeamName(match.getHomeTeam());
         String awayTeam = normalizeClubTeamName(match.getAwayTeam());
         if (homeTeam.compareTo(awayTeam) <= 0) {
@@ -398,8 +406,7 @@ public class TeamStrengthService {
     private boolean isWorldCup2026Match(HistoricalMatch match) {
         String tournament = match.getTournament() == null ? "" : match.getTournament().toLowerCase(Locale.ROOT);
         return !match.getMatchDate().isBefore(TOURNAMENT_START_DATE)
-                && tournament.contains("world cup")
-                && tournament.contains("2026");
+                && (tournament.contains("world cup") || tournament.contains("世界杯"));
     }
 
     private HistoricalMatch toHistoricalMatch(MatchSchedule schedule) {
@@ -417,11 +424,9 @@ public class TeamStrengthService {
     }
 
     private String getModelTeamName(MatchSchedule schedule, boolean homeTeam) {
-        if (schedule.getCompetition().isClubCompetition()) {
-            String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
-            if (chineseName != null && !chineseName.isBlank()) {
-                return chineseName;
-            }
+        String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
+        if (chineseName != null && !chineseName.isBlank()) {
+            return chineseName;
         }
         return homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
     }

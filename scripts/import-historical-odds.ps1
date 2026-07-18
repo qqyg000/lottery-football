@@ -2,35 +2,92 @@
     [Parameter(Mandatory = $true)]
     [string]$SourcePath,
 
-    [string]$ClubHistoryPath = (Join-Path $PSScriptRoot "..\src\main\resources\data\club_history_matches.csv"),
+    [string]$OutputPath = (Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds_data.csv"),
 
-    [string]$OutputPath = (Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds.csv"),
+    [datetime]$StartDate = [datetime]"2014-10-22",
 
-    [datetime]$StartDate = [datetime]"2022-11-20",
-
-    [int]$SourceRowOffset = 4
+    [int]$SourceRowOffset = 2
 )
 
 $ErrorActionPreference = "Stop"
 
-function Test-OddsTriplet {
+$competitionByLeague = @{
+    "世界杯" = "WORLD_CUP"
+    "欧洲杯" = "EUROPEAN_CHAMPIONSHIP"
+    "美洲杯" = "COPA_AMERICA"
+    "世俱杯" = "CLUB_WORLD_CUP"
+    "欧罗巴" = "EUROPA_LEAGUE"
+    "欧冠" = "CHAMPIONS_LEAGUE"
+    "英超" = "PREMIER_LEAGUE"
+    "西甲" = "LA_LIGA"
+    "意甲" = "SERIE_A"
+    "德甲" = "BUNDESLIGA"
+    "法甲" = "LIGUE_1"
+    "巴甲" = "BRAZIL_SERIE_A"
+    "葡超" = "PRIMEIRA_LIGA"
+    "荷甲" = "EREDIVISIE"
+    "阿甲" = "ARGENTINE_PRIMERA_DIVISION"
+}
+
+$supportedCompetitions = [Collections.Generic.HashSet[string]]::new(
+    [string[]]@($competitionByLeague.Values)
+)
+
+$neutralCompetitions = [Collections.Generic.HashSet[string]]::new(
+    [string[]]@("WORLD_CUP", "EUROPEAN_CHAMPIONSHIP", "COPA_AMERICA", "CLUB_WORLD_CUP")
+)
+
+function Get-FirstValue {
     param(
         [object]$Row,
-        [string]$Prefix
+        [string[]]$PropertyNames
     )
 
-    $winProperty = "$Prefix-胜"
-    $drawProperty = "$Prefix-平"
-    $loseProperty = "$Prefix-负"
-    return -not [string]::IsNullOrWhiteSpace([string]$Row.$winProperty) `
-        -and -not [string]::IsNullOrWhiteSpace([string]$Row.$drawProperty) `
-        -and -not [string]::IsNullOrWhiteSpace([string]$Row.$loseProperty)
+    foreach ($propertyName in $PropertyNames) {
+        $property = $Row.PSObject.Properties[$propertyName]
+        if ($null -ne $property -and -not [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+            return [string]$property.Value
+        }
+    }
+    return ""
 }
 
 function Test-ExactScore {
     param([string]$Score)
 
     return $Score -match "^\d+:\d+$"
+}
+
+function Get-CanonicalChineseName {
+    param([string]$Value)
+
+    $normalized = if ($null -eq $Value) { "" } else { $Value }
+    $normalized = $normalized.Normalize([Text.NormalizationForm]::FormKC).ToUpperInvariant()
+    $normalized = $normalized.Replace("足球俱乐部", "").Replace("俱乐部", "")
+    return [Text.RegularExpressions.Regex]::Replace(
+        $normalized,
+        "[\s·•.．,，'’``´()（）\[\]【】\-_/&]+",
+        ""
+    )
+}
+
+function Get-EnglishName {
+    param(
+        [hashtable]$Translations,
+        [string]$Competition,
+        [string]$ChineseName
+    )
+
+    $nameKey = Get-CanonicalChineseName $ChineseName
+    $competitionKey = "$Competition|$nameKey"
+    $globalKey = "*|$nameKey"
+    if ($Translations.ContainsKey($competitionKey)) {
+        return [string]$Translations[$competitionKey]
+    }
+    if ($Translations.ContainsKey($globalKey)) {
+        return [string]$Translations[$globalKey]
+    }
+    return ""
 }
 
 function Get-ScoreParts {
@@ -40,178 +97,146 @@ function Get-ScoreParts {
     return @([int]$parts[0], [int]$parts[1])
 }
 
-function Test-LeagueMatch {
+function Get-OddsTriplet {
     param(
-        [string]$SourceLeague,
-        [string]$MappedLeague
+        [object]$Row,
+        [bool]$Handicap
     )
 
-    if ($SourceLeague -eq $MappedLeague) {
-        return $true
+    if ($Handicap) {
+        return @(
+            (Get-FirstValue $Row @("赔率-让球胜", "让球胜平负初盘赔率-胜")),
+            (Get-FirstValue $Row @("赔率-让球平", "让球胜平负初盘赔率-平")),
+            (Get-FirstValue $Row @("赔率-让球负", "让球胜平负初盘赔率-负"))
+        )
     }
-    return $MappedLeague -eq "美职" -and $SourceLeague -eq "美职足"
-}
-
-function New-HistoricalOddsRow {
-    param(
-        [object]$SourceRow,
-        [int]$SourceRowNumber,
-        [string]$Competition,
-        [string]$GroupName,
-        [string]$HomeTeamCn,
-        [string]$AwayTeamCn,
-        [string]$HomeTeamEn,
-        [string]$AwayTeamEn,
-        [bool]$Neutral,
-        [string]$SportteryMatchNumber
+    return @(
+        (Get-FirstValue $Row @("赔率-胜", "胜平负初盘赔率-胜")),
+        (Get-FirstValue $Row @("赔率-平", "胜平负初盘赔率-平")),
+        (Get-FirstValue $Row @("赔率-负", "胜平负初盘赔率-负"))
     )
-
-    $score = Get-ScoreParts ([string]$SourceRow.比分)
-    $hasNormalOdds = Test-OddsTriplet $SourceRow "胜平负初盘赔率"
-    $hasHandicapOdds = Test-OddsTriplet $SourceRow "让球胜平负初盘赔率"
-    return [pscustomobject][ordered]@{
-        match_id = "HIS-$SourceRowNumber"
-        match_date = [string]$SourceRow.比赛时间
-        competition = $Competition
-        group_name = $GroupName
-        home_team_cn = $HomeTeamCn
-        away_team_cn = $AwayTeamCn
-        home_team_en = $HomeTeamEn
-        away_team_en = $AwayTeamEn
-        home_score = $score[0]
-        away_score = $score[1]
-        neutral = $Neutral.ToString().ToLowerInvariant()
-        sporttery_match_number = $SportteryMatchNumber
-        handicap = [string]$SourceRow.让球数
-        normal_win = if ($hasNormalOdds) { [string]$SourceRow.'胜平负初盘赔率-胜' } else { "" }
-        normal_draw = if ($hasNormalOdds) { [string]$SourceRow.'胜平负初盘赔率-平' } else { "" }
-        normal_lose = if ($hasNormalOdds) { [string]$SourceRow.'胜平负初盘赔率-负' } else { "" }
-        handicap_win = if ($hasHandicapOdds) { [string]$SourceRow.'让球胜平负初盘赔率-胜' } else { "" }
-        handicap_draw = if ($hasHandicapOdds) { [string]$SourceRow.'让球胜平负初盘赔率-平' } else { "" }
-        handicap_lose = if ($hasHandicapOdds) { [string]$SourceRow.'让球胜平负初盘赔率-负' } else { "" }
-        source_row = $SourceRowNumber
-    }
 }
 
-$nationalTeams = @{
-    "阿根廷" = @{ Cn = "阿根廷"; En = "Argentina" }
-    "澳大利亚" = @{ Cn = "澳大利亚"; En = "Australia" }
-    "巴西" = @{ Cn = "巴西"; En = "Brazil" }
-    "比利时" = @{ Cn = "比利时"; En = "Belgium" }
-    "波兰" = @{ Cn = "波兰"; En = "Poland" }
-    "丹麦" = @{ Cn = "丹麦"; En = "Denmark" }
-    "德国" = @{ Cn = "德国"; En = "Germany" }
-    "厄瓜多尔" = @{ Cn = "厄瓜多尔"; En = "Ecuador" }
-    "法国" = @{ Cn = "法国"; En = "France" }
-    "哥斯达" = @{ Cn = "哥斯达黎加"; En = "Costa Rica" }
-    "韩国" = @{ Cn = "韩国"; En = "South Korea" }
-    "荷兰" = @{ Cn = "荷兰"; En = "Netherlands" }
-    "加拿大" = @{ Cn = "加拿大"; En = "Canada" }
-    "加纳" = @{ Cn = "加纳"; En = "Ghana" }
-    "喀麦隆" = @{ Cn = "喀麦隆"; En = "Cameroon" }
-    "卡塔尔" = @{ Cn = "卡塔尔"; En = "Qatar" }
-    "克罗地亚" = @{ Cn = "克罗地亚"; En = "Croatia" }
-    "美国" = @{ Cn = "美国"; En = "United States" }
-    "摩洛哥" = @{ Cn = "摩洛哥"; En = "Morocco" }
-    "墨西哥" = @{ Cn = "墨西哥"; En = "Mexico" }
-    "葡萄牙" = @{ Cn = "葡萄牙"; En = "Portugal" }
-    "日本" = @{ Cn = "日本"; En = "Japan" }
-    "瑞士" = @{ Cn = "瑞士"; En = "Switzerland" }
-    "塞尔维亚" = @{ Cn = "塞尔维亚"; En = "Serbia" }
-    "塞内加尔" = @{ Cn = "塞内加尔"; En = "Senegal" }
-    "沙特" = @{ Cn = "沙特阿拉伯"; En = "Saudi Arabia" }
-    "突尼斯" = @{ Cn = "突尼斯"; En = "Tunisia" }
-    "威尔士" = @{ Cn = "威尔士"; En = "Wales" }
-    "乌拉圭" = @{ Cn = "乌拉圭"; En = "Uruguay" }
-    "西班牙" = @{ Cn = "西班牙"; En = "Spain" }
-    "伊朗" = @{ Cn = "伊朗"; En = "Iran" }
-    "英格兰" = @{ Cn = "英格兰"; En = "England" }
+function Test-CompleteOdds {
+    param([object[]]$Odds)
+
+    return $Odds.Count -eq 3 `
+        -and -not [string]::IsNullOrWhiteSpace([string]$Odds[0]) `
+        -and -not [string]::IsNullOrWhiteSpace([string]$Odds[1]) `
+        -and -not [string]::IsNullOrWhiteSpace([string]$Odds[2])
 }
 
 $resolvedSourcePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($SourcePath)
-$resolvedClubHistoryPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ClubHistoryPath)
 $resolvedOutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
 if (-not (Test-Path -LiteralPath $resolvedSourcePath)) {
     throw "Historical odds source not found: $resolvedSourcePath"
 }
-if (-not (Test-Path -LiteralPath $resolvedClubHistoryPath)) {
-    throw "Club history mapping not found: $resolvedClubHistoryPath"
+
+$existingRows = @()
+$existingEnglishByChinese = @{}
+if (Test-Path -LiteralPath $resolvedOutputPath) {
+    $existingRows = @(Import-Csv -LiteralPath $resolvedOutputPath -Encoding UTF8)
+    foreach ($existingRow in @($existingRows | Sort-Object match_date)) {
+        foreach ($side in @("home", "away")) {
+            $chineseName = [string]$existingRow.PSObject.Properties["${side}_team_cn"].Value
+            $englishName = [string]$existingRow.PSObject.Properties["${side}_team_en"].Value
+            if ([string]::IsNullOrWhiteSpace($chineseName) -or [string]::IsNullOrWhiteSpace($englishName)) {
+                continue
+            }
+            $nameKey = Get-CanonicalChineseName $chineseName
+            $existingEnglishByChinese[([string]$existingRow.competition + "|" + $nameKey)] = $englishName
+            $existingEnglishByChinese[("*|" + $nameKey)] = $englishName
+        }
+    }
 }
 
-$sourceRows = @(Import-Csv -LiteralPath $resolvedSourcePath)
-$clubHistoryRows = @(Import-Csv -LiteralPath $resolvedClubHistoryPath -Encoding UTF8)
+$sourceRows = @(Import-Csv -LiteralPath $resolvedSourcePath -Encoding UTF8)
 $outputRows = New-Object System.Collections.Generic.List[object]
-$clubCount = 0
-$worldCupCount = 0
-
-foreach ($clubRow in $clubHistoryRows) {
-    if ([datetime]$clubRow.match_date -lt $StartDate) {
-        continue
-    }
-    $sourceRowNumber = [int]$clubRow.source_row
-    $sourceIndex = $sourceRowNumber - $SourceRowOffset
-    if ($sourceIndex -lt 0 -or $sourceIndex -ge $sourceRows.Count) {
-        throw "Source row $sourceRowNumber is outside the input CSV"
-    }
-    $sourceRow = $sourceRows[$sourceIndex]
-    if (-not (Test-ExactScore ([string]$sourceRow.比分))) {
-        throw "Source row $sourceRowNumber does not contain an exact score"
-    }
-    $score = Get-ScoreParts ([string]$sourceRow.比分)
-    $matchesMapping = [string]$sourceRow.比赛时间 -eq [string]$clubRow.match_date `
-        -and (Test-LeagueMatch ([string]$sourceRow.联赛) ([string]$clubRow.source_league)) `
-        -and $score[0] -eq [int]$clubRow.home_score `
-        -and $score[1] -eq [int]$clubRow.away_score
-    if (-not $matchesMapping) {
-        throw "Source row $sourceRowNumber does not match club history mapping"
-    }
-    if (-not (Test-OddsTriplet $sourceRow "胜平负初盘赔率") `
-            -and -not (Test-OddsTriplet $sourceRow "让球胜平负初盘赔率")) {
-        continue
-    }
-    $outputRows.Add((New-HistoricalOddsRow `
-        -SourceRow $sourceRow `
-        -SourceRowNumber $sourceRowNumber `
-        -Competition ([string]$clubRow.competition) `
-        -GroupName ([string]$clubRow.source_league) `
-        -HomeTeamCn ([string]$clubRow.home_team_cn) `
-        -AwayTeamCn ([string]$clubRow.away_team_cn) `
-        -HomeTeamEn "" `
-        -AwayTeamEn "" `
-        -Neutral ([bool]::Parse([string]$clubRow.neutral)) `
-        -SportteryMatchNumber ([string]$clubRow.source_match_number)))
-    $clubCount++
-}
+$skippedCompetitionCount = 0
+$skippedScoreCount = 0
+$skippedOddsCount = 0
 
 for ($index = 0; $index -lt $sourceRows.Count; $index++) {
     $sourceRow = $sourceRows[$index]
-    if ([string]$sourceRow.联赛 -ne "世界杯" `
-            -or [datetime]$sourceRow.比赛时间 -lt $StartDate `
-            -or -not (Test-ExactScore ([string]$sourceRow.比分))) {
+    $league = [string]$sourceRow.联赛
+    if (-not $competitionByLeague.ContainsKey($league)) {
+        $skippedCompetitionCount++
         continue
     }
-    if (-not (Test-OddsTriplet $sourceRow "胜平负初盘赔率") `
-            -and -not (Test-OddsTriplet $sourceRow "让球胜平负初盘赔率")) {
+
+    $matchDate = [datetime]$sourceRow.比赛时间
+    if ($matchDate.Date -lt $StartDate.Date) {
         continue
     }
-    $homeTeam = $nationalTeams[[string]$sourceRow.主场球队]
-    $awayTeam = $nationalTeams[[string]$sourceRow.客场球队]
-    if ($null -eq $homeTeam -or $null -eq $awayTeam) {
-        throw "Missing World Cup team mapping for $($sourceRow.主场球队) vs $($sourceRow.客场球队)"
+
+    $scoreText = [string]$sourceRow.比分
+    if (-not (Test-ExactScore $scoreText)) {
+        $skippedScoreCount++
+        continue
     }
+
+    $normalOdds = Get-OddsTriplet $sourceRow $false
+    $handicapOdds = Get-OddsTriplet $sourceRow $true
+    $hasNormalOdds = Test-CompleteOdds $normalOdds
+    $hasHandicapOdds = Test-CompleteOdds $handicapOdds
+    if (-not $hasNormalOdds -and -not $hasHandicapOdds) {
+        $skippedOddsCount++
+        continue
+    }
+
+    $competition = $competitionByLeague[$league]
+    $score = Get-ScoreParts $scoreText
     $sourceRowNumber = $index + $SourceRowOffset
-    $outputRows.Add((New-HistoricalOddsRow `
-        -SourceRow $sourceRow `
-        -SourceRowNumber $sourceRowNumber `
-        -Competition "WORLD_CUP" `
-        -GroupName "世界杯" `
-        -HomeTeamCn ([string]$homeTeam.Cn) `
-        -AwayTeamCn ([string]$awayTeam.Cn) `
-        -HomeTeamEn ([string]$homeTeam.En) `
-        -AwayTeamEn ([string]$awayTeam.En) `
-        -Neutral $true `
-        -SportteryMatchNumber ""))
-    $worldCupCount++
+    $outputRows.Add([pscustomobject][ordered]@{
+        match_id = "HIS-$sourceRowNumber"
+        match_date = $matchDate.ToString("yyyy-MM-dd")
+        competition = $competition
+        home_team_cn = [string]$sourceRow.主场球队
+        away_team_cn = [string]$sourceRow.客场球队
+        home_team_en = Get-EnglishName $existingEnglishByChinese $competition ([string]$sourceRow.主场球队)
+        away_team_en = Get-EnglishName $existingEnglishByChinese $competition ([string]$sourceRow.客场球队)
+        home_score = $score[0]
+        away_score = $score[1]
+        neutral = $neutralCompetitions.Contains($competition).ToString().ToLowerInvariant()
+        sporttery_match_number = ""
+        handicap = [string]$sourceRow.让球数
+        normal_win = if ($hasNormalOdds) { $normalOdds[0] } else { "" }
+        normal_draw = if ($hasNormalOdds) { $normalOdds[1] } else { "" }
+        normal_lose = if ($hasNormalOdds) { $normalOdds[2] } else { "" }
+        handicap_win = if ($hasHandicapOdds) { $handicapOdds[0] } else { "" }
+        handicap_draw = if ($hasHandicapOdds) { $handicapOdds[1] } else { "" }
+        handicap_lose = if ($hasHandicapOdds) { $handicapOdds[2] } else { "" }
+    })
+}
+
+$outputMatchIds = [Collections.Generic.HashSet[string]]::new()
+foreach ($row in $outputRows) {
+    $null = $outputMatchIds.Add([string]$row.match_id)
+}
+$preservedExistingCount = 0
+foreach ($existingRow in $existingRows) {
+    $existingMatchId = [string]$existingRow.match_id
+    if ([string]::IsNullOrWhiteSpace($existingMatchId) -or $outputMatchIds.Contains($existingMatchId)) {
+        continue
+    }
+    if (-not $supportedCompetitions.Contains([string]$existingRow.competition) `
+            -or ([datetime]$existingRow.match_date).Date -lt $StartDate.Date `
+            -or [string]$existingRow.home_score -notmatch "^\d+$" `
+            -or [string]$existingRow.away_score -notmatch "^\d+$") {
+        continue
+    }
+    $hasNormalOdds = -not [string]::IsNullOrWhiteSpace([string]$existingRow.normal_win) `
+        -and -not [string]::IsNullOrWhiteSpace([string]$existingRow.normal_draw) `
+        -and -not [string]::IsNullOrWhiteSpace([string]$existingRow.normal_lose)
+    $hasHandicapOdds = -not [string]::IsNullOrWhiteSpace([string]$existingRow.handicap_win) `
+        -and -not [string]::IsNullOrWhiteSpace([string]$existingRow.handicap_draw) `
+        -and -not [string]::IsNullOrWhiteSpace([string]$existingRow.handicap_lose)
+    if (-not $hasNormalOdds -and -not $hasHandicapOdds) {
+        continue
+    }
+    $outputRows.Add($existingRow)
+    $null = $outputMatchIds.Add($existingMatchId)
+    $preservedExistingCount++
 }
 
 $duplicates = @($outputRows | Group-Object match_id | Where-Object { $_.Count -gt 1 })
@@ -224,10 +249,31 @@ if (-not (Test-Path -LiteralPath $outputDirectory)) {
     New-Item -ItemType Directory -Path $outputDirectory | Out-Null
 }
 $outputRows |
-    Sort-Object match_date, competition, source_row |
+    Sort-Object match_date, competition, match_id |
     Export-Csv -LiteralPath $resolvedOutputPath -NoTypeInformation -Encoding UTF8
 
-Write-Host "Imported club odds rows: $clubCount"
-Write-Host "Imported World Cup odds rows: $worldCupCount"
-Write-Host "Imported total odds rows: $($outputRows.Count)"
+Write-Host "Imported odds rows: $($outputRows.Count)"
+Write-Host "Preserved enriched or supplemental rows: $preservedExistingCount"
+Write-Host "Skipped non-target competitions: $skippedCompetitionCount"
+Write-Host "Skipped rows without full-time score: $skippedScoreCount"
+Write-Host "Skipped rows without complete odds: $skippedOddsCount"
 Write-Host "Output: $resolvedOutputPath"
+
+$defaultOutputPath = [IO.Path]::GetFullPath(
+    (Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds_data.csv")
+)
+if ([string]::Equals($resolvedOutputPath, $defaultOutputPath, [StringComparison]::OrdinalIgnoreCase)) {
+    $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
+    $nodePath = if ($null -ne $nodeCommand) {
+        $nodeCommand.Source
+    } else {
+        Join-Path $PSScriptRoot "..\target\node\node.exe"
+    }
+    if (-not (Test-Path -LiteralPath $nodePath)) {
+        throw "Node.js is required to reconcile official full-time scores"
+    }
+    & $nodePath (Join-Path $PSScriptRoot "reconcile-historical-scores.mjs") --write --compact
+    if ($LASTEXITCODE -ne 0) {
+        throw "Historical score reconciliation failed with exit code $LASTEXITCODE"
+    }
+}

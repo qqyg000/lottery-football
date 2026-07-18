@@ -7,12 +7,28 @@
 
     [string]$CachePath = (Join-Path $PSScriptRoot "..\config\sporttery-market-selections.json"),
 
-    [string]$TranslatorPath = (Join-Path $PSScriptRoot "..\src\main\java\com\eason\worldcup\util\ClubTeamNameTranslator.java"),
-
-    [string]$OutputPath = (Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds.csv")
+    [string]$OutputPath = (Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds_data.csv")
 )
 
 $ErrorActionPreference = "Stop"
+
+$supportedCompetitions = [Collections.Generic.HashSet[string]]::new([string[]]@(
+    "WORLD_CUP",
+    "EUROPEAN_CHAMPIONSHIP",
+    "COPA_AMERICA",
+    "CLUB_WORLD_CUP",
+    "EUROPA_LEAGUE",
+    "CHAMPIONS_LEAGUE",
+    "PREMIER_LEAGUE",
+    "LA_LIGA",
+    "SERIE_A",
+    "BUNDESLIGA",
+    "LIGUE_1",
+    "BRAZIL_SERIE_A",
+    "PRIMEIRA_LIGA",
+    "EREDIVISIE",
+    "ARGENTINE_PRIMERA_DIVISION"
+))
 
 function Get-CanonicalTeamName {
     param([string]$Value)
@@ -23,19 +39,7 @@ function Get-CanonicalTeamName {
     $normalized = $normalized -replace "[\s·•.．,，'’``´()（）\[\]【】\-_/&]+", ""
     $normalized = $normalized -replace "^(FC|SC|CF)(?=[\u4e00-\u9fff])", ""
     $normalized = $normalized -replace "(AIF|FC|SC|CF|SK|FK|IF|BK|FF)$", ""
-    switch ($normalized) {
-        { $_ -in @("尤尔加登", "佐加顿斯") } { return "佐加顿斯" }
-        { $_ -in @("桑德菲杰", "桑纳菲尤尔") } { return "桑纳菲尤尔" }
-        { $_ -in @("萨普斯堡", "萨尔普斯堡") } { return "萨尔普斯堡" }
-        { $_ -in @("哈伊杜克斯普利特", "斯普利特海杜克") } { return "斯普利特海杜克" }
-        { $_ -in @("杰尔ETO", "杰尔") } { return "杰尔" }
-        { $_ -in @("阿特尔特比森", "比森阿泰尔") } { return "比森阿泰尔" }
-        { $_ -in @("刚果民主共和国", "民主刚果", "刚果金") } { return "刚果金" }
-        { $_ -in @("蔚山HD", "蔚山现代") } { return "蔚山现代" }
-        { $_ -in @("浦项钢铁", "浦项制铁") } { return "浦项制铁" }
-        { $_ -in @("尚州尚武", "金泉尚武") } { return "金泉尚武" }
-        default { return $normalized }
-    }
+    return $normalized
 }
 
 function Test-CanonicalNamesMatch {
@@ -65,10 +69,28 @@ function Test-TeamNamesMatch {
     $chineseName = if ($IsHome) { [string]$Schedule.homeTeamCn } else { [string]$Schedule.awayTeamCn }
     $englishName = if ($IsHome) { [string]$Schedule.homeTeamEn } else { [string]$Schedule.awayTeamEn }
     $sportteryName = if ($IsHome) { [string]$Entry.homeTeam } else { [string]$Entry.awayTeam }
-    $translatedName = if ($Translations.ContainsKey($englishName)) { $Translations[$englishName] } else { $englishName }
+    $englishKey = Get-CanonicalSourceName $englishName
+    $competitionKey = [string]$Schedule.competition + "|" + $englishKey
+    $globalKey = "*|" + $englishKey
+    $translatedName = if ($Translations.ContainsKey($competitionKey)) {
+        $Translations[$competitionKey]
+    } elseif ($Translations.ContainsKey($globalKey)) {
+        $Translations[$globalKey]
+    } else {
+        $englishName
+    }
     $target = Get-CanonicalTeamName $sportteryName
     return (Test-CanonicalNamesMatch (Get-CanonicalTeamName $chineseName) $target) `
         -or (Test-CanonicalNamesMatch (Get-CanonicalTeamName $translatedName) $target)
+}
+
+function Get-CanonicalSourceName {
+    param([string]$Value)
+
+    $normalized = if ($null -eq $Value) { "" } else { $Value }
+    $normalized = $normalized.Normalize([Text.NormalizationForm]::FormKD).ToUpperInvariant()
+    $normalized = [Text.RegularExpressions.Regex]::Replace($normalized, "\p{M}", "")
+    return [Text.RegularExpressions.Regex]::Replace($normalized, "[^\p{L}\p{N}]", "")
 }
 
 function Get-MatchScore {
@@ -116,9 +138,8 @@ function Get-FixtureKey {
 
 $resolvedSchedulePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($SchedulePath)
 $resolvedCachePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($CachePath)
-$resolvedTranslatorPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TranslatorPath)
 $resolvedOutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
-foreach ($path in @($resolvedSchedulePath, $resolvedCachePath, $resolvedTranslatorPath, $resolvedOutputPath)) {
+foreach ($path in @($resolvedSchedulePath, $resolvedCachePath, $resolvedOutputPath)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "Required file not found: $path"
     }
@@ -127,16 +148,26 @@ if ($EndDate.Date -lt $StartDate.Date) {
     throw "EndDate cannot be earlier than StartDate"
 }
 
+$existingRows = @(Import-Csv -LiteralPath $resolvedOutputPath -Encoding UTF8)
 $translations = @{}
-$translatorSource = Get-Content -LiteralPath $resolvedTranslatorPath -Raw -Encoding UTF8
-[regex]::Matches($translatorSource, 'teamNames\.put\("([^"]+)",\s*"([^"]+)"\)') | ForEach-Object {
-    $translations[$_.Groups[1].Value] = $_.Groups[2].Value
+foreach ($row in $existingRows) {
+    foreach ($side in @("home", "away")) {
+        $englishName = [string]$row.PSObject.Properties["${side}_team_en"].Value
+        $chineseName = [string]$row.PSObject.Properties["${side}_team_cn"].Value
+        if ([string]::IsNullOrWhiteSpace($englishName) -or [string]::IsNullOrWhiteSpace($chineseName)) {
+            continue
+        }
+        $englishKey = Get-CanonicalSourceName $englishName
+        $translations[([string]$row.competition + "|" + $englishKey)] = $chineseName
+        $translations[("*|" + $englishKey)] = $chineseName
+    }
 }
 
 $schedules = Get-Content -LiteralPath $resolvedSchedulePath -Raw -Encoding UTF8 | ConvertFrom-Json
 $cache = Get-Content -LiteralPath $resolvedCachePath -Raw -Encoding UTF8 | ConvertFrom-Json
 $entries = @($cache.entries | Where-Object {
-    ([datetime]$_.matchDate).Date -ge $StartDate.Date `
+    $supportedCompetitions.Contains([string]$_.competition) `
+        -and ([datetime]$_.matchDate).Date -ge $StartDate.Date `
         -and ([datetime]$_.matchDate).Date -le $EndDate.Date
 })
 $entriesByCompetition = @{}
@@ -157,7 +188,8 @@ foreach ($schedule in $schedules) {
         continue
     }
     $competition = [string]$schedule.competition
-    if (-not $entriesByCompetition.ContainsKey($competition)) {
+    if (-not $supportedCompetitions.Contains($competition) `
+            -or -not $entriesByCompetition.ContainsKey($competition)) {
         continue
     }
 
@@ -191,7 +223,6 @@ foreach ($schedule in $schedules) {
         match_id = "HIS-SPT-$($bestEntry.sportteryMatchId)"
         match_date = $schedule.matchDate
         competition = $schedule.competition
-        group_name = $schedule.groupName
         home_team_cn = $schedule.homeTeamCn
         away_team_cn = $schedule.awayTeamCn
         home_team_en = $schedule.homeTeamEn
@@ -207,19 +238,18 @@ foreach ($schedule in $schedules) {
         handicap_win = Get-OddsValue $bestEntry.handicapOdds "win"
         handicap_draw = Get-OddsValue $bestEntry.handicapOdds "draw"
         handicap_lose = Get-OddsValue $bestEntry.handicapOdds "lose"
-        source_row = "SPORTTERY-$($bestEntry.sportteryMatchId)"
     })
 }
 
-$newSourceRows = [Collections.Generic.HashSet[string]]::new()
+$newMatchIds = [Collections.Generic.HashSet[string]]::new()
 foreach ($row in $newRows) {
-    $null = $newSourceRows.Add([string]$row.source_row)
+    $null = $newMatchIds.Add([string]$row.match_id)
 }
-$existingSourceRows = [Collections.Generic.HashSet[string]]::new()
+$existingMatchIds = [Collections.Generic.HashSet[string]]::new()
 $rowsByFixture = [ordered]@{}
-foreach ($row in @(Import-Csv -LiteralPath $resolvedOutputPath -Encoding UTF8)) {
-    $null = $existingSourceRows.Add([string]$row.source_row)
-    if ($newSourceRows.Contains([string]$row.source_row)) {
+foreach ($row in $existingRows) {
+    $null = $existingMatchIds.Add([string]$row.match_id)
+    if ($newMatchIds.Contains([string]$row.match_id)) {
         continue
     }
     $rowsByFixture[(Get-FixtureKey $row)] = $row
@@ -228,7 +258,7 @@ $addedCount = 0
 $updatedCount = 0
 foreach ($row in $newRows) {
     $key = Get-FixtureKey $row
-    if ($existingSourceRows.Contains([string]$row.source_row) -or $rowsByFixture.Contains($key)) {
+    if ($existingMatchIds.Contains([string]$row.match_id) -or $rowsByFixture.Contains($key)) {
         $updatedCount++
     } else {
         $addedCount++
@@ -245,3 +275,22 @@ Write-Host "Added odds rows: $addedCount"
 Write-Host "Updated odds rows: $updatedCount"
 Write-Host "Output rows: $($rowsByFixture.Count)"
 Write-Host "Output: $resolvedOutputPath"
+
+$defaultOutputPath = [IO.Path]::GetFullPath(
+    (Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds_data.csv")
+)
+if ([string]::Equals($resolvedOutputPath, $defaultOutputPath, [StringComparison]::OrdinalIgnoreCase)) {
+    $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
+    $nodePath = if ($null -ne $nodeCommand) {
+        $nodeCommand.Source
+    } else {
+        Join-Path $PSScriptRoot "..\target\node\node.exe"
+    }
+    if (-not (Test-Path -LiteralPath $nodePath)) {
+        throw "Node.js is required to reconcile official full-time scores"
+    }
+    & $nodePath (Join-Path $PSScriptRoot "reconcile-historical-scores.mjs") --write --compact
+    if ($LASTEXITCODE -ne 0) {
+        throw "Historical score reconciliation failed with exit code $LASTEXITCODE"
+    }
+}

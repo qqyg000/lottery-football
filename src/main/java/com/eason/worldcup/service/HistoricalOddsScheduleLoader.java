@@ -31,10 +31,38 @@ public class HistoricalOddsScheduleLoader {
 
     private static final LocalTime UNKNOWN_KICKOFF_TIME = LocalTime.NOON;
 
+    private static final int MATCH_ID_COLUMN = 0;
+
+    private static final int MATCH_DATE_COLUMN = 1;
+
+    private static final int COMPETITION_COLUMN = 2;
+
+    private static final int HOME_TEAM_CN_COLUMN = 3;
+
+    private static final int AWAY_TEAM_CN_COLUMN = 4;
+
+    private static final int HOME_TEAM_EN_COLUMN = 5;
+
+    private static final int AWAY_TEAM_EN_COLUMN = 6;
+
+    private static final int HOME_SCORE_COLUMN = 7;
+
+    private static final int AWAY_SCORE_COLUMN = 8;
+
+    private static final int NEUTRAL_COLUMN = 9;
+
+    private static final int SPORTTERY_MATCH_NUMBER_COLUMN = 10;
+
+    private static final int HANDICAP_COLUMN = 11;
+
+    private static final int NORMAL_ODDS_COLUMN = 12;
+
+    private static final int HANDICAP_ODDS_COLUMN = 15;
+
     private final ResourceLoader resourceLoader;
 
-    @Value("${sporttery.result-update.historical-odds-path:classpath:data/historical_odds.csv}")
-    private String historicalOddsPath;
+    @Value("${sporttery.result-update.historical-odds-data-path:classpath:data/historical_odds_data.csv}")
+    private String historicalOddsDataPath;
 
     public HistoricalOddsScheduleLoader(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
@@ -70,7 +98,7 @@ public class HistoricalOddsScheduleLoader {
     }
 
     private List<MatchSchedule> loadSchedules() {
-        Resource resource = resourceLoader.getResource(historicalOddsPath);
+        Resource resource = resourceLoader.getResource(historicalOddsDataPath);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                 resource.getInputStream(),
                 StandardCharsets.UTF_8))) {
@@ -80,33 +108,38 @@ public class HistoricalOddsScheduleLoader {
                     .map(this::parseSchedule)
                     .toList();
         } catch (IOException ex) {
-            throw new IllegalStateException("读取历史赔率数据失败：" + historicalOddsPath, ex);
+            throw new IllegalStateException("读取历史赔率数据失败：" + historicalOddsDataPath, ex);
         }
     }
 
     private MatchSchedule parseSchedule(String line) {
         List<String> row = CsvUtils.parseLine(line);
         MatchSchedule schedule = new MatchSchedule();
-        LocalDate matchDate = LocalDate.parse(CsvUtils.get(row, 1));
-        SportteryOdds normalOdds = parseOdds(row, 13, matchDate);
-        SportteryOdds handicapOdds = parseOdds(row, 16, matchDate);
-        schedule.setMatchId(CsvUtils.get(row, 0));
+        LocalDate matchDate = LocalDate.parse(CsvUtils.get(row, MATCH_DATE_COLUMN));
+        Competition competition = Competition.fromCode(CsvUtils.get(row, COMPETITION_COLUMN));
+        String homeTeamCn = CsvUtils.get(row, HOME_TEAM_CN_COLUMN);
+        String awayTeamCn = CsvUtils.get(row, AWAY_TEAM_CN_COLUMN);
+        String homeTeamEn = CsvUtils.get(row, HOME_TEAM_EN_COLUMN);
+        String awayTeamEn = CsvUtils.get(row, AWAY_TEAM_EN_COLUMN);
+        SportteryOdds normalOdds = parseOdds(row, NORMAL_ODDS_COLUMN, matchDate);
+        SportteryOdds handicapOdds = parseOdds(row, HANDICAP_ODDS_COLUMN, matchDate);
+        schedule.setMatchId(CsvUtils.get(row, MATCH_ID_COLUMN));
         schedule.setMatchDate(matchDate);
-        schedule.setCompetition(Competition.fromCode(CsvUtils.get(row, 2)));
+        schedule.setCompetition(competition);
         schedule.setKickoffTime(UNKNOWN_KICKOFF_TIME);
-        schedule.setGroupName(CsvUtils.get(row, 3));
-        schedule.setHomeTeamCn(CsvUtils.get(row, 4));
-        schedule.setAwayTeamCn(CsvUtils.get(row, 5));
-        schedule.setHomeTeamEn(CsvUtils.get(row, 6));
-        schedule.setAwayTeamEn(CsvUtils.get(row, 7));
-        schedule.setHomeScore(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, 8)));
-        schedule.setAwayScore(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, 9)));
-        schedule.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, 10)));
+        schedule.setGroupName(competition.getDisplayName());
+        schedule.setHomeTeamCn(resolveChineseTeamName(competition, homeTeamCn, homeTeamEn));
+        schedule.setAwayTeamCn(resolveChineseTeamName(competition, awayTeamCn, awayTeamEn));
+        schedule.setHomeTeamEn(homeTeamEn);
+        schedule.setAwayTeamEn(awayTeamEn);
+        schedule.setHomeScore(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, HOME_SCORE_COLUMN)));
+        schedule.setAwayScore(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, AWAY_SCORE_COLUMN)));
+        schedule.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, NEUTRAL_COLUMN)));
         schedule.setVenue("");
         schedule.setStatus("COMPLETED");
         schedule.setSportteryMatchId(schedule.getMatchId());
-        schedule.setSportteryMatchNumber(CsvUtils.get(row, 11));
-        schedule.setSportteryHandicap(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, 12)));
+        schedule.setSportteryMatchNumber(CsvUtils.get(row, SPORTTERY_MATCH_NUMBER_COLUMN));
+        schedule.setSportteryHandicap(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, HANDICAP_COLUMN)));
         schedule.setSportteryNormalAvailable(normalOdds != null);
         schedule.setSportteryNormalOdds(normalOdds);
         schedule.setSportteryHandicapOdds(handicapOdds);
@@ -132,6 +165,14 @@ public class HistoricalOddsScheduleLoader {
 
     private void applyHistoricalData(MatchSchedule target, MatchSchedule source) {
         target.setStatus("COMPLETED");
+        target.setHomeTeamCn(source.getHomeTeamCn());
+        target.setAwayTeamCn(source.getAwayTeamCn());
+        if (target.getHomeTeamEn() == null || target.getHomeTeamEn().isBlank()) {
+            target.setHomeTeamEn(source.getHomeTeamEn());
+        }
+        if (target.getAwayTeamEn() == null || target.getAwayTeamEn().isBlank()) {
+            target.setAwayTeamEn(source.getAwayTeamEn());
+        }
         target.setHomeScore(source.getHomeScore());
         target.setAwayScore(source.getAwayScore());
         target.setSportteryMatchId(source.getSportteryMatchId());
@@ -145,15 +186,33 @@ public class HistoricalOddsScheduleLoader {
     private String buildFixtureKey(MatchSchedule schedule) {
         return schedule.getCompetition()
                 + "|" + schedule.getMatchDate()
-                + "|" + canonicalTeamName(resolveTeamName(schedule.getHomeTeamCn(), schedule.getHomeTeamEn()))
-                + "|" + canonicalTeamName(resolveTeamName(schedule.getAwayTeamCn(), schedule.getAwayTeamEn()));
+                + "|" + canonicalTeamName(resolveTeamName(
+                        schedule.getCompetition(),
+                        schedule.getHomeTeamCn(),
+                        schedule.getHomeTeamEn()))
+                + "|" + canonicalTeamName(resolveTeamName(
+                        schedule.getCompetition(),
+                        schedule.getAwayTeamCn(),
+                        schedule.getAwayTeamEn()));
     }
 
-    private String resolveTeamName(String chineseName, String englishName) {
+    private String resolveTeamName(Competition competition, String chineseName, String englishName) {
+        String translatedName = ClubTeamNameTranslator.translate(competition, englishName);
+        if (englishName != null
+                && !englishName.isBlank()
+                && translatedName != null
+                && !translatedName.isBlank()
+                && !translatedName.equals(englishName.trim())) {
+            return translatedName;
+        }
         if (chineseName != null && !chineseName.isBlank()) {
             return chineseName;
         }
-        return ClubTeamNameTranslator.translate(englishName);
+        return translatedName;
+    }
+
+    private String resolveChineseTeamName(Competition competition, String chineseName, String englishName) {
+        return resolveTeamName(competition, chineseName, englishName);
     }
 
     private String canonicalTeamName(String value) {
@@ -164,15 +223,7 @@ public class HistoricalOddsScheduleLoader {
                 .replaceAll("[\\s·•.．,，'’`´()（）\\[\\]【】\\-_/&]+", "")
                 .replaceAll("^(FC|SC|CF)(?=\\p{IsHan})", "")
                 .replaceAll("(AIF|FC|SC|CF|SK|FK|IF|BK|FF)$", "");
-        return switch (normalized) {
-            case "尤尔加登", "佐加顿斯" -> "佐加顿斯";
-            case "桑德菲杰", "桑纳菲尤尔" -> "桑纳菲尤尔";
-            case "萨普斯堡", "萨尔普斯堡" -> "萨尔普斯堡";
-            case "蔚山HD", "蔚山现代" -> "蔚山现代";
-            case "浦项钢铁", "浦项制铁" -> "浦项制铁";
-            case "尚州尚武", "金泉尚武" -> "金泉尚武";
-            default -> normalized;
-        };
+        return normalized;
     }
 
 }
