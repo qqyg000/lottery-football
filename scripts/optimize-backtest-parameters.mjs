@@ -1,5 +1,7 @@
 const BASE_URL = 'http://localhost:8080/api/football/recommendation-backtest'
-const CLUB_COMPETITIONS = [
+const NON_WORLD_CUP_COMPETITIONS = [
+  'EUROPEAN_CHAMPIONSHIP',
+  'COPA_AMERICA',
   'CLUB_WORLD_CUP',
   'EUROPA_LEAGUE',
   'CHAMPIONS_LEAGUE',
@@ -19,25 +21,25 @@ const PROBABILITY_MASKS = [1, 2, 4]
 const PRESETS = {
   stable: {
     modelMode: 'after',
-    hostTeamGoalFactor: 1.00,
+    hostTeamGoalFactor: 1.55,
     homeTeamGoalFactor: 1.05,
     seedTeamGoalFactor: 1.85,
-    handicapSmoothingFactor: 0.685,
-    recommendationOdds: 1.56,
-    handicapRecommendationThreshold: 94.00,
-    handicapReverseThreshold: 43.75,
-    singleRecommendationThreshold: 77.50
+    handicapSmoothingFactor: 0.255,
+    recommendationOdds: 1.03,
+    handicapRecommendationThreshold: 66.49,
+    handicapReverseThreshold: 32.80,
+    singleRecommendationThreshold: 72.03
   },
   aggressive: {
-    modelMode: 'before',
-    hostTeamGoalFactor: 1.25,
-    homeTeamGoalFactor: 2.65,
+    modelMode: 'after',
+    hostTeamGoalFactor: 0.90,
+    homeTeamGoalFactor: 1.75,
     seedTeamGoalFactor: 2.05,
-    handicapSmoothingFactor: 0.128,
-    recommendationOdds: 2.53,
-    handicapRecommendationThreshold: 78.00,
-    handicapReverseThreshold: 53.15,
-    singleRecommendationThreshold: 82.50
+    handicapSmoothingFactor: 0.650,
+    recommendationOdds: 2.46,
+    handicapRecommendationThreshold: 89.09,
+    handicapReverseThreshold: 43.41,
+    singleRecommendationThreshold: 86.22
   }
 }
 
@@ -49,8 +51,20 @@ const argumentsMap = new Map(
 )
 const simulations = Math.max(1000, Number(argumentsMap.get('simulations')) || 1000)
 const phase = argumentsMap.get('phase') || 'baseline'
-const modelMode = argumentsMap.get('model') === 'before' ? 'before' : 'after'
+const modelMode = 'after'
+const includePreviousEdition = argumentsMap.get('include-previous') !== 'false'
+const requestedScheme = ['stable', 'aggressive'].includes(argumentsMap.get('scheme'))
+  ? argumentsMap.get('scheme')
+  : null
 const responseCache = new Map()
+
+function selectedSchemeNames() {
+  return Object.keys(PRESETS).filter(name => !requestedScheme || name === requestedScheme)
+}
+
+function selectedPresetEntries(presets = PRESETS) {
+  return Object.entries(presets).filter(([name]) => !requestedScheme || name === requestedScheme)
+}
 
 function roundToTwo(value) {
   return Math.round((value + Number.EPSILON) * 100) / 100
@@ -300,12 +314,16 @@ function evaluate(matches, parameters) {
 }
 
 async function fetchBacktest(competition, factors, effectiveModelMode = modelMode) {
-  const key = [effectiveModelMode, competition, factors.hostTeamGoalFactor, factors.homeTeamGoalFactor, factors.seedTeamGoalFactor].join('|')
+  const effectiveFactorKey = competition === 'WORLD_CUP'
+    ? [factors.hostTeamGoalFactor, factors.seedTeamGoalFactor]
+    : [factors.homeTeamGoalFactor]
+  const key = [includePreviousEdition, effectiveModelMode, competition, ...effectiveFactorKey].join('|')
   if (responseCache.has(key)) {
     return responseCache.get(key)
   }
   const url = new URL(BASE_URL)
   url.searchParams.set('competition', competition)
+  url.searchParams.set('includePreviousEdition', String(includePreviousEdition))
   url.searchParams.set('simulations', simulations)
   url.searchParams.set('hostTeamGoalFactor', factors.hostTeamGoalFactor)
   url.searchParams.set('homeTeamGoalFactor', factors.homeTeamGoalFactor)
@@ -340,11 +358,11 @@ async function fetchBacktest(competition, factors, effectiveModelMode = modelMod
 }
 
 async function loadPresetMatches(preset, effectiveModelMode = modelMode) {
-  const [worldCupMatches, clubMatches] = await Promise.all([
+  const [worldCupMatches, nonWorldCupMatches] = await Promise.all([
     fetchBacktest('WORLD_CUP', preset, effectiveModelMode),
-    fetchBacktest(CLUB_COMPETITIONS, preset, effectiveModelMode)
+    fetchBacktest(NON_WORLD_CUP_COMPETITIONS, preset, effectiveModelMode)
   ])
-  return worldCupMatches.concat(clubMatches)
+  return worldCupMatches.concat(nonWorldCupMatches)
 }
 
 function printableMetrics(metrics) {
@@ -362,7 +380,7 @@ function printableMetrics(metrics) {
 
 async function runBaselines() {
   const result = {}
-  for (const [name, preset] of Object.entries(PRESETS)) {
+  for (const [name, preset] of selectedPresetEntries()) {
     const matches = await loadPresetMatches(preset, preset.modelMode || modelMode)
     const smoothedMatches = withSmoothing(matches, preset.handicapSmoothingFactor)
     result[name] = {
@@ -397,7 +415,7 @@ function addRankedResult(results, candidate, metrics, limit = 10) {
 
 const SEARCH_DEFINITIONS = {
   stable: {
-    minimumRecommendedMatches: 35,
+    minimumRecommendedMatches: 500,
     minimumAverageOdds: 1.60,
     odds: [1.00, 2.50],
     handicapRecommendation: [0, 100],
@@ -405,7 +423,7 @@ const SEARCH_DEFINITIONS = {
     singleRecommendation: [0, 100]
   },
   aggressive: {
-    minimumRecommendedMatches: 12,
+    minimumRecommendedMatches: 100,
     minimumAverageOdds: 1.90,
     odds: [1.30, 4.00],
     handicapRecommendation: [0, 100],
@@ -417,50 +435,50 @@ const SEARCH_DEFINITIONS = {
 const TARGETED_CANDIDATES = {
   stable: {
     modelMode: 'after',
-    hostTeamGoalFactor: 1.00,
+    hostTeamGoalFactor: 1.55,
     homeTeamGoalFactor: 1.05,
     seedTeamGoalFactor: 1.85,
-    handicapSmoothingFactor: 0.685,
-    recommendationOdds: 1.56,
-    handicapRecommendationThreshold: 94.00,
-    handicapReverseThreshold: 43.75,
-    singleRecommendationThreshold: 77.50
+    handicapSmoothingFactor: 0.255,
+    recommendationOdds: 1.03,
+    handicapRecommendationThreshold: 66.49,
+    handicapReverseThreshold: 32.80,
+    singleRecommendationThreshold: 72.03
   },
   aggressive: {
-    modelMode: 'before',
-    hostTeamGoalFactor: 1.25,
-    homeTeamGoalFactor: 2.65,
+    modelMode: 'after',
+    hostTeamGoalFactor: 0.90,
+    homeTeamGoalFactor: 1.75,
     seedTeamGoalFactor: 2.05,
-    handicapSmoothingFactor: 0.128,
-    recommendationOdds: 2.53,
-    handicapRecommendationThreshold: 78.00,
-    handicapReverseThreshold: 53.15,
-    singleRecommendationThreshold: 82.50
+    handicapSmoothingFactor: 0.650,
+    recommendationOdds: 2.46,
+    handicapRecommendationThreshold: 89.09,
+    handicapReverseThreshold: 43.41,
+    singleRecommendationThreshold: 86.22
   }
 }
 
 const VERIFICATION_CANDIDATES = {
   stable: {
     modelMode: 'after',
-    hostTeamGoalFactor: 1.00,
+    hostTeamGoalFactor: 1.55,
     homeTeamGoalFactor: 1.05,
     seedTeamGoalFactor: 1.85,
-    handicapSmoothingFactor: 0.685,
-    recommendationOdds: 1.56,
-    handicapRecommendationThreshold: 94.00,
-    handicapReverseThreshold: 43.75,
-    singleRecommendationThreshold: 77.50
+    handicapSmoothingFactor: 0.255,
+    recommendationOdds: 1.03,
+    handicapRecommendationThreshold: 66.49,
+    handicapReverseThreshold: 32.80,
+    singleRecommendationThreshold: 72.03
   },
   aggressive: {
-    modelMode: 'before',
-    hostTeamGoalFactor: 1.25,
-    homeTeamGoalFactor: 2.65,
+    modelMode: 'after',
+    hostTeamGoalFactor: 0.90,
+    homeTeamGoalFactor: 1.75,
     seedTeamGoalFactor: 2.05,
-    handicapSmoothingFactor: 0.128,
-    recommendationOdds: 2.53,
-    handicapRecommendationThreshold: 78.00,
-    handicapReverseThreshold: 53.15,
-    singleRecommendationThreshold: 82.50
+    handicapSmoothingFactor: 0.650,
+    recommendationOdds: 2.46,
+    handicapRecommendationThreshold: 89.09,
+    handicapReverseThreshold: 43.41,
+    singleRecommendationThreshold: 86.22
   }
 }
 
@@ -472,7 +490,7 @@ function isEligible(metrics, definition) {
 function buildThresholdCandidates(name, count, seed, center = PRESETS[name], local = false) {
   const definition = SEARCH_DEFINITIONS[name]
   const random = createRandom(seed)
-  const candidates = [{ ...center }, { ...PRESETS[name] }]
+  const candidates = [{ ...center }, { ...PRESETS[name] }, { ...TARGETED_CANDIDATES[name] }]
   for (let index = 0; index < count; index++) {
     const oddsRange = local
       ? [
@@ -553,14 +571,14 @@ function factorRange(center, radius, step, minimum, maximum) {
   return values
 }
 
-async function loadClubFactorGrid(homeValues) {
+async function loadNonWorldCupFactorGrid(homeValues) {
   const entries = await mapWithConcurrency(homeValues, 2, async homeTeamGoalFactor => {
     const factors = {
       hostTeamGoalFactor: 1,
       homeTeamGoalFactor,
       seedTeamGoalFactor: 1
     }
-    return [homeTeamGoalFactor, await fetchBacktest(CLUB_COMPETITIONS, factors)]
+    return [homeTeamGoalFactor, await fetchBacktest(NON_WORLD_CUP_COMPETITIONS, factors)]
   })
   return new Map(entries)
 }
@@ -580,13 +598,13 @@ async function loadWorldCupFactorGrid(hostValues, seedValues) {
   return new Map(entries)
 }
 
-function combinedMatches(clubGrid, worldCupGrid, factors) {
-  const clubMatches = clubGrid.get(factors.homeTeamGoalFactor)
+function combinedMatches(nonWorldCupGrid, worldCupGrid, factors) {
+  const nonWorldCupMatches = nonWorldCupGrid.get(factors.homeTeamGoalFactor)
   const worldCupMatches = worldCupGrid.get(`${factors.hostTeamGoalFactor}|${factors.seedTeamGoalFactor}`)
-  if (!clubMatches || !worldCupMatches) {
+  if (!nonWorldCupMatches || !worldCupMatches) {
     throw new Error(`缺少模型因子数据 ${JSON.stringify(factors)}`)
   }
-  return worldCupMatches.concat(clubMatches)
+  return worldCupMatches.concat(nonWorldCupMatches)
 }
 
 async function runCoarseModelSearch() {
@@ -594,16 +612,16 @@ async function runCoarseModelSearch() {
   const hostValues = [0.10, 0.40, 0.70, 1.00, 1.30, 1.60, 2.00, 2.50, 3.00]
   const seedValues = [0.10, 0.40, 0.70, 1.00, 1.30, 1.60, 2.00, 2.50, 3.00]
   const smoothingValues = [0.00, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80]
-  const [clubGrid, worldCupGrid] = await Promise.all([
-    loadClubFactorGrid(homeValues),
+  const [nonWorldCupGrid, worldCupGrid] = await Promise.all([
+    loadNonWorldCupFactorGrid(homeValues),
     loadWorldCupFactorGrid(hostValues, seedValues)
   ])
   const result = {}
-  for (const name of Object.keys(PRESETS)) {
+  for (const name of selectedSchemeNames()) {
     const definition = SEARCH_DEFINITIONS[name]
     const thresholdCandidates = buildThresholdCandidates(
       name,
-      300,
+      48,
       name === 'stable' ? 20260719 : 20260720
     )
     const ranked = []
@@ -612,7 +630,7 @@ async function runCoarseModelSearch() {
       for (const hostTeamGoalFactor of hostValues) {
         for (const seedTeamGoalFactor of seedValues) {
           const modelFactors = { homeTeamGoalFactor, hostTeamGoalFactor, seedTeamGoalFactor }
-          const matches = combinedMatches(clubGrid, worldCupGrid, modelFactors)
+          const matches = combinedMatches(nonWorldCupGrid, worldCupGrid, modelFactors)
           for (const smoothingFactor of smoothingValues) {
             const best = findBestThresholds(
               matches,
@@ -649,7 +667,7 @@ async function refineCandidate(name, initial) {
   )
 
   const homeValues = factorRange(current.candidate.homeTeamGoalFactor, 0.35, 0.05, 0.10, 3.00)
-  const clubGrid = await loadClubFactorGrid(homeValues)
+  const nonWorldCupGrid = await loadNonWorldCupFactorGrid(homeValues)
   const initialHostValues = [current.candidate.hostTeamGoalFactor]
   const initialSeedValues = [current.candidate.seedTeamGoalFactor]
   let worldCupGrid = await loadWorldCupFactorGrid(initialHostValues, initialSeedValues)
@@ -660,7 +678,7 @@ async function refineCandidate(name, initial) {
       seedTeamGoalFactor: current.candidate.seedTeamGoalFactor
     }
     const best = findBestThresholds(
-      combinedMatches(clubGrid, worldCupGrid, modelFactors),
+      combinedMatches(nonWorldCupGrid, worldCupGrid, modelFactors),
       current.candidate.handicapSmoothingFactor,
       localThresholds,
       definition,
@@ -674,7 +692,7 @@ async function refineCandidate(name, initial) {
   const hostValues = factorRange(current.candidate.hostTeamGoalFactor, 0.35, 0.05, 0.10, 3.00)
   const seedValues = factorRange(current.candidate.seedTeamGoalFactor, 0.35, 0.05, 0.10, 3.00)
   worldCupGrid = await loadWorldCupFactorGrid(hostValues, seedValues)
-  const currentClubGrid = await loadClubFactorGrid([current.candidate.homeTeamGoalFactor])
+  const currentNonWorldCupGrid = await loadNonWorldCupFactorGrid([current.candidate.homeTeamGoalFactor])
   for (const hostTeamGoalFactor of hostValues) {
     for (const seedTeamGoalFactor of seedValues) {
       const modelFactors = {
@@ -683,7 +701,7 @@ async function refineCandidate(name, initial) {
         seedTeamGoalFactor
       }
       const best = findBestThresholds(
-        combinedMatches(currentClubGrid, worldCupGrid, modelFactors),
+        combinedMatches(currentNonWorldCupGrid, worldCupGrid, modelFactors),
         current.candidate.handicapSmoothingFactor,
         localThresholds,
         definition,
@@ -695,7 +713,7 @@ async function refineCandidate(name, initial) {
     }
   }
 
-  const finalMatches = combinedMatches(currentClubGrid, worldCupGrid, {
+  const finalMatches = combinedMatches(currentNonWorldCupGrid, worldCupGrid, {
     homeTeamGoalFactor: current.candidate.homeTeamGoalFactor,
     hostTeamGoalFactor: current.candidate.hostTeamGoalFactor,
     seedTeamGoalFactor: current.candidate.seedTeamGoalFactor
@@ -741,7 +759,7 @@ async function refineCandidate(name, initial) {
 async function runFullSearch() {
   const coarseResult = await runCoarseModelSearch()
   const result = {}
-  for (const name of Object.keys(PRESETS)) {
+  for (const name of selectedSchemeNames()) {
     process.stderr.write(`${name} 开始精调\n`)
     const refined = await refineCandidate(name, coarseResult[name][0])
     result[name] = {
@@ -760,7 +778,7 @@ async function runFullSearch() {
 
 async function runTargetedSearch() {
   const result = {}
-  for (const [name, initial] of Object.entries(TARGETED_CANDIDATES)) {
+  for (const [name, initial] of selectedPresetEntries(TARGETED_CANDIDATES)) {
     const matches = await loadPresetMatches(initial, initial.modelMode || modelMode)
     const definition = SEARCH_DEFINITIONS[name]
     const smoothingThresholds = buildThresholdCandidates(
@@ -825,7 +843,8 @@ async function runThresholdSearch() {
   const definitions = {
     stable: {
       iterations: 300000,
-      minimumRecommendedMatches: 35,
+      minimumRecommendedMatches: 500,
+      minimumAverageOdds: 1.60,
       odds: [1.00, 2.50],
       handicapRecommendation: [0, 100],
       handicapReverse: [0, 100],
@@ -833,7 +852,8 @@ async function runThresholdSearch() {
     },
     aggressive: {
       iterations: 300000,
-      minimumRecommendedMatches: 12,
+      minimumRecommendedMatches: 100,
+      minimumAverageOdds: 1.90,
       odds: [1.30, 4.00],
       handicapRecommendation: [0, 100],
       handicapReverse: [0, 100],
@@ -841,7 +861,7 @@ async function runThresholdSearch() {
     }
   }
   const result = {}
-  for (const [name, preset] of Object.entries(PRESETS)) {
+  for (const [name, preset] of selectedPresetEntries()) {
     const definition = definitions[name]
     const matches = withSmoothing(
       await loadPresetMatches(preset, preset.modelMode || modelMode),
@@ -858,7 +878,7 @@ async function runThresholdSearch() {
         singleRecommendationThreshold: randomValue(random, ...definition.singleRecommendation, 2)
       }
       const metrics = evaluate(matches, candidate)
-      if (metrics.recommendedMatchCount >= definition.minimumRecommendedMatches) {
+      if (isEligible(metrics, definition)) {
         addRankedResult(ranked, candidate, metrics)
       }
     }
@@ -947,7 +967,7 @@ function goalFactorVariants(parameters) {
 
 async function runVerification() {
   const result = {}
-  for (const [name, parameters] of Object.entries(VERIFICATION_CANDIDATES)) {
+  for (const [name, parameters] of selectedPresetEntries(VERIFICATION_CANDIDATES)) {
     const effectiveModelMode = parameters.modelMode || modelMode
     const matches = await loadPresetMatches(parameters, effectiveModelMode)
     const localSensitivity = localParameterVariants(parameters).map(variant => ({

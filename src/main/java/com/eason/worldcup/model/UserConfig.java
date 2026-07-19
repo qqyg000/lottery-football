@@ -67,10 +67,10 @@ public class UserConfig {
 
         public static GlobalParameters defaults() {
             GlobalParameters parameters = new GlobalParameters();
-            parameters.setRecommendationOdds(1.56D);
-            parameters.setHandicapRecommendationThreshold(94.0D);
-            parameters.setHandicapReverseThreshold(43.75D);
-            parameters.setSingleRecommendationThreshold(77.5D);
+            parameters.setRecommendationOdds(1.03D);
+            parameters.setHandicapRecommendationThreshold(66.49D);
+            parameters.setHandicapReverseThreshold(32.80D);
+            parameters.setSingleRecommendationThreshold(72.03D);
             return parameters;
         }
 
@@ -120,10 +120,10 @@ public class UserConfig {
 
         public static ModelFactors defaults() {
             ModelFactors factors = new ModelFactors();
-            factors.setHostTeamGoalFactor(1.0D);
+            factors.setHostTeamGoalFactor(1.55D);
             factors.setHomeTeamGoalFactor(1.05D);
             factors.setSeedTeamGoalFactor(1.85D);
-            factors.setHandicapSmoothingFactor(0.685D);
+            factors.setHandicapSmoothingFactor(0.255D);
             return factors;
         }
 

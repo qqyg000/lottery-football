@@ -82,7 +82,7 @@ public class PredictionService {
     @Value("${worldcup.simulation-count:50000}")
     private int defaultSimulationCount;
 
-    @Value("${worldcup.handicap-smoothing-factor:0.685}")
+    @Value("${worldcup.handicap-smoothing-factor:0.255}")
     private double handicapSmoothingFactor;
 
     @Value("${worldcup.handicap-max-smoothing:0.685}")

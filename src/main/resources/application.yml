@@ -32,10 +32,10 @@ worldcup:
     target-zone: ${data-refresh.target-zone}
   max-goals-lambda: 4.5
   min-goals-lambda: 0.2
-  host-team-goal-factor: 1.00
+  host-team-goal-factor: 1.55
   home-team-goal-factor: 1.05
   seed-team-goal-factor: 1.85
-  handicap-smoothing-factor: 0.685
+  handicap-smoothing-factor: 0.255
   handicap-max-smoothing: 0.685
 
 champions-league:

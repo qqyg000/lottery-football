@@ -613,14 +613,14 @@ const GLOBAL_PARAMETER_COOKIE = 'worldcup_global_parameters'
 const GLOBAL_PARAMETER_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const ACTIVE_COMPETITION_COOKIE = 'football_active_competition'
 const ACTIVE_COMPETITION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
-const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.00
+const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.55
 const DEFAULT_HOME_TEAM_GOAL_FACTOR = 1.05
 const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.85
-const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.685
-const DEFAULT_RECOMMENDATION_ODDS = 1.56
-const DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD = 94.00
-const DEFAULT_HANDICAP_REVERSE_THRESHOLD = 43.75
-const DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD = 77.50
+const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.255
+const DEFAULT_RECOMMENDATION_ODDS = 1.03
+const DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD = 66.49
+const DEFAULT_HANDICAP_REVERSE_THRESHOLD = 32.80
+const DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD = 72.03
 const RECOMMENDATION_ODDS_MIN = 1
 const RECOMMENDATION_ODDS_MAX = 100
 const RECOMMENDATION_THRESHOLD_MIN = 0
@@ -645,16 +645,16 @@ const STABLE_PARAMETER_PRESET = {
 }
 const AGGRESSIVE_PARAMETER_PRESET = {
   modelFactors: {
-    hostTeamGoalFactor: 1.25,
-    homeTeamGoalFactor: 2.65,
+    hostTeamGoalFactor: 0.90,
+    homeTeamGoalFactor: 1.75,
     seedTeamGoalFactor: 2.05,
-    handicapSmoothingFactor: 0.128
+    handicapSmoothingFactor: 0.650
   },
   globalParameters: {
-    recommendationOdds: 2.53,
-    handicapRecommendationThreshold: 78.00,
-    handicapReverseThreshold: 53.15,
-    singleRecommendationThreshold: 82.50
+    recommendationOdds: 2.46,
+    handicapRecommendationThreshold: 89.09,
+    handicapReverseThreshold: 43.41,
+    singleRecommendationThreshold: 86.22
   }
 }
 const MODEL_FACTOR_KEYS = [
