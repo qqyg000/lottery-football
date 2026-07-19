@@ -21,25 +21,25 @@ const PROBABILITY_MASKS = [1, 2, 4]
 const PRESETS = {
   stable: {
     modelMode: 'after',
-    hostTeamGoalFactor: 1.55,
-    homeTeamGoalFactor: 1.05,
+    hostTeamGoalFactor: 1.10,
+    homeTeamGoalFactor: 1.06,
     seedTeamGoalFactor: 1.85,
-    handicapSmoothingFactor: 0.255,
+    handicapSmoothingFactor: 0.274,
     recommendationOdds: 1.03,
-    handicapRecommendationThreshold: 66.49,
-    handicapReverseThreshold: 32.80,
-    singleRecommendationThreshold: 72.03
+    handicapRecommendationThreshold: 68.16,
+    handicapReverseThreshold: 46.78,
+    singleRecommendationThreshold: 71.72
   },
   aggressive: {
     modelMode: 'after',
-    hostTeamGoalFactor: 0.90,
+    hostTeamGoalFactor: 2.30,
     homeTeamGoalFactor: 1.75,
-    seedTeamGoalFactor: 2.05,
+    seedTeamGoalFactor: 1.55,
     handicapSmoothingFactor: 0.650,
     recommendationOdds: 2.46,
     handicapRecommendationThreshold: 89.09,
     handicapReverseThreshold: 43.41,
-    singleRecommendationThreshold: 86.22
+    singleRecommendationThreshold: 78.71
   }
 }
 
@@ -56,6 +56,20 @@ const includePreviousEdition = argumentsMap.get('include-previous') !== 'false'
 const requestedScheme = ['stable', 'aggressive'].includes(argumentsMap.get('scheme'))
   ? argumentsMap.get('scheme')
   : null
+const coordinatePasses = Math.max(1, Math.min(10, Number(argumentsMap.get('coordinate-passes')) || 4))
+const coordinateThresholdStep = Math.max(0.01, Math.min(5, Number(argumentsMap.get('coordinate-step')) || 0.01))
+const coordinateSmoothingStep = Math.max(0.001, Math.min(0.1, Number(argumentsMap.get('smoothing-step')) || 0.001))
+const factorStep = Math.max(0.01, Math.min(1, Number(argumentsMap.get('factor-step')) || 0.1))
+const factorTop = Math.max(1, Math.min(30, Number(argumentsMap.get('factor-top')) || 10))
+const factorMinimum = Math.max(0.1, Math.min(3, Number(argumentsMap.get('factor-min')) || 0.1))
+const factorMaximum = Math.max(factorMinimum, Math.min(3, Number(argumentsMap.get('factor-max')) || 3))
+const hostFactorMinimum = Math.max(0.1, Math.min(3, Number(argumentsMap.get('host-factor-min')) || factorMinimum))
+const hostFactorMaximum = Math.max(hostFactorMinimum, Math.min(3, Number(argumentsMap.get('host-factor-max')) || factorMaximum))
+const seedFactorMinimum = Math.max(0.1, Math.min(3, Number(argumentsMap.get('seed-factor-min')) || factorMinimum))
+const seedFactorMaximum = Math.max(seedFactorMinimum, Math.min(3, Number(argumentsMap.get('seed-factor-max')) || factorMaximum))
+const targetedSmoothingCandidates = Math.max(100, Math.min(20000, Number(argumentsMap.get('targeted-smoothing-candidates')) || 800))
+const targetedFinalCandidates = Math.max(1000, Math.min(2000000, Number(argumentsMap.get('targeted-final-candidates')) || 50000))
+const randomSeedOffset = Number(argumentsMap.get('seed-offset')) || 0
 const responseCache = new Map()
 
 function selectedSchemeNames() {
@@ -435,50 +449,50 @@ const SEARCH_DEFINITIONS = {
 const TARGETED_CANDIDATES = {
   stable: {
     modelMode: 'after',
-    hostTeamGoalFactor: 1.55,
-    homeTeamGoalFactor: 1.05,
+    hostTeamGoalFactor: 1.10,
+    homeTeamGoalFactor: 1.06,
     seedTeamGoalFactor: 1.85,
-    handicapSmoothingFactor: 0.255,
+    handicapSmoothingFactor: 0.274,
     recommendationOdds: 1.03,
-    handicapRecommendationThreshold: 66.49,
-    handicapReverseThreshold: 32.80,
-    singleRecommendationThreshold: 72.03
+    handicapRecommendationThreshold: 68.16,
+    handicapReverseThreshold: 46.78,
+    singleRecommendationThreshold: 71.72
   },
   aggressive: {
     modelMode: 'after',
-    hostTeamGoalFactor: 0.90,
+    hostTeamGoalFactor: 2.30,
     homeTeamGoalFactor: 1.75,
-    seedTeamGoalFactor: 2.05,
+    seedTeamGoalFactor: 1.55,
     handicapSmoothingFactor: 0.650,
     recommendationOdds: 2.46,
     handicapRecommendationThreshold: 89.09,
     handicapReverseThreshold: 43.41,
-    singleRecommendationThreshold: 86.22
+    singleRecommendationThreshold: 78.71
   }
 }
 
 const VERIFICATION_CANDIDATES = {
   stable: {
     modelMode: 'after',
-    hostTeamGoalFactor: 1.55,
-    homeTeamGoalFactor: 1.05,
+    hostTeamGoalFactor: 1.10,
+    homeTeamGoalFactor: 1.06,
     seedTeamGoalFactor: 1.85,
-    handicapSmoothingFactor: 0.255,
+    handicapSmoothingFactor: 0.274,
     recommendationOdds: 1.03,
-    handicapRecommendationThreshold: 66.49,
-    handicapReverseThreshold: 32.80,
-    singleRecommendationThreshold: 72.03
+    handicapRecommendationThreshold: 68.16,
+    handicapReverseThreshold: 46.78,
+    singleRecommendationThreshold: 71.72
   },
   aggressive: {
     modelMode: 'after',
-    hostTeamGoalFactor: 0.90,
+    hostTeamGoalFactor: 2.30,
     homeTeamGoalFactor: 1.75,
-    seedTeamGoalFactor: 2.05,
+    seedTeamGoalFactor: 1.55,
     handicapSmoothingFactor: 0.650,
     recommendationOdds: 2.46,
     handicapRecommendationThreshold: 89.09,
     handicapReverseThreshold: 43.41,
-    singleRecommendationThreshold: 86.22
+    singleRecommendationThreshold: 78.71
   }
 }
 
@@ -783,8 +797,8 @@ async function runTargetedSearch() {
     const definition = SEARCH_DEFINITIONS[name]
     const smoothingThresholds = buildThresholdCandidates(
       name,
-      800,
-      name === 'stable' ? 20260725 : 20260726,
+      targetedSmoothingCandidates,
+      (name === 'stable' ? 20260725 : 20260726) + randomSeedOffset,
       initial,
       true
     )
@@ -809,8 +823,8 @@ async function runTargetedSearch() {
     const bestSmoothing = ranked[0]
     const finalThresholds = buildThresholdCandidates(
       name,
-      50000,
-      name === 'stable' ? 20260727 : 20260728,
+      targetedFinalCandidates,
+      (name === 'stable' ? 20260727 : 20260728) + randomSeedOffset,
       bestSmoothing.candidate,
       true
     )
@@ -888,6 +902,226 @@ async function runThresholdSearch() {
     }))
   }
   console.log(JSON.stringify({ simulations, result }, null, 2))
+}
+
+function coordinateValues(minimum, maximum, step, scale) {
+  const values = []
+  const multiplier = 10 ** scale
+  const start = Math.round(minimum * multiplier)
+  const end = Math.round(maximum * multiplier)
+  const increment = Math.max(1, Math.round(step * multiplier))
+  for (let value = start; value <= end; value += increment) {
+    values.push(value / multiplier)
+  }
+  if (values[values.length - 1] !== maximum) {
+    values.push(maximum)
+  }
+  return values
+}
+
+function isBetterCoordinateCandidate(candidate, current, definition) {
+  if (!isEligible(current.metrics, definition)) {
+    return true
+  }
+  const roiDifference = candidate.metrics.roi - current.metrics.roi
+  if (roiDifference > 1e-12) {
+    return true
+  }
+  if (Math.abs(roiDifference) > 1e-12) {
+    return false
+  }
+  return candidate.metrics.recommendedMatchCount > current.metrics.recommendedMatchCount
+}
+
+function bestCoordinateValue(matches, current, definition, key, values) {
+  let best = current
+  for (const value of values) {
+    if (value === current.candidate[key]) {
+      continue
+    }
+    const candidate = {
+      ...current.candidate,
+      [key]: value
+    }
+    const metrics = evaluate(matches, candidate)
+    if (!isEligible(metrics, definition)) {
+      continue
+    }
+    const evaluated = { candidate, metrics }
+    if (isBetterCoordinateCandidate(evaluated, best, definition)) {
+      best = evaluated
+    }
+  }
+  return best
+}
+
+function optimizeThresholdCoordinates(name, matches, initial) {
+  const definition = SEARCH_DEFINITIONS[name]
+  let current = {
+    candidate: { ...initial },
+    metrics: evaluate(withSmoothing(matches, initial.handicapSmoothingFactor), initial)
+  }
+  const coordinateDefinitions = [
+    ['recommendationOdds', coordinateValues(1, 100, coordinateThresholdStep, 2)],
+    ['handicapRecommendationThreshold', coordinateValues(0, 100, coordinateThresholdStep, 2)],
+    ['handicapReverseThreshold', coordinateValues(0, 100, coordinateThresholdStep, 2)],
+    ['singleRecommendationThreshold', coordinateValues(0, 100, coordinateThresholdStep, 2)]
+  ]
+  const smoothingValues = coordinateValues(0, 0.8, coordinateSmoothingStep, 3)
+
+  for (let pass = 1; pass <= coordinatePasses; pass++) {
+    const before = current
+    let bestSmoothing = current
+    for (const smoothingFactor of smoothingValues) {
+      const candidate = {
+        ...current.candidate,
+        handicapSmoothingFactor: smoothingFactor
+      }
+      const metrics = evaluate(withSmoothing(matches, smoothingFactor), candidate)
+      if (!isEligible(metrics, definition)) {
+        continue
+      }
+      const evaluated = { candidate, metrics }
+      if (isBetterCoordinateCandidate(evaluated, bestSmoothing, definition)) {
+        bestSmoothing = evaluated
+      }
+    }
+    current = bestSmoothing
+    let smoothedMatches = withSmoothing(matches, current.candidate.handicapSmoothingFactor)
+    for (const [key, values] of coordinateDefinitions) {
+      current = bestCoordinateValue(smoothedMatches, current, definition, key, values)
+    }
+    process.stderr.write(`${name} 坐标穷举第 ${pass} 轮：${JSON.stringify(printableMetrics(current.metrics))}\n`)
+    if (current.candidate.handicapSmoothingFactor !== before.candidate.handicapSmoothingFactor) {
+      smoothedMatches = withSmoothing(matches, current.candidate.handicapSmoothingFactor)
+    }
+    if (current.metrics.roi <= before.metrics.roi + 1e-12) {
+      break
+    }
+  }
+  return current
+}
+
+async function runCoordinateSearch() {
+  const result = {}
+  for (const [name, preset] of selectedPresetEntries()) {
+    const matches = await loadPresetMatches(preset, preset.modelMode || modelMode)
+    const optimized = optimizeThresholdCoordinates(name, matches, preset)
+    result[name] = {
+      parameters: optimized.candidate,
+      metrics: printableMetrics(optimized.metrics),
+      verification: verificationMetrics(matches, optimized.candidate)
+    }
+  }
+  console.log(JSON.stringify({
+    simulations,
+    coordinatePasses,
+    coordinateThresholdStep,
+    coordinateSmoothingStep,
+    result
+  }, null, 2))
+}
+
+function uniqueSortedNumbers(values) {
+  return [...new Set(values.map(value => Number(value.toFixed(3))))]
+    .sort((left, right) => left - right)
+}
+
+function isExplorationEligible(metrics, definition) {
+  return metrics.recommendedMatchCount >= Math.floor(definition.minimumRecommendedMatches * 0.75) &&
+    metrics.averageOddsIncludingMisses >= definition.minimumAverageOdds * 0.8
+}
+
+async function runHomeFactorGrid() {
+  const presetEntries = selectedPresetEntries()
+  const homeValues = uniqueSortedNumbers([
+    ...coordinateValues(factorMinimum, factorMaximum, factorStep, 2),
+    ...presetEntries.map(([, preset]) => preset.homeTeamGoalFactor)
+  ])
+  const nonWorldCupGrid = await loadNonWorldCupFactorGrid(homeValues)
+  const result = {}
+  for (const [name, preset] of presetEntries) {
+    const definition = SEARCH_DEFINITIONS[name]
+    const worldCupMatches = await fetchBacktest('WORLD_CUP', preset, preset.modelMode || modelMode)
+    const coarseRanked = []
+    for (const homeTeamGoalFactor of homeValues) {
+      const candidate = { ...preset, homeTeamGoalFactor }
+      const matches = worldCupMatches.concat(nonWorldCupGrid.get(homeTeamGoalFactor))
+      const metrics = evaluate(withSmoothing(matches, candidate.handicapSmoothingFactor), candidate)
+      if (isExplorationEligible(metrics, definition)) {
+        addRankedResult(coarseRanked, candidate, metrics, factorTop)
+      }
+    }
+    const refinedRanked = []
+    for (const item of coarseRanked) {
+      const matches = worldCupMatches.concat(nonWorldCupGrid.get(item.candidate.homeTeamGoalFactor))
+      const optimized = optimizeThresholdCoordinates(name, matches, item.candidate)
+      if (isEligible(optimized.metrics, definition)) {
+        addRankedResult(refinedRanked, optimized.candidate, optimized.metrics, factorTop)
+      }
+    }
+    result[name] = {
+      coarseTop: coarseRanked.map(item => ({
+        parameters: item.candidate,
+        metrics: printableMetrics(item.metrics)
+      })),
+      refinedTop: refinedRanked.map(item => ({
+        parameters: item.candidate,
+        metrics: printableMetrics(item.metrics)
+      }))
+    }
+  }
+  console.log(JSON.stringify({ simulations, factorStep, factorTop, result }, null, 2))
+}
+
+async function runWorldFactorGrid() {
+  const presetEntries = selectedPresetEntries()
+  const hostValues = uniqueSortedNumbers([
+    ...coordinateValues(hostFactorMinimum, hostFactorMaximum, factorStep, 2),
+    ...presetEntries.map(([, preset]) => preset.hostTeamGoalFactor)
+  ])
+  const seedValues = uniqueSortedNumbers([
+    ...coordinateValues(seedFactorMinimum, seedFactorMaximum, factorStep, 2),
+    ...presetEntries.map(([, preset]) => preset.seedTeamGoalFactor)
+  ])
+  const worldCupGrid = await loadWorldCupFactorGrid(hostValues, seedValues)
+  const result = {}
+  for (const [name, preset] of presetEntries) {
+    const definition = SEARCH_DEFINITIONS[name]
+    const nonWorldCupMatches = await fetchBacktest(NON_WORLD_CUP_COMPETITIONS, preset, preset.modelMode || modelMode)
+    const coarseRanked = []
+    for (const hostTeamGoalFactor of hostValues) {
+      for (const seedTeamGoalFactor of seedValues) {
+        const candidate = { ...preset, hostTeamGoalFactor, seedTeamGoalFactor }
+        const worldCupMatches = worldCupGrid.get(`${hostTeamGoalFactor}|${seedTeamGoalFactor}`)
+        const matches = worldCupMatches.concat(nonWorldCupMatches)
+        const metrics = evaluate(withSmoothing(matches, candidate.handicapSmoothingFactor), candidate)
+        if (isExplorationEligible(metrics, definition)) {
+          addRankedResult(coarseRanked, candidate, metrics, factorTop)
+        }
+      }
+    }
+    const refinedRanked = []
+    for (const item of coarseRanked) {
+      const key = `${item.candidate.hostTeamGoalFactor}|${item.candidate.seedTeamGoalFactor}`
+      const matches = worldCupGrid.get(key).concat(nonWorldCupMatches)
+      const optimized = optimizeThresholdCoordinates(name, matches, item.candidate)
+      if (isEligible(optimized.metrics, definition)) {
+        addRankedResult(refinedRanked, optimized.candidate, optimized.metrics, factorTop)
+      }
+    }
+    result[name] = {
+      coarseTop: coarseRanked.map(item => ({
+        parameters: item.candidate,
+        metrics: printableMetrics(item.metrics)
+      })),
+      refinedTop: refinedRanked.map(item => ({
+        parameters: item.candidate,
+        metrics: printableMetrics(item.metrics)
+      }))
+    }
+  }
+  console.log(JSON.stringify({ simulations, factorStep, factorTop, result }, null, 2))
 }
 
 function chronologicalFolds(matches, foldCount = 3) {
@@ -996,6 +1230,12 @@ async function runVerification() {
 
 if (phase === 'verify') {
   await runVerification()
+} else if (phase === 'home-grid') {
+  await runHomeFactorGrid()
+} else if (phase === 'world-grid') {
+  await runWorldFactorGrid()
+} else if (phase === 'coordinate') {
+  await runCoordinateSearch()
 } else if (phase === 'targeted') {
   await runTargetedSearch()
 } else if (phase === 'search') {
