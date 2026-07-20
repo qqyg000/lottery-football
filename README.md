@@ -7,7 +7,7 @@
 ## 一、主要功能
 
 - 查询 15 类赛事的历史比赛、近期赛程和完场结果
-- 同时选择一个、多个或“全部”赛事进行查询和回测
+- 联赛下拉框仅支持单选，点击联赛后立即切换，不提供多选、“全部”或搜索功能
 - 计算常规胜平负概率：主胜、平局、主负
 - 计算主队让球胜平负概率：`-3`、`-2`、`-1`、`+1`、`+2`、`+3`
 - 展示双方期望进球、前三总进球数和前三比分预测
@@ -15,7 +15,8 @@
 - 从中国体彩网读取胜平负开售状态、让球数和最新赔率
 - 使用历史赔率数据统一映射接口返回的英文球队名
 - 点击球队名称查看双方最多 50 场正式比赛和降权友谊赛
-- 提供推荐结果回测、模型参数调整和用户配置持久化
+- 每类赛事维护“本届/含上届 × 稳定/激进”四套独立参数档案
+- 提供推荐结果回测、平投注入 ROI、模型参数调整和用户配置持久化
 
 模型统一使用 90 分钟加伤停补时的全场比分，不把加时赛和点球大战计入常规赛果。
 
@@ -39,7 +40,7 @@
 | 荷甲 | `EREDIVISIE` |
 | 阿甲 | `ARGENTINE_PRIMERA_DIVISION` |
 
-前端下拉框保留“全部”选项。“全部”表示选中并汇总上述 15 类赛事，不是独立的第 16 类赛事。除回测接口外，直接调用后端接口时应传具体赛事代码。
+前端下拉框只展示上述 15 类赛事且仅支持单选，不提供“全部”和搜索入口。预测、概览、历史交锋和刷新接口应传入一个具体赛事代码；推荐回测接口仍兼容 `ALL` 或逗号分隔的多个赛事代码，供脚本和批量接口调用使用。
 
 ## 三、当前数据快照
 
@@ -96,9 +97,12 @@ lottery-football
 ├─ README.md
 ├─ DATA_SOURCES.md
 ├─ frontend
-│  └─ src
-│     ├─ App.vue
-│     └─ main.js
+│  ├─ src
+│  │  ├─ App.vue
+│  │  ├─ backtest-roi.mjs
+│  │  └─ main.js
+│  └─ tests
+│     └─ backtest-roi.test.mjs
 ├─ scripts
 │  ├─ import-historical-odds.ps1
 │  ├─ import-public-history.mjs
@@ -108,7 +112,8 @@ lottery-football
 │  ├─ update-history-data.ps1
 │  ├─ rebuild-data.ps1
 │  ├─ backtest-recommendations.mjs
-│  └─ optimize-backtest-parameters.mjs
+│  ├─ optimize-backtest-parameters.mjs
+│  └─ optimize-profile-parameters.mjs
 └─ src
    └─ main
       ├─ java
@@ -149,10 +154,10 @@ build.cmd
 也可以在项目根目录执行：
 
 ```powershell
-mvn -DskipTests clean package
+mvn clean package
 ```
 
-`build.cmd` 会先停止当前项目目录下正在运行的旧服务，再构建前后端并生成：
+该命令会执行 Java 测试并构建前后端。`build.cmd` 会先停止当前项目目录下正在运行的旧服务，再使用 `-DskipTests` 构建分发包并生成：
 
 ```text
 target/dist/lottery-football-1.0.0.jar
@@ -177,6 +182,20 @@ http://127.0.0.1:8080
 
 ```powershell
 Invoke-RestMethod "http://127.0.0.1:8080/api/football/health"
+```
+
+### 4. 测试
+
+Java 测试：
+
+```powershell
+mvn test
+```
+
+完成一次 Maven 构建后，使用项目下载的 npm 执行前端 ROI 测试：
+
+```powershell
+.\target\node\npm.cmd --prefix frontend test
 ```
 
 ## 七、后端接口
@@ -241,27 +260,62 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 
 ### 3. 推荐回测
 
-推荐回测按赛事使用独立的起始日期，结束日期统一为 `Asia/Shanghai` 时区的当天，起始日和结束日都包含在回测范围内。
+推荐回测按赛事和页面范围使用独立的起始日期，结束日期统一为 `Asia/Shanghai` 时区的当天，起始日和结束日都包含在回测范围内。页面选择“仅本届赛事”时使用本届起始日，选择“含上届赛事”时从上届起始日开始。
 
-| 赛事 | 赛事代码 | 回测起始日期 |
+| 赛事 | 赛事代码 | 上届起始日期 | 本届起始日期 |
+|---|---|---|---|
+| 世界杯 | `WORLD_CUP` | `2022-11-20` | `2026-06-11` |
+| 欧洲杯 | `EUROPEAN_CHAMPIONSHIP` | `2024-06-14` | `2028-06-09` |
+| 美洲杯 | `COPA_AMERICA` | `2024-06-20` | `2028-06-09` |
+| 世俱杯 | `CLUB_WORLD_CUP` | `2025-06-14` | `2028-06-09` |
+| 欧罗巴 | `EUROPA_LEAGUE` | `2025-09-24` | `2026-09-16` |
+| 欧冠 | `CHAMPIONS_LEAGUE` | `2025-09-16` | `2026-09-08` |
+| 英超 | `PREMIER_LEAGUE` | `2025-08-15` | `2026-08-21` |
+| 西甲 | `LA_LIGA` | `2025-08-15` | `2026-08-15` |
+| 意甲 | `SERIE_A` | `2025-08-23` | `2026-08-21` |
+| 德甲 | `BUNDESLIGA` | `2025-08-22` | `2026-08-28` |
+| 法甲 | `LIGUE_1` | `2025-08-15` | `2026-08-21` |
+| 巴甲 | `BRAZIL_SERIE_A` | `2025-03-29` | `2026-01-28` |
+| 葡超 | `PRIMEIRA_LIGA` | `2025-08-08` | `2026-08-08` |
+| 荷甲 | `EREDIVISIE` | `2025-08-08` | `2026-08-07` |
+| 阿甲 | `ARGENTINE_PRIMERA_DIVISION` | `2025-01-23` | `2026-01-22` |
+
+批量接口选择 `ALL` 或多个赛事时，每场比赛仍按自身赛事和范围的起始日期过滤，不会使用全局统一起始日期。起始日期晚于当天的未开始赛事没有本届回测样本。只有已完赛且有完整比分、竞彩比赛 ID 和至少一类胜平负赔率的场次才进入最终回测；每场回测只使用比赛日期之前的历史数据建模，避免未来数据泄漏。
+
+#### 参数档案
+
+每类赛事在 `config/user-config.json` 中保存四套参数档案，共 15 × 4 = 60 套：
+
+| 档案键后缀 | 页面范围 | 方案 |
 |---|---|---|
-| 世界杯 | `WORLD_CUP` | `2026-06-11` |
-| 欧洲杯 | `EUROPEAN_CHAMPIONSHIP` | `2028-06-09` |
-| 美洲杯 | `COPA_AMERICA` | `2028-06-09` |
-| 世俱杯 | `CLUB_WORLD_CUP` | `2028-06-09` |
-| 欧罗巴 | `EUROPA_LEAGUE` | `2026-09-16` |
-| 欧冠 | `CHAMPIONS_LEAGUE` | `2026-09-08` |
-| 英超 | `PREMIER_LEAGUE` | `2026-08-21` |
-| 西甲 | `LA_LIGA` | `2026-08-15` |
-| 意甲 | `SERIE_A` | `2026-08-21` |
-| 德甲 | `BUNDESLIGA` | `2026-08-28` |
-| 法甲 | `LIGUE_1` | `2026-08-21` |
-| 巴甲 | `BRAZIL_SERIE_A` | `2026-01-28` |
-| 葡超 | `PRIMEIRA_LIGA` | `2026-08-08` |
-| 荷甲 | `EREDIVISIE` | `2026-08-07` |
-| 阿甲 | `ARGENTINE_PRIMERA_DIVISION` | `2026-01-22` |
+| `CURRENT:STABLE` | 仅本届赛事 | 稳定方案 |
+| `CURRENT:AGGRESSIVE` | 仅本届赛事 | 激进方案 |
+| `PREVIOUS:STABLE` | 含上届赛事 | 稳定方案 |
+| `PREVIOUS:AGGRESSIVE` | 含上届赛事 | 激进方案 |
 
-选择“全部”时，每场比赛按自身赛事的起始日期过滤，不会使用全局统一起始日期。起始日期晚于当天的未开始赛事不参与回测。只有已完赛且有完整比分、竞彩比赛 ID 和至少一类胜平负赔率的场次才进入最终回测。每场回测仅使用该场比赛日期之前的历史比赛建模。
+完整键格式为 `{competition}:{range}:{preset}`，例如 `PREMIER_LEAGUE:PREVIOUS:AGGRESSIVE`。当前届尚未开始时，页面预测和参数编辑自动使用该赛事的 `PREVIOUS` 档案，`CURRENT` 档案保留到本届开赛后使用。处于稳定方案时按钮显示“切换激进方案”，处于激进方案时显示“切换稳定方案”。
+
+每套档案包含：
+
+| 分组 | 参数 |
+|---|---|
+| `modelFactors` | `hostTeamGoalFactor`、`homeTeamGoalFactor`、`seedTeamGoalFactor`、`handicapSmoothingFactor` |
+| `globalParameters` | `recommendationOdds`、`handicapRecommendationThreshold`、`handicapReverseThreshold`、`singleRecommendationThreshold` |
+
+#### ROI 计算
+
+回测采用平投注入口径，每个推荐项投入 1 个单位；同一场推荐两个赛果时总投入为 2 个单位。命中项按该项初盘赔率返奖，未命中项返奖为 0：
+
+```text
+totalStake = recommendedSelectionCount
+totalReturn = sum(winningSelectionOdds)
+netProfit = totalReturn - totalStake
+ROI = (totalReturn / totalStake - 1) × 100%
+场均返奖 = totalReturn / recommendedMatchCount
+命中率 = hitMatchCount / recommendedMatchCount × 100%
+```
+
+没有推荐项时不计算 ROI；存在推荐项但全部未命中时 ROI 为 `-100%`。ROI 不使用命中率、场均返奖或场均推荐数的平方推导。
 
 ### 4. 刷新运行时数据
 
@@ -269,7 +323,7 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 POST /api/football/data/refresh?competition=CHAMPIONS_LEAGUE&date=2026-07-18
 ```
 
-刷新会重新加载系统配置的 15 类赛事近期赛程，并为这些赛事的参赛球队补充近期国家队正式赛、国际窗口友谊赛、俱乐部杯赛、洲际赛和一线队友谊赛，然后重建模型并强制刷新目标日期附近的体彩数据。`competition` 只决定接口最终返回哪一类赛事的概览；前端下拉仍只显示 15 类赛事和“全部”。
+刷新会重新加载系统配置的 15 类赛事近期赛程，并为这些赛事的参赛球队补充近期国家队正式赛、国际窗口友谊赛、俱乐部杯赛、洲际赛和一线队友谊赛，然后重建模型并强制刷新目标日期附近的体彩数据。`competition` 只决定接口最终返回哪一类赛事的概览；前端下拉只显示 15 类赛事且仅支持单选。
 
 页面“更新数据”使用异步任务接口，按“赛程与补充数据→球队模型→竞彩数据→赛事概览”四个实际阶段更新进度，并复用回测的全屏蒙版和进度条样式。原同步接口保留用于兼容现有调用。
 
@@ -488,6 +542,34 @@ node scripts\reconcile-historical-scores.mjs --write --compact
 
 `import-historical-odds.ps1` 和 `merge-sporttery-cache-odds.ps1` 在写入默认正式路径时已经自动调用该校正脚本，通常不需要再手工执行 `--write`。
 
+### 7. 参数档案优化与核验
+
+参数优化脚本通过正在运行的本地服务读取配置、执行回测并生成报告。先启动服务，再在项目根目录执行只生成结果、不写回配置的优化：
+
+```powershell
+node scripts\optimize-profile-parameters.mjs --apply=false
+```
+
+确认报告后写回 `config/user-config.json`：
+
+```powershell
+node scripts\optimize-profile-parameters.mjs --apply=true
+```
+
+仅核验当前已保存档案：
+
+```powershell
+node scripts\optimize-profile-parameters.mjs --verify-only=true
+```
+
+脚本的目标是在满足稳定方案 ROI 大于 `7.5%`、激进方案 ROI 大于 `15%` 且高于对应稳定方案后，优先提高推荐场次数。尚未开赛赛事会跳过 `CURRENT`，只优化 `PREVIOUS`。优化前配置备份、优化报告和核验报告分别写入：
+
+```text
+target/user-config-before-profile-optimization.json
+target/profile-optimization-report.json
+target/profile-verification-report.json
+```
+
 ## 十、模型说明
 
 模型按前端选择的赛事建立参赛球队集合，并把这些球队参加的正式比赛和降权友谊赛纳入同一个时间截面。每支球队根据历史比赛计算：
@@ -541,9 +623,9 @@ adjustedHomeGoals = homeGoals + handicap
 
 ## 十一、关键配置
 
-主要配置位于 `src/main/resources/application.yml`：
+主要配置位于 `src/main/resources/application.yml` 和 `config/user-config.json`：
 
-| 配置节点 | 用途 |
+| 配置文件或节点 | 用途 |
 |---|---|
 | `data-refresh` | 近期赛程刷新窗口和目标时区 |
 | `football-data.historical-matches-path` | 历史比赛 CSV 路径 |
@@ -551,5 +633,6 @@ adjustedHomeGoals = homeGoals + handicap
 | `champions-league` | 欧冠 ESPN 数据源 |
 | `club-competitions.schedule-update` | 其他赛事数据源、并发数和缓存路径 |
 | `sporttery.result-update` | 体彩接口、刷新窗口、历史赔率路径和缓存 |
+| `config/user-config.json` | 60 套赛事参数档案、回测范围和页面推荐选择 |
 
 修改 CSV 字段或赛事代码时，需要同步检查 Java 加载器、数据维护脚本和前端赛事列表，避免运行时列错位或出现未支持赛事。
