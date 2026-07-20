@@ -18,36 +18,19 @@
             <span class="competition-select-arrow" :class="{ 'is-open': competitionDropdownOpen }" aria-hidden="true"></span>
           </button>
           <div v-if="competitionDropdownOpen" class="competition-select-dropdown">
-            <label class="competition-search">
-              <span aria-hidden="true">⌕</span>
-              <input
-                ref="competitionSearchInput"
-                v-model.trim="competitionSearch"
-                type="search"
-                placeholder="输入联赛名称"
-                aria-label="模糊查询联赛"
-              >
-            </label>
-            <div class="competition-option-list" role="listbox" aria-label="联赛多选" aria-multiselectable="true">
+            <div class="competition-option-list" role="listbox" aria-label="联赛单选">
               <button
-                v-for="competition in filteredCompetitionOptions"
+                v-for="competition in getConcreteCompetitions()"
                 :key="competition.code"
                 type="button"
                 class="competition-option"
                 role="option"
-                :aria-selected="isDraftCompetitionSelected(competition.code) ? 'true' : 'false'"
-                @click="toggleDraftCompetition(competition.code)"
+                :aria-selected="activeCompetition === competition.code ? 'true' : 'false'"
+                @click="selectCompetition(competition.code)"
               >
-                <span class="competition-checkbox" :class="{ 'is-checked': isDraftCompetitionSelected(competition.code) }">
-                  {{ isDraftCompetitionSelected(competition.code) ? '✓' : '' }}
-                </span>
                 <span>{{ competition.name }}</span>
+                <span v-if="activeCompetition === competition.code" class="competition-option-check" aria-hidden="true">✓</span>
               </button>
-              <div v-if="filteredCompetitionOptions.length === 0" class="competition-option-empty">未找到匹配联赛</div>
-            </div>
-            <div class="competition-select-footer">
-              <span>已选 {{ draftCompetitions.length }} 项</span>
-              <button type="button" :disabled="draftCompetitions.length === 0" @click="applyCompetitionSelection">确定</button>
             </div>
           </div>
         </div>
@@ -82,8 +65,8 @@
             <div class="factor-control-column">
               <label
                 class="factor-control"
-                :class="{ 'is-competition-disabled': activeCompetition !== 'WORLD_CUP' }"
-                :title="activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : ''"
+                :class="{ 'is-competition-disabled': !activeParameterProfileEditable || activeCompetition !== 'WORLD_CUP' }"
+                :title="!activeParameterProfileEditable ? '请只选择一个赛事后编辑参数' : (activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : '')"
               >
                 <span>种子队进球系数</span>
                 <input
@@ -92,7 +75,7 @@
                   max="3"
                   step="0.01"
                   v-model.number="modelFactors.seedTeamGoalFactor"
-                  :disabled="loading || updatingData || backtesting || activeCompetition !== 'WORLD_CUP'"
+                  :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable || activeCompetition !== 'WORLD_CUP'"
                   @change="saveModelFactorInput('seedTeamGoalFactor')"
                   @keyup.enter="commitModelFactors"
                 >
@@ -105,7 +88,7 @@
                   max="3"
                   step="0.01"
                   v-model.number="modelFactors.hostTeamGoalFactor"
-                  :disabled="loading || updatingData || backtesting"
+                  :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
                   @change="saveModelFactorInput('hostTeamGoalFactor')"
                   @keyup.enter="commitModelFactors"
                 >
@@ -118,7 +101,7 @@
                   max="3"
                   step="0.01"
                   v-model.number="modelFactors.homeTeamGoalFactor"
-                  :disabled="loading || updatingData || backtesting"
+                  :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
                   @change="saveModelFactorInput('homeTeamGoalFactor')"
                   @keyup.enter="commitModelFactors"
                 >
@@ -131,7 +114,7 @@
                   max="0.8"
                   step="0.001"
                   v-model.number="modelFactors.handicapSmoothingFactor"
-                  :disabled="loading || updatingData || backtesting"
+                  :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
                   @change="saveModelFactorInput('handicapSmoothingFactor')"
                   @keyup.enter="commitModelFactors"
                 >
@@ -148,7 +131,7 @@
                     step="0.01"
                     inputmode="decimal"
                     v-model.number="handicapRecommendationThreshold"
-                    :disabled="loading || updatingData || backtesting"
+                    :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
                     @change="saveRecommendationThresholdInputs"
                     @keyup.enter="saveRecommendationThresholdInputs"
                   >
@@ -165,7 +148,7 @@
                     step="0.01"
                     inputmode="decimal"
                     v-model.number="handicapReverseThreshold"
-                    :disabled="loading || updatingData || backtesting"
+                    :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
                     @change="saveRecommendationThresholdInputs"
                     @keyup.enter="saveRecommendationThresholdInputs"
                   >
@@ -182,7 +165,7 @@
                     step="0.01"
                     inputmode="decimal"
                     v-model.number="singleRecommendationThreshold"
-                    :disabled="loading || updatingData || backtesting"
+                    :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
                     @change="saveRecommendationThresholdInputs"
                     @keyup.enter="saveRecommendationThresholdInputs"
                   >
@@ -191,10 +174,10 @@
               </label>
             </div>
             <div class="factor-actions">
-              <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting" @click="toggleParameterPreset">
+              <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable" @click="toggleParameterPreset">
                 {{ parameterPresetToggleText }}
               </button>
-              <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting || !queryDate" @click="commitModelFactors">
+              <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable || !queryDate" @click="commitModelFactors">
                 {{ loading ? '计算中' : '重新计算' }}
               </button>
             </div>
@@ -205,7 +188,7 @@
             <div class="backtest-average-grid">
               <div>
                 <strong>{{ backtestAverageOddsText }}</strong>
-                <span>场均赔率</span>
+                <span>场均返奖</span>
               </div>
               <div>
                 <strong>{{ backtestAverageRecommendationText }}</strong>
@@ -215,7 +198,7 @@
                 <strong>{{ backtestHitRateText }}</strong>
                 <span>命中率</span>
               </div>
-              <div title="ROI = [((命中率 × 含未中奖场次的场均赔率) ÷ 场均推荐数)² - 1] × 100%">
+              <div title="ROI = [(总返奖 ÷ 总投入) - 1] × 100%，每个推荐项按 1 单位投入">
                 <strong>{{ backtestRoiText }}</strong>
                 <span>ROI</span>
               </div>
@@ -230,7 +213,7 @@
               step="0.01"
               inputmode="decimal"
               v-model.number="recommendationOdds"
-              :disabled="loading || updatingData || backtesting"
+              :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
               @change="normalizeRecommendationOddsInput"
               @keyup.enter="runRecommendationOddsBacktest"
             >
@@ -582,6 +565,8 @@
 </template>
 
 <script>
+import { calculateFlatStakeBacktest } from './backtest-roi.mjs'
+
 const FIXED_SIMULATIONS = 50000
 const BACKTEST_PROGRESS_POLL_INTERVAL = 300
 const DATA_REFRESH_PROGRESS_POLL_INTERVAL = 300
@@ -605,6 +590,23 @@ const COMPETITIONS = [
   { code: 'EREDIVISIE', name: '荷甲' },
   { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲' }
 ]
+const CURRENT_EDITION_START_DATES = {
+  WORLD_CUP: '2026-06-11',
+  EUROPEAN_CHAMPIONSHIP: '2028-06-09',
+  COPA_AMERICA: '2028-06-09',
+  CLUB_WORLD_CUP: '2028-06-09',
+  EUROPA_LEAGUE: '2026-09-16',
+  CHAMPIONS_LEAGUE: '2026-09-08',
+  PREMIER_LEAGUE: '2026-08-21',
+  LA_LIGA: '2026-08-15',
+  SERIE_A: '2026-08-21',
+  BUNDESLIGA: '2026-08-28',
+  LIGUE_1: '2026-08-21',
+  BRAZIL_SERIE_A: '2026-01-28',
+  PRIMEIRA_LIGA: '2026-08-08',
+  EREDIVISIE: '2026-08-07',
+  ARGENTINE_PRIMERA_DIVISION: '2026-01-22'
+}
 const SELECTION_COOKIE = 'worldcup_recommendation_rows'
 const SELECTION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const MODEL_FACTOR_COOKIE = 'worldcup_model_factors'
@@ -657,6 +659,8 @@ const AGGRESSIVE_PARAMETER_PRESET = {
     singleRecommendationThreshold: 78.71
   }
 }
+const PARAMETER_PROFILE_RANGES = ['CURRENT', 'PREVIOUS']
+const PARAMETER_PRESETS = ['STABLE', 'AGGRESSIVE']
 const MODEL_FACTOR_KEYS = [
   'hostTeamGoalFactor',
   'homeTeamGoalFactor',
@@ -670,6 +674,29 @@ const PROBABILITY_LABELS = {
   lose: '负'
 }
 
+function createDefaultParameterProfile(parameterPreset = 'STABLE') {
+  const preset = parameterPreset === 'AGGRESSIVE'
+    ? AGGRESSIVE_PARAMETER_PRESET
+    : STABLE_PARAMETER_PRESET
+  return {
+    modelFactors: { ...preset.modelFactors },
+    globalParameters: { ...preset.globalParameters }
+  }
+}
+
+function createDefaultParameterProfiles() {
+  return COMPETITIONS
+    .filter(competition => competition.code !== 'ALL')
+    .reduce((profiles, competition) => {
+      PARAMETER_PROFILE_RANGES.forEach(range => {
+        PARAMETER_PRESETS.forEach(parameterPreset => {
+          profiles[competition.code + ':' + range + ':' + parameterPreset] = createDefaultParameterProfile(parameterPreset)
+        })
+      })
+      return profiles
+    }, {})
+}
+
 function createEmptyBacktestSummary() {
   return {
     completedMatchCount: 0,
@@ -681,7 +708,11 @@ function createEmptyBacktestSummary() {
     missMatchCount: 0,
     winningSelectionCount: 0,
     averageWinningOdds: null,
-    averageOddsIncludingMisses: null
+    averageOddsIncludingMisses: null,
+    totalStake: 0,
+    totalReturn: 0,
+    netProfit: 0,
+    roi: null
   }
 }
 
@@ -705,15 +736,14 @@ export default {
       response: {},
       competitions: COMPETITIONS,
       activeCompetitions: ['WORLD_CUP'],
-      draftCompetitions: ['WORLD_CUP'],
       competitionDropdownOpen: false,
-      competitionSearch: '',
       scheduleDates: [],
       weekdays: WEEKDAYS,
       calendarMonth: '',
       queryDate: '',
       modelMode: 'after',
       includePreviousEdition: false,
+      parameterProfiles: createDefaultParameterProfiles(),
       modelFactors: {
         hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR.toFixed(2),
         homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR.toFixed(2),
@@ -750,27 +780,14 @@ export default {
   },
   computed: {
     activeCompetition() {
-      const selectedCodes = this.getSelectedCompetitionCodes()
-      if (selectedCodes.length === this.getConcreteCompetitions().length) {
-        return 'ALL'
-      }
-      return selectedCodes.length === 1 ? selectedCodes[0] : 'MULTIPLE'
+      return this.getSelectedCompetitionCodes()[0] || 'WORLD_CUP'
     },
     activeCompetitionLabel() {
-      const selectedCompetitions = this.getSelectedCompetitions()
-      if (selectedCompetitions.length <= 3) {
-        return selectedCompetitions.map(item => item.name).join('、')
-      }
-      return '已选 ' + selectedCompetitions.length + ' 项'
+      const selectedCompetition = this.getSelectedCompetitions()[0]
+      return selectedCompetition ? selectedCompetition.name : '世界杯'
     },
-    filteredCompetitionOptions() {
-      const keyword = this.competitionSearch.trim().toLocaleLowerCase('zh-CN')
-      if (!keyword) {
-        return this.competitions
-      }
-      return this.competitions.filter(competition => {
-        return competition.name.toLocaleLowerCase('zh-CN').includes(keyword)
-      })
+    activeParameterProfileEditable() {
+      return this.getSelectedCompetitionCodes().length === 1
     },
     matches() {
       const sourceMatches = this.backtestActive ? this.backtestMatches : (this.response.matches || [])
@@ -831,19 +848,10 @@ export default {
       if (recommendedMatchCount <= 0) {
         return '0.0%'
       }
-      const hitMatchCount = Number(this.backtestSummary.hitMatchCount) || 0
-      if (hitMatchCount <= 0) {
-        return '-100.0%'
-      }
-      const recommendedSelectionCount = Number(this.backtestSummary.recommendedSelectionCount) || 0
-      const averageRecommendations = recommendedSelectionCount / recommendedMatchCount
-      const averageOddsIncludingMisses = Number(this.backtestSummary.averageOddsIncludingMisses)
-      if (!Number.isFinite(averageRecommendations) || averageRecommendations <= 0 ||
-        !Number.isFinite(averageOddsIncludingMisses) || averageOddsIncludingMisses <= 0) {
+      const netRoi = this.backtestSummary.roi
+      if (typeof netRoi !== 'number' || !Number.isFinite(netRoi)) {
         return '--'
       }
-      const hitRate = hitMatchCount / recommendedMatchCount
-      const netRoi = Math.pow((hitRate * averageOddsIncludingMisses) / averageRecommendations, 2) - 1
       return (netRoi * 100).toFixed(1) + '%'
     },
     operationProgress() {
@@ -868,7 +876,9 @@ export default {
         ' / ' + totalMatchCount.toLocaleString('zh-CN') + ' 场'
     },
     parameterPresetToggleText() {
-      return this.activeParameterPreset === 'aggressive' ? '切换稳健方案' : '切换激进方案'
+      return this.activeParameterPreset === 'aggressive'
+        ? '切换稳定方案'
+        : '切换激进方案'
     },
     matchColumns() {
       const matchCount = this.matches.length || 1
@@ -907,19 +917,10 @@ export default {
         this.closeCompetitionDropdown()
         return
       }
-      this.draftCompetitions = this.getSelectedCompetitionCodes()
-      this.competitionSearch = ''
       this.competitionDropdownOpen = true
-      this.$nextTick(() => {
-        if (this.$refs.competitionSearchInput) {
-          this.$refs.competitionSearchInput.focus()
-        }
-      })
     },
     closeCompetitionDropdown() {
       this.competitionDropdownOpen = false
-      this.competitionSearch = ''
-      this.draftCompetitions = this.getSelectedCompetitionCodes()
     },
     handleCompetitionOutsideClick(event) {
       if (!this.competitionDropdownOpen || !this.$refs.competitionSelect) {
@@ -929,47 +930,26 @@ export default {
         this.closeCompetitionDropdown()
       }
     },
-    isDraftCompetitionSelected(code) {
-      if (code === 'ALL') {
-        return this.draftCompetitions.length === this.getConcreteCompetitions().length
-      }
-      return this.draftCompetitions.includes(code)
-    },
-    toggleDraftCompetition(code) {
-      if (code === 'ALL') {
-        this.draftCompetitions = this.isDraftCompetitionSelected('ALL')
-          ? []
-          : this.getConcreteCompetitions().map(item => item.code)
+    async selectCompetition(code) {
+      if (this.loading || this.updatingData || this.backtesting) {
         return
       }
-      if (this.draftCompetitions.includes(code)) {
-        this.draftCompetitions = this.draftCompetitions.filter(item => item !== code)
-      } else {
-        const selectedCodes = new Set([...this.draftCompetitions, code])
-        this.draftCompetitions = this.getConcreteCompetitions()
-          .map(item => item.code)
-          .filter(item => selectedCodes.has(item))
-      }
-    },
-    async applyCompetitionSelection() {
-      if (this.draftCompetitions.length === 0 || this.loading || this.updatingData || this.backtesting) {
+      const selectedCompetition = this.getConcreteCompetitions().find(item => item.code === code)
+      if (!selectedCompetition) {
         return
       }
-      const selectedCodes = new Set(this.draftCompetitions)
-      const nextCompetitions = this.getConcreteCompetitions()
-        .map(item => item.code)
-        .filter(code => selectedCodes.has(code))
-      const selectionChanged = nextCompetitions.join(',') !== this.getSelectedCompetitionCodes().join(',')
+      const selectionChanged = selectedCompetition.code !== this.activeCompetition
       this.competitionDropdownOpen = false
-      this.competitionSearch = ''
       if (!selectionChanged) {
         return
       }
       const currentDate = this.queryDate
+      this.storeActiveParameterProfile()
       this.clearBacktestResults()
-      this.activeCompetitions = nextCompetitions
-      this.draftCompetitions = [...nextCompetitions]
+      this.activeCompetitions = [selectedCompetition.code]
+      this.loadActiveParameterProfile()
       this.saveActiveCompetition()
+      this.saveUserConfig()
       this.overview = {}
       this.response = {}
       this.scheduleDates = []
@@ -1088,7 +1068,8 @@ export default {
       this.loadActiveCompetition()
       this.loadModelFactors()
       this.loadGlobalParameters()
-      this.syncActiveParameterPreset()
+      this.parameterProfiles = this.normalizeParameterProfiles(null, this.buildParameterProfilePayload())
+      this.loadActiveParameterProfile()
       this.loadRecommendationSelections()
       await this.loadUserConfig()
       this.loadOverview()
@@ -1111,33 +1092,21 @@ export default {
       }
       this.modelMode = 'after'
       this.includePreviousEdition = config.includePreviousEdition === true
-      if (config.modelFactors && typeof config.modelFactors === 'object' && !Array.isArray(config.modelFactors)) {
-        MODEL_FACTOR_KEYS.forEach(key => {
-          this.$set(this.modelFactors, key, this.formatModelFactorValue(config.modelFactors[key], this.getDefaultModelFactor(key), key))
-        })
-        this.saveModelFactorsToCookie()
+      const displayedProfile = this.buildParameterProfilePayload()
+      const legacyProfile = {
+        modelFactors: config.modelFactors && typeof config.modelFactors === 'object' && !Array.isArray(config.modelFactors)
+          ? config.modelFactors
+          : displayedProfile.modelFactors,
+        globalParameters: config.globalParameters && typeof config.globalParameters === 'object' && !Array.isArray(config.globalParameters)
+          ? config.globalParameters
+          : displayedProfile.globalParameters
       }
-      if (config.globalParameters && typeof config.globalParameters === 'object' && !Array.isArray(config.globalParameters)) {
-        this.recommendationOdds = this.formatRecommendationOddsValue(config.globalParameters.recommendationOdds)
-        this.handicapRecommendationThreshold = this.formatRecommendationThresholdValue(
-          config.globalParameters.handicapRecommendationThreshold,
-          DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
-        )
-        this.handicapReverseThreshold = this.formatRecommendationThresholdValue(
-          config.globalParameters.handicapReverseThreshold,
-          DEFAULT_HANDICAP_REVERSE_THRESHOLD
-        )
-        this.singleRecommendationThreshold = this.formatRecommendationThresholdValue(
-          config.globalParameters.singleRecommendationThreshold,
-          DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
-        )
-        this.saveGlobalParametersToCookie()
-      }
+      this.parameterProfiles = this.normalizeParameterProfiles(config.parameterProfiles, legacyProfile)
+      this.loadActiveParameterProfile()
       if (config.selectedRows && typeof config.selectedRows === 'object' && !Array.isArray(config.selectedRows)) {
         this.selectedRows = this.normalizeSelectedRows(config.selectedRows)
         this.saveRecommendationSelectionsToCookie()
       }
-      this.syncActiveParameterPreset()
     },
     async loadOverview(preferredDate) {
       this.errorMessage = ''
@@ -1162,14 +1131,155 @@ export default {
       return this.competitions.filter(competition => competition.code !== 'ALL')
     },
     getSelectedCompetitionCodes() {
-      const selectedCodes = new Set(this.activeCompetitions)
-      return this.getConcreteCompetitions()
-        .map(competition => competition.code)
-        .filter(code => selectedCodes.has(code))
+      const concreteCompetitions = this.getConcreteCompetitions()
+      const validCodes = new Set(concreteCompetitions.map(competition => competition.code))
+      const selectedCode = this.activeCompetitions.find(code => validCodes.has(code))
+      return selectedCode ? [selectedCode] : concreteCompetitions.slice(0, 1).map(competition => competition.code)
     },
     getSelectedCompetitions() {
       const selectedCodes = new Set(this.getSelectedCompetitionCodes())
       return this.getConcreteCompetitions().filter(competition => selectedCodes.has(competition.code))
+    },
+    getParameterProfileKey(
+      competition,
+      includePreviousEdition = this.includePreviousEdition,
+      parameterPreset = this.activeParameterPreset
+    ) {
+      const usePreviousProfile = includePreviousEdition || !this.isCurrentEditionStarted(competition)
+      const presetName = String(parameterPreset || 'stable').toUpperCase() === 'AGGRESSIVE'
+        ? 'AGGRESSIVE'
+        : 'STABLE'
+      return competition + ':' + (usePreviousProfile ? 'PREVIOUS' : 'CURRENT') + ':' + presetName
+    },
+    isCurrentEditionStarted(competition) {
+      const startDate = CURRENT_EDITION_START_DATES[competition]
+      return !startDate || startDate <= getUtcPlusEightDate()
+    },
+    normalizeParameterProfiles(parameterProfiles, legacyProfile) {
+      const sourceProfiles = parameterProfiles && typeof parameterProfiles === 'object' && !Array.isArray(parameterProfiles)
+        ? parameterProfiles
+        : {}
+      const stableFallbackProfile = this.normalizeParameterProfile(
+        legacyProfile || createDefaultParameterProfile('STABLE'),
+        'STABLE'
+      )
+      return this.getConcreteCompetitions().reduce((profiles, competition) => {
+        PARAMETER_PROFILE_RANGES.forEach(range => {
+          PARAMETER_PRESETS.forEach(parameterPreset => {
+            const key = competition.code + ':' + range + ':' + parameterPreset
+            const legacyKey = competition.code + ':' + range
+            const fallbackProfile = parameterPreset === 'AGGRESSIVE'
+              ? createDefaultParameterProfile('AGGRESSIVE')
+              : (sourceProfiles[legacyKey] || stableFallbackProfile)
+            profiles[key] = this.normalizeParameterProfile(
+              sourceProfiles[key] || fallbackProfile,
+              parameterPreset
+            )
+          })
+        })
+        return profiles
+      }, {})
+    },
+    normalizeParameterProfile(profile, parameterPreset = 'STABLE') {
+      const defaults = createDefaultParameterProfile(parameterPreset)
+      const source = profile && typeof profile === 'object' && !Array.isArray(profile)
+        ? profile
+        : defaults
+      const modelFactors = source.modelFactors && typeof source.modelFactors === 'object' && !Array.isArray(source.modelFactors)
+        ? source.modelFactors
+        : {}
+      const globalParameters = source.globalParameters && typeof source.globalParameters === 'object' && !Array.isArray(source.globalParameters)
+        ? source.globalParameters
+        : {}
+      return {
+        modelFactors: {
+          hostTeamGoalFactor: this.normalizeModelFactor(modelFactors.hostTeamGoalFactor, defaults.modelFactors.hostTeamGoalFactor, 'hostTeamGoalFactor'),
+          homeTeamGoalFactor: this.normalizeModelFactor(modelFactors.homeTeamGoalFactor, defaults.modelFactors.homeTeamGoalFactor, 'homeTeamGoalFactor'),
+          seedTeamGoalFactor: this.normalizeModelFactor(modelFactors.seedTeamGoalFactor, defaults.modelFactors.seedTeamGoalFactor, 'seedTeamGoalFactor'),
+          handicapSmoothingFactor: this.normalizeModelFactor(modelFactors.handicapSmoothingFactor, defaults.modelFactors.handicapSmoothingFactor, 'handicapSmoothingFactor')
+        },
+        globalParameters: {
+          recommendationOdds: this.normalizeRecommendationOdds(
+            globalParameters.recommendationOdds,
+            defaults.globalParameters.recommendationOdds
+          ),
+          handicapRecommendationThreshold: this.normalizeRecommendationThreshold(
+            globalParameters.handicapRecommendationThreshold,
+            defaults.globalParameters.handicapRecommendationThreshold
+          ),
+          handicapReverseThreshold: this.normalizeRecommendationThreshold(
+            globalParameters.handicapReverseThreshold,
+            defaults.globalParameters.handicapReverseThreshold
+          ),
+          singleRecommendationThreshold: this.normalizeRecommendationThreshold(
+            globalParameters.singleRecommendationThreshold,
+            defaults.globalParameters.singleRecommendationThreshold
+          )
+        }
+      }
+    },
+    buildParameterProfilePayload() {
+      return {
+        modelFactors: this.buildModelFactorPayload(),
+        globalParameters: this.buildGlobalParameterPayload()
+      }
+    },
+    storeActiveParameterProfile() {
+      const competition = this.getSelectedCompetitionCodes()[0]
+      if (!this.activeParameterProfileEditable || !competition) {
+        return
+      }
+      const presetName = this.activeParameterPreset === 'aggressive' ? 'AGGRESSIVE' : 'STABLE'
+      const profile = this.normalizeParameterProfile(this.buildParameterProfilePayload(), presetName)
+      this.$set(this.parameterProfiles, this.getParameterProfileKey(competition), profile)
+    },
+    loadActiveParameterProfile() {
+      const competition = this.getSelectedCompetitionCodes()[0]
+      if (!this.activeParameterProfileEditable || !competition) {
+        return
+      }
+      this.applyParameterProfile(this.getParameterProfile(competition))
+      this.saveModelFactorsToCookie()
+      this.saveGlobalParametersToCookie()
+    },
+    applyParameterProfile(profile) {
+      const presetName = this.activeParameterPreset === 'aggressive' ? 'AGGRESSIVE' : 'STABLE'
+      const defaults = createDefaultParameterProfile(presetName)
+      const normalized = this.normalizeParameterProfile(profile, presetName)
+      MODEL_FACTOR_KEYS.forEach(key => {
+        this.$set(
+          this.modelFactors,
+          key,
+          this.formatModelFactorValue(normalized.modelFactors[key], defaults.modelFactors[key], key)
+        )
+      })
+      this.recommendationOdds = this.formatRecommendationOddsValue(
+        normalized.globalParameters.recommendationOdds,
+        defaults.globalParameters.recommendationOdds
+      )
+      this.handicapRecommendationThreshold = this.formatRecommendationThresholdValue(
+        normalized.globalParameters.handicapRecommendationThreshold,
+        defaults.globalParameters.handicapRecommendationThreshold
+      )
+      this.handicapReverseThreshold = this.formatRecommendationThresholdValue(
+        normalized.globalParameters.handicapReverseThreshold,
+        defaults.globalParameters.handicapReverseThreshold
+      )
+      this.singleRecommendationThreshold = this.formatRecommendationThresholdValue(
+        normalized.globalParameters.singleRecommendationThreshold,
+        defaults.globalParameters.singleRecommendationThreshold
+      )
+    },
+    getParameterProfile(competition, includePreviousEdition = this.includePreviousEdition) {
+      const profile = this.parameterProfiles[this.getParameterProfileKey(competition, includePreviousEdition)]
+      const presetName = this.activeParameterPreset === 'aggressive' ? 'AGGRESSIVE' : 'STABLE'
+      return profile || createDefaultParameterProfile(presetName)
+    },
+    getMatchGlobalParameters(match) {
+      const competition = match && match.competition
+        ? match.competition
+        : this.getSelectedCompetitionCodes()[0]
+      return this.getParameterProfile(competition).globalParameters
     },
     async fetchCompetitionOverview(competition) {
       const params = new URLSearchParams()
@@ -1317,18 +1427,26 @@ export default {
       params.append('date', this.queryDate)
       params.append('competition', competition)
       params.append('simulations', FIXED_SIMULATIONS)
-      this.appendModelFactorParams(params)
+      this.appendModelFactorParams(params, this.getParameterProfile(competition).modelFactors)
       const res = await fetch('/api/football/predictions?' + params.toString())
       if (!res.ok) {
         throw new Error('服务响应异常')
       }
       return res.json()
     },
-    appendModelFactorParams(params) {
-      params.append('hostTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'))
-      params.append('homeTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.homeTeamGoalFactor, DEFAULT_HOME_TEAM_GOAL_FACTOR, 'homeTeamGoalFactor'))
-      params.append('seedTeamGoalFactor', this.formatModelFactorValue(this.modelFactors.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'))
-      params.append('handicapSmoothingFactor', this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
+    appendModelFactorParams(params, modelFactors) {
+      const defaults = this.getActiveParameterPresetDefaults().modelFactors
+      const factors = modelFactors || defaults
+      params.append('hostTeamGoalFactor', this.formatModelFactorValue(factors.hostTeamGoalFactor, defaults.hostTeamGoalFactor, 'hostTeamGoalFactor'))
+      params.append('homeTeamGoalFactor', this.formatModelFactorValue(factors.homeTeamGoalFactor, defaults.homeTeamGoalFactor, 'homeTeamGoalFactor'))
+      params.append('seedTeamGoalFactor', this.formatModelFactorValue(factors.seedTeamGoalFactor, defaults.seedTeamGoalFactor, 'seedTeamGoalFactor'))
+      params.append('handicapSmoothingFactor', this.formatModelFactorValue(factors.handicapSmoothingFactor, defaults.handicapSmoothingFactor, 'handicapSmoothingFactor'))
+    },
+    buildBacktestModelFactorsPayload(competitions) {
+      return competitions.reduce((result, competition) => {
+        result[competition] = { ...this.getParameterProfile(competition).modelFactors }
+        return result
+      }, {})
     },
     async runRecommendationOddsBacktest() {
       if (this.backtesting) {
@@ -1355,9 +1473,14 @@ export default {
             : selectedCompetitions.join(',')
         )
         params.append('includePreviousEdition', String(this.includePreviousEdition))
-        this.appendModelFactorParams(params)
         const res = await fetch('/api/football/recommendation-backtest/jobs?' + params.toString(), {
-          method: 'POST'
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            modelFactorsByCompetition: this.buildBacktestModelFactorsPayload(selectedCompetitions)
+          })
         })
         if (!res.ok) {
           throw new Error('创建回测任务失败')
@@ -1427,7 +1550,6 @@ export default {
       const recommendedMatches = []
       const hitMatches = []
       const winningMatchOdds = []
-      const settledMatchOdds = []
       let recommendedSelectionCount = 0
       let winningSelectionCount = 0
       this.backtestSourceMatches.forEach(match => {
@@ -1438,7 +1560,6 @@ export default {
         recommendedMatches.push(match)
         recommendedSelectionCount += recommendationKeys.size
         if (this.recommendationResult(match) !== 'hit') {
-          settledMatchOdds.push(0)
           return
         }
         hitMatches.push(match)
@@ -1448,12 +1569,13 @@ export default {
         winningSelectionCount += matchWinningOdds.length
         const winningOdds = matchWinningOdds.reduce((sum, odds) => sum + odds, 0)
         winningMatchOdds.push(winningOdds)
-        if (recommendationKeys.size === 1) {
-          return
-        }
-        settledMatchOdds.push(winningOdds)
       })
       const missMatchCount = recommendedMatches.length - hitMatches.length
+      const financials = calculateFlatStakeBacktest(
+        winningMatchOdds,
+        recommendedSelectionCount,
+        recommendedMatches.length
+      )
       this.backtestMatches = recommendedMatches
       this.backtestSummary = {
         ...this.backtestSummary,
@@ -1463,7 +1585,11 @@ export default {
         missMatchCount,
         winningSelectionCount,
         averageWinningOdds: this.calculateAverageOdds(winningMatchOdds),
-        averageOddsIncludingMisses: this.calculateAverageOdds(settledMatchOdds)
+        averageOddsIncludingMisses: financials.averageReturnIncludingMisses,
+        totalStake: financials.totalStake,
+        totalReturn: financials.totalReturn,
+        netProfit: financials.netProfit,
+        roi: financials.roi
       }
     },
     calculateAverageOdds(values) {
@@ -1556,17 +1682,22 @@ export default {
       const month = String(date.getMonth() + 1).padStart(2, '0')
       return year + '-' + month
     },
-    setIncludePreviousEdition(includePreviousEdition) {
+    async setIncludePreviousEdition(includePreviousEdition) {
       const nextValue = includePreviousEdition === true
       if (this.includePreviousEdition === nextValue) {
         return
       }
+      this.storeActiveParameterProfile()
       this.includePreviousEdition = nextValue
+      this.loadActiveParameterProfile()
       if (this.backtestActive) {
         this.clearBacktestResults()
         this.response = {}
       }
       this.saveUserConfig()
+      if (this.queryDate) {
+        await this.loadPredictions()
+      }
     },
     loadRecommendationSelections() {
       const cookieValue = this.getCookie(SELECTION_COOKIE)
@@ -1680,20 +1811,14 @@ export default {
       }
       const concreteCompetitions = this.getConcreteCompetitions()
       const validCodes = new Set(concreteCompetitions.map(item => item.code))
-      const selectedCodes = value.split(',').map(code => code.trim()).filter(code => validCodes.has(code))
-      this.activeCompetitions = value === 'ALL'
-        ? concreteCompetitions.map(item => item.code)
-        : concreteCompetitions.map(item => item.code).filter(code => selectedCodes.includes(code))
-      if (this.activeCompetitions.length === 0) {
-        this.activeCompetitions = ['WORLD_CUP']
-      }
-      this.draftCompetitions = [...this.activeCompetitions]
+      const fallbackCode = concreteCompetitions[0] ? concreteCompetitions[0].code : 'WORLD_CUP'
+      const selectedCode = value === 'ALL'
+        ? fallbackCode
+        : value.split(',').map(code => code.trim()).find(code => validCodes.has(code))
+      this.activeCompetitions = [selectedCode || fallbackCode]
     },
     saveActiveCompetition() {
-      const selectedCodes = this.getSelectedCompetitionCodes()
-      const value = selectedCodes.length === this.getConcreteCompetitions().length
-        ? 'ALL'
-        : selectedCodes.join(',')
+      const value = this.getSelectedCompetitionCodes()[0] || 'WORLD_CUP'
       this.setCookie(ACTIVE_COMPETITION_COOKIE, value, ACTIVE_COMPETITION_COOKIE_MAX_AGE)
     },
     loadGlobalParameters() {
@@ -1733,26 +1858,30 @@ export default {
       )
     },
     buildGlobalParameterPayload() {
+      const defaults = this.getActiveParameterPresetDefaults().globalParameters
       return {
-        recommendationOdds: this.normalizeRecommendationOdds(this.recommendationOdds),
+        recommendationOdds: this.normalizeRecommendationOdds(
+          this.recommendationOdds,
+          defaults.recommendationOdds
+        ),
         handicapRecommendationThreshold: this.normalizeRecommendationThreshold(
           this.handicapRecommendationThreshold,
-          DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
+          defaults.handicapRecommendationThreshold
         ),
         handicapReverseThreshold: this.normalizeRecommendationThreshold(
           this.handicapReverseThreshold,
-          DEFAULT_HANDICAP_REVERSE_THRESHOLD
+          defaults.handicapReverseThreshold
         ),
         singleRecommendationThreshold: this.normalizeRecommendationThreshold(
           this.singleRecommendationThreshold,
-          DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+          defaults.singleRecommendationThreshold
         )
       }
     },
-    normalizeRecommendationOdds(value) {
+    normalizeRecommendationOdds(value, fallback = DEFAULT_RECOMMENDATION_ODDS) {
       const numberValue = Number(value)
       if (!Number.isFinite(numberValue)) {
-        return DEFAULT_RECOMMENDATION_ODDS
+        return fallback
       }
       return Number(Math.max(RECOMMENDATION_ODDS_MIN, Math.min(RECOMMENDATION_ODDS_MAX, numberValue)).toFixed(2))
     },
@@ -1772,24 +1901,25 @@ export default {
       const clampedValue = Math.max(RECOMMENDATION_THRESHOLD_MIN, Math.min(RECOMMENDATION_THRESHOLD_MAX, numberValue))
       return Number(clampedValue.toFixed(2))
     },
-    formatRecommendationOddsValue(value) {
-      return this.normalizeRecommendationOdds(value).toFixed(2)
+    formatRecommendationOddsValue(value, fallback = this.getActiveParameterPresetDefaults().globalParameters.recommendationOdds) {
+      return this.normalizeRecommendationOdds(value, fallback).toFixed(2)
     },
     formatRecommendationThresholdValue(value, fallback) {
       return this.normalizeRecommendationThreshold(value, fallback).toFixed(2)
     },
     normalizeRecommendationThresholdInputs() {
+      const defaults = this.getActiveParameterPresetDefaults().globalParameters
       this.handicapRecommendationThreshold = this.formatRecommendationThresholdValue(
         this.handicapRecommendationThreshold,
-        DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
+        defaults.handicapRecommendationThreshold
       )
       this.handicapReverseThreshold = this.formatRecommendationThresholdValue(
         this.handicapReverseThreshold,
-        DEFAULT_HANDICAP_REVERSE_THRESHOLD
+        defaults.handicapReverseThreshold
       )
       this.singleRecommendationThreshold = this.formatRecommendationThresholdValue(
         this.singleRecommendationThreshold,
-        DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
+        defaults.singleRecommendationThreshold
       )
     },
     saveRecommendationThresholdInputs() {
@@ -1841,11 +1971,13 @@ export default {
       }
     },
     buildUserConfigPayload() {
+      this.storeActiveParameterProfile()
+      const normalizedProfiles = this.normalizeParameterProfiles(this.parameterProfiles)
+      this.parameterProfiles = normalizedProfiles
       return {
         modelMode: 'after',
         includePreviousEdition: this.includePreviousEdition,
-        modelFactors: this.buildModelFactorPayload(),
-        globalParameters: this.buildGlobalParameterPayload(),
+        parameterProfiles: normalizedProfiles,
         selectedRows: this.normalizeSelectedRows(this.selectedRows)
       }
     },
@@ -1882,59 +2014,26 @@ export default {
       }
     },
     async toggleParameterPreset() {
+      this.storeActiveParameterProfile()
       const targetPresetName = this.activeParameterPreset === 'aggressive' ? 'stable' : 'aggressive'
-      const targetPreset = targetPresetName === 'aggressive' ? AGGRESSIVE_PARAMETER_PRESET : STABLE_PARAMETER_PRESET
-      this.applyParameterPreset(targetPreset)
       this.activeParameterPreset = targetPresetName
-      this.saveModelFactorsToCookie()
-      this.saveGlobalParametersToCookie()
-      this.saveUserConfig()
+      this.loadActiveParameterProfile()
+      await this.persistUserConfig()
+      if (this.backtestActive) {
+        this.clearBacktestResults()
+        this.response = {}
+      }
       if (this.queryDate) {
         await this.loadPredictions()
       }
     },
-    applyParameterPreset(preset) {
-      MODEL_FACTOR_KEYS.forEach(key => {
-        this.$set(
-          this.modelFactors,
-          key,
-          this.formatModelFactorValue(preset.modelFactors[key], this.getDefaultModelFactor(key), key)
-        )
-      })
-      this.recommendationOdds = this.formatRecommendationOddsValue(preset.globalParameters.recommendationOdds)
-      this.handicapRecommendationThreshold = this.formatRecommendationThresholdValue(
-        preset.globalParameters.handicapRecommendationThreshold,
-        DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
-      )
-      this.handicapReverseThreshold = this.formatRecommendationThresholdValue(
-        preset.globalParameters.handicapReverseThreshold,
-        DEFAULT_HANDICAP_REVERSE_THRESHOLD
-      )
-      this.singleRecommendationThreshold = this.formatRecommendationThresholdValue(
-        preset.globalParameters.singleRecommendationThreshold,
-        DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
-      )
-    },
-    syncActiveParameterPreset() {
-      this.activeParameterPreset = this.matchesParameterPreset(AGGRESSIVE_PARAMETER_PRESET) ? 'aggressive' : 'stable'
-    },
-    matchesParameterPreset(preset) {
-      const currentModelFactors = this.buildModelFactorPayload()
-      const currentGlobalParameters = this.buildGlobalParameterPayload()
-      return MODEL_FACTOR_KEYS.every(key => currentModelFactors[key] === preset.modelFactors[key]) &&
-        Object.keys(preset.globalParameters).every(key => currentGlobalParameters[key] === preset.globalParameters[key])
+    getActiveParameterPresetDefaults() {
+      const presetName = this.activeParameterPreset === 'aggressive' ? 'AGGRESSIVE' : 'STABLE'
+      return createDefaultParameterProfile(presetName)
     },
     getDefaultModelFactor(key) {
-      if (key === 'homeTeamGoalFactor') {
-        return DEFAULT_HOME_TEAM_GOAL_FACTOR
-      }
-      if (key === 'seedTeamGoalFactor') {
-        return DEFAULT_SEED_TEAM_GOAL_FACTOR
-      }
-      if (key === 'handicapSmoothingFactor') {
-        return DEFAULT_HANDICAP_SMOOTHING_FACTOR
-      }
-      return DEFAULT_HOST_TEAM_GOAL_FACTOR
+      const defaults = this.getActiveParameterPresetDefaults().modelFactors
+      return defaults[key] ?? defaults.hostTeamGoalFactor
     },
     getModelFactorMin(key) {
       return key === 'handicapSmoothingFactor' ? HANDICAP_SMOOTHING_MIN : MODEL_FACTOR_MIN
@@ -2113,8 +2212,9 @@ export default {
       if (!recommendationKeys || recommendationKeys.size !== 2) {
         return recommendationKeys
       }
+      const globalParameters = this.getMatchGlobalParameters(match)
       const threshold = this.normalizeRecommendationThreshold(
-        this.singleRecommendationThreshold,
+        globalParameters.singleRecommendationThreshold,
         DEFAULT_SINGLE_RECOMMENDATION_THRESHOLD
       )
       let strongestRecommendation = null
@@ -2142,22 +2242,24 @@ export default {
       const normalRows = selectedRows.filter(item => item.handicap === 0)
       const handicapRows = selectedRows.filter(item => item.handicap !== 0)
       if (normalRows.length > 0 && handicapRows.length > 0) {
-        const pairSwitchKeys = this.buildHandicapPairSwitchKeys(normalRows[0], handicapRows[0], selectedRows)
+        const pairSwitchKeys = this.buildHandicapPairSwitchKeys(match, normalRows[0], handicapRows[0], selectedRows)
         if (pairSwitchKeys) {
           return pairSwitchKeys
         }
-        return this.buildRecommendationKeys(selectedRows, true)
+        return this.buildRecommendationKeys(match, selectedRows, true)
       }
       if (handicapRows.length > 0) {
-        return this.buildRecommendationKeys(handicapRows, false)
+        return this.buildRecommendationKeys(match, handicapRows, false)
       }
-      return this.buildRecommendationKeys(normalRows, false)
+      return this.buildRecommendationKeys(match, normalRows, false)
     },
     hasQualifiedRecommendationOdds(match, recommendationKeys) {
       if (!recommendationKeys || recommendationKeys.size === 0) {
         return false
       }
-      const threshold = this.normalizeRecommendationOdds(this.recommendationOdds)
+      const threshold = this.normalizeRecommendationOdds(
+        this.getMatchGlobalParameters(match).recommendationOdds
+      )
       const recommendationOdds = []
       this.probabilityRows(match).forEach(item => {
         PROBABILITY_KEYS.forEach(probabilityKey => {
@@ -2193,13 +2295,14 @@ export default {
         return result
       }, [])
     },
-    buildRecommendationKeys(rows, applyHandicapThreshold) {
+    buildRecommendationKeys(match, rows, applyHandicapThreshold) {
       const maxCell = this.findMaxProbabilityCell(rows)
       if (!maxCell) {
         return new Set()
       }
+      const globalParameters = this.getMatchGlobalParameters(match)
       const reverseThreshold = this.normalizeRecommendationThreshold(
-        this.handicapReverseThreshold,
+        globalParameters.handicapReverseThreshold,
         DEFAULT_HANDICAP_REVERSE_THRESHOLD
       )
       if (applyHandicapThreshold && maxCell.row.handicap !== 0 && maxCell.probabilityKey !== 'draw' && maxCell.value < reverseThreshold) {
@@ -2214,7 +2317,7 @@ export default {
           .map(key => this.getRecommendationCellKey(maxCell.row, key))
       )
     },
-    buildHandicapPairSwitchKeys(normalRow, handicapRow, rows) {
+    buildHandicapPairSwitchKeys(match, normalRow, handicapRow, rows) {
       const maxCell = this.findMaxProbabilityCell(rows)
       if (!maxCell || maxCell.row !== normalRow) {
         return null
@@ -2224,8 +2327,9 @@ export default {
       }
 
       const handicapValue = Number(handicapRow.probability[maxCell.probabilityKey]) || 0
+      const globalParameters = this.getMatchGlobalParameters(match)
       const recommendationThreshold = this.normalizeRecommendationThreshold(
-        this.handicapRecommendationThreshold,
+        globalParameters.handicapRecommendationThreshold,
         DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD
       )
       if (handicapValue >= recommendationThreshold && handicapValue < maxCell.value) {
@@ -2509,39 +2613,15 @@ h1 {
   box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24);
 }
 
-.competition-search {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 7px;
-  margin: 9px;
-  padding: 0 9px;
-  border: 1px solid #cbd5e1;
-  border-radius: 7px;
-  color: #64748b;
-  background: #f8fafc;
-}
-
-.competition-search input {
-  min-width: 0;
-  height: 30px;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  color: #0f172a;
-  background: transparent;
-  font-size: 12px;
-}
-
 .competition-option-list {
   max-height: 270px;
   overflow-y: auto;
-  padding: 0 6px 6px;
+  padding: 6px;
 }
 
 .competition-option {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   width: 100%;
@@ -2561,56 +2641,10 @@ h1 {
   background: #eff6ff;
 }
 
-.competition-checkbox {
-  display: grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  color: #ffffff;
-  font-size: 11px;
+.competition-option-check {
+  color: #2563eb;
+  font-size: 13px;
   font-weight: 900;
-}
-
-.competition-checkbox.is-checked {
-  border-color: #2563eb;
-  background: #2563eb;
-}
-
-.competition-option-empty {
-  padding: 18px 8px;
-  color: #94a3b8;
-  font-size: 12px;
-  text-align: center;
-}
-
-.competition-select-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border-top: 1px solid #e2e8f0;
-  color: #64748b;
-  font-size: 11px;
-  background: #f8fafc;
-}
-
-.competition-select-footer button {
-  height: 26px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 6px;
-  color: #ffffff;
-  background: #2563eb;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.competition-select-footer button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 
 .hero-card {

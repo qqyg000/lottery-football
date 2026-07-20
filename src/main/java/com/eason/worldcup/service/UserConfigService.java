@@ -1,6 +1,8 @@
 package com.eason.worldcup.service;
 
+import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.UserConfig;
+import com.eason.worldcup.model.UserConfig.ParameterProfile;
 import com.eason.worldcup.model.UserConfig.RecommendationSelection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
@@ -42,7 +44,13 @@ public class UserConfigService {
             return save(UserConfigDefaults.newConfig());
         }
         try {
-            return normalize(objectMapper.readValue(resolvedUserConfigPath.toFile(), UserConfig.class));
+            UserConfig loaded = objectMapper.readValue(resolvedUserConfigPath.toFile(), UserConfig.class);
+            boolean requiresMigration = requiresParameterProfileMigration(loaded);
+            UserConfig normalized = normalize(loaded);
+            if (requiresMigration) {
+                writeConfig(normalized);
+            }
+            return normalized;
         } catch (IOException ex) {
             throw new IllegalStateException("读取用户配置失败：" + resolvedUserConfigPath, ex);
         }
@@ -51,19 +59,23 @@ public class UserConfigService {
     public synchronized UserConfig save(UserConfig config) {
         UserConfig normalized = normalize(config);
         try {
-            Path directory = resolvedUserConfigPath.getParent();
-            if (directory != null) {
-                Files.createDirectories(directory);
-            }
-            Path tempFile = directory == null
-                    ? Files.createTempFile("user-config-", ".json")
-                    : Files.createTempFile(directory, "user-config-", ".json");
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(tempFile.toFile(), normalized);
-            moveConfigFile(tempFile, resolvedUserConfigPath);
+            writeConfig(normalized);
             return normalized;
         } catch (IOException ex) {
             throw new IllegalStateException("保存用户配置失败：" + resolvedUserConfigPath, ex);
         }
+    }
+
+    private void writeConfig(UserConfig config) throws IOException {
+        Path directory = resolvedUserConfigPath.getParent();
+        if (directory != null) {
+            Files.createDirectories(directory);
+        }
+        Path tempFile = directory == null
+                ? Files.createTempFile("user-config-", ".json")
+                : Files.createTempFile(directory, "user-config-", ".json");
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(tempFile.toFile(), config);
+        moveConfigFile(tempFile, resolvedUserConfigPath);
     }
 
     private void moveConfigFile(Path tempFile, Path targetFile) throws IOException {
@@ -85,14 +97,126 @@ public class UserConfigService {
     private UserConfig normalize(UserConfig config) {
         UserConfig normalized = config == null ? UserConfigDefaults.newConfig() : config;
         normalized.setModelMode("after");
-        normalized.setModelFactors(normalizeModelFactors(normalized.getModelFactors()));
-        normalized.setGlobalParameters(normalizeGlobalParameters(normalized.getGlobalParameters()));
+        UserConfig.ModelFactors legacyModelFactors = normalizeModelFactors(normalized.getModelFactors());
+        UserConfig.GlobalParameters legacyGlobalParameters = normalizeGlobalParameters(normalized.getGlobalParameters());
+        normalized.setParameterProfiles(normalizeParameterProfiles(
+                normalized.getParameterProfiles(),
+                legacyModelFactors,
+                legacyGlobalParameters));
         normalized.setSelectedRows(normalizeSelectedRows(normalized.getSelectedRows()));
         return normalized;
     }
 
+    private Map<String, ParameterProfile> normalizeParameterProfiles(
+            Map<String, ParameterProfile> parameterProfiles,
+            UserConfig.ModelFactors legacyModelFactors,
+            UserConfig.GlobalParameters legacyGlobalParameters) {
+        Map<String, ParameterProfile> normalized = new LinkedHashMap<>();
+        for (var competition : UserConfig.getParameterCompetitions()) {
+            for (String profileRange : UserConfig.getParameterProfileRanges()) {
+                for (String parameterPreset : UserConfig.getParameterPresets()) {
+                    addNormalizedParameterProfile(
+                            normalized,
+                            parameterProfiles,
+                            competition,
+                            profileRange,
+                            parameterPreset,
+                            legacyModelFactors,
+                            legacyGlobalParameters);
+                }
+            }
+        }
+        return normalized;
+    }
+
+    private void addNormalizedParameterProfile(
+            Map<String, ParameterProfile> normalized,
+            Map<String, ParameterProfile> parameterProfiles,
+            Competition competition,
+            String profileRange,
+            String parameterPreset,
+            UserConfig.ModelFactors legacyModelFactors,
+            UserConfig.GlobalParameters legacyGlobalParameters) {
+        String profileKey = UserConfig.parameterProfileKey(competition, profileRange, parameterPreset);
+        ParameterProfile source = parameterProfiles == null ? null : parameterProfiles.get(profileKey);
+        if (source == null && UserConfig.STABLE_PARAMETER_PRESET.equals(parameterPreset) && parameterProfiles != null) {
+            source = parameterProfiles.get(UserConfig.legacyParameterProfileKey(competition, profileRange));
+        }
+        ParameterProfile presetDefaults = UserConfig.AGGRESSIVE_PARAMETER_PRESET.equals(parameterPreset)
+                ? ParameterProfile.aggressiveDefaults()
+                : ParameterProfile.of(legacyModelFactors, legacyGlobalParameters);
+        UserConfig.ModelFactors sourceModelFactors = source == null
+                ? presetDefaults.getModelFactors()
+                : source.getModelFactors();
+        UserConfig.GlobalParameters sourceGlobalParameters = source == null
+                ? presetDefaults.getGlobalParameters()
+                : source.getGlobalParameters();
+        normalized.put(profileKey, ParameterProfile.of(
+                normalizeModelFactors(
+                        copyModelFactors(sourceModelFactors),
+                        presetDefaults.getModelFactors()),
+                normalizeGlobalParameters(
+                        copyGlobalParameters(sourceGlobalParameters),
+                        presetDefaults.getGlobalParameters())));
+    }
+
+    private UserConfig.ModelFactors copyModelFactors(UserConfig.ModelFactors source) {
+        UserConfig.ModelFactors copy = new UserConfig.ModelFactors();
+        if (source != null) {
+            copy.setHostTeamGoalFactor(source.getHostTeamGoalFactor());
+            copy.setHomeTeamGoalFactor(source.getHomeTeamGoalFactor());
+            copy.setSeedTeamGoalFactor(source.getSeedTeamGoalFactor());
+            copy.setHandicapSmoothingFactor(source.getHandicapSmoothingFactor());
+        }
+        return copy;
+    }
+
+    private UserConfig.GlobalParameters copyGlobalParameters(UserConfig.GlobalParameters source) {
+        UserConfig.GlobalParameters copy = new UserConfig.GlobalParameters();
+        if (source != null) {
+            copy.setRecommendationOdds(source.getRecommendationOdds());
+            copy.setHandicapRecommendationThreshold(source.getHandicapRecommendationThreshold());
+            copy.setHandicapReverseThreshold(source.getHandicapReverseThreshold());
+            copy.setSingleRecommendationThreshold(source.getSingleRecommendationThreshold());
+        }
+        return copy;
+    }
+
+    private boolean requiresParameterProfileMigration(UserConfig config) {
+        if (config == null || config.getParameterProfiles() == null
+                || config.getParameterProfiles().size() != UserConfig.getParameterCompetitions().size()
+                * UserConfig.getParameterProfileRanges().size()
+                * UserConfig.getParameterPresets().size()) {
+            return true;
+        }
+        for (var competition : UserConfig.getParameterCompetitions()) {
+            for (String profileRange : UserConfig.getParameterProfileRanges()) {
+                for (String parameterPreset : UserConfig.getParameterPresets()) {
+                    if (!hasCompleteParameterProfile(config.getParameterProfiles().get(UserConfig.parameterProfileKey(
+                            competition,
+                            profileRange,
+                            parameterPreset)))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean hasCompleteParameterProfile(ParameterProfile profile) {
+        return profile != null
+                && profile.getModelFactors() != null
+                && profile.getGlobalParameters() != null;
+    }
+
     private UserConfig.GlobalParameters normalizeGlobalParameters(UserConfig.GlobalParameters parameters) {
-        UserConfig.GlobalParameters defaults = UserConfig.GlobalParameters.defaults();
+        return normalizeGlobalParameters(parameters, UserConfig.GlobalParameters.defaults());
+    }
+
+    private UserConfig.GlobalParameters normalizeGlobalParameters(
+            UserConfig.GlobalParameters parameters,
+            UserConfig.GlobalParameters defaults) {
         UserConfig.GlobalParameters normalized = parameters == null
                 ? new UserConfig.GlobalParameters()
                 : parameters;
@@ -120,7 +244,12 @@ public class UserConfigService {
     }
 
     private UserConfig.ModelFactors normalizeModelFactors(UserConfig.ModelFactors factors) {
-        UserConfig.ModelFactors defaults = UserConfig.ModelFactors.defaults();
+        return normalizeModelFactors(factors, UserConfig.ModelFactors.defaults());
+    }
+
+    private UserConfig.ModelFactors normalizeModelFactors(
+            UserConfig.ModelFactors factors,
+            UserConfig.ModelFactors defaults) {
         UserConfig.ModelFactors normalized = factors == null ? new UserConfig.ModelFactors() : factors;
         normalized.setHostTeamGoalFactor(normalizeNumber(normalized.getHostTeamGoalFactor(), defaults.getHostTeamGoalFactor(), 0.1D, 3.0D));
         normalized.setHomeTeamGoalFactor(normalizeNumber(normalized.getHomeTeamGoalFactor(), defaults.getHomeTeamGoalFactor(), 0.1D, 3.0D));
@@ -176,6 +305,7 @@ public class UserConfigService {
             config.setIncludePreviousEdition(false);
             config.setModelFactors(UserConfig.ModelFactors.defaults());
             config.setGlobalParameters(UserConfig.GlobalParameters.defaults());
+            config.setParameterProfiles(new LinkedHashMap<>());
             config.setSelectedRows(new LinkedHashMap<>());
             return config;
         }

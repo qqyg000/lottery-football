@@ -1,9 +1,45 @@
 package com.eason.worldcup.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class UserConfig {
+
+    public static final String CURRENT_EDITION_PROFILE = "CURRENT";
+
+    public static final String PREVIOUS_EDITION_PROFILE = "PREVIOUS";
+
+    public static final String STABLE_PARAMETER_PRESET = "STABLE";
+
+    public static final String AGGRESSIVE_PARAMETER_PRESET = "AGGRESSIVE";
+
+    private static final List<String> PARAMETER_PROFILE_RANGES = List.of(
+            CURRENT_EDITION_PROFILE,
+            PREVIOUS_EDITION_PROFILE);
+
+    private static final List<String> PARAMETER_PRESETS = List.of(
+            STABLE_PARAMETER_PRESET,
+            AGGRESSIVE_PARAMETER_PRESET);
+
+    private static final List<Competition> PARAMETER_COMPETITIONS = List.of(
+            Competition.WORLD_CUP,
+            Competition.EUROPEAN_CHAMPIONSHIP,
+            Competition.COPA_AMERICA,
+            Competition.CLUB_WORLD_CUP,
+            Competition.EUROPA_LEAGUE,
+            Competition.CHAMPIONS_LEAGUE,
+            Competition.PREMIER_LEAGUE,
+            Competition.LA_LIGA,
+            Competition.SERIE_A,
+            Competition.BUNDESLIGA,
+            Competition.LIGUE_1,
+            Competition.BRAZIL_SERIE_A,
+            Competition.PRIMEIRA_LIGA,
+            Competition.EREDIVISIE,
+            Competition.ARGENTINE_PRIMERA_DIVISION);
 
     private String modelMode = "after";
 
@@ -13,7 +49,43 @@ public class UserConfig {
 
     private GlobalParameters globalParameters = GlobalParameters.defaults();
 
+    private Map<String, ParameterProfile> parameterProfiles = new LinkedHashMap<>();
+
     private Map<String, RecommendationSelection> selectedRows = new LinkedHashMap<>();
+
+    public static List<Competition> getParameterCompetitions() {
+        return PARAMETER_COMPETITIONS;
+    }
+
+    public static List<String> getParameterProfileRanges() {
+        return PARAMETER_PROFILE_RANGES;
+    }
+
+    public static List<String> getParameterPresets() {
+        return PARAMETER_PRESETS;
+    }
+
+    public static String parameterProfileKey(Competition competition, boolean includePreviousEdition) {
+        return parameterProfileKey(
+                competition,
+                includePreviousEdition ? PREVIOUS_EDITION_PROFILE : CURRENT_EDITION_PROFILE,
+                STABLE_PARAMETER_PRESET);
+    }
+
+    public static String parameterProfileKey(Competition competition, String profileRange) {
+        return parameterProfileKey(competition, profileRange, STABLE_PARAMETER_PRESET);
+    }
+
+    public static String parameterProfileKey(
+            Competition competition,
+            String profileRange,
+            String parameterPreset) {
+        return competition.name() + ":" + profileRange + ":" + parameterPreset;
+    }
+
+    public static String legacyParameterProfileKey(Competition competition, String profileRange) {
+        return competition.name() + ":" + profileRange;
+    }
 
     public String getModelMode() {
         return modelMode;
@@ -31,6 +103,7 @@ public class UserConfig {
         this.includePreviousEdition = includePreviousEdition;
     }
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public ModelFactors getModelFactors() {
         return modelFactors;
     }
@@ -39,6 +112,7 @@ public class UserConfig {
         this.modelFactors = modelFactors;
     }
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public GlobalParameters getGlobalParameters() {
         return globalParameters;
     }
@@ -47,12 +121,59 @@ public class UserConfig {
         this.globalParameters = globalParameters;
     }
 
+    public Map<String, ParameterProfile> getParameterProfiles() {
+        return parameterProfiles;
+    }
+
+    public void setParameterProfiles(Map<String, ParameterProfile> parameterProfiles) {
+        this.parameterProfiles = parameterProfiles;
+    }
+
     public Map<String, RecommendationSelection> getSelectedRows() {
         return selectedRows;
     }
 
     public void setSelectedRows(Map<String, RecommendationSelection> selectedRows) {
         this.selectedRows = selectedRows;
+    }
+
+    public static class ParameterProfile {
+
+        private ModelFactors modelFactors = ModelFactors.defaults();
+
+        private GlobalParameters globalParameters = GlobalParameters.defaults();
+
+        public static ParameterProfile defaults() {
+            return of(ModelFactors.defaults(), GlobalParameters.defaults());
+        }
+
+        public static ParameterProfile aggressiveDefaults() {
+            return of(ModelFactors.aggressiveDefaults(), GlobalParameters.aggressiveDefaults());
+        }
+
+        public static ParameterProfile of(ModelFactors modelFactors, GlobalParameters globalParameters) {
+            ParameterProfile profile = new ParameterProfile();
+            profile.setModelFactors(modelFactors);
+            profile.setGlobalParameters(globalParameters);
+            return profile;
+        }
+
+        public ModelFactors getModelFactors() {
+            return modelFactors;
+        }
+
+        public void setModelFactors(ModelFactors modelFactors) {
+            this.modelFactors = modelFactors;
+        }
+
+        public GlobalParameters getGlobalParameters() {
+            return globalParameters;
+        }
+
+        public void setGlobalParameters(GlobalParameters globalParameters) {
+            this.globalParameters = globalParameters;
+        }
+
     }
 
     public static class GlobalParameters {
@@ -71,6 +192,15 @@ public class UserConfig {
             parameters.setHandicapRecommendationThreshold(68.16D);
             parameters.setHandicapReverseThreshold(46.78D);
             parameters.setSingleRecommendationThreshold(71.72D);
+            return parameters;
+        }
+
+        public static GlobalParameters aggressiveDefaults() {
+            GlobalParameters parameters = new GlobalParameters();
+            parameters.setRecommendationOdds(2.46D);
+            parameters.setHandicapRecommendationThreshold(89.09D);
+            parameters.setHandicapReverseThreshold(43.41D);
+            parameters.setSingleRecommendationThreshold(78.71D);
             return parameters;
         }
 
@@ -124,6 +254,15 @@ public class UserConfig {
             factors.setHomeTeamGoalFactor(1.06D);
             factors.setSeedTeamGoalFactor(1.85D);
             factors.setHandicapSmoothingFactor(0.274D);
+            return factors;
+        }
+
+        public static ModelFactors aggressiveDefaults() {
+            ModelFactors factors = new ModelFactors();
+            factors.setHostTeamGoalFactor(2.30D);
+            factors.setHomeTeamGoalFactor(1.75D);
+            factors.setSeedTeamGoalFactor(1.55D);
+            factors.setHandicapSmoothingFactor(0.650D);
             return factors;
         }
 

@@ -3,6 +3,7 @@ package com.eason.worldcup.service;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.RecommendationBacktestJobResponse;
 import com.eason.worldcup.model.RecommendationBacktestResponse;
+import com.eason.worldcup.model.UserConfig;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,8 @@ public class RecommendationBacktestJobService {
             Double seedTeamGoalFactor,
             Double homeTeamGoalFactor,
             Double handicapSmoothingFactor,
-            boolean includePreviousEdition) {
+            boolean includePreviousEdition,
+            Map<Competition, UserConfig.ModelFactors> modelFactorsByCompetition) {
         removeExpiredJobs();
         BacktestJob job = new BacktestJob(UUID.randomUUID().toString());
         jobs.put(job.getJobId(), job);
@@ -66,7 +68,8 @@ public class RecommendationBacktestJobService {
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
                 handicapSmoothingFactor,
-                includePreviousEdition));
+                includePreviousEdition,
+                modelFactorsByCompetition == null ? Map.of() : Map.copyOf(modelFactorsByCompetition)));
         return toResponse(job);
     }
 
@@ -88,7 +91,8 @@ public class RecommendationBacktestJobService {
             Double seedTeamGoalFactor,
             Double homeTeamGoalFactor,
             Double handicapSmoothingFactor,
-            boolean includePreviousEdition) {
+            boolean includePreviousEdition,
+            Map<Competition, UserConfig.ModelFactors> modelFactorsByCompetition) {
         job.start();
         try {
             RecommendationBacktestResponse result = predictionService.queryRecommendationBacktest(
@@ -99,6 +103,7 @@ public class RecommendationBacktestJobService {
                     homeTeamGoalFactor,
                     handicapSmoothingFactor,
                     includePreviousEdition,
+                    modelFactorsByCompetition,
                     job::updateProgress);
             job.complete(result);
         } catch (Exception ex) {

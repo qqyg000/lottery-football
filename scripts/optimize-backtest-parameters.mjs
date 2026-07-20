@@ -1,3 +1,5 @@
+import { calculateFlatStakeBacktest } from '../frontend/src/backtest-roi.mjs'
+
 const BASE_URL = 'http://localhost:8080/api/football/recommendation-backtest'
 const NON_WORLD_CUP_COMPETITIONS = [
   'EUROPEAN_CHAMPIONSHIP',
@@ -281,8 +283,7 @@ function evaluate(matches, parameters) {
   let recommendedMatchCount = 0
   let recommendedSelectionCount = 0
   let hitMatchCount = 0
-  let settledMatchCount = 0
-  let settledOddsTotal = 0
+  const winningMatchReturns = []
   matches.forEach(match => {
     const recommendation = recommendationForMatch(match, parameters)
     if (!recommendation) {
@@ -294,27 +295,21 @@ function evaluate(matches, parameters) {
       ? PROBABILITY_MASKS[recommendation.actualIndex]
       : 0
     if ((recommendation.mask & actualMask) === 0) {
-      settledMatchCount++
       return
     }
     hitMatchCount++
-    if (recommendation.selectionCount === 1) {
-      return
-    }
-    settledMatchCount++
-    settledOddsTotal += recommendation.odds[recommendation.actualIndex] || 0
+    winningMatchReturns.push(recommendation.odds[recommendation.actualIndex] || 0)
   })
   const missMatchCount = recommendedMatchCount - hitMatchCount
   const averageRecommendations = recommendedMatchCount > 0
     ? recommendedSelectionCount / recommendedMatchCount
     : 0
   const hitRate = recommendedMatchCount > 0 ? hitMatchCount / recommendedMatchCount : 0
-  const averageOddsIncludingMisses = settledMatchCount > 0
-    ? settledOddsTotal / settledMatchCount
-    : 0
-  const roi = recommendedMatchCount > 0 && averageRecommendations > 0 && averageOddsIncludingMisses > 0
-    ? Math.pow(hitRate * averageOddsIncludingMisses / averageRecommendations, 2) - 1
-    : -1
+  const financials = calculateFlatStakeBacktest(
+    winningMatchReturns,
+    recommendedSelectionCount,
+    recommendedMatchCount
+  )
   return {
     recommendedMatchCount,
     recommendedSelectionCount,
@@ -322,8 +317,11 @@ function evaluate(matches, parameters) {
     missMatchCount,
     averageRecommendations,
     hitRate,
-    averageOddsIncludingMisses,
-    roi
+    averageOddsIncludingMisses: financials.averageReturnIncludingMisses ?? 0,
+    totalStake: financials.totalStake,
+    totalReturn: financials.totalReturn,
+    netProfit: financials.netProfit,
+    roi: financials.roi ?? -1
   }
 }
 
@@ -388,6 +386,9 @@ function printableMetrics(metrics) {
     averageOddsIncludingMisses: Number(metrics.averageOddsIncludingMisses.toFixed(4)),
     averageRecommendations: Number(metrics.averageRecommendations.toFixed(4)),
     hitRate: Number((metrics.hitRate * 100).toFixed(2)),
+    totalStake: Number(metrics.totalStake.toFixed(2)),
+    totalReturn: Number(metrics.totalReturn.toFixed(2)),
+    netProfit: Number(metrics.netProfit.toFixed(2)),
     roi: Number((metrics.roi * 100).toFixed(2))
   }
 }

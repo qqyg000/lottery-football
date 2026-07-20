@@ -14,6 +14,7 @@ import com.eason.worldcup.model.ScoreProbability;
 import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
 import com.eason.worldcup.model.ThreeWayProbability;
 import com.eason.worldcup.model.TotalGoalsProbability;
+import com.eason.worldcup.model.UserConfig;
 import com.eason.worldcup.util.ApplicationTime;
 import com.eason.worldcup.util.PoissonRandom;
 import org.springframework.beans.factory.annotation.Value;
@@ -208,6 +209,7 @@ public class PredictionService {
                 homeTeamGoalFactor,
                 handicapSmoothingFactor,
                 includePreviousEdition,
+                Map.of(),
                 null);
     }
 
@@ -219,9 +221,9 @@ public class PredictionService {
             Double homeTeamGoalFactor,
             Double handicapSmoothingFactor,
             boolean includePreviousEdition,
+            Map<Competition, UserConfig.ModelFactors> modelFactorsByCompetition,
             BiConsumer<Integer, Integer> progressConsumer) {
         int simulationCount = normalizeSimulationCount(simulations);
-        double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
         LocalDate backtestEndDate = ApplicationTime.today();
         List<MatchSchedule> completedSchedules = dataRepository.getSchedules().stream()
                 .filter(schedule -> competitions == null
@@ -253,14 +255,25 @@ public class PredictionService {
         List<MatchPredictionResponse> matches = new ArrayList<>(totalMatchCount);
         for (int index = 0; index < totalMatchCount; index++) {
             MatchSchedule schedule = oddsSchedules.get(index);
+            UserConfig.ModelFactors competitionFactors = resolveBacktestModelFactors(
+                    schedule.getCompetition(),
+                    modelFactorsByCompetition);
             matches.add(predict(
                     schedule,
                     simulationCount,
                     schedule.getMatchDate(),
-                    hostTeamGoalFactor,
-                    seedTeamGoalFactor,
-                    homeTeamGoalFactor,
-                    effectiveHandicapSmoothingFactor));
+                    resolveModelFactor(
+                            competitionFactors == null ? null : competitionFactors.getHostTeamGoalFactor(),
+                            hostTeamGoalFactor),
+                    resolveModelFactor(
+                            competitionFactors == null ? null : competitionFactors.getSeedTeamGoalFactor(),
+                            seedTeamGoalFactor),
+                    resolveModelFactor(
+                            competitionFactors == null ? null : competitionFactors.getHomeTeamGoalFactor(),
+                            homeTeamGoalFactor),
+                    normalizeHandicapSmoothingFactor(resolveModelFactor(
+                            competitionFactors == null ? null : competitionFactors.getHandicapSmoothingFactor(),
+                            handicapSmoothingFactor))));
             notifyBacktestProgress(progressConsumer, index + 1, totalMatchCount);
         }
 
@@ -270,6 +283,21 @@ public class PredictionService {
         response.setOddsMatchCount(oddsSchedules.size());
         response.setMatches(matches);
         return response;
+    }
+
+    UserConfig.ModelFactors resolveBacktestModelFactors(
+            Competition competition,
+            Map<Competition, UserConfig.ModelFactors> modelFactorsByCompetition) {
+        if (competition == null || modelFactorsByCompetition == null) {
+            return null;
+        }
+        return modelFactorsByCompetition.get(competition);
+    }
+
+    private Double resolveModelFactor(Double competitionValue, Double fallbackValue) {
+        return competitionValue == null || !Double.isFinite(competitionValue)
+                ? fallbackValue
+                : competitionValue;
     }
 
     private void notifyBacktestProgress(

@@ -31,20 +31,29 @@ public class TeamStrengthService {
     private static final double SHRINK_WEIGHT = 8.0D;
     private static final LocalDate TOURNAMENT_START_DATE = LocalDate.of(2026, 6, 11);
     private static final String WORLD_CUP_2026 = "FIFA World Cup 2026";
-    private static final List<String> HOST_TEAMS = List.of("Canada", "Mexico", "United States");
-    private static final List<String> SEEDED_TEAMS = List.of(
-            "Mexico",
-            "Canada",
-            "Brazil",
-            "United States",
-            "Germany",
-            "Netherlands",
-            "Belgium",
-            "Spain",
-            "France",
-            "Argentina",
-            "Portugal",
-            "England"
+    private static final List<WorldCupEdition> WORLD_CUP_EDITIONS = List.of(
+            new WorldCupEdition(
+                    LocalDate.of(2022, 11, 20),
+                    LocalDate.of(2022, 12, 18),
+                    Set.of("Qatar"),
+                    Set.of("Qatar", "Brazil", "Belgium", "France", "Argentina", "England", "Spain", "Portugal")),
+            new WorldCupEdition(
+                    LocalDate.of(2026, 6, 11),
+                    LocalDate.of(2026, 7, 19),
+                    Set.of("Canada", "Mexico", "United States"),
+                    Set.of(
+                            "Canada",
+                            "Mexico",
+                            "United States",
+                            "Spain",
+                            "Argentina",
+                            "France",
+                            "England",
+                            "Brazil",
+                            "Portugal",
+                            "Netherlands",
+                            "Belgium",
+                            "Germany"))
     );
 
     private final DataRepository dataRepository;
@@ -218,17 +227,28 @@ public class TeamStrengthService {
         return model.getStrengthMap().getOrDefault(teamName, TeamStrength.defaultOf(teamName, model.getBaselineGoals()));
     }
 
-    private double getTournamentTeamFactor(MatchSchedule schedule, String teamName, double effectiveHostTeamGoalFactor, double effectiveSeedTeamGoalFactor) {
-        if (schedule.getCompetition() != Competition.WORLD_CUP) {
+    double getTournamentTeamFactor(MatchSchedule schedule, String teamName, double effectiveHostTeamGoalFactor, double effectiveSeedTeamGoalFactor) {
+        if (schedule.getCompetition() != Competition.WORLD_CUP || schedule.getMatchDate() == null) {
             return 1.0D;
         }
-        if (HOST_TEAMS.contains(teamName)) {
+        WorldCupEdition edition = findWorldCupEdition(schedule.getMatchDate());
+        if (edition == null) {
+            return 1.0D;
+        }
+        if (edition.hostTeams().contains(teamName)) {
             return effectiveHostTeamGoalFactor;
         }
-        if (SEEDED_TEAMS.contains(teamName)) {
+        if (edition.seededTeams().contains(teamName)) {
             return effectiveSeedTeamGoalFactor;
         }
         return 1.0D;
+    }
+
+    private WorldCupEdition findWorldCupEdition(LocalDate matchDate) {
+        return WORLD_CUP_EDITIONS.stream()
+                .filter(edition -> edition.contains(matchDate))
+                .findFirst()
+                .orElse(null);
     }
 
     private double getHomeAdvantage(MatchSchedule schedule, Double homeTeamGoalFactorOverride) {
@@ -617,6 +637,20 @@ public class TeamStrengthService {
     }
 
     private record CompetitionDateKey(Competition competition, LocalDate date) {
+
+    }
+
+    private record WorldCupEdition(
+            LocalDate startDate,
+            LocalDate endDate,
+            Set<String> hostTeams,
+            Set<String> seededTeams) {
+
+        private boolean contains(LocalDate matchDate) {
+            return matchDate != null
+                    && !matchDate.isBefore(startDate)
+                    && !matchDate.isAfter(endDate);
+        }
 
     }
 

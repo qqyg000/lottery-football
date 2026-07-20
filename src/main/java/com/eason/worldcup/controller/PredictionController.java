@@ -6,6 +6,7 @@ import com.eason.worldcup.model.HeadToHeadMatchResponse;
 import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
 import com.eason.worldcup.model.RecommendationBacktestJobResponse;
+import com.eason.worldcup.model.RecommendationBacktestRequest;
 import com.eason.worldcup.model.RecommendationBacktestResponse;
 import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
 import com.eason.worldcup.model.UserConfig;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +85,8 @@ public class PredictionController {
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
             @RequestParam(value = "includePreviousEdition", defaultValue = "false") boolean includePreviousEdition,
-            @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
+            @RequestParam(value = "competition", defaultValue = "ALL") String competition,
+            @RequestBody(required = false) RecommendationBacktestRequest request) {
         return recommendationBacktestJobService.start(
                 parseBacktestCompetitions(competition),
                 simulations,
@@ -91,7 +94,8 @@ public class PredictionController {
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
                 handicapSmoothingFactor,
-                includePreviousEdition);
+                includePreviousEdition,
+                parseBacktestModelFactors(request));
     }
 
     @GetMapping("/recommendation-backtest/jobs/{jobId}")
@@ -211,6 +215,20 @@ public class PredictionController {
             competitions.add(parseCompetition(code));
         }
         return Set.copyOf(competitions);
+    }
+
+    private Map<Competition, UserConfig.ModelFactors> parseBacktestModelFactors(
+            RecommendationBacktestRequest request) {
+        if (request == null || request.getModelFactorsByCompetition() == null) {
+            return Map.of();
+        }
+        Map<Competition, UserConfig.ModelFactors> factorsByCompetition = new LinkedHashMap<>();
+        request.getModelFactorsByCompetition().forEach((competitionCode, factors) -> {
+            if (competitionCode != null && !competitionCode.isBlank() && factors != null) {
+                factorsByCompetition.put(parseCompetition(competitionCode), factors);
+            }
+        });
+        return Map.copyOf(factorsByCompetition);
     }
 
 }
