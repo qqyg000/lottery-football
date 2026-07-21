@@ -478,8 +478,8 @@ public class ClubCompetitionScheduleUpdater {
             return null;
         }
         if (requiresHistoricalOddsTeamMapping(competition)
-                && (!ClubTeamNameTranslator.hasHistoricalOddsMapping(homeTeam)
-                || !ClubTeamNameTranslator.hasHistoricalOddsMapping(awayTeam))) {
+                && (!ClubTeamNameTranslator.hasMapping(homeTeam)
+                || !ClubTeamNameTranslator.hasMapping(awayTeam))) {
             return null;
         }
 

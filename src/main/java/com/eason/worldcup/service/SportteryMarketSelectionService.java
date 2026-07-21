@@ -981,6 +981,12 @@ public class SportteryMarketSelectionService {
             }
             schedule.setSportteryMatchId(entry.getSportteryMatchId());
             schedule.setSportteryMatchNumber(entry.getSportteryMatchNumber());
+            schedule.setSportteryHomeTeamName(ClubTeamNameTranslator.translate(
+                    schedule.getCompetition(),
+                    entry.getHomeTeam()));
+            schedule.setSportteryAwayTeamName(ClubTeamNameTranslator.translate(
+                    schedule.getCompetition(),
+                    entry.getAwayTeam()));
             schedule.setSportteryNormalAvailable(entry.getNormalAvailable());
             schedule.setSportteryHandicap(entry.getHandicap());
             schedule.setSportteryNormalOdds(entry.getNormalOdds());
@@ -1011,6 +1017,8 @@ public class SportteryMarketSelectionService {
     private void clearSelection(MatchSchedule schedule) {
         schedule.setSportteryMatchId(null);
         schedule.setSportteryMatchNumber(null);
+        schedule.setSportteryHomeTeamName(null);
+        schedule.setSportteryAwayTeamName(null);
         schedule.setSportteryNormalAvailable(null);
         schedule.setSportteryHandicap(null);
         schedule.setSportteryNormalOdds(null);
@@ -1080,13 +1088,15 @@ public class SportteryMarketSelectionService {
                 && schedule.getAwayScore().equals(entry.getAwayScore());
     }
 
-    private boolean teamNamesMatch(
+    boolean teamNamesMatch(
             Competition competition,
             String chineseName,
             String englishName,
             String sportteryName) {
-        String sportteryCanonicalName = canonicalTeamName(sportteryName);
-        String chineseCanonicalName = canonicalTeamName(chineseName);
+        String sportteryCanonicalName = canonicalTeamName(
+                ClubTeamNameTranslator.translate(competition, sportteryName));
+        String chineseCanonicalName = canonicalTeamName(
+                ClubTeamNameTranslator.translate(competition, chineseName));
         String translatedCanonicalName = canonicalTeamName(
                 ClubTeamNameTranslator.translate(competition, englishName));
         return canonicalNamesMatch(chineseCanonicalName, sportteryCanonicalName)

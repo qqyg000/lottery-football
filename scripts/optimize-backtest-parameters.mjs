@@ -1,4 +1,4 @@
-import { calculateFlatStakeBacktest } from '../frontend/src/backtest-roi.mjs'
+import { calculateFlatStakeBacktest, calculateSamplingRate } from '../frontend/src/backtest-roi.mjs'
 
 const BASE_URL = 'http://localhost:8080/api/football/recommendation-backtest'
 const NON_WORLD_CUP_COMPETITIONS = [
@@ -166,7 +166,7 @@ function smoothHandicapProbability(rawProbability, normalProbability, smoothingF
 }
 
 function withSmoothing(matches, smoothingFactor) {
-  return matches.map(match => ({
+  const smoothedMatches = matches.map(match => ({
     ...match,
     handicapProbability: smoothHandicapProbability(
       match.rawHandicapProbability,
@@ -174,6 +174,11 @@ function withSmoothing(matches, smoothingFactor) {
       smoothingFactor
     )
   }))
+  smoothedMatches.totalMatchCount = Math.max(
+    smoothedMatches.length,
+    Number(matches.totalMatchCount) || 0
+  )
+  return smoothedMatches
 }
 
 function findMaxCell(rows) {
@@ -310,7 +315,13 @@ function evaluate(matches, parameters) {
     recommendedSelectionCount,
     recommendedMatchCount
   )
+  const totalMatchCount = Math.max(
+    matches.length,
+    Number(matches.totalMatchCount) || 0
+  )
   return {
+    sampleCount: totalMatchCount,
+    samplingRate: calculateSamplingRate(recommendedMatchCount, totalMatchCount),
     recommendedMatchCount,
     recommendedSelectionCount,
     hitMatchCount,
@@ -364,6 +375,10 @@ async function fetchBacktest(competition, factors, effectiveModelMode = modelMod
     throw lastError || new Error('回测接口未返回数据')
   }
   const result = prepareMatches(data.matches, effectiveModelMode)
+  result.totalMatchCount = Math.max(
+    result.length,
+    Number(data.completedMatchCount) || 0
+  )
   responseCache.set(key, result)
   process.stderr.write(`读取 ${competition} ${result.length} 场，${((Date.now() - startedAt) / 1000).toFixed(1)} 秒\n`)
   return result
@@ -374,11 +389,23 @@ async function loadPresetMatches(preset, effectiveModelMode = modelMode) {
     fetchBacktest('WORLD_CUP', preset, effectiveModelMode),
     fetchBacktest(NON_WORLD_CUP_COMPETITIONS, preset, effectiveModelMode)
   ])
-  return worldCupMatches.concat(nonWorldCupMatches)
+  return combineMatchGroups(worldCupMatches, nonWorldCupMatches)
+}
+
+function combineMatchGroups(...groups) {
+  const matches = groups.flat()
+  matches.totalMatchCount = groups.reduce((sum, group) => {
+    return sum + Math.max(group.length, Number(group.totalMatchCount) || 0)
+  }, 0)
+  return matches
 }
 
 function printableMetrics(metrics) {
   return {
+    sampleCount: metrics.sampleCount,
+    samplingRate: metrics.samplingRate === null
+      ? null
+      : Number((metrics.samplingRate * 100).toFixed(2)),
     recommendedMatchCount: metrics.recommendedMatchCount,
     recommendedSelectionCount: metrics.recommendedSelectionCount,
     hitMatchCount: metrics.hitMatchCount,
@@ -619,7 +646,7 @@ function combinedMatches(nonWorldCupGrid, worldCupGrid, factors) {
   if (!nonWorldCupMatches || !worldCupMatches) {
     throw new Error(`缺少模型因子数据 ${JSON.stringify(factors)}`)
   }
-  return worldCupMatches.concat(nonWorldCupMatches)
+  return combineMatchGroups(worldCupMatches, nonWorldCupMatches)
 }
 
 async function runCoarseModelSearch() {
@@ -1047,7 +1074,7 @@ async function runHomeFactorGrid() {
     const coarseRanked = []
     for (const homeTeamGoalFactor of homeValues) {
       const candidate = { ...preset, homeTeamGoalFactor }
-      const matches = worldCupMatches.concat(nonWorldCupGrid.get(homeTeamGoalFactor))
+      const matches = combineMatchGroups(worldCupMatches, nonWorldCupGrid.get(homeTeamGoalFactor))
       const metrics = evaluate(withSmoothing(matches, candidate.handicapSmoothingFactor), candidate)
       if (isExplorationEligible(metrics, definition)) {
         addRankedResult(coarseRanked, candidate, metrics, factorTop)
@@ -1055,7 +1082,10 @@ async function runHomeFactorGrid() {
     }
     const refinedRanked = []
     for (const item of coarseRanked) {
-      const matches = worldCupMatches.concat(nonWorldCupGrid.get(item.candidate.homeTeamGoalFactor))
+      const matches = combineMatchGroups(
+        worldCupMatches,
+        nonWorldCupGrid.get(item.candidate.homeTeamGoalFactor)
+      )
       const optimized = optimizeThresholdCoordinates(name, matches, item.candidate)
       if (isEligible(optimized.metrics, definition)) {
         addRankedResult(refinedRanked, optimized.candidate, optimized.metrics, factorTop)
@@ -1095,7 +1125,7 @@ async function runWorldFactorGrid() {
       for (const seedTeamGoalFactor of seedValues) {
         const candidate = { ...preset, hostTeamGoalFactor, seedTeamGoalFactor }
         const worldCupMatches = worldCupGrid.get(`${hostTeamGoalFactor}|${seedTeamGoalFactor}`)
-        const matches = worldCupMatches.concat(nonWorldCupMatches)
+        const matches = combineMatchGroups(worldCupMatches, nonWorldCupMatches)
         const metrics = evaluate(withSmoothing(matches, candidate.handicapSmoothingFactor), candidate)
         if (isExplorationEligible(metrics, definition)) {
           addRankedResult(coarseRanked, candidate, metrics, factorTop)
@@ -1105,7 +1135,7 @@ async function runWorldFactorGrid() {
     const refinedRanked = []
     for (const item of coarseRanked) {
       const key = `${item.candidate.hostTeamGoalFactor}|${item.candidate.seedTeamGoalFactor}`
-      const matches = worldCupGrid.get(key).concat(nonWorldCupMatches)
+      const matches = combineMatchGroups(worldCupGrid.get(key), nonWorldCupMatches)
       const optimized = optimizeThresholdCoordinates(name, matches, item.candidate)
       if (isEligible(optimized.metrics, definition)) {
         addRankedResult(refinedRanked, optimized.candidate, optimized.metrics, factorTop)

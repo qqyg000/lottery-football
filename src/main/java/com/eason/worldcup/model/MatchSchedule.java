@@ -1,5 +1,7 @@
 package com.eason.worldcup.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -36,6 +38,12 @@ public class MatchSchedule {
     private String sportteryMatchId;
 
     private String sportteryMatchNumber;
+
+    @JsonIgnore
+    private String sportteryHomeTeamName;
+
+    @JsonIgnore
+    private String sportteryAwayTeamName;
 
     private Boolean sportteryNormalAvailable;
 
@@ -171,6 +179,22 @@ public class MatchSchedule {
 
     public void setSportteryMatchNumber(String sportteryMatchNumber) {
         this.sportteryMatchNumber = sportteryMatchNumber;
+    }
+
+    public String getSportteryHomeTeamName() {
+        return sportteryHomeTeamName;
+    }
+
+    public void setSportteryHomeTeamName(String sportteryHomeTeamName) {
+        this.sportteryHomeTeamName = sportteryHomeTeamName;
+    }
+
+    public String getSportteryAwayTeamName() {
+        return sportteryAwayTeamName;
+    }
+
+    public void setSportteryAwayTeamName(String sportteryAwayTeamName) {
+        this.sportteryAwayTeamName = sportteryAwayTeamName;
     }
 
     public Boolean getSportteryNormalAvailable() {

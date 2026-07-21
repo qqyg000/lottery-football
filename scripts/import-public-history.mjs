@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const historicalMatchesPath = path.join(root, 'src/main/resources/data/historical_matches.csv')
-const historicalOddsPath = path.join(root, 'src/main/resources/data/historical_odds_data.csv')
+const teamNameMappingsPath = path.join(root, 'src/main/resources/data/team_name_mappings.csv')
 const cacheRoot = path.join(root, 'target/public-history-cache')
 const MINIMUM_HISTORY_DATE = '2014-06-12'
 
@@ -42,136 +42,6 @@ const MONTHS = new Map([
   ['JUL', 7], ['AUG', 8], ['SEP', 9], ['OCT', 10], ['NOV', 11], ['DEC', 12]
 ])
 
-const SOURCE_NAME_ALIASES = new Map(Object.entries({
-  'AC Sparta Praha': 'Sparta Prague',
-  'ACF Fiorentina': 'Fiorentina',
-  'Aalborg BK': 'AaB',
-  'Academica de Coimbra': 'Academica',
-  'AJ Auxerre': 'Auxerre',
-  'APOEL Nikosia': 'APOEL Nicosia',
-  'Al Jazira Club': 'Al-Jazira',
-  'Asteras Tripoli': 'Asteras Tripolis',
-  'Athletic Bilbao': 'Athletic Club',
-  'Atletico de Madrid': 'Atletico Madrid',
-  'Atlético Mineiro': 'Atletico MG',
-  'Bayer 04 Leverkusen': 'Bayer Leverkusen',
-  'Bayern Munich': 'Bayern München',
-  'Belgrano (Córdoba)': 'Belgrano',
-  'Belenenses': 'Cova da Piedade SAD',
-  'Beşiktaş İstanbul JK': 'Beşiktaş',
-  'Brondby IF': 'Brøndby IF',
-  'BSC Young Boys': 'Young Boys',
-  'C.D. Nacional': 'Nacional',
-  'CSKA Moskva': 'CSKA Moscow',
-  'Chapecoense': 'Chapecoense AF',
-  'Corinthians SP': 'Corinthians',
-  'Deportivo La Coruna': 'Deportivo A Coruña',
-  'Dnipro Dnipropetrovsk': 'Dnipro',
-  'Dnepr Dnepropetrovsk': 'Dnipro',
-  'Dinamo Kiev': 'Dynamo Kyiv',
-  'Evian Thonon Gaillard': 'Thonon Evian Grand Geneve',
-  'Espérance de Tunis': 'Espérance',
-  'Estudiantes de La Plata': 'Estudiantes',
-  'FC Bayern Munich': 'Bayern München',
-  'FC Copenhagen': 'FC København',
-  'FC Cologne': '1. FC Köln',
-  'FC RB Salzburg': 'Salzburg',
-  'FC Zorya Luhansk': 'Zorya',
-  'Fenerbahçe İstanbul SK': 'Fenerbahçe',
-  'Feyenoord Rotterdam': 'Feyenoord',
-  'Flamengo RJ': 'Flamengo',
-  'Fluminense RJ': 'Fluminense',
-  'Galatasaray İstanbul AŞ': 'Galatasaray',
-  'Gimnasia La Plata': 'Gimnasia LP',
-  'Girondins Bordeaux': 'Bordeaux',
-  'Godoy Cruz Antonio Tomba': 'Godoy Cruz',
-  'Grêmio Porto Alegre': 'Gremio',
-  'Guangzhou Evergrande': 'Guangzhou FC',
-  'HJK Helsinki': 'HJK',
-  'Hamburg SV': 'Hamburger SV',
-  'Heracles Almelo': 'Heracles',
-  'Internazionale': 'Inter',
-  'Internazionale Milano': 'Inter',
-  'Inter Milan': 'Inter',
-  'Kobenhavn': 'FC København',
-  'Koln': '1. FC Köln',
-  'KRC Genk': 'Genk',
-  'KSC Lokeren': 'Lokeren',
-  'Legia Warsaw': 'Legia Warszawa',
-  'Lille OSC': 'Lille',
-  'Lokomotiv Moskva': 'Lokomotiv Moscow',
-  'NK Maribor': 'Maribor',
-  'Manchester Utd': 'Manchester United',
-  'Man City': 'Manchester City',
-  'Man United': 'Manchester United',
-  'OGC Nice': 'Nice',
-  'Olympique Lyon': 'Lyon',
-  'Olympique Lyonnais': 'Lyon',
-  'Olympique Marseille': 'Marseille',
-  'PAOK FC': 'PAOK Thessaloniki',
-  'PFC Ludogorets Razgrad': 'Ludogorets Razgrad',
-  'Paris SG': 'Paris Saint-Germain',
-  'Partizan Belgrade': 'Partizan Beograd',
-  'Rosenborg BK': 'Rosenborg',
-  'RSC Anderlecht': 'Anderlecht',
-  'RB Salzburg': 'Salzburg',
-  'SC Paderborn 07': 'Paderborn',
-  'Servette Geneve': 'Servette',
-  'Sheriff Tiraspol': 'FC Sheriff',
-  'SK Slovan Bratislava': 'Slovan Bratislava',
-  'SK Sturm Graz': 'Sturm Graz',
-  'SL Benfica': 'Benfica',
-  'Slavia Praha': 'Slavia Prague',
-  'Sparta Praha': 'Sparta Prague',
-  'Spartak Moskva': 'Spartak Moscow',
-  'Spartak TAZ Trnava': 'Spartak Trnava',
-  'Sporting Braga': 'Braga',
-  'Sporting Lisbon': 'Sporting CP',
-  'Sport': 'Sport Recife',
-  'SS Lazio': 'Lazio',
-  'SSC Napoli': 'Napoli',
-  'Stade de Reims': 'Reims',
-  'Stade Reims': 'Reims',
-  'Steaua Bucuresti': 'FCSB',
-  'UANL Tigres': 'Tigres',
-  'United States': 'USA',
-  'Turkey': 'Turkiye',
-  'Republic of Ireland': 'Ireland',
-  'Czech Republic': 'Czechia',
-  'Vasco da Gama RJ': 'Vasco da Gama',
-  'Vitoria Setubal': 'Vitoria de Setubal',
-  'West Germany': 'Germany',
-  'Soviet Union': 'Russia',
-  "Côte d'Ivoire": 'Ivory Coast',
-  'Bosnia & Herzegovina': 'Bosnia and Herzegovina',
-  'Bosnia-Herzegovina': 'Bosnia and Herzegovina',
-  'Serbia and Montenegro': 'Serbia',
-  'Wydad AC': 'Wydad Casablanca',
-  'Zaire': 'DR Congo'
-}).map(([sourceName, targetName]) => [canonicalName(sourceName), targetName]))
-
-const NATIONAL_TEAM_FALLBACKS = new Map(Object.entries({
-  Angola: '安哥拉',
-  Bulgaria: '保加利亚',
-  China: '中国',
-  Cuba: '古巴',
-  Czechoslovakia: '捷克斯洛伐克',
-  'El Salvador': '萨尔瓦多',
-  'German DR': '东德',
-  Greece: '希腊',
-  Honduras: '洪都拉斯',
-  Indonesia: '印度尼西亚',
-  Israel: '以色列',
-  Kuwait: '科威特',
-  Latvia: '拉脱维亚',
-  'North Korea': '朝鲜',
-  Togo: '多哥',
-  'Trinidad and Tobago': '特立尼达和多巴哥',
-  'United Arab Emirates': '阿联酋',
-  Yugoslavia: '南斯拉夫',
-  'Dutch East Indies': '印度尼西亚',
-  'East Germany': '东德'
-}).map(([englishName, chineseName]) => [canonicalName(englishName), chineseName]))
 
 const HISTORY_HEADERS = [
   'match_id',
@@ -335,41 +205,28 @@ function canonicalChineseName(value) {
     .replace(/(AIF|FC|SC|CF|SK|FK|IF|BK|FF)$/u, '')
 }
 
-function buildMappings(oddsRows) {
+function buildMappings(mappingRows) {
   const mappings = new Map()
-  const dates = new Map()
-  for (const row of oddsRows) {
-    for (const side of ['home', 'away']) {
-      const englishName = String(row[`${side}_team_en`] ?? '').trim()
-      const chineseName = String(row[`${side}_team_cn`] ?? '').trim()
-      if (!englishName || !chineseName) {
-        continue
-      }
-      for (const nameKey of nameKeys(englishName)) {
-        for (const key of [`${row.competition}|${nameKey}`, `*|${nameKey}`]) {
-          if (!dates.has(key) || row.match_date >= dates.get(key)) {
-            dates.set(key, row.match_date)
-            mappings.set(key, chineseName)
-          }
-        }
-      }
+  for (const row of mappingRows) {
+    const competition = String(row.competition ?? '').trim()
+    const aliasName = String(row.alias_team_name ?? '').trim()
+    const standardName = String(row.standard_team_name ?? '').trim()
+    if (!competition || !aliasName || !standardName) {
+      continue
+    }
+    for (const nameKey of nameKeys(aliasName)) {
+      mappings.set(`${competition}|${nameKey}`, standardName)
     }
   }
   return mappings
 }
 
-function mappedChineseName(competition, sourceName, mappings, allowNationalFallback) {
-  const alias = SOURCE_NAME_ALIASES.get(canonicalName(sourceName))
-  for (const candidate of [sourceName, alias].filter(Boolean)) {
-    for (const nameKey of nameKeys(candidate)) {
-      const mapped = mappings.get(`${competition}|${nameKey}`) ?? mappings.get(`*|${nameKey}`)
-      if (mapped) {
-        return mapped
-      }
+function mappedChineseName(competition, sourceName, mappings) {
+  for (const nameKey of nameKeys(sourceName)) {
+    const mapped = mappings.get(`${competition}|${nameKey}`) ?? mappings.get(`*|${nameKey}`)
+    if (mapped) {
+      return mapped
     }
-  }
-  if (allowNationalFallback) {
-    return NATIONAL_TEAM_FALLBACKS.get(canonicalName(sourceName)) ?? null
   }
   return null
 }
@@ -722,9 +579,9 @@ function summarizeForOutput(sourceSummaries) {
 }
 
 const options = parseArguments(process.argv.slice(2))
-const [historicalText, oddsText, sourceRows] = await Promise.all([
+const [historicalText, mappingText, sourceRows] = await Promise.all([
   fs.readFile(historicalMatchesPath, 'utf8'),
-  fs.readFile(historicalOddsPath, 'utf8'),
+  fs.readFile(teamNameMappingsPath, 'utf8'),
   loadSourceRows(options)
 ])
 
@@ -732,8 +589,8 @@ const originalHistoricalRows = parseCsv(historicalText).map(normalizeHistoricalR
 const historicalRows = originalHistoricalRows.filter(row => (
   row.match_date >= options.minDate && row.match_date <= options.maxDate
 ))
-const oddsRows = parseCsv(oddsText)
-const mappings = buildMappings(oddsRows)
+const mappingRows = parseCsv(mappingText)
+const mappings = buildMappings(mappingRows)
 const exactFixtureIndex = new Set(historicalRows.map(row => fixtureKey(
   row.competition,
   row.match_date,
@@ -859,6 +716,7 @@ const rebuiltRows = [...historicalRows, ...addedRows].sort((left, right) => (
 
 if (options.write) {
   await fs.writeFile(historicalMatchesPath, toCsv(rebuiltRows), 'utf8')
+  await import('./generate-team-name-mappings.mjs')
 }
 
 console.log(JSON.stringify({

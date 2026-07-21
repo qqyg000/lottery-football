@@ -190,17 +190,17 @@
                 <strong>{{ backtestAverageOddsText }}</strong>
                 <span>场均返奖</span>
               </div>
+              <div title="ROI = [(总返奖 ÷ 总投入) - 1] × 100%，每个推荐项按 1 单位投入">
+                <strong>{{ backtestRoiText }}</strong>
+                <span>ROI</span>
+              </div>
               <div>
-                <strong>{{ backtestAverageRecommendationText }}</strong>
-                <span>场均推荐数</span>
+                <strong>{{ backtestSamplingRateText }}</strong>
+                <span>采样率</span>
               </div>
               <div>
                 <strong>{{ backtestHitRateText }}</strong>
                 <span>命中率</span>
-              </div>
-              <div title="ROI = [(总返奖 ÷ 总投入) - 1] × 100%，每个推荐项按 1 单位投入">
-                <strong>{{ backtestRoiText }}</strong>
-                <span>ROI</span>
               </div>
             </div>
           </div>
@@ -565,7 +565,7 @@
 </template>
 
 <script>
-import { calculateFlatStakeBacktest } from './backtest-roi.mjs'
+import { calculateFlatStakeBacktest, calculateSamplingRate } from './backtest-roi.mjs'
 
 const FIXED_SIMULATIONS = 50000
 const BACKTEST_PROGRESS_POLL_INTERVAL = 300
@@ -592,20 +592,20 @@ const COMPETITIONS = [
 ]
 const CURRENT_EDITION_START_DATES = {
   WORLD_CUP: '2026-06-11',
-  EUROPEAN_CHAMPIONSHIP: '2028-06-09',
-  COPA_AMERICA: '2028-06-09',
-  CLUB_WORLD_CUP: '2028-06-09',
-  EUROPA_LEAGUE: '2026-09-16',
-  CHAMPIONS_LEAGUE: '2026-09-08',
+  EUROPEAN_CHAMPIONSHIP: '2024-06-14',
+  COPA_AMERICA: '2024-06-20',
+  CLUB_WORLD_CUP: '2025-06-14',
+  EUROPA_LEAGUE: '2026-07-09',
+  CHAMPIONS_LEAGUE: '2026-07-07',
   PREMIER_LEAGUE: '2026-08-21',
   LA_LIGA: '2026-08-15',
-  SERIE_A: '2026-08-21',
+  SERIE_A: '2026-08-22',
   BUNDESLIGA: '2026-08-28',
-  LIGUE_1: '2026-08-21',
+  LIGUE_1: '2026-08-20',
   BRAZIL_SERIE_A: '2026-01-28',
-  PRIMEIRA_LIGA: '2026-08-08',
+  PRIMEIRA_LIGA: '2026-08-07',
   EREDIVISIE: '2026-08-07',
-  ARGENTINE_PRIMERA_DIVISION: '2026-01-22'
+  ARGENTINE_PRIMERA_DIVISION: '2026-01-25'
 }
 const SELECTION_COOKIE = 'worldcup_recommendation_rows'
 const SELECTION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
@@ -702,6 +702,7 @@ function createEmptyBacktestSummary() {
     completedMatchCount: 0,
     sportteryCompletedMatchCount: 0,
     oddsMatchCount: 0,
+    samplingRate: null,
     recommendedMatchCount: 0,
     recommendedSelectionCount: 0,
     hitMatchCount: 0,
@@ -818,16 +819,16 @@ export default {
     backtestAverageOddsText() {
       return this.formatBacktestOdds(this.backtestSummary.averageOddsIncludingMisses)
     },
-    backtestAverageRecommendationText() {
+    backtestSamplingRateText() {
       if (!this.backtestActive) {
         return '--'
       }
-      const recommendedMatchCount = Number(this.backtestSummary.recommendedMatchCount) || 0
-      if (recommendedMatchCount <= 0) {
-        return '0.00'
+      const samplingRate = this.backtestSummary.samplingRate
+      const numberValue = Number(samplingRate)
+      if (samplingRate === null || !Number.isFinite(numberValue)) {
+        return '--'
       }
-      const recommendedSelectionCount = Number(this.backtestSummary.recommendedSelectionCount) || 0
-      return (recommendedSelectionCount / recommendedMatchCount).toFixed(2)
+      return (numberValue * 100).toFixed(1) + '%'
     },
     backtestHitRateText() {
       if (!this.backtestActive) {
@@ -1284,6 +1285,7 @@ export default {
     async fetchCompetitionOverview(competition) {
       const params = new URLSearchParams()
       params.append('competition', competition)
+      params.append('includePreviousEdition', String(this.includePreviousEdition))
       const res = await fetch('/api/football/overview?' + params.toString())
       if (!res.ok) {
         throw new Error('服务响应异常')
@@ -1576,9 +1578,11 @@ export default {
         recommendedSelectionCount,
         recommendedMatches.length
       )
+      const totalMatchCount = Number(this.backtestSummary.completedMatchCount) || this.backtestSourceMatches.length
       this.backtestMatches = recommendedMatches
       this.backtestSummary = {
         ...this.backtestSummary,
+        samplingRate: calculateSamplingRate(recommendedMatches.length, totalMatchCount),
         recommendedMatchCount: recommendedMatches.length,
         recommendedSelectionCount,
         hitMatchCount: hitMatches.length,
@@ -1695,9 +1699,7 @@ export default {
         this.response = {}
       }
       this.saveUserConfig()
-      if (this.queryDate) {
-        await this.loadPredictions()
-      }
+      await this.loadOverview(this.queryDate)
     },
     loadRecommendationSelections() {
       const cookieValue = this.getCookie(SELECTION_COOKIE)

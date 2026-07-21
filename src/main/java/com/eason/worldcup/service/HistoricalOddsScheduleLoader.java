@@ -197,18 +197,10 @@ public class HistoricalOddsScheduleLoader {
     }
 
     private String resolveTeamName(Competition competition, String chineseName, String englishName) {
-        String translatedName = ClubTeamNameTranslator.translate(competition, englishName);
-        if (englishName != null
-                && !englishName.isBlank()
-                && translatedName != null
-                && !translatedName.isBlank()
-                && !translatedName.equals(englishName.trim())) {
-            return translatedName;
-        }
         if (chineseName != null && !chineseName.isBlank()) {
-            return chineseName;
+            return ClubTeamNameTranslator.translate(competition, chineseName);
         }
-        return translatedName;
+        return ClubTeamNameTranslator.translate(competition, englishName);
     }
 
     private String resolveChineseTeamName(Competition competition, String chineseName, String englishName) {

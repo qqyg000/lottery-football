@@ -16,6 +16,7 @@ import com.eason.worldcup.model.ThreeWayProbability;
 import com.eason.worldcup.model.TotalGoalsProbability;
 import com.eason.worldcup.model.UserConfig;
 import com.eason.worldcup.util.ApplicationTime;
+import com.eason.worldcup.util.ClubTeamNameTranslator;
 import com.eason.worldcup.util.PoissonRandom;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -40,39 +42,54 @@ public class PredictionService {
 
     private static final int[] HANDICAPS = {-3, -2, -1, 1, 2, 3};
 
-    private static final Map<Competition, LocalDate> CURRENT_EDITION_BACKTEST_START_DATES = Map.ofEntries(
-            Map.entry(Competition.WORLD_CUP, LocalDate.of(2026, 6, 11)),
-            Map.entry(Competition.EUROPEAN_CHAMPIONSHIP, LocalDate.of(2028, 6, 9)),
-            Map.entry(Competition.COPA_AMERICA, LocalDate.of(2028, 6, 9)),
-            Map.entry(Competition.CLUB_WORLD_CUP, LocalDate.of(2028, 6, 9)),
-            Map.entry(Competition.EUROPA_LEAGUE, LocalDate.of(2026, 9, 16)),
-            Map.entry(Competition.CHAMPIONS_LEAGUE, LocalDate.of(2026, 9, 8)),
-            Map.entry(Competition.PREMIER_LEAGUE, LocalDate.of(2026, 8, 21)),
-            Map.entry(Competition.LA_LIGA, LocalDate.of(2026, 8, 15)),
-            Map.entry(Competition.SERIE_A, LocalDate.of(2026, 8, 21)),
-            Map.entry(Competition.BUNDESLIGA, LocalDate.of(2026, 8, 28)),
-            Map.entry(Competition.LIGUE_1, LocalDate.of(2026, 8, 21)),
-            Map.entry(Competition.BRAZIL_SERIE_A, LocalDate.of(2026, 1, 28)),
-            Map.entry(Competition.PRIMEIRA_LIGA, LocalDate.of(2026, 8, 8)),
-            Map.entry(Competition.EREDIVISIE, LocalDate.of(2026, 8, 7)),
-            Map.entry(Competition.ARGENTINE_PRIMERA_DIVISION, LocalDate.of(2026, 1, 22)));
+    private static final long BACKTEST_MARKET_DATE_END_OFFSET_DAYS = 1L;
 
-    private static final Map<Competition, LocalDate> PREVIOUS_EDITION_BACKTEST_START_DATES = Map.ofEntries(
-            Map.entry(Competition.WORLD_CUP, LocalDate.of(2022, 11, 20)),
-            Map.entry(Competition.EUROPEAN_CHAMPIONSHIP, LocalDate.of(2024, 6, 14)),
-            Map.entry(Competition.COPA_AMERICA, LocalDate.of(2024, 6, 20)),
-            Map.entry(Competition.CLUB_WORLD_CUP, LocalDate.of(2025, 6, 14)),
-            Map.entry(Competition.EUROPA_LEAGUE, LocalDate.of(2025, 9, 24)),
-            Map.entry(Competition.CHAMPIONS_LEAGUE, LocalDate.of(2025, 9, 16)),
-            Map.entry(Competition.PREMIER_LEAGUE, LocalDate.of(2025, 8, 15)),
-            Map.entry(Competition.LA_LIGA, LocalDate.of(2025, 8, 15)),
-            Map.entry(Competition.SERIE_A, LocalDate.of(2025, 8, 23)),
-            Map.entry(Competition.BUNDESLIGA, LocalDate.of(2025, 8, 22)),
-            Map.entry(Competition.LIGUE_1, LocalDate.of(2025, 8, 15)),
-            Map.entry(Competition.BRAZIL_SERIE_A, LocalDate.of(2025, 3, 29)),
-            Map.entry(Competition.PRIMEIRA_LIGA, LocalDate.of(2025, 8, 8)),
-            Map.entry(Competition.EREDIVISIE, LocalDate.of(2025, 8, 8)),
-            Map.entry(Competition.ARGENTINE_PRIMERA_DIVISION, LocalDate.of(2025, 1, 23)));
+    private static final Map<Competition, CompetitionBacktestPeriod> COMPETITION_BACKTEST_PERIODS = Map.ofEntries(
+            Map.entry(Competition.WORLD_CUP, new CompetitionBacktestPeriod(
+                    LocalDate.of(2022, 11, 20), LocalDate.of(2022, 12, 18),
+                    LocalDate.of(2026, 6, 11), LocalDate.of(2026, 7, 19))),
+            Map.entry(Competition.EUROPEAN_CHAMPIONSHIP, new CompetitionBacktestPeriod(
+                    LocalDate.of(2021, 6, 11), LocalDate.of(2021, 7, 11),
+                    LocalDate.of(2024, 6, 14), LocalDate.of(2024, 7, 14))),
+            Map.entry(Competition.COPA_AMERICA, new CompetitionBacktestPeriod(
+                    LocalDate.of(2019, 6, 14), LocalDate.of(2019, 7, 7),
+                    LocalDate.of(2024, 6, 20), LocalDate.of(2024, 7, 14))),
+            Map.entry(Competition.CLUB_WORLD_CUP, new CompetitionBacktestPeriod(
+                    LocalDate.of(2023, 12, 12), LocalDate.of(2023, 12, 22),
+                    LocalDate.of(2025, 6, 14), LocalDate.of(2025, 7, 13))),
+            Map.entry(Competition.EUROPA_LEAGUE, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 7, 10), LocalDate.of(2026, 5, 20),
+                    LocalDate.of(2026, 7, 9), LocalDate.of(2027, 5, 26))),
+            Map.entry(Competition.CHAMPIONS_LEAGUE, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 7, 8), LocalDate.of(2026, 5, 30),
+                    LocalDate.of(2026, 7, 7), LocalDate.of(2027, 6, 5))),
+            Map.entry(Competition.PREMIER_LEAGUE, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 8, 15), LocalDate.of(2026, 5, 24),
+                    LocalDate.of(2026, 8, 21), LocalDate.of(2027, 5, 30))),
+            Map.entry(Competition.LA_LIGA, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 8, 15), LocalDate.of(2026, 5, 24),
+                    LocalDate.of(2026, 8, 15), LocalDate.of(2027, 5, 30))),
+            Map.entry(Competition.SERIE_A, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 8, 23), LocalDate.of(2026, 5, 24),
+                    LocalDate.of(2026, 8, 22), LocalDate.of(2027, 5, 30))),
+            Map.entry(Competition.BUNDESLIGA, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 8, 22), LocalDate.of(2026, 5, 16),
+                    LocalDate.of(2026, 8, 28), LocalDate.of(2027, 5, 22))),
+            Map.entry(Competition.LIGUE_1, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 8, 15), LocalDate.of(2026, 5, 16),
+                    LocalDate.of(2026, 8, 20), LocalDate.of(2027, 5, 29))),
+            Map.entry(Competition.BRAZIL_SERIE_A, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 3, 29), LocalDate.of(2025, 12, 7),
+                    LocalDate.of(2026, 1, 28), LocalDate.of(2026, 12, 2))),
+            Map.entry(Competition.PRIMEIRA_LIGA, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 8, 8), LocalDate.of(2026, 5, 17),
+                    LocalDate.of(2026, 8, 7), LocalDate.of(2027, 5, 16))),
+            Map.entry(Competition.EREDIVISIE, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 8, 8), LocalDate.of(2026, 5, 17),
+                    LocalDate.of(2026, 8, 7), LocalDate.of(2027, 5, 23))),
+            Map.entry(Competition.ARGENTINE_PRIMERA_DIVISION, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 1, 24), LocalDate.of(2025, 12, 13),
+                    LocalDate.of(2026, 1, 25), LocalDate.of(2026, 12, 13))));
 
     private final DataRepository dataRepository;
 
@@ -140,8 +157,9 @@ public class PredictionService {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         int simulationCount = normalizeSimulationCount(simulations);
         double effectiveHandicapSmoothingFactor = normalizeHandicapSmoothingFactor(handicapSmoothingFactor);
-        List<MatchSchedule> schedules = dataRepository.findSchedulesByDate(date, effectiveCompetition);
-        sportteryMarketSelectionService.updateSelections(schedules);
+        List<MatchSchedule> scheduleCandidates = dataRepository.findSchedulesByDate(date, effectiveCompetition);
+        sportteryMarketSelectionService.updateSelections(scheduleCandidates);
+        List<MatchSchedule> schedules = deduplicateSchedules(scheduleCandidates);
         List<MatchPredictionResponse> matches = schedules.stream()
                 .map(schedule -> predict(
                         schedule,
@@ -225,7 +243,7 @@ public class PredictionService {
             BiConsumer<Integer, Integer> progressConsumer) {
         int simulationCount = normalizeSimulationCount(simulations);
         LocalDate backtestEndDate = ApplicationTime.today();
-        List<MatchSchedule> completedSchedules = dataRepository.getSchedules().stream()
+        List<MatchSchedule> completedScheduleCandidates = dataRepository.getSchedules().stream()
                 .filter(schedule -> competitions == null
                         || competitions.isEmpty()
                         || competitions.contains(schedule.getCompetition()))
@@ -236,7 +254,8 @@ public class PredictionService {
                 .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
                 .filter(schedule -> schedule.getHomeScore() != null && schedule.getAwayScore() != null)
                 .toList();
-        sportteryMarketSelectionService.applyCachedSelections(completedSchedules);
+        sportteryMarketSelectionService.applyCachedSelections(completedScheduleCandidates);
+        List<MatchSchedule> completedSchedules = deduplicateSchedules(completedScheduleCandidates);
         List<MatchSchedule> sportterySchedules = completedSchedules.stream()
                 .filter(schedule -> schedule.getSportteryMatchId() != null && !schedule.getSportteryMatchId().isBlank())
                 .toList();
@@ -331,39 +350,129 @@ public class PredictionService {
         return response;
     }
 
-    private boolean isWithinRecommendationBacktestRange(
+    boolean isWithinRecommendationBacktestRange(
             MatchSchedule schedule,
             LocalDate backtestEndDate,
             boolean includePreviousEdition) {
         if (schedule.getCompetition() == null || schedule.getMatchDate() == null) {
             return false;
         }
-        Map<Competition, LocalDate> backtestStartDates = includePreviousEdition
-                ? PREVIOUS_EDITION_BACKTEST_START_DATES
-                : CURRENT_EDITION_BACKTEST_START_DATES;
-        LocalDate backtestStartDate = backtestStartDates.get(schedule.getCompetition());
-        return backtestStartDate != null
-                && !backtestStartDate.isAfter(backtestEndDate)
+        CompetitionBacktestPeriod period = COMPETITION_BACKTEST_PERIODS.get(schedule.getCompetition());
+        if (period == null) {
+            return false;
+        }
+        LocalDate backtestStartDate = includePreviousEdition
+                ? period.previousStartDate()
+                : period.currentStartDate();
+        LocalDate marketDataEndDate = period.currentEndDate().plusDays(BACKTEST_MARKET_DATE_END_OFFSET_DAYS);
+        LocalDate effectiveEndDate = marketDataEndDate.isAfter(backtestEndDate)
+                ? backtestEndDate
+                : marketDataEndDate;
+        return !backtestStartDate.isAfter(effectiveEndDate)
                 && !schedule.getMatchDate().isBefore(backtestStartDate)
-                && !schedule.getMatchDate().isAfter(backtestEndDate);
+                && !schedule.getMatchDate().isAfter(effectiveEndDate);
+    }
+
+    CompetitionBacktestPeriod resolveCompetitionBacktestPeriod(Competition competition) {
+        return COMPETITION_BACKTEST_PERIODS.get(competition);
     }
 
     public ModelOverviewResponse overview() {
-        return overview(Competition.WORLD_CUP);
+        return overview(Competition.WORLD_CUP, false);
     }
 
     public ModelOverviewResponse overview(Competition competition) {
+        return overview(competition, false);
+    }
+
+    public ModelOverviewResponse overview(Competition competition, boolean includePreviousEdition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
-        sportteryMarketSelectionService.applyCachedSelections(dataRepository.getSchedules(effectiveCompetition));
+        List<MatchSchedule> schedules = dataRepository.getSchedules(effectiveCompetition);
+        List<MatchSchedule> rangeSchedules = deduplicateSchedules(schedules.stream()
+                .filter(schedule -> isWithinConfiguredBacktestRange(schedule, includePreviousEdition))
+                .toList());
         ModelOverviewResponse response = new ModelOverviewResponse();
         response.setCompetition(effectiveCompetition);
         response.setCompetitionName(effectiveCompetition.getDisplayName());
         response.setHistoricalMatchCount(teamStrengthService.countHistoricalMatches(effectiveCompetition));
-        response.setScheduleMatchCount(dataRepository.getCurrentSeasonSchedules(effectiveCompetition).size());
-        response.setCompletedMatchCount(teamStrengthService.countCompletedScheduleMatches(effectiveCompetition));
+        response.setScheduleMatchCount(rangeSchedules.size());
+        response.setCompletedMatchCount((int) rangeSchedules.stream()
+                .filter(this::isCompletedSchedule)
+                .count());
         response.setBaselineGoals(teamStrengthService.getBaselineGoals(effectiveCompetition));
-        response.setScheduleDates(dataRepository.findScheduleDates(effectiveCompetition));
+        response.setScheduleDates(rangeSchedules.stream()
+                .map(MatchSchedule::getMatchDate)
+                .filter(java.util.Objects::nonNull)
+                .map(LocalDate::toString)
+                .distinct()
+                .sorted()
+                .toList());
         return response;
+    }
+
+    private boolean isWithinConfiguredBacktestRange(
+            MatchSchedule schedule,
+            boolean includePreviousEdition) {
+        if (schedule == null || schedule.getCompetition() == null) {
+            return false;
+        }
+        CompetitionBacktestPeriod period = COMPETITION_BACKTEST_PERIODS.get(schedule.getCompetition());
+        if (period == null) {
+            return false;
+        }
+        return isWithinRecommendationBacktestRange(
+                schedule,
+                period.currentEndDate().plusDays(BACKTEST_MARKET_DATE_END_OFFSET_DAYS),
+                includePreviousEdition);
+    }
+
+    List<MatchSchedule> deduplicateSchedules(List<MatchSchedule> schedules) {
+        Map<String, MatchSchedule> schedulesByFixture = new LinkedHashMap<>();
+        if (schedules == null) {
+            return List.of();
+        }
+        for (MatchSchedule schedule : schedules) {
+            if (schedule == null) {
+                continue;
+            }
+            schedulesByFixture.merge(
+                    buildScheduleFixtureKey(schedule),
+                    schedule,
+                    this::preferSchedule);
+        }
+        return new ArrayList<>(schedulesByFixture.values());
+    }
+
+    private String buildScheduleFixtureKey(MatchSchedule schedule) {
+        return schedule.getCompetition()
+                + "|" + schedule.getMatchDate()
+                + "|" + canonicalFixtureTeamName(schedule, true)
+                + "|" + canonicalFixtureTeamName(schedule, false);
+    }
+
+    private String canonicalFixtureTeamName(MatchSchedule schedule, boolean homeTeam) {
+        String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
+        String englishName = homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
+        String source = chineseName == null || chineseName.isBlank() ? englishName : chineseName;
+        return canonicalTeamName(ClubTeamNameTranslator.translate(schedule.getCompetition(), source));
+    }
+
+    private MatchSchedule preferSchedule(MatchSchedule current, MatchSchedule candidate) {
+        return scheduleQuality(candidate) > scheduleQuality(current) ? candidate : current;
+    }
+
+    private int scheduleQuality(MatchSchedule schedule) {
+        int quality = 0;
+        if (schedule.getSportteryNormalOdds() != null || schedule.getSportteryHandicapOdds() != null) {
+            quality += 4;
+        }
+        if (schedule.getSportteryMatchId() != null && !schedule.getSportteryMatchId().isBlank()) {
+            quality += 2;
+        }
+        if (isCompletedSchedule(schedule)) {
+            quality++;
+        }
+        return quality;
     }
 
     public ModelOverviewResponse refreshData() {
@@ -627,8 +736,8 @@ public class PredictionService {
         response.setMatchDate(schedule.getMatchDate());
         response.setKickoffTime(schedule.getKickoffTime());
         response.setGroupName(schedule.getGroupName());
-        response.setHomeTeamCn(schedule.getHomeTeamCn());
-        response.setAwayTeamCn(schedule.getAwayTeamCn());
+        response.setHomeTeamCn(resolveDisplayTeamName(schedule, true));
+        response.setAwayTeamCn(resolveDisplayTeamName(schedule, false));
         response.setHomeTeamEn(schedule.getHomeTeamEn());
         response.setAwayTeamEn(schedule.getAwayTeamEn());
         response.setVenue(schedule.getVenue());
@@ -658,6 +767,19 @@ public class PredictionService {
         response.setCorrectionMatchCount(postMatchExpectedGoals.getCorrectionMatchCount());
         response.setModelRemark(buildModelRemark(schedule));
         return response;
+    }
+
+    String resolveDisplayTeamName(MatchSchedule schedule, boolean homeTeam) {
+        String sportteryName = homeTeam
+                ? schedule.getSportteryHomeTeamName()
+                : schedule.getSportteryAwayTeamName();
+        if (sportteryName != null && !sportteryName.isBlank()) {
+            return ClubTeamNameTranslator.translate(schedule.getCompetition(), sportteryName);
+        }
+        String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
+        String englishName = homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
+        String source = chineseName == null || chineseName.isBlank() ? englishName : chineseName;
+        return ClubTeamNameTranslator.translate(schedule.getCompetition(), source);
     }
 
     private SimulationCounter runMonteCarlo(MatchSchedule schedule, TeamStrengthService.ExpectedGoals expectedGoals, int simulationCount, double effectiveHandicapSmoothingFactor) {
@@ -900,6 +1022,22 @@ public class PredictionService {
                 return "主队让" + Math.abs(handicap) + "球";
             }
             return "主队受让" + handicap + "球";
+        }
+
+    }
+
+    record CompetitionBacktestPeriod(
+            LocalDate previousStartDate,
+            LocalDate previousEndDate,
+            LocalDate currentStartDate,
+            LocalDate currentEndDate) {
+
+        CompetitionBacktestPeriod {
+            if (previousStartDate.isAfter(previousEndDate)
+                    || currentStartDate.isAfter(currentEndDate)
+                    || !previousEndDate.isBefore(currentStartDate)) {
+                throw new IllegalArgumentException("Invalid competition backtest period");
+            }
         }
 
     }

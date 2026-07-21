@@ -13,7 +13,8 @@
 - 展示双方期望进球、前三总进球数和前三比分预测
 - 展示比赛状态、比分、分组、开球时间和场地
 - 从中国体彩网读取胜平负开售状态、让球数和最新赔率
-- 使用历史赔率数据统一映射接口返回的英文球队名
+- 体彩赔率匹配成功后，接口和页面统一以体彩主客队名为准
+- 使用 `team_name_mappings.csv` 统一历史数据、赛程、回测和页面球队名
 - 点击球队名称查看双方最多 50 场正式比赛和降权友谊赛
 - 每类赛事维护“本届/含上届 × 稳定/激进”四套独立参数档案
 - 提供推荐结果回测、平投注入 ROI、模型参数调整和用户配置持久化
@@ -50,6 +51,7 @@
 |---|---:|---|---:|---:|
 | `historical_matches.csv` | 56,809 | 2014-06-12 至 2026-07-18 | 19 | 10 |
 | `historical_odds_data.csv` | 30,942 | 2014-10-22 至 2026-07-17 | 15 | 18 |
+| `team_name_mappings.csv` | 4,435 | 截至 2026-07-22 | 19 类赛事及全局映射 | 6 |
 
 历史比赛的 19 个分类由 15 个前端可选赛事和 4 个内部补充分类组成：国家队其他正式比赛、国家队国际窗口友谊赛、俱乐部其他正式比赛、俱乐部正常阵容友谊赛。内部分类只用于补充参赛球队样本，不会出现在赛事下拉框中。
 
@@ -104,6 +106,7 @@ lottery-football
 │  └─ tests
 │     └─ backtest-roi.test.mjs
 ├─ scripts
+│  ├─ generate-team-name-mappings.mjs
 │  ├─ import-historical-odds.ps1
 │  ├─ import-public-history.mjs
 │  ├─ import-supplemental-history.mjs
@@ -127,7 +130,8 @@ lottery-football
          ├─ application.yml
          └─ data
             ├─ historical_matches.csv
-            └─ historical_odds_data.csv
+            ├─ historical_odds_data.csv
+            └─ team_name_mappings.csv
 ```
 
 运行时缓存和用户配置保存在 `config` 目录，不属于内置历史 CSV。
@@ -258,29 +262,48 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 | `sportteryNormalOdds` | 最新不让球胜平负赔率，包含 `win`、`draw`、`lose`、`updatedAt` |
 | `sportteryHandicapOdds` | 最新让球胜平负赔率，包含 `win`、`draw`、`lose`、`updatedAt` |
 
+#### 体彩队名适配
+
+近期赛程与体彩赔率来自不同数据源，球队名称可能分别使用简称、英文名或不同中文译名。系统按赛事、比赛日期和主客队方向匹配比赛，所有球队名称先通过 `team_name_mappings.csv` 转换为体彩标准名称。只有主客队都能可靠对应时才挂载体彩比赛 ID 和赔率，避免将同日其他比赛错误关联。
+
+数据更新、历史比赛加载、模型计算、回测去重、体彩赔率匹配和接口展示共用同一份映射。`homeTeamCn` 和 `awayTeamCn` 返回映射后的体彩标准名称；未收录的名称保持数据源原值，不进行猜测式替换。
+
+当前明确适配的名称包括：
+
+| 赛程源名称 | 体彩标准名称 |
+|---|---|
+| 米竞技、Atlético-MG | 米内罗竞技 |
+| KuPS Kuopio | 库奥皮奥 |
+| AGF | 奥胡斯 |
+| 波兹南、Lech Poznan | 波兹南莱赫 |
+| 格风暴、SK Sturm Graz | 格拉茨风暴 |
+| Heart of Midlothian | 哈茨 |
+
+新增球队别名时，直接在 `team_name_mappings.csv` 增加 `source=MANUAL` 的映射行，并重启服务。运行生成脚本时会保留 `MANUAL`、`VERIFIED_ALIAS` 和 `VERIFIED_SPORTTERY` 行，不需要再修改 Java 常量。
+
 ### 3. 推荐回测
 
-推荐回测按赛事和页面范围使用独立的起始日期，结束日期统一为 `Asia/Shanghai` 时区的当天，起始日和结束日都包含在回测范围内。页面选择“仅本届赛事”时使用本届起始日，选择“含上届赛事”时从上届起始日开始。
+推荐回测按赛事使用独立的届次日期，起始日和结束日都包含在范围内。页面选择“含上届赛事”时使用“上届开始至本届结束”，选择“仅本届赛事”时使用“本届开始至本届结束”。赛事日期表保留举办地公布的官方日期；由于竞彩比赛日期统一按 `Asia/Shanghai` 保存，回测结束边界额外包含官方结束日后的北京时间次日，避免遗漏决赛或末轮晚场。本届尚未结束时，实际回测结束日仍截取到 `Asia/Shanghai` 时区的当天。
 
-| 赛事 | 赛事代码 | 上届起始日期 | 本届起始日期 |
-|---|---|---|---|
-| 世界杯 | `WORLD_CUP` | `2022-11-20` | `2026-06-11` |
-| 欧洲杯 | `EUROPEAN_CHAMPIONSHIP` | `2024-06-14` | `2028-06-09` |
-| 美洲杯 | `COPA_AMERICA` | `2024-06-20` | `2028-06-09` |
-| 世俱杯 | `CLUB_WORLD_CUP` | `2025-06-14` | `2028-06-09` |
-| 欧罗巴 | `EUROPA_LEAGUE` | `2025-09-24` | `2026-09-16` |
-| 欧冠 | `CHAMPIONS_LEAGUE` | `2025-09-16` | `2026-09-08` |
-| 英超 | `PREMIER_LEAGUE` | `2025-08-15` | `2026-08-21` |
-| 西甲 | `LA_LIGA` | `2025-08-15` | `2026-08-15` |
-| 意甲 | `SERIE_A` | `2025-08-23` | `2026-08-21` |
-| 德甲 | `BUNDESLIGA` | `2025-08-22` | `2026-08-28` |
-| 法甲 | `LIGUE_1` | `2025-08-15` | `2026-08-21` |
-| 巴甲 | `BRAZIL_SERIE_A` | `2025-03-29` | `2026-01-28` |
-| 葡超 | `PRIMEIRA_LIGA` | `2025-08-08` | `2026-08-08` |
-| 荷甲 | `EREDIVISIE` | `2025-08-08` | `2026-08-07` |
-| 阿甲 | `ARGENTINE_PRIMERA_DIVISION` | `2025-01-23` | `2026-01-22` |
+| 赛事 | 赛事代码 | 上届开始 | 上届结束 | 本届开始 | 本届结束 |
+|---|---|---|---|---|---|
+| 世界杯 | `WORLD_CUP` | `2022-11-20` | `2022-12-18` | `2026-06-11` | `2026-07-19` |
+| 欧洲杯 | `EUROPEAN_CHAMPIONSHIP` | `2021-06-11` | `2021-07-11` | `2024-06-14` | `2024-07-14` |
+| 美洲杯 | `COPA_AMERICA` | `2019-06-14` | `2019-07-07` | `2024-06-20` | `2024-07-14` |
+| 世俱杯 | `CLUB_WORLD_CUP` | `2023-12-12` | `2023-12-22` | `2025-06-14` | `2025-07-13` |
+| 欧罗巴 | `EUROPA_LEAGUE` | `2025-07-10` | `2026-05-20` | `2026-07-09` | `2027-05-26` |
+| 欧冠 | `CHAMPIONS_LEAGUE` | `2025-07-08` | `2026-05-30` | `2026-07-07` | `2027-06-05` |
+| 英超 | `PREMIER_LEAGUE` | `2025-08-15` | `2026-05-24` | `2026-08-21` | `2027-05-30` |
+| 西甲 | `LA_LIGA` | `2025-08-15` | `2026-05-24` | `2026-08-15` | `2027-05-30` |
+| 意甲 | `SERIE_A` | `2025-08-23` | `2026-05-24` | `2026-08-22` | `2027-05-30` |
+| 德甲 | `BUNDESLIGA` | `2025-08-22` | `2026-05-16` | `2026-08-28` | `2027-05-22` |
+| 法甲 | `LIGUE_1` | `2025-08-15` | `2026-05-16` | `2026-08-20` | `2027-05-29` |
+| 巴甲 | `BRAZIL_SERIE_A` | `2025-03-29` | `2025-12-07` | `2026-01-28` | `2026-12-02` |
+| 葡超 | `PRIMEIRA_LIGA` | `2025-08-08` | `2026-05-17` | `2026-08-07` | `2027-05-16` |
+| 荷甲 | `EREDIVISIE` | `2025-08-08` | `2026-05-17` | `2026-08-07` | `2027-05-23` |
+| 阿甲 | `ARGENTINE_PRIMERA_DIVISION` | `2025-01-24` | `2025-12-13` | `2026-01-25` | `2026-12-13` |
 
-批量接口选择 `ALL` 或多个赛事时，每场比赛仍按自身赛事和范围的起始日期过滤，不会使用全局统一起始日期。起始日期晚于当天的未开始赛事没有本届回测样本。只有已完赛且有完整比分、竞彩比赛 ID 和至少一类胜平负赔率的场次才进入最终回测；每场回测只使用比赛日期之前的历史数据建模，避免未来数据泄漏。
+批量接口选择 `ALL` 或多个赛事时，每场比赛仍按自身赛事和页面范围过滤，不会使用全局统一日期。起始日期晚于当天的未开始赛事没有本届回测样本。只有已完赛且有完整比分、竞彩比赛 ID 和至少一类胜平负赔率的场次才进入最终回测；每场回测只使用比赛日期之前的历史数据建模，避免未来数据泄漏。
 
 #### 参数档案
 
@@ -313,9 +336,12 @@ netProfit = totalReturn - totalStake
 ROI = (totalReturn / totalStake - 1) × 100%
 场均返奖 = totalReturn / recommendedMatchCount
 命中率 = hitMatchCount / recommendedMatchCount × 100%
+采样率 = recommendedMatchCount / completedMatchCount × 100%
 ```
 
 没有推荐项时不计算 ROI；存在推荐项但全部未命中时 ROI 为 `-100%`。ROI 不使用命中率、场均返奖或场均推荐数的平方推导。
+
+采样率在页面结果卡片保留 1 位小数展示，并写入前端回测汇总对象及参数优化、核验报告。`recommendedMatchCount` 是运用当前方案参数后实际覆盖的比赛数，`completedMatchCount` 是回测范围内按比赛日期、主队和客队去重后的已完赛赛程总数，不要求存在竞彩比赛 ID 或赔率；总比赛数为 0 时采样率为 `null`。
 
 ### 4. 刷新运行时数据
 
@@ -416,13 +442,42 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_team_en,away_team
 
 两个 CSV 的 `match_id` 不是跨文件外键。比分校正脚本按赛事、日期和球队匹配比赛，允许日期相差 1 天，并处理主客队方向相反的情况。
 
-### 3. 球队中文名映射
+### 3. 球队名映射
 
-- `historical_odds_data.csv` 中的中文球队名是映射基准
-- 同一英文球队存在多个历史中文名时，优先使用日期最新的赔率记录
-- 映射同时按赛事和全局别名匹配，避免同名球队跨赛事误映射
-- 近期赛程接口返回英文名后，先映射为赔率数据中的中文名再参与合并和去重
-- 无法可靠映射的球队使用已核验兜底名称或数据源名称，不进行猜测式覆盖
+文件：
+
+```text
+src/main/resources/data/team_name_mappings.csv
+```
+
+该文件是运行时球队名称的唯一映射基准，以体彩中文名称作为 `standard_team_name`。首版从 `historical_matches.csv` 和 `historical_odds_data.csv` 聚合生成，同一英文球队存在多个历史中文名时使用日期最新的体彩赔率中文名；历史比赛中没有体彩对应关系的球队暂时使用原中文名作为标准名。
+
+| 字段 | 说明 |
+|---|---|
+| `competition` | 赛事代码，`*` 表示所有赛事可用的全局映射 |
+| `standard_team_name` | 体彩标准球队名，更新、模型、回测和页面统一使用该名称 |
+| `alias_team_name` | 数据源可能返回的中文简称、旧译名或英文名 |
+| `alias_type` | `STANDARD`、`ZH` 或 `EN` |
+| `source` | `HISTORICAL_ODDS`、`HISTORICAL_MATCHES`、`VERIFIED_ALIAS`、`VERIFIED_SPORTTERY` 或 `MANUAL` |
+| `last_seen_date` | 该名称最后出现日期，人工通用别名允许为空 |
+
+查找时先使用具体赛事映射，再使用 `competition=*` 的全局映射。名称会统一大小写、变音符号、空格和常见俱乐部前后缀后再查找；CSV 中同一作用域的同一规范化别名不允许指向两个不同标准名，服务启动时检测到冲突会直接报错。
+
+重新根据两份历史数据生成自动映射：
+
+```powershell
+node scripts\generate-team-name-mappings.mjs
+```
+
+生成器会重建 `HISTORICAL_ODDS` 和 `HISTORICAL_MATCHES` 条目，同时保留已有 `VERIFIED_ALIAS`、`VERIFIED_SPORTTERY` 和 `MANUAL` 条目。Java 测试会逐行验证每个别名都能解析为该行的标准名称。
+
+人工增加别名示例：
+
+```csv
+CHAMPIONS_LEAGUE,格拉茨风暴,格风暴,ZH,MANUAL,2026-07-22
+```
+
+同一别名同时适用于多个赛事时，可把 `competition` 设置为 `*`；只影响一个赛事时应填写具体赛事代码，避免同名球队跨赛事误映射。修改映射文件后需要重启服务，历史数据文件本身无需改名或重写。
 
 ## 九、数据更新与维护
 
@@ -432,11 +487,12 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_team_en,away_team
 
 - 近期赛程窗口为当前日期前 30 天至后 30 天
 - 同时补取这些参赛球队的国家队正式赛、国际窗口友谊赛、俱乐部杯赛、洲际赛和一线队友谊赛
-- 俱乐部补充比赛双方都必须能映射到 `historical_odds_data.csv`，避免青年队、预备队和未知球队混入模型
+- 俱乐部补充比赛双方都必须能映射到 `team_name_mappings.csv`，避免青年队、预备队和未知球队混入模型
 - 服务启动时直接使用本地历史和已有补充缓存，补充远程源只在手动更新时主动刷新，避免拖慢启动
 - 目标日期前 30 天内缺失的体彩赔率会补查
 - 目标日期前 1 天至后 4 天的体彩比赛会强制刷新
-- 新接口球队名会按 `historical_odds_data.csv` 的最新中文名映射
+- 新接口、历史数据和体彩队名统一通过 `team_name_mappings.csv` 转换
+- 实时赛程和体彩队名不一致时，会使用映射文件中的已核验别名完成关联
 - 结果写入 `config/club-competition-schedules.json` 和 `config/sporttery-market-selections.json`
 - 不会直接改写两个内置历史 CSV
 
@@ -542,6 +598,8 @@ node scripts\reconcile-historical-scores.mjs --write --compact
 
 `import-historical-odds.ps1` 和 `merge-sporttery-cache-odds.ps1` 在写入默认正式路径时已经自动调用该校正脚本，通常不需要再手工执行 `--write`。
 
+上述历史数据脚本写入正式 CSV 后会自动重新生成 `team_name_mappings.csv`。仅修改球队别名时无需改写历史数据，直接编辑映射文件并将人工行的 `source` 设置为 `MANUAL` 即可。
+
 ### 7. 参数档案优化与核验
 
 参数优化脚本通过正在运行的本地服务读取配置、执行回测并生成报告。先启动服务，再在项目根目录执行只生成结果、不写回配置的优化：
@@ -562,7 +620,15 @@ node scripts\optimize-profile-parameters.mjs --apply=true
 node scripts\optimize-profile-parameters.mjs --verify-only=true
 ```
 
-脚本的目标是在满足稳定方案 ROI 大于 `7.5%`、激进方案 ROI 大于 `15%` 且高于对应稳定方案后，优先提高推荐场次数。尚未开赛赛事会跳过 `CURRENT`，只优化 `PREVIOUS`。优化前配置备份、优化报告和核验报告分别写入：
+脚本仅优化稳定方案，以采样率严格大于 `80%` 为硬约束；满足约束后优先提高 ROI，ROI 相同时优先选择采样率更高的参数。激进方案不参与搜索并保持现有参数不变。尚未开赛赛事会跳过 `CURRENT`，只优化 `PREVIOUS`。优化前配置备份、优化报告和核验报告分别写入：
+
+需要单独调优某套档案时，可通过 `--profile`、`--minimum-sampling-rate`、`--minimum-roi` 和 `--priority=roi|sampling-rate` 覆盖默认目标；例如以采样率严格大于 `66.6%` 为约束提高世界杯上届激进方案 ROI：
+
+```powershell
+node scripts\optimize-profile-parameters.mjs --profile=WORLD_CUP:PREVIOUS:AGGRESSIVE --minimum-sampling-rate=0.666 --priority=roi --apply=true
+```
+
+若需要在 ROI 不为负的前提下优先提高采样率，可增加 `--minimum-roi=0 --priority=sampling-rate`。
 
 ```text
 target/user-config-before-profile-optimization.json
@@ -629,6 +695,7 @@ adjustedHomeGoals = homeGoals + handicap
 |---|---|
 | `data-refresh` | 近期赛程刷新窗口和目标时区 |
 | `football-data.historical-matches-path` | 历史比赛 CSV 路径 |
+| `data/team_name_mappings.csv` | 体彩标准球队名及所有数据源别名映射 |
 | `worldcup` | 世界杯数据源和模型参数 |
 | `champions-league` | 欧冠 ESPN 数据源 |
 | `club-competitions.schedule-update` | 其他赛事数据源、并发数和缓存路径 |

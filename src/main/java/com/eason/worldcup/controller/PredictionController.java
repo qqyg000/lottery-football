@@ -136,8 +136,10 @@ public class PredictionController {
 
     @GetMapping("/overview")
     public ModelOverviewResponse overview(
-            @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition) {
-        return predictionService.overview(parseCompetition(competition));
+            @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition,
+            @RequestParam(value = "includePreviousEdition", defaultValue = "false")
+            boolean includePreviousEdition) {
+        return predictionService.overview(parseCompetition(competition), includePreviousEdition);
     }
 
     @PostMapping("/data/refresh")

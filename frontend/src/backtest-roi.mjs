@@ -19,6 +19,20 @@ export function calculateFlatStakeBacktest(
   }
 }
 
+export function calculateSamplingRate(coveredMatchCount, totalMatchCount) {
+  const coveredCount = normalizeCount(coveredMatchCount)
+  const totalCount = normalizeCount(totalMatchCount)
+  return totalCount > 0 ? coveredCount / totalCount : null
+}
+
+export function calculateMinimumCoveredMatchCount(totalMatchCount, minimumSamplingRate) {
+  const totalCount = Math.floor(normalizeCount(totalMatchCount))
+  const minimumRate = Number(minimumSamplingRate)
+  return totalCount > 0 && Number.isFinite(minimumRate) && minimumRate >= 0
+    ? Math.floor(totalCount * minimumRate) + 1
+    : 0
+}
+
 function normalizeCount(value) {
   const numberValue = Number(value)
   return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : 0

@@ -1,7 +1,10 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { calculateFlatStakeBacktest } from '../frontend/src/backtest-roi.mjs'
+import {
+  calculateFlatStakeBacktest,
+  calculateSamplingRate
+} from '../frontend/src/backtest-roi.mjs'
 
 const API_ROOT = 'http://localhost:8080/api/football'
 const BACKTEST_URL = API_ROOT + '/recommendation-backtest'
@@ -16,27 +19,27 @@ const MODEL_FACTOR_MAX = 3
 const SMOOTHING_MIN = 0
 const SMOOTHING_MAX = 0.8
 const ROI_EPSILON = 1e-12
-const MINIMUM_STABLE_ROI = 0.075
-const MINIMUM_AGGRESSIVE_ROI = 0.15
-const MINIMUM_AGGRESSIVE_ROI_GAP = 0.0001
+const DEFAULT_MINIMUM_STABLE_SAMPLING_RATE = 0.8
+const DEFAULT_MINIMUM_AGGRESSIVE_SAMPLING_RATE = 0.6
 const PARAMETER_PRESETS = ['STABLE', 'AGGRESSIVE']
+const DEFAULT_OPTIMIZED_PARAMETER_PRESETS = PARAMETER_PRESETS
 
 const COMPETITIONS = [
   { code: 'WORLD_CUP', name: '世界杯', currentStartDate: '2026-06-11' },
-  { code: 'EUROPEAN_CHAMPIONSHIP', name: '欧洲杯', currentStartDate: '2028-06-09' },
-  { code: 'COPA_AMERICA', name: '美洲杯', currentStartDate: '2028-06-09' },
-  { code: 'CLUB_WORLD_CUP', name: '世俱杯', currentStartDate: '2028-06-09' },
-  { code: 'EUROPA_LEAGUE', name: '欧罗巴', currentStartDate: '2026-09-16' },
-  { code: 'CHAMPIONS_LEAGUE', name: '欧冠', currentStartDate: '2026-09-08' },
+  { code: 'EUROPEAN_CHAMPIONSHIP', name: '欧洲杯', currentStartDate: '2024-06-14' },
+  { code: 'COPA_AMERICA', name: '美洲杯', currentStartDate: '2024-06-20' },
+  { code: 'CLUB_WORLD_CUP', name: '世俱杯', currentStartDate: '2025-06-14' },
+  { code: 'EUROPA_LEAGUE', name: '欧罗巴', currentStartDate: '2026-07-09' },
+  { code: 'CHAMPIONS_LEAGUE', name: '欧冠', currentStartDate: '2026-07-07' },
   { code: 'PREMIER_LEAGUE', name: '英超', currentStartDate: '2026-08-21' },
   { code: 'LA_LIGA', name: '西甲', currentStartDate: '2026-08-15' },
-  { code: 'SERIE_A', name: '意甲', currentStartDate: '2026-08-21' },
+  { code: 'SERIE_A', name: '意甲', currentStartDate: '2026-08-22' },
   { code: 'BUNDESLIGA', name: '德甲', currentStartDate: '2026-08-28' },
-  { code: 'LIGUE_1', name: '法甲', currentStartDate: '2026-08-21' },
+  { code: 'LIGUE_1', name: '法甲', currentStartDate: '2026-08-20' },
   { code: 'BRAZIL_SERIE_A', name: '巴甲', currentStartDate: '2026-01-28' },
-  { code: 'PRIMEIRA_LIGA', name: '葡超', currentStartDate: '2026-08-08' },
+  { code: 'PRIMEIRA_LIGA', name: '葡超', currentStartDate: '2026-08-07' },
   { code: 'EREDIVISIE', name: '荷甲', currentStartDate: '2026-08-07' },
-  { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲', currentStartDate: '2026-01-22' }
+  { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲', currentStartDate: '2026-01-25' }
 ]
 
 const argumentsMap = new Map(
@@ -55,12 +58,40 @@ const applyResults = argumentsMap.get('apply') !== 'false'
 const requestedProfile = argumentsMap.get('profile') || ''
 const verifyOnly = argumentsMap.get('verify-only') === 'true'
 const verboseRequests = argumentsMap.get('verbose-requests') === 'true'
+const sharedMinimumSamplingRate = argumentsMap.has('minimum-sampling-rate')
+  ? decimalArgument('minimum-sampling-rate', DEFAULT_MINIMUM_STABLE_SAMPLING_RATE, 0, 1)
+  : null
+const minimumStableSamplingRate = decimalArgument(
+  'minimum-stable-sampling-rate',
+  sharedMinimumSamplingRate ?? DEFAULT_MINIMUM_STABLE_SAMPLING_RATE,
+  0,
+  1
+)
+const minimumAggressiveSamplingRate = decimalArgument(
+  'minimum-aggressive-sampling-rate',
+  sharedMinimumSamplingRate ?? DEFAULT_MINIMUM_AGGRESSIVE_SAMPLING_RATE,
+  0,
+  1
+)
+const minimumRoi = decimalArgument('minimum-roi', -1, -1, 10)
+const fineTuneRatio = decimalArgument('fine-tune-ratio', 0, 0, 0.5)
+const fineTuneEnabled = fineTuneRatio > 0
+const optimizationPriority = argumentsMap.get('priority') === 'sampling-rate'
+  ? 'SAMPLING_RATE'
+  : 'ROI'
 const requestCache = new Map()
 
 function numberArgument(name, fallback, minimum, maximum) {
   const value = Number(argumentsMap.get(name))
   return Number.isFinite(value)
     ? Math.max(minimum, Math.min(maximum, Math.round(value)))
+    : fallback
+}
+
+function decimalArgument(name, fallback, minimum, maximum) {
+  const value = Number(argumentsMap.get(name))
+  return Number.isFinite(value)
+    ? Math.max(minimum, Math.min(maximum, value))
     : fallback
 }
 
@@ -85,6 +116,15 @@ function targetLabel(target) {
   return target.preset
     ? profileKey(target.code, target.range, target.preset)
     : baseProfileKey(target.code, target.range)
+}
+
+function optimizedParameterPresets(target) {
+  if (!requestedProfile || requestedProfile === baseProfileKey(target.code, target.range)) {
+    return DEFAULT_OPTIMIZED_PARAMETER_PRESETS
+  }
+  return PARAMETER_PRESETS.filter(preset => {
+    return requestedProfile === profileKey(target.code, target.range, preset)
+  })
 }
 
 function buildTargets() {
@@ -350,8 +390,13 @@ function evaluate(matches, parameters) {
     recommendedSelectionCount,
     recommendedMatchCount
   )
+  const totalMatchCount = Math.max(
+    matches.length,
+    Number(matches.totalMatchCount) || 0
+  )
   return {
-    sampleCount: matches.length,
+    sampleCount: totalMatchCount,
+    samplingRate: calculateSamplingRate(recommendedMatchCount, totalMatchCount),
     recommendedMatchCount,
     recommendedSelectionCount,
     hitMatchCount,
@@ -367,28 +412,39 @@ function evaluate(matches, parameters) {
   }
 }
 
-function minimumRecommendedMatches(sampleCount) {
-  return sampleCount > 0 ? 1 : 0
+function minimumSamplingRateForPreset(preset, target = null) {
+  if (target?.range === 'PREVIOUS' && target.code === 'PREMIER_LEAGUE') {
+    return preset === 'AGGRESSIVE' ? 0.5 : 0.65
+  }
+  if (target?.range === 'PREVIOUS' && target.code === 'LIGUE_1') {
+    return preset === 'AGGRESSIVE' ? 0.5 : 0.666
+  }
+  return preset === 'AGGRESSIVE' ? minimumAggressiveSamplingRate : minimumStableSamplingRate
 }
 
-function createObjective(preset, minimumRoiExclusive) {
+function minimumRecommendedMatches(sampleCount, minimumSamplingRateInclusive) {
+  if (sampleCount <= 0) {
+    return 0
+  }
+  return Math.ceil(sampleCount * minimumSamplingRateInclusive - ROI_EPSILON)
+}
+
+function createObjective(preset, target = null) {
+  const minimumSamplingRateInclusive = minimumSamplingRateForPreset(preset, target)
   return {
     preset,
-    minimumRoiExclusive,
+    minimumSamplingRateInclusive,
+    minimumRoiInclusive: minimumRoi,
+    priority: optimizationPriority,
     isEligible(metrics) {
       return metrics.recommendedMatchCount > 0 &&
         metrics.hitMatchCount > 0 &&
+        metrics.samplingRate !== null &&
+        metrics.samplingRate + ROI_EPSILON >= minimumSamplingRateInclusive &&
         Number.isFinite(metrics.roi) &&
-        metrics.roi > minimumRoiExclusive + ROI_EPSILON
+        metrics.roi + ROI_EPSILON >= minimumRoi
     }
   }
-}
-
-function aggressiveMinimumRoiExclusive(stableRoi) {
-  return Math.max(
-    MINIMUM_AGGRESSIVE_ROI,
-    stableRoi + MINIMUM_AGGRESSIVE_ROI_GAP - ROI_EPSILON
-  )
 }
 
 function isBetter(left, right, objective) {
@@ -398,11 +454,16 @@ function isBetter(left, right, objective) {
   if (!right || !objective.isEligible(right.metrics)) {
     return true
   }
+  const priorityMetrics = objective.priority === 'SAMPLING_RATE'
+    ? ['samplingRate', 'roi']
+    : ['roi', 'samplingRate']
+  for (const metric of priorityMetrics) {
+    if (Math.abs(left.metrics[metric] - right.metrics[metric]) > ROI_EPSILON) {
+      return left.metrics[metric] > right.metrics[metric]
+    }
+  }
   if (left.metrics.recommendedMatchCount !== right.metrics.recommendedMatchCount) {
     return left.metrics.recommendedMatchCount > right.metrics.recommendedMatchCount
-  }
-  if (Math.abs(left.metrics.roi - right.metrics.roi) > ROI_EPSILON) {
-    return left.metrics.roi > right.metrics.roi
   }
   if (left.metrics.recommendedSelectionCount !== right.metrics.recommendedSelectionCount) {
     return left.metrics.recommendedSelectionCount > right.metrics.recommendedSelectionCount
@@ -479,6 +540,110 @@ function expandProfile(parameters) {
       singleRecommendationThreshold: normalized.singleRecommendationThreshold
     }
   }
+}
+
+const FINE_TUNE_PARAMETER_SPECS = {
+  hostTeamGoalFactor: { minimum: MODEL_FACTOR_MIN, maximum: MODEL_FACTOR_MAX, scale: 2, step: 0.01 },
+  homeTeamGoalFactor: { minimum: MODEL_FACTOR_MIN, maximum: MODEL_FACTOR_MAX, scale: 2, step: 0.01 },
+  seedTeamGoalFactor: { minimum: MODEL_FACTOR_MIN, maximum: MODEL_FACTOR_MAX, scale: 2, step: 0.01 },
+  handicapSmoothingFactor: { minimum: SMOOTHING_MIN, maximum: SMOOTHING_MAX, scale: 3, step: 0.001 },
+  recommendationOdds: { minimum: 1, maximum: 100, scale: 2, step: 0.01 },
+  handicapRecommendationThreshold: { minimum: 0, maximum: 100, scale: 2, step: 0.05 },
+  handicapReverseThreshold: { minimum: 0, maximum: 100, scale: 2, step: 0.05 },
+  singleRecommendationThreshold: { minimum: 0, maximum: 100, scale: 2, step: 0.05 }
+}
+
+function fineTuneBounds(center, key) {
+  const spec = FINE_TUNE_PARAMETER_SPECS[key]
+  const centerValue = Number(center[key])
+  return {
+    minimum: Math.max(spec.minimum, centerValue * (1 - fineTuneRatio)),
+    maximum: Math.min(spec.maximum, centerValue * (1 + fineTuneRatio))
+  }
+}
+
+function isWithinFineTuneBounds(parameters, center) {
+  return Object.keys(FINE_TUNE_PARAMETER_SPECS).every(key => {
+    const bounds = fineTuneBounds(center, key)
+    const value = Number(parameters[key])
+    return value + ROI_EPSILON >= bounds.minimum && value <= bounds.maximum + ROI_EPSILON
+  })
+}
+
+function fineTuneBoundViolations(parameters, center) {
+  return Object.keys(FINE_TUNE_PARAMETER_SPECS).flatMap(key => {
+    const bounds = fineTuneBounds(center, key)
+    const value = Number(parameters[key])
+    return value + ROI_EPSILON >= bounds.minimum && value <= bounds.maximum + ROI_EPSILON
+      ? []
+      : [{ key, value, ...bounds, center: center[key] }]
+  })
+}
+
+function fineTuneValues(center, key) {
+  const spec = FINE_TUNE_PARAMETER_SPECS[key]
+  const bounds = fineTuneBounds(center, key)
+  return uniqueNumbers([
+    ...range(bounds.minimum, bounds.maximum, spec.step, spec.scale),
+    center[key]
+  ], spec.scale).filter(value => {
+    return value + ROI_EPSILON >= bounds.minimum && value <= bounds.maximum + ROI_EPSILON
+  })
+}
+
+function fineTuneOddsValues(matches, center) {
+  const bounds = fineTuneBounds(center, 'recommendationOdds')
+  return uniqueNumbers([
+    center.recommendationOdds,
+    ...observedOdds(matches).filter(value => {
+      return value + ROI_EPSILON >= bounds.minimum && value <= bounds.maximum + ROI_EPSILON
+    })
+  ], 2)
+}
+
+function buildFineTuneCandidates(matches, modelFactors, center, count, seed) {
+  const random = createRandom(seed)
+  const oddsValues = fineTuneOddsValues(matches, center)
+  const candidates = [normalizeParameters({ ...center, ...modelFactors })]
+  for (let index = 0; index < count; index++) {
+    const smoothingBounds = fineTuneBounds(center, 'handicapSmoothingFactor')
+    const recommendationBounds = fineTuneBounds(center, 'handicapRecommendationThreshold')
+    const reverseBounds = fineTuneBounds(center, 'handicapReverseThreshold')
+    const singleBounds = fineTuneBounds(center, 'singleRecommendationThreshold')
+    const candidate = normalizeParameters({
+      ...center,
+      ...modelFactors,
+      handicapSmoothingFactor: randomBetween(
+        random,
+        smoothingBounds.minimum,
+        smoothingBounds.maximum,
+        3
+      ),
+      recommendationOdds: pick(random, oddsValues),
+      handicapRecommendationThreshold: randomBetween(
+        random,
+        recommendationBounds.minimum,
+        recommendationBounds.maximum,
+        2
+      ),
+      handicapReverseThreshold: randomBetween(
+        random,
+        reverseBounds.minimum,
+        reverseBounds.maximum,
+        2
+      ),
+      singleRecommendationThreshold: randomBetween(
+        random,
+        singleBounds.minimum,
+        singleBounds.maximum,
+        2
+      )
+    })
+    if (isWithinFineTuneBounds(candidate, center)) {
+      candidates.push(candidate)
+    }
+  }
+  return candidates
 }
 
 function buildRandomCandidates(matches, modelFactors, center, count, seed, localRatio = 0.65) {
@@ -573,6 +738,59 @@ function coordinateOptimize(matches, initial, objective) {
     )
   }
   return current
+}
+
+function coordinateFineTune(matches, initial, center, objective) {
+  let current = { candidate: normalizeParameters(initial), metrics: evaluate(matches, initial) }
+  const coordinateValues = {
+    handicapSmoothingFactor: fineTuneValues(center, 'handicapSmoothingFactor'),
+    recommendationOdds: fineTuneOddsValues(matches, center),
+    handicapRecommendationThreshold: fineTuneValues(center, 'handicapRecommendationThreshold'),
+    handicapReverseThreshold: fineTuneValues(center, 'handicapReverseThreshold'),
+    singleRecommendationThreshold: fineTuneValues(center, 'singleRecommendationThreshold')
+  }
+  for (let pass = 0; pass < 3; pass++) {
+    const before = current
+    for (const [key, values] of Object.entries(coordinateValues)) {
+      current = bestCoordinateValue(matches, current, key, values, objective)
+    }
+    if (!isBetter(current, before, objective)) {
+      break
+    }
+  }
+  return current
+}
+
+function deepFineTune(matches, modelFactors, center, seed, objective) {
+  const ranked = []
+  buildFineTuneCandidates(matches, modelFactors, center, finalCandidateCount, seed)
+    .forEach(candidate => {
+      const metrics = evaluate(matches, candidate)
+      addRankedResult(ranked, candidate, metrics, objective, 8)
+    })
+  if (ranked.length === 0) {
+    return null
+  }
+  ranked.slice(0, 4)
+    .map(result => coordinateFineTune(matches, result.candidate, center, objective))
+    .forEach(result => addRankedResult(ranked, result.candidate, result.metrics, objective, 8))
+  return ranked[0]
+}
+
+function fineTuneModelFactorCandidates(target, original) {
+  if (target.code !== 'WORLD_CUP') {
+    return fineTuneValues(original, 'homeTeamGoalFactor').map(homeTeamGoalFactor => ({
+      ...original,
+      homeTeamGoalFactor
+    }))
+  }
+  return fineTuneValues(original, 'hostTeamGoalFactor').flatMap(hostTeamGoalFactor => {
+    return fineTuneValues(original, 'seedTeamGoalFactor').map(seedTeamGoalFactor => ({
+      ...original,
+      hostTeamGoalFactor,
+      seedTeamGoalFactor
+    }))
+  })
 }
 
 function deepOptimize(matches, modelFactors, center, seed, objective) {
@@ -682,6 +900,10 @@ async function fetchBacktest(target, factors, simulations) {
   const startedAt = Date.now()
   const response = await fetchJson(url)
   const prepared = prepareMatches(response.matches)
+  prepared.totalMatchCount = Math.max(
+    prepared.length,
+    Number(response.completedMatchCount) || 0
+  )
   requestCache.set(cacheKey, prepared)
   if (verboseRequests) {
     process.stderr.write(
@@ -824,7 +1046,7 @@ async function optimizeWorldCupFactors(target, original, seed, objective) {
   }
 }
 
-function chronologicalMetrics(matches, parameters) {
+function chronologicalMetrics(matches, parameters, minimumSamplingRateInclusive) {
   const sorted = [...matches].sort((left, right) => {
     const dateOrder = String(left.matchDate).localeCompare(String(right.matchDate))
     return dateOrder || String(left.matchId).localeCompare(String(right.matchId))
@@ -837,15 +1059,19 @@ function chronologicalMetrics(matches, parameters) {
       period: index + 1,
       startDate: fold[0]?.matchDate || null,
       endDate: fold[fold.length - 1]?.matchDate || null,
-      metrics: printableMetrics(evaluate(fold, parameters))
+      metrics: printableMetrics(evaluate(fold, parameters), minimumSamplingRateInclusive)
     }
   })
 }
 
-function printableMetrics(metrics) {
+function printableMetrics(metrics, minimumSamplingRateInclusive) {
   return {
     sampleCount: metrics.sampleCount,
-    minimumRecommendedMatches: minimumRecommendedMatches(metrics.sampleCount),
+    samplingRate: metrics.samplingRate === null ? null : round(metrics.samplingRate * 100, 2),
+    minimumRecommendedMatches: minimumRecommendedMatches(
+      metrics.sampleCount,
+      minimumSamplingRateInclusive
+    ),
     recommendedMatchCount: metrics.recommendedMatchCount,
     recommendedSelectionCount: metrics.recommendedSelectionCount,
     hitMatchCount: metrics.hitMatchCount,
@@ -861,14 +1087,131 @@ function printableMetrics(metrics) {
   }
 }
 
-function printableRanked(results) {
+function printableRanked(results, minimumSamplingRateInclusive) {
   return results.map(result => ({
     parameters: result.candidate,
-    metrics: printableMetrics(result.metrics)
+    metrics: printableMetrics(result.metrics, minimumSamplingRateInclusive)
   }))
 }
 
+async function optimizeFineTunedProfile(target, preset, originalProfile, objective) {
+  const scopedTarget = { ...target, preset }
+  const key = profileKey(target.code, target.range, preset)
+  const original = flattenProfile(originalProfile)
+  const seed = stringSeed(key)
+  const originalMatches = await fetchBacktest(scopedTarget, original, finalSimulations)
+  if (originalMatches.length === 0) {
+    return {
+      key,
+      competitionName: target.name,
+      range: target.range,
+      preset,
+      status: 'SKIPPED_NO_SAMPLES',
+      sampleCount: 0
+    }
+  }
+
+  const baselineMetrics = evaluate(originalMatches, original)
+  const factorCandidates = fineTuneModelFactorCandidates(target, original)
+  const factorRanked = []
+  process.stderr.write(
+    `开始精调 ${key}，样本 ${baselineMetrics.sampleCount} 场` +
+    `，参数范围 ±${(fineTuneRatio * 100).toFixed(1)}%` +
+    `，采样率要求 >= ${(objective.minimumSamplingRateInclusive * 100).toFixed(1)}%\n`
+  )
+  for (let index = 0; index < factorCandidates.length; index++) {
+    const factors = factorCandidates[index]
+    const matches = await fetchBacktest(scopedTarget, factors, refineSimulations)
+    const best = findBestCandidate(
+      matches,
+      buildFineTuneCandidates(matches, factors, original, refineCandidateCount, seed + index),
+      objective
+    )
+    if (best) {
+      const coordinated = coordinateFineTune(matches, best.candidate, original, objective)
+      addRankedResult(factorRanked, coordinated.candidate, coordinated.metrics, objective, 8)
+    }
+    if ((index + 1) % 5 === 0 || index === factorCandidates.length - 1) {
+      process.stderr.write(
+        `${key} 模型候选 ${index + 1}/${factorCandidates.length}` +
+        `，当前最佳 ROI ${factorRanked[0] ? round(factorRanked[0].metrics.roi * 100, 2) : '--'}%\n`
+      )
+    }
+  }
+
+  const finalFactorCandidates = factorRanked.slice(0, 3).map(result => result.candidate)
+  finalFactorCandidates.push(original)
+  const uniqueFinalFactors = [...new Map(finalFactorCandidates.map(candidate => [
+    [candidate.hostTeamGoalFactor, candidate.homeTeamGoalFactor, candidate.seedTeamGoalFactor].join('|'),
+    candidate
+  ])).values()]
+  const finalRanked = []
+  for (let index = 0; index < uniqueFinalFactors.length; index++) {
+    const factorCandidate = uniqueFinalFactors[index]
+    const matches = await fetchBacktest(scopedTarget, factorCandidate, finalSimulations)
+    const optimized = deepFineTune(
+      matches,
+      {
+        hostTeamGoalFactor: factorCandidate.hostTeamGoalFactor,
+        homeTeamGoalFactor: factorCandidate.homeTeamGoalFactor,
+        seedTeamGoalFactor: factorCandidate.seedTeamGoalFactor
+      },
+      original,
+      seed + 5000 + index,
+      objective
+    )
+    if (optimized) {
+      addRankedResult(finalRanked, optimized.candidate, optimized.metrics, objective, 8)
+    }
+  }
+
+  let best = finalRanked[0]
+  if (!best || (objective.isEligible(baselineMetrics) &&
+      best.metrics.roi <= baselineMetrics.roi + ROI_EPSILON)) {
+    best = { candidate: original, metrics: baselineMetrics }
+  }
+  if (!isWithinFineTuneBounds(best.candidate, original)) {
+    throw new Error(
+      `${key} 精调结果超出 ±${fineTuneRatio * 100}% 边界：` +
+      JSON.stringify(fineTuneBoundViolations(best.candidate, original))
+    )
+  }
+  const finalMatches = await fetchBacktest(scopedTarget, best.candidate, finalSimulations)
+  const result = {
+    key,
+    competitionName: target.name,
+    range: target.range,
+    preset,
+    status: 'OPTIMIZED',
+    fineTuneRatio,
+    minimumSamplingRateInclusive: objective.minimumSamplingRateInclusive,
+    optimizedRoi: best.metrics.roi,
+    lowSampleWarning: finalMatches.length < 20,
+    originalParameters: original,
+    optimizedParameters: best.candidate,
+    baselineMetrics: printableMetrics(baselineMetrics, objective.minimumSamplingRateInclusive),
+    optimizedMetrics: printableMetrics(best.metrics, objective.minimumSamplingRateInclusive),
+    chronologicalMetrics: chronologicalMetrics(
+      finalMatches,
+      best.candidate,
+      objective.minimumSamplingRateInclusive
+    ),
+    coarseTop: [],
+    refinedTop: printableRanked(factorRanked, objective.minimumSamplingRateInclusive),
+    finalTop: printableRanked(finalRanked, objective.minimumSamplingRateInclusive)
+  }
+  process.stderr.write(
+    `完成 ${key}：ROI ${result.baselineMetrics.roi}% -> ${result.optimizedMetrics.roi}%` +
+    `，采样率 ${result.baselineMetrics.samplingRate}% -> ${result.optimizedMetrics.samplingRate}%` +
+    `，推荐 ${result.optimizedMetrics.recommendedMatchCount}/${result.optimizedMetrics.sampleCount} 场\n`
+  )
+  return result
+}
+
 async function optimizeProfile(target, preset, originalProfile, objective) {
+  if (fineTuneEnabled) {
+    return optimizeFineTunedProfile(target, preset, originalProfile, objective)
+  }
   const scopedTarget = { ...target, preset }
   const key = profileKey(target.code, target.range, preset)
   const original = flattenProfile(originalProfile)
@@ -887,7 +1230,7 @@ async function optimizeProfile(target, preset, originalProfile, objective) {
 
   process.stderr.write(
     `开始优化 ${key}，样本 ${sampleMatches.length} 场` +
-    `，ROI 下限 ${(objective.minimumRoiExclusive * 100).toFixed(4)}%\n`
+    `，采样率要求 >= ${(objective.minimumSamplingRateInclusive * 100).toFixed(1)}%\n`
   )
   const factorSearch = target.code === 'WORLD_CUP'
     ? await optimizeWorldCupFactors(scopedTarget, original, seed, objective)
@@ -924,7 +1267,7 @@ async function optimizeProfile(target, preset, originalProfile, objective) {
     }
   }
 
-  const best = finalRanked[0]
+  let best = finalRanked[0]
   const originalMatches = await fetchBacktest(scopedTarget, original, finalSimulations)
   const baselineMetrics = evaluate(originalMatches, original)
   if (!best) {
@@ -933,16 +1276,21 @@ async function optimizeProfile(target, preset, originalProfile, objective) {
       competitionName: target.name,
       range: target.range,
       preset,
-      status: 'FAILED_ROI_CONSTRAINT',
-      minimumRoiExclusive: objective.minimumRoiExclusive,
-      sampleCount: originalMatches.length,
+      status: 'FAILED_SAMPLING_RATE_CONSTRAINT',
+      minimumSamplingRateInclusive: objective.minimumSamplingRateInclusive,
+      sampleCount: baselineMetrics.sampleCount,
       originalParameters: original,
-      baselineMetrics: printableMetrics(baselineMetrics),
-      coarseTop: printableRanked(factorSearch.coarseTop),
-      refinedTop: printableRanked(factorSearch.refinedTop)
+      baselineMetrics: printableMetrics(baselineMetrics, objective.minimumSamplingRateInclusive),
+      coarseTop: printableRanked(factorSearch.coarseTop, objective.minimumSamplingRateInclusive),
+      refinedTop: printableRanked(factorSearch.refinedTop, objective.minimumSamplingRateInclusive)
     }
-    process.stderr.write(`未找到满足 ROI 约束的 ${key}\n`)
+    process.stderr.write(`未找到满足采样率约束的 ${key}\n`)
     return failedResult
+  }
+  const primaryMetric = objective.priority === 'SAMPLING_RATE' ? 'samplingRate' : 'roi'
+  if (objective.isEligible(baselineMetrics) &&
+      best.metrics[primaryMetric] <= baselineMetrics[primaryMetric] + ROI_EPSILON) {
+    best = { candidate: original, metrics: baselineMetrics }
   }
   const finalMatches = await fetchBacktest(scopedTarget, best.candidate, finalSimulations)
   const result = {
@@ -951,20 +1299,25 @@ async function optimizeProfile(target, preset, originalProfile, objective) {
     range: target.range,
     preset,
     status: 'OPTIMIZED',
-    minimumRoiExclusive: objective.minimumRoiExclusive,
+    minimumSamplingRateInclusive: objective.minimumSamplingRateInclusive,
     optimizedRoi: best.metrics.roi,
     lowSampleWarning: finalMatches.length < 20,
     originalParameters: original,
     optimizedParameters: best.candidate,
-    baselineMetrics: printableMetrics(baselineMetrics),
-    optimizedMetrics: printableMetrics(best.metrics),
-    chronologicalMetrics: chronologicalMetrics(finalMatches, best.candidate),
-    coarseTop: printableRanked(factorSearch.coarseTop),
-    refinedTop: printableRanked(factorSearch.refinedTop),
-    finalTop: printableRanked(finalRanked)
+    baselineMetrics: printableMetrics(baselineMetrics, objective.minimumSamplingRateInclusive),
+    optimizedMetrics: printableMetrics(best.metrics, objective.minimumSamplingRateInclusive),
+    chronologicalMetrics: chronologicalMetrics(
+      finalMatches,
+      best.candidate,
+      objective.minimumSamplingRateInclusive
+    ),
+    coarseTop: printableRanked(factorSearch.coarseTop, objective.minimumSamplingRateInclusive),
+    refinedTop: printableRanked(factorSearch.refinedTop, objective.minimumSamplingRateInclusive),
+    finalTop: printableRanked(finalRanked, objective.minimumSamplingRateInclusive)
   }
   process.stderr.write(
     `完成 ${key}：ROI ${result.baselineMetrics.roi}% -> ${result.optimizedMetrics.roi}%` +
+    `，采样率 ${result.baselineMetrics.samplingRate}% -> ${result.optimizedMetrics.samplingRate}%` +
     `，推荐 ${result.optimizedMetrics.recommendedMatchCount}/${result.optimizedMetrics.sampleCount} 场` +
     `，命中 ${result.optimizedMetrics.hitMatchCount} 场\n`
   )
@@ -982,9 +1335,9 @@ async function verifySavedProfiles(config, targets) {
     today: todayInShanghai(),
     simulations: finalSimulations,
     savedProfileCount: Object.keys(config.parameterProfiles || {}).length,
-    minimumStableRoi: MINIMUM_STABLE_ROI,
-    minimumAggressiveRoi: MINIMUM_AGGRESSIVE_ROI,
-    minimumAggressiveRoiGap: MINIMUM_AGGRESSIVE_ROI_GAP,
+    minimumStableSamplingRateInclusive: minimumStableSamplingRate,
+    minimumAggressiveSamplingRateInclusive: minimumAggressiveSamplingRate,
+    optimizationPriority,
     results: []
   }
   for (const target of targets) {
@@ -1006,13 +1359,19 @@ async function verifySavedProfiles(config, targets) {
       const parameters = flattenProfile(profile)
       const matches = await fetchBacktest({ ...target, preset }, parameters, finalSimulations)
       const metrics = evaluate(matches, parameters)
+      const objective = createObjective(preset, target)
       pair.profiles[preset] = {
         key,
         status: matches.length > 0 ? 'VERIFIED' : 'SKIPPED_NO_SAMPLES',
         parameters,
         rawRoi: metrics.roi,
-        metrics: printableMetrics(metrics),
-        chronologicalMetrics: chronologicalMetrics(matches, parameters)
+        rawSamplingRate: metrics.samplingRate,
+        metrics: printableMetrics(metrics, objective.minimumSamplingRateInclusive),
+        chronologicalMetrics: chronologicalMetrics(
+          matches,
+          parameters,
+          objective.minimumSamplingRateInclusive
+        )
       }
     }
     if (missingProfile) {
@@ -1030,28 +1389,21 @@ async function verifySavedProfiles(config, targets) {
       process.stderr.write(`复核 ${pair.key}：无可用样本\n`)
       continue
     }
-    const stableObjective = createObjective('STABLE', MINIMUM_STABLE_ROI)
-    const aggressiveObjective = createObjective(
-      'AGGRESSIVE',
-      aggressiveMinimumRoiExclusive(stable.rawRoi)
-    )
-    stable.eligible = stableObjective.isEligible({
-      recommendedMatchCount: stable.metrics.recommendedMatchCount,
-      hitMatchCount: stable.metrics.hitMatchCount,
-      roi: stable.rawRoi
-    })
-    aggressive.minimumRoiExclusive = aggressiveObjective.minimumRoiExclusive
-    aggressive.eligible = aggressiveObjective.isEligible({
-      recommendedMatchCount: aggressive.metrics.recommendedMatchCount,
-      hitMatchCount: aggressive.metrics.hitMatchCount,
-      roi: aggressive.rawRoi
-    })
+    for (const preset of PARAMETER_PRESETS) {
+      const profile = pair.profiles[preset]
+      profile.eligible = createObjective(preset, target).isEligible({
+        recommendedMatchCount: profile.metrics.recommendedMatchCount,
+        hitMatchCount: profile.metrics.hitMatchCount,
+        samplingRate: profile.rawSamplingRate,
+        roi: profile.rawRoi
+      })
+    }
     pair.status = 'VERIFIED'
     pair.constraintsSatisfied = stable.eligible && aggressive.eligible
     report.results.push(pair)
     process.stderr.write(
-      `复核 ${pair.key}：稳健推荐 ${stable.metrics.recommendedMatchCount} 场 / ROI ${stable.metrics.roi}%` +
-      `，激进推荐 ${aggressive.metrics.recommendedMatchCount} 场 / ROI ${aggressive.metrics.roi}%` +
+      `复核 ${pair.key}：稳健采样率 ${stable.metrics.samplingRate}% / ROI ${stable.metrics.roi}%` +
+      `，激进采样率 ${aggressive.metrics.samplingRate}% / ROI ${aggressive.metrics.roi}%` +
       `，约束${pair.constraintsSatisfied ? '通过' : '失败'}\n`
     )
   }
@@ -1108,11 +1460,15 @@ async function main() {
       refineCandidateCount,
       finalCandidateCount,
       applyResults,
-      stableObjective: 'ROI > 7.5% 后优先最大化推荐场次数',
-      aggressiveObjective: 'ROI > 15% 且至少高于稳健档 0.01 个百分点后优先最大化推荐场次数',
-      minimumStableRoi: MINIMUM_STABLE_ROI,
-      minimumAggressiveRoi: MINIMUM_AGGRESSIVE_ROI,
-      minimumAggressiveRoiGap: MINIMUM_AGGRESSIVE_ROI_GAP
+      fineTuneRatio,
+      fineTuneEnabled,
+      objective: optimizationPriority === 'SAMPLING_RATE'
+        ? `各档满足采样率下限后优先最大化采样率`
+        : `各档满足采样率下限后优先最大化 ROI`,
+      minimumStableSamplingRateInclusive: minimumStableSamplingRate,
+      minimumAggressiveSamplingRateInclusive: minimumAggressiveSamplingRate,
+      minimumRoiInclusive: minimumRoi,
+      optimizationPriority
     },
     skippedFutureCurrentProfiles: COMPETITIONS
       .filter(competition => competition.currentStartDate > todayInShanghai())
@@ -1122,58 +1478,22 @@ async function main() {
     results: []
   }
   for (const target of targets) {
-    const stableKey = profileKey(target.code, target.range, 'STABLE')
-    const stableProfile = config.parameterProfiles?.[stableKey]
-    if (!stableProfile) {
-      report.results.push({ key: stableKey, status: 'SKIPPED_MISSING_CONFIG' })
-      continue
-    }
-    const stableObjective = createObjective('STABLE', MINIMUM_STABLE_ROI)
-    const stableResult = await optimizeProfile(target, 'STABLE', stableProfile, stableObjective)
-    report.results.push(stableResult)
-    await writeReport(report)
-
-    const aggressiveKey = profileKey(target.code, target.range, 'AGGRESSIVE')
-    const aggressiveProfile = config.parameterProfiles?.[aggressiveKey]
-    if (!aggressiveProfile) {
-      report.results.push({ key: aggressiveKey, status: 'SKIPPED_MISSING_CONFIG' })
+    for (const preset of optimizedParameterPresets(target)) {
+      const key = profileKey(target.code, target.range, preset)
+      const profile = config.parameterProfiles?.[key]
+      if (!profile) {
+        report.results.push({ key, status: 'SKIPPED_MISSING_CONFIG' })
+        await writeReport(report)
+        continue
+      }
+      report.results.push(await optimizeProfile(
+        target,
+        preset,
+        profile,
+        createObjective(preset, target)
+      ))
       await writeReport(report)
-      continue
     }
-    if (stableResult.status === 'SKIPPED_NO_SAMPLES') {
-      report.results.push({
-        key: aggressiveKey,
-        competitionName: target.name,
-        range: target.range,
-        preset: 'AGGRESSIVE',
-        status: 'SKIPPED_NO_SAMPLES',
-        sampleCount: 0
-      })
-      await writeReport(report)
-      continue
-    }
-    if (stableResult.status !== 'OPTIMIZED') {
-      report.results.push({
-        key: aggressiveKey,
-        competitionName: target.name,
-        range: target.range,
-        preset: 'AGGRESSIVE',
-        status: 'SKIPPED_STABLE_CONSTRAINT'
-      })
-      await writeReport(report)
-      continue
-    }
-    const aggressiveObjective = createObjective(
-      'AGGRESSIVE',
-      aggressiveMinimumRoiExclusive(stableResult.optimizedRoi)
-    )
-    report.results.push(await optimizeProfile(
-      target,
-      'AGGRESSIVE',
-      aggressiveProfile,
-      aggressiveObjective
-    ))
-    await writeReport(report)
   }
   if (applyResults) {
     const savedConfig = await applyOptimizedProfiles(config, report.results)
@@ -1190,6 +1510,8 @@ async function main() {
       .map(result => ({
         key: result.key,
         sampleCount: result.optimizedMetrics.sampleCount,
+        baselineSamplingRate: result.baselineMetrics.samplingRate,
+        optimizedSamplingRate: result.optimizedMetrics.samplingRate,
         baselineRoi: result.baselineMetrics.roi,
         optimizedRoi: result.optimizedMetrics.roi,
         recommendedMatchCount: result.optimizedMetrics.recommendedMatchCount,

@@ -435,6 +435,7 @@ if (shouldWrite) {
     fs.writeFile(historicalMatchesPath, toCsv(rebuiltHistoryRows, historyHeaders), 'utf8'),
     fs.writeFile(historicalOddsPath, toCsv(oddsRows, oddsHeaders), 'utf8')
   ])
+  await import('./generate-team-name-mappings.mjs')
 }
 
 if (compactOutput) {

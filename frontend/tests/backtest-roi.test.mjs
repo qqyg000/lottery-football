@@ -1,7 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { calculateFlatStakeBacktest } from '../src/backtest-roi.mjs'
+import {
+  calculateFlatStakeBacktest,
+  calculateMinimumCoveredMatchCount,
+  calculateSamplingRate
+} from '../src/backtest-roi.mjs'
 
 test('单选命中时按一个推荐项计算投入和返奖', () => {
   const result = calculateFlatStakeBacktest([2.2], 1, 1)
@@ -46,4 +50,19 @@ test('没有推荐项时不计算 ROI', () => {
   assert.equal(result.netProfit, 0)
   assert.equal(result.roi, null)
   assert.equal(result.averageReturnIncludingMisses, null)
+})
+
+test('采样率等于覆盖比赛数除以总比赛数', () => {
+  assert.equal(calculateSamplingRate(15, 60), 0.25)
+})
+
+test('没有回测比赛时采样率为空', () => {
+  assert.equal(calculateSamplingRate(0, 0), null)
+})
+
+test('最少覆盖场次保证采样率严格大于约束值', () => {
+  const minimumCoveredMatchCount = calculateMinimumCoveredMatchCount(63, 0.666)
+
+  assert.equal(minimumCoveredMatchCount, 42)
+  assert.ok(calculateSamplingRate(minimumCoveredMatchCount, 63) > 0.666)
 })

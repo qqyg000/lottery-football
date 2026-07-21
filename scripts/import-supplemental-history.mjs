@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const historicalMatchesPath = path.join(root, 'src/main/resources/data/historical_matches.csv')
-const historicalOddsPath = path.join(root, 'src/main/resources/data/historical_odds_data.csv')
+const teamNameMappingsPath = path.join(root, 'src/main/resources/data/team_name_mappings.csv')
 const cacheRoot = path.join(root, 'target/supplemental-history-cache')
 const MINIMUM_HISTORY_DATE = '2014-06-12'
 
@@ -65,327 +65,6 @@ const COMPETITION_NAMES = new Map(Object.entries({
   ARGENTINE_PRIMERA_DIVISION: '阿甲'
 }))
 
-const SOURCE_NAME_ALIASES = new Map(Object.entries({
-  'AC Sparta Praha': 'Sparta Prague',
-  'ACF Fiorentina': 'Fiorentina',
-  'Aalborg BK': 'AaB',
-  'Academica de Coimbra': 'Academica',
-  'AJ Auxerre': 'Auxerre',
-  'APOEL Nikosia': 'APOEL Nicosia',
-  'Ajax Amsterdam': 'Ajax',
-  'Asteras Tripoli': 'Asteras Tripolis',
-  'Alavés': 'Deportivo Alaves',
-  'América Mineiro': 'America MG',
-  'Athletico-PR': 'Athletico Paranaense',
-  'Atlético Goianiense': 'Atletico GO',
-  'Athletic Bilbao': 'Athletic Club',
-  'Atletico de Madrid': 'Atletico Madrid',
-  'Atlético Mineiro': 'Atletico MG',
-  'Bayer 04 Leverkusen': 'Bayer Leverkusen',
-  'Bayern Munich': 'Bayern München',
-  'Belgrano (Córdoba)': 'Belgrano',
-  'Belenenses': 'Cova da Piedade SAD',
-  'Beşiktaş İstanbul JK': 'Beşiktaş',
-  'Brondby IF': 'Brøndby IF',
-  'BSC Young Boys': 'Young Boys',
-  'C.D. Nacional': 'Nacional',
-  'Bodo/Glimt': 'Bodø/Glimt',
-  'Botafogo': 'Botafogo RJ',
-  'CSKA Moskva': 'CSKA Moscow',
-  'Chapecoense': 'Chapecoense AF',
-  'Czech Republic': 'Czechia',
-  'Corinthians SP': 'Corinthians',
-  'Deportivo La Coruna': 'Deportivo A Coruña',
-  'Dnipro Dnipropetrovsk': 'Dnipro',
-  'Dnepr Dnepropetrovsk': 'Dnipro',
-  'Dinamo Kiev': 'Dynamo Kyiv',
-  'Evian Thonon Gaillard': 'Thonon Evian Grand Geneve',
-  'Espérance de Tunis': 'Espérance',
-  'Estudiantes de La Plata': 'Estudiantes',
-  'FC Bayern Munich': 'Bayern München',
-  'FC Cologne': '1. FC Köln',
-  'FC Copenhagen': 'FC København',
-  'FC RB Salzburg': 'Salzburg',
-  'FC Heidenheim 1846': 'FC Heidenheim',
-  'FC Zorya Luhansk': 'Zorya',
-  'Fenerbahçe İstanbul SK': 'Fenerbahçe',
-  'Feyenoord Rotterdam': 'Feyenoord',
-  'Flamengo RJ': 'Flamengo',
-  'Fluminense RJ': 'Fluminense',
-  'Galatasaray İstanbul AŞ': 'Galatasaray',
-  'Gimnasia La Plata': 'Gimnasia LP',
-  'Girondins Bordeaux': 'Bordeaux',
-  'Godoy Cruz Antonio Tomba': 'Godoy Cruz',
-  'Grêmio Porto Alegre': 'Gremio',
-  'Hamburg SV': 'Hamburger SV',
-  'Heracles Almelo': 'Heracles',
-  'HJK Helsinki': 'HJK',
-  'Internazionale': 'Inter',
-  'Internazionale Milano': 'Inter',
-  'Inter Milan': 'Inter',
-  'KAA Gent': 'Gent',
-  'Kobenhavn': 'FC København',
-  'Koln': '1. FC Köln',
-  'KRC Genk': 'Genk',
-  'KSC Lokeren': 'Lokeren',
-  'Legia Warsaw': 'Legia Warszawa',
-  'Lille OSC': 'Lille',
-  'Lokomotiv Moskva': 'Lokomotiv Moscow',
-  'NK Maribor': 'Maribor',
-  'Manchester Utd': 'Manchester United',
-  'Mainz': 'Mainz 05',
-  'Man City': 'Manchester City',
-  'Man United': 'Manchester United',
-  'OGC Nice': 'Nice',
-  'Olympique Lyon': 'Lyon',
-  'Olympique Lyonnais': 'Lyon',
-  'Olympique Marseille': 'Marseille',
-  'PAOK FC': 'PAOK Thessaloniki',
-  'PAOK Salonika': 'PAOK Thessaloniki',
-  'PFC Ludogorets Razgrad': 'Ludogorets Razgrad',
-  'Paris SG': 'Paris Saint-Germain',
-  'Partizan Belgrade': 'Partizan Beograd',
-  'Republic of Ireland': 'Ireland',
-  'Rosenborg BK': 'Rosenborg',
-  'RSC Anderlecht': 'Anderlecht',
-  'RB Salzburg': 'Salzburg',
-  'SC Paderborn 07': 'Paderborn',
-  'Servette Geneve': 'Servette',
-  'Sheriff Tiraspol': 'FC Sheriff',
-  'SK Slovan Bratislava': 'Slovan Bratislava',
-  'SK Sturm Graz': 'Sturm Graz',
-  'SL Benfica': 'Benfica',
-  'Slavia Praha': 'Slavia Prague',
-  'Sparta Praha': 'Sparta Prague',
-  'Spartak Moskva': 'Spartak Moscow',
-  'Sporting Braga': 'Braga',
-  'Sporting Lisbon': 'Sporting CP',
-  'Sport': 'Sport Recife',
-  'SS Lazio': 'Lazio',
-  'SSC Napoli': 'Napoli',
-  'Stade de Reims': 'Reims',
-  'Stade Reims': 'Reims',
-  'Stade Rennais': 'Rennes',
-  'Steaua Bucuresti': 'FCSB',
-  'Turkey': 'Turkiye',
-  'UANL Tigres': 'Tigres',
-  'United States': 'USA',
-  'Union Berlin': 'Union Berlin',
-  '1. FC Union Berlin': 'Union Berlin',
-  'VfL Bochum': 'Bochum',
-  'VfL Wolfsburg': 'Wolfsburg',
-  'Hertha Berlin': 'Hertha BSC',
-  'Vasco da Gama RJ': 'Vasco da Gama',
-  'Vitoria Setubal': 'Vitoria de Setubal',
-  'West Germany': 'Germany',
-  'Soviet Union': 'Russia',
-  "Côte d'Ivoire": 'Ivory Coast',
-  'Bosnia & Herzegovina': 'Bosnia and Herzegovina',
-  'Bosnia-Herzegovina': 'Bosnia and Herzegovina',
-  'Serbia and Montenegro': 'Serbia',
-  'Wydad AC': 'Wydad Casablanca',
-  'Zaire': 'DR Congo'
-}).map(([sourceName, targetName]) => [canonicalName(sourceName), targetName]))
-
-const NATIONAL_TEAM_FALLBACKS = new Map(Object.entries({
-  Andorra: '安道尔',
-  Afghanistan: '阿富汗',
-  Angola: '安哥拉',
-  'Antigua and Barbuda': '安提瓜和巴布达',
-  Armenia: '亚美尼亚',
-  Aruba: '阿鲁巴',
-  Azerbaijan: '阿塞拜疆',
-  Bahrain: '巴林',
-  Bangladesh: '孟加拉国',
-  Barbados: '巴巴多斯',
-  Belarus: '白俄罗斯',
-  Belize: '伯利兹',
-  Benin: '贝宁',
-  Bermuda: '百慕大',
-  Botswana: '博茨瓦纳',
-  Brunei: '文莱',
-  Bulgaria: '保加利亚',
-  Burundi: '布隆迪',
-  'Burkina Faso': '布基纳法索',
-  Cambodia: '柬埔寨',
-  'Central African Republic': '中非共和国',
-  China: '中国',
-  Comoros: '科摩罗',
-  Congo: '刚果共和国',
-  Cuba: '古巴',
-  Cyprus: '塞浦路斯',
-  Czechoslovakia: '捷克斯洛伐克',
-  'Dominican Republic': '多米尼加',
-  'El Salvador': '萨尔瓦多',
-  'Equatorial Guinea': '赤道几内亚',
-  Estonia: '爱沙尼亚',
-  Eswatini: '斯威士兰',
-  Ethiopia: '埃塞俄比亚',
-  'Faroe Islands': '法罗群岛',
-  'French Guiana': '法属圭亚那',
-  Gabon: '加蓬',
-  Gambia: '冈比亚',
-  'German DR': '东德',
-  Gibraltar: '直布罗陀',
-  Grenada: '格林纳达',
-  Greece: '希腊',
-  Guatemala: '危地马拉',
-  Guadeloupe: '瓜德罗普',
-  Guinea: '几内亚',
-  'Guinea-Bissau': '几内亚比绍',
-  Guyana: '圭亚那',
-  'Hong Kong': '中国香港',
-  Honduras: '洪都拉斯',
-  India: '印度',
-  Indonesia: '印度尼西亚',
-  Israel: '以色列',
-  Kazakhstan: '哈萨克斯坦',
-  Kenya: '肯尼亚',
-  Kosovo: '科索沃',
-  Kyrgyzstan: '吉尔吉斯斯坦',
-  Kuwait: '科威特',
-  Latvia: '拉脱维亚',
-  Lebanon: '黎巴嫩',
-  Lesotho: '莱索托',
-  Liechtenstein: '列支敦士登',
-  Liberia: '利比里亚',
-  Libya: '利比亚',
-  Lithuania: '立陶宛',
-  Luxembourg: '卢森堡',
-  Madagascar: '马达加斯加',
-  Malawi: '马拉维',
-  Malaysia: '马来西亚',
-  Mali: '马里',
-  Malta: '马耳他',
-  Martinique: '马提尼克',
-  Mauritania: '毛里塔尼亚',
-  Moldova: '摩尔多瓦',
-  Montenegro: '黑山',
-  Mozambique: '莫桑比克',
-  Myanmar: '缅甸',
-  Namibia: '纳米比亚',
-  Nepal: '尼泊尔',
-  Nicaragua: '尼加拉瓜',
-  Niger: '尼日尔',
-  'North Korea': '朝鲜',
-  Oman: '阿曼',
-  Palestine: '巴勒斯坦',
-  'Puerto Rico': '波多黎各',
-  Rwanda: '卢旺达',
-  'Saint Kitts and Nevis': '圣基茨和尼维斯',
-  'Saint Vincent and the Grenadines': '圣文森特和格林纳丁斯',
-  'San Marino': '圣马力诺',
-  'São Tomé and Príncipe': '圣多美和普林西比',
-  Seychelles: '塞舌尔',
-  'Sierra Leone': '塞拉利昂',
-  Singapore: '新加坡',
-  'South Sudan': '南苏丹',
-  Sudan: '苏丹',
-  Suriname: '苏里南',
-  Syria: '叙利亚',
-  Tajikistan: '塔吉克斯坦',
-  Tanzania: '坦桑尼亚',
-  Taiwan: '中国台北',
-  Thailand: '泰国',
-  Togo: '多哥',
-  'Trinidad and Tobago': '特立尼达和多巴哥',
-  Uganda: '乌干达',
-  'United Arab Emirates': '阿联酋',
-  Vietnam: '越南',
-  Turkmenistan: '土库曼斯坦',
-  Yemen: '也门',
-  Yugoslavia: '南斯拉夫',
-  Zambia: '赞比亚',
-  Zimbabwe: '津巴布韦'
-}).map(([englishName, chineseName]) => [canonicalName(englishName), chineseName]))
-
-const NATIONAL_TOURNAMENT_NAMES = new Map(Object.entries({
-  Friendly: '国家队国际窗口友谊赛',
-  'FIFA World Cup': '世界杯',
-  'FIFA World Cup qualification': '世界杯预选赛',
-  'UEFA Euro': '欧洲杯',
-  'UEFA Euro qualification': '欧洲杯预选赛',
-  'UEFA Nations League': '欧国联',
-  'Copa América': '美洲杯',
-  'CONCACAF Nations League': '中北美洲及加勒比海国家联赛',
-  'CONCACAF Championship': '中北美洲及加勒比海锦标赛',
-  'Gold Cup': '中北美洲及加勒比海金杯赛',
-  'African Cup of Nations': '非洲杯',
-  'African Cup of Nations qualification': '非洲杯预选赛',
-  'AFC Asian Cup': '亚洲杯',
-  'AFC Asian Cup qualification': '亚洲杯预选赛',
-  'Oceania Nations Cup': '大洋洲国家杯',
-  'Confederations Cup': '联合会杯'
-}))
-
-const ESPN_PRIMARY_SOURCES = [
-  ['fifa.cwc', 'CLUB_WORLD_CUP'],
-  ['uefa.europa', 'EUROPA_LEAGUE'],
-  ['uefa.europa_qual', 'EUROPA_LEAGUE'],
-  ['uefa.champions', 'CHAMPIONS_LEAGUE'],
-  ['uefa.champions_qual', 'CHAMPIONS_LEAGUE'],
-  ['eng.1', 'PREMIER_LEAGUE'],
-  ['esp.1', 'LA_LIGA'],
-  ['ita.1', 'SERIE_A'],
-  ['ger.1', 'BUNDESLIGA'],
-  ['fra.1', 'LIGUE_1'],
-  ['bra.1', 'BRAZIL_SERIE_A'],
-  ['por.1', 'PRIMEIRA_LIGA'],
-  ['ned.1', 'EREDIVISIE'],
-  ['arg.1', 'ARGENTINE_PRIMERA_DIVISION']
-].map(([slug, competition]) => ({
-  slug,
-  sourceCompetition: COMPETITION_NAMES.get(competition),
-  competition,
-  matchType: 'OFFICIAL',
-  monthly: false
-}))
-
-const ESPN_OFFICIAL_SOURCES = [
-  ['uefa.europa.conf', '欧协联'],
-  ['uefa.europa.conf_qual', '欧协联资格赛'],
-  ['uefa.super_cup', '欧洲超级杯'],
-  ['eng.fa', '英格兰足总杯'],
-  ['eng.league_cup', '英格兰联赛杯'],
-  ['eng.charity', '英格兰社区盾'],
-  ['esp.copa_del_rey', '西班牙国王杯'],
-  ['esp.super_cup', '西班牙超级杯'],
-  ['ger.dfb_pokal', '德国杯'],
-  ['ger.super_cup', '德国超级杯'],
-  ['ita.coppa_italia', '意大利杯'],
-  ['ita.super_cup', '意大利超级杯'],
-  ['fra.coupe_de_france', '法国杯'],
-  ['fra.super_cup', '法国超级杯'],
-  ['por.taca.portugal', '葡萄牙杯'],
-  ['ned.cup', '荷兰杯'],
-  ['ned.supercup', '荷兰超级杯'],
-  ['bra.copa_do_brazil', '巴西杯'],
-  ['arg.copa', '阿根廷杯'],
-  ['conmebol.libertadores', '解放者杯'],
-  ['conmebol.sudamericana', '南美杯'],
-  ['conmebol.recopa', '南美优胜者杯'],
-  ['fifa.intercontinental_cup', '洲际杯']
-].map(([slug, sourceCompetition]) => ({
-  slug,
-  sourceCompetition,
-  competition: 'CLUB_OFFICIAL_OTHER',
-  matchType: 'OFFICIAL',
-  monthly: false
-}))
-
-const ESPN_FRIENDLY_SOURCES = [
-  ['club.friendly', '俱乐部友谊赛', true],
-  ['global.champs_cup', '国际冠军杯', false],
-  ['friendly.emirates_cup', '酋长杯', false],
-  ['eng.asia_trophy', '英超亚洲杯', false],
-  ['esp.joan_gamper', '甘伯杯', false]
-].map(([slug, sourceCompetition, monthly]) => ({
-  slug,
-  sourceCompetition,
-  competition: 'CLUB_FRIENDLY',
-  matchType: 'CLUB_FRIENDLY',
-  monthly
-}))
 
 function parseArguments(argv) {
   const options = {
@@ -559,42 +238,30 @@ function normalizeHistoryRow(row) {
   }
 }
 
-function buildMappings(oddsRows, allowedCompetitions) {
+function buildMappings(mappingRows, allowedCompetitions) {
   const mappings = new Map()
-  const mappingDates = new Map()
-  for (const row of oddsRows) {
-    if (!allowedCompetitions.has(row.competition)) {
+  for (const row of mappingRows) {
+    if (row.competition !== '*' && !allowedCompetitions.has(row.competition)) {
       continue
     }
-    for (const side of ['home', 'away']) {
-      const englishName = String(row[`${side}_team_en`] ?? '').trim()
-      const chineseName = String(row[`${side}_team_cn`] ?? '').trim()
-      if (!englishName || !chineseName) {
-        continue
-      }
-      for (const key of nameKeys(englishName)) {
-        if (!mappingDates.has(key) || row.match_date >= mappingDates.get(key)) {
-          mappingDates.set(key, row.match_date)
-          mappings.set(key, chineseName)
-        }
-      }
+    const aliasName = String(row.alias_team_name ?? '').trim()
+    const standardName = String(row.standard_team_name ?? '').trim()
+    if (!aliasName || !standardName) {
+      continue
+    }
+    for (const key of nameKeys(aliasName)) {
+      mappings.set(key, standardName)
     }
   }
   return mappings
 }
 
-function mappedChineseName(sourceName, mappings, allowNationalFallback) {
-  const alias = SOURCE_NAME_ALIASES.get(canonicalName(sourceName))
-  for (const candidate of [sourceName, alias].filter(Boolean)) {
-    for (const key of nameKeys(candidate)) {
-      const mapped = mappings.get(key)
-      if (mapped) {
-        return mapped
-      }
+function mappedChineseName(sourceName, mappings) {
+  for (const key of nameKeys(sourceName)) {
+    const mapped = mappings.get(key)
+    if (mapped) {
+      return mapped
     }
-  }
-  if (allowNationalFallback) {
-    return NATIONAL_TEAM_FALLBACKS.get(canonicalName(sourceName)) ?? null
   }
   return null
 }
@@ -1041,9 +708,9 @@ function outputSourceSummaries(summaries, compact) {
 }
 
 const options = parseArguments(process.argv.slice(2))
-const [historyText, oddsText, resultsText, goalsText, espnData] = await Promise.all([
+const [historyText, mappingText, resultsText, goalsText, espnData] = await Promise.all([
   fs.readFile(historicalMatchesPath, 'utf8'),
-  fs.readFile(historicalOddsPath, 'utf8'),
+  fs.readFile(teamNameMappingsPath, 'utf8'),
   readInternationalSource(options, 'results.csv'),
   readInternationalSource(options, 'goalscorers.csv'),
   loadEspnRows(options)
@@ -1053,9 +720,9 @@ const originalRows = parseCsv(historyText).map(normalizeHistoryRow)
 const retainedRows = originalRows.filter(row => (
   row.match_date >= options.minDate && row.match_date <= options.maxDate
 ))
-const oddsRows = parseCsv(oddsText)
-const nationalMappings = buildMappings(oddsRows, NATIONAL_COMPETITIONS)
-const clubMappings = buildMappings(oddsRows, CLUB_COMPETITIONS)
+const mappingRows = parseCsv(mappingText)
+const nationalMappings = buildMappings(mappingRows, NATIONAL_COMPETITIONS)
+const clubMappings = buildMappings(mappingRows, CLUB_COMPETITIONS)
 const targetNationalTeams = new Set(originalRows
   .filter(row => NATIONAL_COMPETITIONS.has(row.competition))
   .flatMap(row => [row.home_team_cn, row.away_team_cn])
@@ -1183,6 +850,7 @@ const rebuiltRows = retainedRows.sort((left, right) => (
 
 if (options.write) {
   await fs.writeFile(historicalMatchesPath, toCsv(rebuiltRows), 'utf8')
+  await import('./generate-team-name-mappings.mjs')
 }
 
 const matchTypes = Object.fromEntries([...new Set(rebuiltRows.map(row => row.match_type))]

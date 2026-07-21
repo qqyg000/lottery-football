@@ -6,6 +6,7 @@ import com.eason.worldcup.model.HistoricalMatchType;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.SportteryOdds;
 import com.eason.worldcup.util.ApplicationTime;
+import com.eason.worldcup.util.ClubTeamNameTranslator;
 import com.eason.worldcup.util.CsvUtils;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -269,8 +270,12 @@ public class DataRepository {
                 HistoricalMatch match = new HistoricalMatch();
                 match.setMatchDate(LocalDate.parse(CsvUtils.get(row, MATCH_DATE_COLUMN)));
                 match.setTournament(competition.getDisplayName());
-                match.setHomeTeam(CsvUtils.get(row, HOME_TEAM_CN_COLUMN));
-                match.setAwayTeam(CsvUtils.get(row, AWAY_TEAM_CN_COLUMN));
+                match.setHomeTeam(ClubTeamNameTranslator.translate(
+                        competition,
+                        CsvUtils.get(row, HOME_TEAM_CN_COLUMN)));
+                match.setAwayTeam(ClubTeamNameTranslator.translate(
+                        competition,
+                        CsvUtils.get(row, AWAY_TEAM_CN_COLUMN)));
                 match.setHomeScore(Integer.parseInt(CsvUtils.get(row, HOME_SCORE_COLUMN)));
                 match.setAwayScore(Integer.parseInt(CsvUtils.get(row, AWAY_SCORE_COLUMN)));
                 match.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, NEUTRAL_COLUMN)));
@@ -310,8 +315,39 @@ public class DataRepository {
             log.info("Loaded {} additional club competition schedule rows.", clubCompetitionUpdatedCount);
         }
         historicalOddsScheduleLoader.mergeInto(result);
+        normalizeScheduleTeamNames(result);
         result.sort(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getKickoffTime));
         return result;
+    }
+
+    private void normalizeScheduleTeamNames(List<MatchSchedule> schedules) {
+        for (MatchSchedule schedule : schedules) {
+            Competition competition = schedule.getCompetition();
+            schedule.setHomeTeamCn(resolveStandardTeamName(
+                    competition,
+                    schedule.getHomeTeamCn(),
+                    schedule.getHomeTeamEn()));
+            schedule.setAwayTeamCn(resolveStandardTeamName(
+                    competition,
+                    schedule.getAwayTeamCn(),
+                    schedule.getAwayTeamEn()));
+            schedule.setSportteryHomeTeamName(ClubTeamNameTranslator.translate(
+                    competition,
+                    schedule.getSportteryHomeTeamName()));
+            schedule.setSportteryAwayTeamName(ClubTeamNameTranslator.translate(
+                    competition,
+                    schedule.getSportteryAwayTeamName()));
+        }
+    }
+
+    private String resolveStandardTeamName(
+            Competition competition,
+            String chineseName,
+            String englishName) {
+        if (chineseName != null && !chineseName.isBlank()) {
+            return ClubTeamNameTranslator.translate(competition, chineseName);
+        }
+        return ClubTeamNameTranslator.translate(competition, englishName);
     }
 
     private void preserveSchedulesOutsideRefreshWindow(
