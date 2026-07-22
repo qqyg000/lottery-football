@@ -64,8 +64,14 @@ class UserConfigServiceTest {
                 UserConfig.CURRENT_EDITION_PROFILE,
                 UserConfig.AGGRESSIVE_PARAMETER_PRESET));
         assertEquals(1.21D, currentProfile.getModelFactors().getHostTeamGoalFactor());
+        assertEquals(1.00D, currentProfile.getModelFactors().getOfficialMatchWeight());
+        assertEquals(0.50D, currentProfile.getModelFactors().getInternationalFriendlyWeight());
+        assertEquals(0.30D, currentProfile.getModelFactors().getClubFriendlyWeight());
         assertEquals(1.51D, previousProfile.getGlobalParameters().getRecommendationOdds());
         assertEquals(2.30D, aggressiveProfile.getModelFactors().getHostTeamGoalFactor());
+        assertEquals(1.00D, aggressiveProfile.getModelFactors().getOfficialMatchWeight());
+        assertEquals(0.50D, aggressiveProfile.getModelFactors().getInternationalFriendlyWeight());
+        assertEquals(0.30D, aggressiveProfile.getModelFactors().getClubFriendlyWeight());
         assertEquals(2.46D, aggressiveProfile.getGlobalParameters().getRecommendationOdds());
         assertNotSame(currentProfile, previousProfile);
         assertNotSame(currentProfile, aggressiveProfile);
@@ -103,6 +109,12 @@ class UserConfigServiceTest {
         assertFalse(persisted.has("globalParameters"));
         assertTrue(persisted.has("parameterProfiles"));
         assertEquals(60, persisted.get("parameterProfiles").size());
+        JsonNode modelFactors = persisted.get("parameterProfiles")
+                .get("WORLD_CUP:CURRENT:STABLE")
+                .get("modelFactors");
+        assertEquals(1.00D, modelFactors.get("officialMatchWeight").asDouble());
+        assertEquals(0.50D, modelFactors.get("internationalFriendlyWeight").asDouble());
+        assertEquals(0.30D, modelFactors.get("clubFriendlyWeight").asDouble());
     }
 
     @Test

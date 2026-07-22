@@ -1,6 +1,7 @@
 package com.eason.worldcup.service;
 
 import com.eason.worldcup.model.Competition;
+import com.eason.worldcup.model.HistoricalMatchType;
 import com.eason.worldcup.model.MatchSchedule;
 import org.junit.jupiter.api.Test;
 
@@ -94,6 +95,63 @@ class TeamStrengthServiceTest {
                 "Brazil",
                 HOST_FACTOR,
                 SEED_FACTOR));
+    }
+
+    @Test
+    void shouldUseDefaultAndDynamicMatchTypeWeights() {
+        assertEquals(1.0D, teamStrengthService.resolveMatchTypeWeight(
+                HistoricalMatchType.OFFICIAL,
+                null,
+                null,
+                null));
+        assertEquals(0.5D, teamStrengthService.resolveMatchTypeWeight(
+                HistoricalMatchType.INTERNATIONAL_FRIENDLY,
+                null,
+                null,
+                null));
+        assertEquals(0.3D, teamStrengthService.resolveMatchTypeWeight(
+                HistoricalMatchType.CLUB_FRIENDLY,
+                null,
+                null,
+                null));
+        assertEquals(0.82D, teamStrengthService.resolveMatchTypeWeight(
+                HistoricalMatchType.OFFICIAL,
+                0.82D,
+                0.44D,
+                0.21D));
+        assertEquals(0.44D, teamStrengthService.resolveMatchTypeWeight(
+                HistoricalMatchType.INTERNATIONAL_FRIENDLY,
+                0.82D,
+                0.44D,
+                0.21D));
+        assertEquals(0.21D, teamStrengthService.resolveMatchTypeWeight(
+                HistoricalMatchType.CLUB_FRIENDLY,
+                0.82D,
+                0.44D,
+                0.21D));
+        assertEquals(1.0D, teamStrengthService.resolveMatchTypeWeight(
+                HistoricalMatchType.OFFICIAL,
+                2.0D,
+                -1.0D,
+                0.21D));
+        assertEquals(0.0D, teamStrengthService.resolveMatchTypeWeight(
+                HistoricalMatchType.INTERNATIONAL_FRIENDLY,
+                2.0D,
+                -1.0D,
+                0.21D));
+    }
+
+    @Test
+    void shouldUseDynamicHomeTeamGoalFactorForNonNeutralMatches() {
+        MatchSchedule leagueSchedule = worldCupSchedule(LocalDate.of(2026, 8, 7));
+        leagueSchedule.setCompetition(Competition.EREDIVISIE);
+        MatchSchedule worldCupSchedule = worldCupSchedule(LocalDate.of(2026, 6, 12));
+        MatchSchedule neutralSchedule = worldCupSchedule(LocalDate.of(2026, 6, 12));
+        neutralSchedule.setNeutral(true);
+
+        assertEquals(1.06D, teamStrengthService.getHomeAdvantage(leagueSchedule, 1.06D));
+        assertEquals(1.18D, teamStrengthService.getHomeAdvantage(worldCupSchedule, 1.18D));
+        assertEquals(1.0D, teamStrengthService.getHomeAdvantage(neutralSchedule, 1.18D));
     }
 
     private MatchSchedule worldCupSchedule(LocalDate matchDate) {

@@ -54,6 +54,9 @@ public class RecommendationBacktestJobService {
             Double seedTeamGoalFactor,
             Double homeTeamGoalFactor,
             Double handicapSmoothingFactor,
+            Double officialMatchWeight,
+            Double internationalFriendlyWeight,
+            Double clubFriendlyWeight,
             boolean includePreviousEdition,
             Map<Competition, UserConfig.ModelFactors> modelFactorsByCompetition) {
         removeExpiredJobs();
@@ -68,6 +71,9 @@ public class RecommendationBacktestJobService {
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
                 handicapSmoothingFactor,
+                officialMatchWeight,
+                internationalFriendlyWeight,
+                clubFriendlyWeight,
                 includePreviousEdition,
                 modelFactorsByCompetition == null ? Map.of() : Map.copyOf(modelFactorsByCompetition)));
         return toResponse(job);
@@ -91,6 +97,9 @@ public class RecommendationBacktestJobService {
             Double seedTeamGoalFactor,
             Double homeTeamGoalFactor,
             Double handicapSmoothingFactor,
+            Double officialMatchWeight,
+            Double internationalFriendlyWeight,
+            Double clubFriendlyWeight,
             boolean includePreviousEdition,
             Map<Competition, UserConfig.ModelFactors> modelFactorsByCompetition) {
         job.start();
@@ -102,6 +111,9 @@ public class RecommendationBacktestJobService {
                     seedTeamGoalFactor,
                     homeTeamGoalFactor,
                     handicapSmoothingFactor,
+                    officialMatchWeight,
+                    internationalFriendlyWeight,
+                    clubFriendlyWeight,
                     includePreviousEdition,
                     modelFactorsByCompetition,
                     job::updateProgress);

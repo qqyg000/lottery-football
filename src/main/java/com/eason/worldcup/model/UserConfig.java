@@ -246,6 +246,12 @@ public class UserConfig {
 
         private Double seedTeamGoalFactor;
 
+        private Double officialMatchWeight;
+
+        private Double internationalFriendlyWeight;
+
+        private Double clubFriendlyWeight;
+
         private Double handicapSmoothingFactor;
 
         public static ModelFactors defaults() {
@@ -253,6 +259,9 @@ public class UserConfig {
             factors.setHostTeamGoalFactor(1.10D);
             factors.setHomeTeamGoalFactor(1.06D);
             factors.setSeedTeamGoalFactor(1.85D);
+            factors.setOfficialMatchWeight(1.00D);
+            factors.setInternationalFriendlyWeight(0.50D);
+            factors.setClubFriendlyWeight(0.30D);
             factors.setHandicapSmoothingFactor(0.274D);
             return factors;
         }
@@ -262,6 +271,9 @@ public class UserConfig {
             factors.setHostTeamGoalFactor(2.30D);
             factors.setHomeTeamGoalFactor(1.75D);
             factors.setSeedTeamGoalFactor(1.55D);
+            factors.setOfficialMatchWeight(1.00D);
+            factors.setInternationalFriendlyWeight(0.50D);
+            factors.setClubFriendlyWeight(0.30D);
             factors.setHandicapSmoothingFactor(0.650D);
             return factors;
         }
@@ -288,6 +300,30 @@ public class UserConfig {
 
         public void setSeedTeamGoalFactor(Double seedTeamGoalFactor) {
             this.seedTeamGoalFactor = seedTeamGoalFactor;
+        }
+
+        public Double getOfficialMatchWeight() {
+            return officialMatchWeight;
+        }
+
+        public void setOfficialMatchWeight(Double officialMatchWeight) {
+            this.officialMatchWeight = officialMatchWeight;
+        }
+
+        public Double getInternationalFriendlyWeight() {
+            return internationalFriendlyWeight;
+        }
+
+        public void setInternationalFriendlyWeight(Double internationalFriendlyWeight) {
+            this.internationalFriendlyWeight = internationalFriendlyWeight;
+        }
+
+        public Double getClubFriendlyWeight() {
+            return clubFriendlyWeight;
+        }
+
+        public void setClubFriendlyWeight(Double clubFriendlyWeight) {
+            this.clubFriendlyWeight = clubFriendlyWeight;
         }
 
         public Double getHandicapSmoothingFactor() {

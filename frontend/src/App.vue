@@ -38,28 +38,33 @@
       <div class="hero-card-group">
         <div class="hero-card">
           <div class="hero-summary-column">
-          <div class="hero-number">{{ overview.historicalMatchCount || 0 }}</div>
-          <div class="hero-label">历史战绩样本</div>
-          <div class="hero-small">赛程：{{ overview.scheduleMatchCount || 0 }} 场 · 已完赛：{{ overview.completedMatchCount || 0 }} 场</div>
-          <div class="backtest-range-toggle" aria-label="回测范围">
-            <button
-              type="button"
-              :class="{ 'is-active': includePreviousEdition }"
-              :disabled="loading || updatingData || backtesting"
-              @click="setIncludePreviousEdition(true)"
-            >含上届赛事</button>
-            <button
-              type="button"
-              :class="{ 'is-active': !includePreviousEdition }"
-              :disabled="loading || updatingData || backtesting"
-              @click="setIncludePreviousEdition(false)"
-            >仅本届赛事</button>
-          </div>
-          <div class="hero-actions">
-            <button type="button" class="factor-recalculate factor-reset refresh-data-button" :disabled="loading || updatingData || backtesting" @click="refreshData">
-              {{ updatingData ? '更新中' : '更新数据' }}
-            </button>
-          </div>
+            <div class="hero-number">{{ overview.historicalMatchCount || 0 }}</div>
+            <div class="hero-label">历史战绩样本</div>
+            <div class="hero-small">赛程：{{ overview.scheduleMatchCount || 0 }} 场 · 已完赛：{{ overview.completedMatchCount || 0 }} 场</div>
+            <div class="backtest-range-toggle" aria-label="回测范围">
+              <button
+                type="button"
+                :class="{ 'is-active': includePreviousEdition }"
+                :disabled="loading || updatingData || backtesting"
+                @click="setIncludePreviousEdition(true)"
+              >含上届赛事</button>
+              <button
+                type="button"
+                :class="{ 'is-active': !includePreviousEdition }"
+                :disabled="loading || updatingData || backtesting"
+                @click="setIncludePreviousEdition(false)"
+              >仅本届赛事</button>
+            </div>
+            <div class="hero-actions">
+              <button
+                type="button"
+                class="factor-recalculate factor-reset refresh-data-button"
+                :disabled="loading || updatingData || backtesting"
+                @click="refreshData"
+              >
+                {{ updatingData ? '更新中' : '更新数据' }}
+              </button>
+            </div>
           </div>
           <div class="factor-controls" aria-label="模型参数">
             <div class="factor-control-column">
@@ -68,7 +73,7 @@
                 :class="{ 'is-competition-disabled': !activeParameterProfileEditable || activeCompetition !== 'WORLD_CUP' }"
                 :title="!activeParameterProfileEditable ? '请只选择一个赛事后编辑参数' : (activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : '')"
               >
-                <span>种子队进球系数</span>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="世界杯种子队的预期进球修正倍数，仅世界杯赛事生效" data-tooltip="世界杯种子队的预期进球修正倍数，仅世界杯赛事生效">i</i>种子队进球系数</span>
                 <input
                   type="number"
                   min="0.1"
@@ -76,25 +81,29 @@
                   step="0.01"
                   v-model.number="modelFactors.seedTeamGoalFactor"
                   :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable || activeCompetition !== 'WORLD_CUP'"
-                  @change="saveModelFactorInput('seedTeamGoalFactor')"
-                  @keyup.enter="commitModelFactors"
+                  @blur="saveModelFactorInput('seedTeamGoalFactor')"
+                  @keyup.enter="$event.target.blur()"
                 >
               </label>
-              <label v-if="activeCompetition === 'WORLD_CUP'" class="factor-control">
-                <span>东道主进球系数</span>
+              <label
+                class="factor-control"
+                :class="{ 'is-competition-disabled': !activeParameterProfileEditable || activeCompetition !== 'WORLD_CUP' }"
+                :title="!activeParameterProfileEditable ? '请只选择一个赛事后编辑参数' : (activeCompetition !== 'WORLD_CUP' ? '仅世界杯赛事可用' : '')"
+              >
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="世界杯东道主的预期进球修正倍数，仅世界杯赛事生效" data-tooltip="世界杯东道主的预期进球修正倍数，仅世界杯赛事生效">i</i>东道主进球系数</span>
                 <input
                   type="number"
                   min="0.1"
                   max="3"
                   step="0.01"
                   v-model.number="modelFactors.hostTeamGoalFactor"
-                  :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
-                  @change="saveModelFactorInput('hostTeamGoalFactor')"
-                  @keyup.enter="commitModelFactors"
+                  :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable || activeCompetition !== 'WORLD_CUP'"
+                  @blur="saveModelFactorInput('hostTeamGoalFactor')"
+                  @keyup.enter="$event.target.blur()"
                 >
               </label>
-              <label v-else class="factor-control">
-                <span>主场进球系数</span>
+              <label class="factor-control">
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="主队预期进球的修正倍数，1.00 表示不额外修正" data-tooltip="主队预期进球的修正倍数，1.00 表示不额外修正">i</i>主场进球系数</span>
                 <input
                   type="number"
                   min="0.1"
@@ -102,12 +111,12 @@
                   step="0.01"
                   v-model.number="modelFactors.homeTeamGoalFactor"
                   :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
-                  @change="saveModelFactorInput('homeTeamGoalFactor')"
-                  @keyup.enter="commitModelFactors"
+                  @blur="saveModelFactorInput('homeTeamGoalFactor')"
+                  @keyup.enter="$event.target.blur()"
                 >
               </label>
               <label class="factor-control">
-                <span>让球平滑系数</span>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="控制让球概率向普通胜平负概率平滑修正的强度，数值越大修正越明显" data-tooltip="控制让球概率向普通胜平负概率平滑修正的强度，数值越大修正越明显">i</i>让球平滑系数</span>
                 <input
                   type="number"
                   min="0"
@@ -115,14 +124,14 @@
                   step="0.001"
                   v-model.number="modelFactors.handicapSmoothingFactor"
                   :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
-                  @change="saveModelFactorInput('handicapSmoothingFactor')"
-                  @keyup.enter="commitModelFactors"
+                  @blur="saveModelFactorInput('handicapSmoothingFactor')"
+                  @keyup.enter="$event.target.blur()"
                 >
               </label>
             </div>
             <div class="factor-control-column">
               <label class="factor-control percentage-factor-control">
-                <span>让球推荐阈值</span>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="普通盘和让球盘同时选择时，让球同向概率达到该值才切换为让球推荐" data-tooltip="普通盘和让球盘同时选择时，让球同向概率达到该值才切换为让球推荐">i</i>让球推荐阈值</span>
                 <span class="percentage-input">
                   <input
                     type="number"
@@ -139,7 +148,7 @@
                 </span>
               </label>
               <label class="factor-control percentage-factor-control">
-                <span>让球反向阈值</span>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="让球盘的最高非平局概率低于该值时，改为推荐另外两个结果" data-tooltip="让球盘的最高非平局概率低于该值时，改为推荐另外两个结果">i</i>让球反向阈值</span>
                 <span class="percentage-input">
                   <input
                     type="number"
@@ -156,7 +165,7 @@
                 </span>
               </label>
               <label class="factor-control percentage-factor-control">
-                <span>单项推荐阈值</span>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="双项推荐中最高概率超过该值时，只保留概率最高的一项" data-tooltip="双项推荐中最高概率超过该值时，只保留概率最高的一项">i</i>单项推荐阈值</span>
                 <span class="percentage-input">
                   <input
                     type="number"
@@ -172,13 +181,71 @@
                   <span class="percentage-suffix">%</span>
                 </span>
               </label>
+              <label class="factor-control percentage-factor-control">
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="所有推荐项的竞彩赔率都不低于该值时，才保留本场推荐" data-tooltip="所有推荐项的竞彩赔率都不低于该值时，才保留本场推荐">i</i>推荐赔率阈值</span>
+                <span class="percentage-input">
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    step="0.01"
+                    inputmode="decimal"
+                    v-model.number="recommendationOdds"
+                    :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
+                    @change="normalizeRecommendationOddsInput"
+                    @keyup.enter="runRecommendationOddsBacktest"
+                  >
+                  <span class="percentage-suffix odds-suffix" aria-hidden="true">倍</span>
+                </span>
+              </label>
             </div>
-            <div class="factor-actions">
-              <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable" @click="toggleParameterPreset">
+            <div class="factor-control-column">
+              <label class="factor-control">
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="正式比赛在球队强度计算中的样本权重，1.00 表示完整计入" data-tooltip="正式比赛在球队强度计算中的样本权重，1.00 表示完整计入">i</i>正式比赛权重</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  v-model.number="modelFactors.officialMatchWeight"
+                  :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
+                  @blur="saveModelFactorInput('officialMatchWeight')"
+                  @keyup.enter="$event.target.blur()"
+                >
+              </label>
+              <label class="factor-control">
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="国家队友谊赛在球队强度计算中的样本权重，0 表示不计入" data-tooltip="国家队友谊赛在球队强度计算中的样本权重，0 表示不计入">i</i>国家队友谊赛权重</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  v-model.number="modelFactors.internationalFriendlyWeight"
+                  :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
+                  @blur="saveModelFactorInput('internationalFriendlyWeight')"
+                  @keyup.enter="$event.target.blur()"
+                >
+              </label>
+              <label class="factor-control">
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="俱乐部友谊赛在球队强度计算中的样本权重，0 表示不计入" data-tooltip="俱乐部友谊赛在球队强度计算中的样本权重，0 表示不计入">i</i>俱乐部友谊赛权重</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  v-model.number="modelFactors.clubFriendlyWeight"
+                  :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
+                  @blur="saveModelFactorInput('clubFriendlyWeight')"
+                  @keyup.enter="$event.target.blur()"
+                >
+              </label>
+              <button
+                type="button"
+                class="factor-recalculate factor-column-action"
+                :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
+                @click="toggleParameterPreset"
+              >
                 {{ parameterPresetToggleText }}
-              </button>
-              <button type="button" class="factor-recalculate" :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable || !queryDate" @click="commitModelFactors">
-                {{ loading ? '计算中' : '重新计算' }}
               </button>
             </div>
           </div>
@@ -186,38 +253,28 @@
         <div class="global-parameter-card" aria-label="全局参数">
           <div class="backtest-result" :class="{ 'is-empty': !backtestActive }">
             <div class="backtest-average-grid">
+              <div title="场均投注 = 总投入 ÷ 推荐比赛数，每个推荐项按 1 单位投入">
+                <strong>{{ backtestAverageStakeText }}</strong>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="总投入除以推荐比赛数，每个推荐项按 1 单位投入" data-tooltip="总投入除以推荐比赛数，每个推荐项按 1 单位投入">i</i>场均投注</span>
+              </div>
               <div>
                 <strong>{{ backtestAverageOddsText }}</strong>
-                <span>场均返奖</span>
-              </div>
-              <div title="ROI = [(总返奖 ÷ 总投入) - 1] × 100%，每个推荐项按 1 单位投入">
-                <strong>{{ backtestRoiText }}</strong>
-                <span>ROI</span>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="总返奖除以推荐比赛数，未命中的比赛按 0 返奖计入" data-tooltip="总返奖除以推荐比赛数，未命中的比赛按 0 返奖计入">i</i>场均返奖</span>
               </div>
               <div>
                 <strong>{{ backtestSamplingRateText }}</strong>
-                <span>采样率</span>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="产生推荐的比赛数除以回测已完赛比赛总数" data-tooltip="产生推荐的比赛数除以回测已完赛比赛总数">i</i>采样率</span>
               </div>
               <div>
                 <strong>{{ backtestHitRateText }}</strong>
-                <span>命中率</span>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="至少命中一个推荐项的比赛数除以推荐比赛数" data-tooltip="至少命中一个推荐项的比赛数除以推荐比赛数">i</i>命中率</span>
+              </div>
+              <div class="backtest-roi-card" title="ROI = [(总返奖 ÷ 总投入) - 1] × 100%，每个推荐项按 1 单位投入">
+                <strong>{{ backtestRoiText }}</strong>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="投资回报率，计算公式为总返奖除以总投入再减 1" data-tooltip="投资回报率，计算公式为总返奖除以总投入再减 1">i</i>ROI</span>
               </div>
             </div>
           </div>
-          <label class="factor-control global-parameter-control">
-            <span>推荐赔率阈值</span>
-            <input
-              type="number"
-              min="1"
-              max="100"
-              step="0.01"
-              inputmode="decimal"
-              v-model.number="recommendationOdds"
-              :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
-              @change="normalizeRecommendationOddsInput"
-              @keyup.enter="runRecommendationOddsBacktest"
-            >
-          </label>
           <button
             type="button"
             class="factor-recalculate backtest-odds-button"
@@ -618,6 +675,9 @@ const ACTIVE_COMPETITION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 const DEFAULT_HOST_TEAM_GOAL_FACTOR = 1.10
 const DEFAULT_HOME_TEAM_GOAL_FACTOR = 1.06
 const DEFAULT_SEED_TEAM_GOAL_FACTOR = 1.85
+const DEFAULT_OFFICIAL_MATCH_WEIGHT = 1.00
+const DEFAULT_INTERNATIONAL_FRIENDLY_WEIGHT = 0.50
+const DEFAULT_CLUB_FRIENDLY_WEIGHT = 0.30
 const DEFAULT_HANDICAP_SMOOTHING_FACTOR = 0.274
 const DEFAULT_RECOMMENDATION_ODDS = 1.03
 const DEFAULT_HANDICAP_RECOMMENDATION_THRESHOLD = 68.16
@@ -631,11 +691,21 @@ const MODEL_FACTOR_MIN = 0.1
 const MODEL_FACTOR_MAX = 3
 const HANDICAP_SMOOTHING_MIN = 0
 const HANDICAP_SMOOTHING_MAX = 0.8
+const MATCH_TYPE_WEIGHT_MIN = 0
+const MATCH_TYPE_WEIGHT_MAX = 1
+const MATCH_TYPE_WEIGHT_KEYS = [
+  'officialMatchWeight',
+  'internationalFriendlyWeight',
+  'clubFriendlyWeight'
+]
 const STABLE_PARAMETER_PRESET = {
   modelFactors: {
     hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR,
     homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR,
     seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR,
+    officialMatchWeight: DEFAULT_OFFICIAL_MATCH_WEIGHT,
+    internationalFriendlyWeight: DEFAULT_INTERNATIONAL_FRIENDLY_WEIGHT,
+    clubFriendlyWeight: DEFAULT_CLUB_FRIENDLY_WEIGHT,
     handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR
   },
   globalParameters: {
@@ -650,6 +720,9 @@ const AGGRESSIVE_PARAMETER_PRESET = {
     hostTeamGoalFactor: 2.30,
     homeTeamGoalFactor: 1.75,
     seedTeamGoalFactor: 1.55,
+    officialMatchWeight: DEFAULT_OFFICIAL_MATCH_WEIGHT,
+    internationalFriendlyWeight: DEFAULT_INTERNATIONAL_FRIENDLY_WEIGHT,
+    clubFriendlyWeight: DEFAULT_CLUB_FRIENDLY_WEIGHT,
     handicapSmoothingFactor: 0.650
   },
   globalParameters: {
@@ -665,6 +738,9 @@ const MODEL_FACTOR_KEYS = [
   'hostTeamGoalFactor',
   'homeTeamGoalFactor',
   'seedTeamGoalFactor',
+  'officialMatchWeight',
+  'internationalFriendlyWeight',
+  'clubFriendlyWeight',
   'handicapSmoothingFactor'
 ]
 const PROBABILITY_KEYS = ['win', 'draw', 'lose']
@@ -749,6 +825,9 @@ export default {
         hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR.toFixed(2),
         homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR.toFixed(2),
         seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR.toFixed(2),
+        officialMatchWeight: DEFAULT_OFFICIAL_MATCH_WEIGHT.toFixed(2),
+        internationalFriendlyWeight: DEFAULT_INTERNATIONAL_FRIENDLY_WEIGHT.toFixed(2),
+        clubFriendlyWeight: DEFAULT_CLUB_FRIENDLY_WEIGHT.toFixed(2),
         handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR.toFixed(3)
       },
       recommendationOdds: DEFAULT_RECOMMENDATION_ODDS.toFixed(2),
@@ -819,6 +898,17 @@ export default {
     backtestAverageOddsText() {
       return this.formatBacktestOdds(this.backtestSummary.averageOddsIncludingMisses)
     },
+    backtestAverageStakeText() {
+      if (!this.backtestActive) {
+        return '--'
+      }
+      const recommendedMatchCount = Number(this.backtestSummary.recommendedMatchCount) || 0
+      if (recommendedMatchCount <= 0) {
+        return '0.00'
+      }
+      const totalStake = Number(this.backtestSummary.totalStake) || 0
+      return (totalStake / recommendedMatchCount).toFixed(2)
+    },
     backtestSamplingRateText() {
       if (!this.backtestActive) {
         return '--'
@@ -878,7 +968,7 @@ export default {
     },
     parameterPresetToggleText() {
       return this.activeParameterPreset === 'aggressive'
-        ? '切换稳定方案'
+        ? '切换稳健方案'
         : '切换激进方案'
     },
     matchColumns() {
@@ -1197,6 +1287,9 @@ export default {
           hostTeamGoalFactor: this.normalizeModelFactor(modelFactors.hostTeamGoalFactor, defaults.modelFactors.hostTeamGoalFactor, 'hostTeamGoalFactor'),
           homeTeamGoalFactor: this.normalizeModelFactor(modelFactors.homeTeamGoalFactor, defaults.modelFactors.homeTeamGoalFactor, 'homeTeamGoalFactor'),
           seedTeamGoalFactor: this.normalizeModelFactor(modelFactors.seedTeamGoalFactor, defaults.modelFactors.seedTeamGoalFactor, 'seedTeamGoalFactor'),
+          officialMatchWeight: this.normalizeModelFactor(modelFactors.officialMatchWeight, defaults.modelFactors.officialMatchWeight, 'officialMatchWeight'),
+          internationalFriendlyWeight: this.normalizeModelFactor(modelFactors.internationalFriendlyWeight, defaults.modelFactors.internationalFriendlyWeight, 'internationalFriendlyWeight'),
+          clubFriendlyWeight: this.normalizeModelFactor(modelFactors.clubFriendlyWeight, defaults.modelFactors.clubFriendlyWeight, 'clubFriendlyWeight'),
           handicapSmoothingFactor: this.normalizeModelFactor(modelFactors.handicapSmoothingFactor, defaults.modelFactors.handicapSmoothingFactor, 'handicapSmoothingFactor')
         },
         globalParameters: {
@@ -1442,6 +1535,9 @@ export default {
       params.append('hostTeamGoalFactor', this.formatModelFactorValue(factors.hostTeamGoalFactor, defaults.hostTeamGoalFactor, 'hostTeamGoalFactor'))
       params.append('homeTeamGoalFactor', this.formatModelFactorValue(factors.homeTeamGoalFactor, defaults.homeTeamGoalFactor, 'homeTeamGoalFactor'))
       params.append('seedTeamGoalFactor', this.formatModelFactorValue(factors.seedTeamGoalFactor, defaults.seedTeamGoalFactor, 'seedTeamGoalFactor'))
+      params.append('officialMatchWeight', this.formatModelFactorValue(factors.officialMatchWeight, defaults.officialMatchWeight, 'officialMatchWeight'))
+      params.append('internationalFriendlyWeight', this.formatModelFactorValue(factors.internationalFriendlyWeight, defaults.internationalFriendlyWeight, 'internationalFriendlyWeight'))
+      params.append('clubFriendlyWeight', this.formatModelFactorValue(factors.clubFriendlyWeight, defaults.clubFriendlyWeight, 'clubFriendlyWeight'))
       params.append('handicapSmoothingFactor', this.formatModelFactorValue(factors.handicapSmoothingFactor, defaults.handicapSmoothingFactor, 'handicapSmoothingFactor'))
     },
     buildBacktestModelFactorsPayload(competitions) {
@@ -1946,6 +2042,9 @@ export default {
           hostTeamGoalFactor: this.formatModelFactorValue(parsedValue.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor'),
           homeTeamGoalFactor: this.formatModelFactorValue(parsedValue.homeTeamGoalFactor, DEFAULT_HOME_TEAM_GOAL_FACTOR, 'homeTeamGoalFactor'),
           seedTeamGoalFactor: this.formatModelFactorValue(parsedValue.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor'),
+          officialMatchWeight: this.formatModelFactorValue(parsedValue.officialMatchWeight, DEFAULT_OFFICIAL_MATCH_WEIGHT, 'officialMatchWeight'),
+          internationalFriendlyWeight: this.formatModelFactorValue(parsedValue.internationalFriendlyWeight, DEFAULT_INTERNATIONAL_FRIENDLY_WEIGHT, 'internationalFriendlyWeight'),
+          clubFriendlyWeight: this.formatModelFactorValue(parsedValue.clubFriendlyWeight, DEFAULT_CLUB_FRIENDLY_WEIGHT, 'clubFriendlyWeight'),
           handicapSmoothingFactor: this.formatModelFactorValue(parsedValue.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor')
         }
       } catch (error) {
@@ -1953,6 +2052,9 @@ export default {
           hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR.toFixed(2),
           homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR.toFixed(2),
           seedTeamGoalFactor: DEFAULT_SEED_TEAM_GOAL_FACTOR.toFixed(2),
+          officialMatchWeight: DEFAULT_OFFICIAL_MATCH_WEIGHT.toFixed(2),
+          internationalFriendlyWeight: DEFAULT_INTERNATIONAL_FRIENDLY_WEIGHT.toFixed(2),
+          clubFriendlyWeight: DEFAULT_CLUB_FRIENDLY_WEIGHT.toFixed(2),
           handicapSmoothingFactor: DEFAULT_HANDICAP_SMOOTHING_FACTOR.toFixed(3)
         }
       }
@@ -1969,6 +2071,9 @@ export default {
         hostTeamGoalFactor: Number(this.formatModelFactorValue(this.modelFactors.hostTeamGoalFactor, DEFAULT_HOST_TEAM_GOAL_FACTOR, 'hostTeamGoalFactor')),
         homeTeamGoalFactor: Number(this.formatModelFactorValue(this.modelFactors.homeTeamGoalFactor, DEFAULT_HOME_TEAM_GOAL_FACTOR, 'homeTeamGoalFactor')),
         seedTeamGoalFactor: Number(this.formatModelFactorValue(this.modelFactors.seedTeamGoalFactor, DEFAULT_SEED_TEAM_GOAL_FACTOR, 'seedTeamGoalFactor')),
+        officialMatchWeight: Number(this.formatModelFactorValue(this.modelFactors.officialMatchWeight, DEFAULT_OFFICIAL_MATCH_WEIGHT, 'officialMatchWeight')),
+        internationalFriendlyWeight: Number(this.formatModelFactorValue(this.modelFactors.internationalFriendlyWeight, DEFAULT_INTERNATIONAL_FRIENDLY_WEIGHT, 'internationalFriendlyWeight')),
+        clubFriendlyWeight: Number(this.formatModelFactorValue(this.modelFactors.clubFriendlyWeight, DEFAULT_CLUB_FRIENDLY_WEIGHT, 'clubFriendlyWeight')),
         handicapSmoothingFactor: Number(this.formatModelFactorValue(this.modelFactors.handicapSmoothingFactor, DEFAULT_HANDICAP_SMOOTHING_FACTOR, 'handicapSmoothingFactor'))
       }
     },
@@ -2001,18 +2106,12 @@ export default {
       }
       return res.json()
     },
-    saveModelFactorInput(key) {
+    async saveModelFactorInput(key) {
       const fallback = this.getDefaultModelFactor(key)
       this.$set(this.modelFactors, key, this.formatModelFactorValue(this.modelFactors[key], fallback, key))
       this.saveModelFactors()
-    },
-    commitModelFactors() {
-      MODEL_FACTOR_KEYS.forEach(key => {
-        this.$set(this.modelFactors, key, this.formatModelFactorValue(this.modelFactors[key], this.getDefaultModelFactor(key), key))
-      })
-      this.saveModelFactors()
       if (this.queryDate) {
-        this.loadPredictions()
+        await this.loadPredictions()
       }
     },
     async toggleParameterPreset() {
@@ -2038,10 +2137,16 @@ export default {
       return defaults[key] ?? defaults.hostTeamGoalFactor
     },
     getModelFactorMin(key) {
-      return key === 'handicapSmoothingFactor' ? HANDICAP_SMOOTHING_MIN : MODEL_FACTOR_MIN
+      if (key === 'handicapSmoothingFactor') {
+        return HANDICAP_SMOOTHING_MIN
+      }
+      return MATCH_TYPE_WEIGHT_KEYS.includes(key) ? MATCH_TYPE_WEIGHT_MIN : MODEL_FACTOR_MIN
     },
     getModelFactorMax(key) {
-      return key === 'handicapSmoothingFactor' ? HANDICAP_SMOOTHING_MAX : MODEL_FACTOR_MAX
+      if (key === 'handicapSmoothingFactor') {
+        return HANDICAP_SMOOTHING_MAX
+      }
+      return MATCH_TYPE_WEIGHT_KEYS.includes(key) ? MATCH_TYPE_WEIGHT_MAX : MODEL_FACTOR_MAX
     },
     getModelFactorScale(key) {
       return key === 'handicapSmoothingFactor' ? 3 : 2
@@ -2652,11 +2757,11 @@ h1 {
 .hero-card {
   align-self: stretch;
   display: grid;
-  grid-template-columns: 230px 504px;
-  align-items: end;
+  grid-template-columns: 230px 774px;
+  align-items: stretch;
   gap: 14px;
   justify-content: center;
-  width: 774px;
+  width: 1044px;
   min-width: 0;
   max-width: 100%;
   padding: 4px 12px;
@@ -2667,6 +2772,8 @@ h1 {
 }
 
 .hero-summary-column {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
@@ -2677,28 +2784,104 @@ h1 {
 }
 
 .hero-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 4px;
   font-size: 14px;
 }
 
+.help-icon {
+  position: relative;
+  z-index: 20;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  align-self: center;
+  margin-right: 3px;
+  border: 0;
+  color: transparent;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23bfdbfe'%3E%3Cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  cursor: default;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.34));
+  font-size: 0;
+  font-style: normal;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.help-icon::after {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  width: 220px;
+  padding: 7px 9px;
+  border: 1px solid rgba(148, 163, 184, 0.52);
+  border-radius: 7px;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.97);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.28);
+  content: attr(data-tooltip);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.45;
+  opacity: 0;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  text-align: left;
+  transform: translate(-50%, 4px);
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+  visibility: hidden;
+  white-space: normal;
+}
+
+.help-icon:hover {
+  z-index: 1000;
+}
+
+.help-icon:focus-visible {
+  z-index: 1000;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(191, 219, 254, 0.52);
+}
+
+.help-icon:hover::after,
+.help-icon:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  visibility: visible;
+}
+
 .hero-small {
-  margin-top: 6px;
+  margin: auto 0;
   font-size: 12px;
   opacity: 0.78;
+  transform: translateY(-2px);
 }
 
 .backtest-range-toggle {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
-  margin-top: 7px;
-  padding: 3px;
+  margin-top: 0;
+  padding: 0 3px;
   border-radius: 8px;
   background: rgba(15, 23, 42, 0.22);
+  transform: translateY(-1px);
 }
 
 .backtest-range-toggle button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 24px;
+  padding: 0;
   border: 0;
   border-radius: 6px;
   color: rgba(255, 255, 255, 0.78);
@@ -2706,6 +2889,7 @@ h1 {
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -2721,7 +2905,7 @@ h1 {
 
 .hero-actions {
   display: grid;
-  margin-top: 7px;
+  margin-top: 5px;
   margin-bottom: 3px;
 }
 
@@ -2730,33 +2914,30 @@ h1 {
 }
 
 .factor-controls {
-  position: relative;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 29px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 20px;
   min-width: 0;
   padding-left: 14px;
   border-left: 1px solid rgba(255, 255, 255, 0.2);
   text-align: left;
 }
 
-.factor-controls::after {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(50% + 7px);
-  width: 1px;
-  background: rgba(255, 255, 255, 0.2);
-  content: '';
-  pointer-events: none;
-}
-
 .factor-control-column {
   display: grid;
+  grid-template-rows: repeat(4, 24px);
   align-content: end;
   gap: 8px;
   min-width: 0;
   padding: 0 12px;
+}
+
+.factor-control-column + .factor-control-column {
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.factor-control-column > * {
+  transform: translateY(-3px);
 }
 
 .factor-control {
@@ -2775,9 +2956,14 @@ h1 {
   white-space: nowrap;
 }
 
+.factor-control > span:first-child {
+  display: flex;
+  align-items: center;
+}
+
 .factor-control input[type="number"] {
   width: 78px;
-  height: 26px;
+  height: 24px;
   padding: 0 6px;
   border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 6px;
@@ -2795,7 +2981,7 @@ h1 {
 
 .factor-control .percentage-input {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 12px;
   gap: 4px;
   align-items: center;
   min-width: 0;
@@ -2807,8 +2993,18 @@ h1 {
 }
 
 .factor-control .percentage-suffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1;
+  text-align: center;
+}
+
+.factor-control .percentage-suffix.odds-suffix {
+  font-size: 10px;
 }
 
 .factor-control input[type="number"]:focus {
@@ -2828,19 +3024,16 @@ h1 {
   opacity: 1;
 }
 
-.factor-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 29px;
-  grid-column: 1 / -1;
-  margin-bottom: 3px;
+.factor-column-action {
+  align-self: end;
+  margin-bottom: 0;
 }
 
 .global-parameter-card {
   flex: 0 0 230px;
   align-self: stretch;
   display: grid;
-  grid-template-rows: 1fr auto auto;
+  grid-template-rows: 1fr auto;
   gap: 8px;
   width: 230px;
   min-width: 230px;
@@ -2849,14 +3042,6 @@ h1 {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.12);
   text-align: left;
-}
-
-.global-parameter-control {
-  grid-template-columns: minmax(0, 1fr) 70px;
-}
-
-.global-parameter-control input[type="number"] {
-  width: 70px;
 }
 
 .backtest-odds-button {
@@ -2875,6 +3060,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
+  transform: translateY(2px);
 }
 
 .backtest-average-grid > div {
@@ -2883,10 +3069,14 @@ h1 {
   gap: 4px;
   align-items: center;
   min-width: 0;
-  height: 30px;
+  height: 28px;
   padding: 2px 8px;
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.08);
+}
+
+.backtest-average-grid > .backtest-roi-card {
+  grid-column: 1 / -1;
 }
 
 .backtest-result strong {
@@ -2906,6 +3096,11 @@ h1 {
   font-weight: 800;
   line-height: 1.1;
   text-align: left;
+}
+
+.backtest-average-grid > div > span {
+  display: flex;
+  align-items: center;
 }
 
 .backtest-result.is-empty strong {
@@ -2934,6 +3129,10 @@ h1 {
 .refresh-data-button:disabled {
   cursor: wait;
   opacity: 0.68;
+}
+
+.factor-control.is-competition-disabled input:disabled {
+  cursor: not-allowed;
 }
 
 .calendar-panel {
@@ -3904,7 +4103,7 @@ body.dialog-open {
   text-align: left;
 }
 
-@media (max-width: 1450px) {
+@media (max-width: 1650px) {
   .hero {
     align-items: stretch;
     flex-direction: column;
@@ -3927,7 +4126,7 @@ body.dialog-open {
   }
 
   .hero-card {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 230px minmax(0, 1fr);
     align-items: stretch;
   }
 
@@ -3980,12 +4179,24 @@ body.dialog-open {
     border-top: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  .factor-controls::after {
-    display: none;
-  }
-
   .factor-control-column {
     padding: 0;
+  }
+
+  .help-icon::after {
+    left: -8px;
+    transform: translate(0, 4px);
+  }
+
+  .help-icon:hover::after,
+  .help-icon:focus-visible::after {
+    transform: translate(0, 0);
+  }
+
+  .factor-control-column + .factor-control-column {
+    padding-top: 10px;
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   .factor-control {
@@ -4001,22 +4212,8 @@ body.dialog-open {
     width: 100%;
   }
 
-  .factor-actions {
-    grid-column: auto;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
-
   .percentage-input {
     grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .global-parameter-control {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .global-parameter-control input[type="number"] {
-    width: 100%;
   }
 
   .calendar-panel {

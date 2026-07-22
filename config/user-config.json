@@ -7,6 +7,9 @@
         "hostTeamGoalFactor" : 1.3,
         "homeTeamGoalFactor" : 1.06,
         "seedTeamGoalFactor" : 1.32,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.656
       },
       "globalParameters" : {
@@ -21,6 +24,9 @@
         "hostTeamGoalFactor" : 2.1,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 2.5,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.681
       },
       "globalParameters" : {
@@ -35,6 +41,9 @@
         "hostTeamGoalFactor" : 0.4,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.4,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.643
       },
       "globalParameters" : {
@@ -49,6 +58,9 @@
         "hostTeamGoalFactor" : 2.18,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 2.42,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.655
       },
       "globalParameters" : {
@@ -63,6 +75,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.21,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.709
       },
       "globalParameters" : {
@@ -77,6 +92,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 2.3,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.708
       },
       "globalParameters" : {
@@ -91,6 +109,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.2,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.042
       },
       "globalParameters" : {
@@ -105,6 +126,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 2.65,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.043
       },
       "globalParameters" : {
@@ -117,8 +141,11 @@
     "COPA_AMERICA:CURRENT:STABLE" : {
       "modelFactors" : {
         "hostTeamGoalFactor" : 1.1,
-        "homeTeamGoalFactor" : 0.45,
+        "homeTeamGoalFactor" : 1.0,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.056
       },
       "globalParameters" : {
@@ -133,6 +160,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.69,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.057
       },
       "globalParameters" : {
@@ -147,6 +177,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 2.15,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.102
       },
       "globalParameters" : {
@@ -161,6 +194,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.3,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.098
       },
       "globalParameters" : {
@@ -175,6 +211,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.67,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.0
       },
       "globalParameters" : {
@@ -189,6 +228,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.95,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.138
       },
       "globalParameters" : {
@@ -203,6 +245,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.18,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.137
       },
       "globalParameters" : {
@@ -217,6 +262,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.35,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.137
       },
       "globalParameters" : {
@@ -231,6 +279,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 2.6,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.318
       },
       "globalParameters" : {
@@ -245,6 +296,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.031
       },
       "globalParameters" : {
@@ -259,6 +313,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.96,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.022
       },
       "globalParameters" : {
@@ -273,6 +330,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.85,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.002
       },
       "globalParameters" : {
@@ -287,6 +347,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.75,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.448
       },
       "globalParameters" : {
@@ -301,6 +364,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.365
       },
       "globalParameters" : {
@@ -315,6 +381,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.5,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.141
       },
       "globalParameters" : {
@@ -329,6 +398,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.5,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.14
       },
       "globalParameters" : {
@@ -343,6 +415,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 2.3,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.08
       },
       "globalParameters" : {
@@ -357,6 +432,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.65
       },
       "globalParameters" : {
@@ -371,6 +449,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.95,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.11
       },
       "globalParameters" : {
@@ -385,6 +466,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.97,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.139
       },
       "globalParameters" : {
@@ -399,6 +483,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.65,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.546
       },
       "globalParameters" : {
@@ -413,6 +500,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.65
       },
       "globalParameters" : {
@@ -427,6 +517,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.8,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.489
       },
       "globalParameters" : {
@@ -441,6 +534,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.715
       },
       "globalParameters" : {
@@ -455,6 +551,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.65,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.417
       },
       "globalParameters" : {
@@ -469,6 +568,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.65
       },
       "globalParameters" : {
@@ -483,6 +585,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.66,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.436
       },
       "globalParameters" : {
@@ -497,6 +602,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.9,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.106
       },
       "globalParameters" : {
@@ -511,6 +619,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.6,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.442
       },
       "globalParameters" : {
@@ -525,6 +636,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.65
       },
       "globalParameters" : {
@@ -539,6 +653,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.75,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.8
       },
       "globalParameters" : {
@@ -553,6 +670,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.5,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.684
       },
       "globalParameters" : {
@@ -567,6 +687,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.11,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.57
       },
       "globalParameters" : {
@@ -581,6 +704,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.65
       },
       "globalParameters" : {
@@ -595,6 +721,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 2.7,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.075
       },
       "globalParameters" : {
@@ -609,6 +738,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.6,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.13
       },
       "globalParameters" : {
@@ -623,6 +755,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.15,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.792
       },
       "globalParameters" : {
@@ -637,6 +772,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.15,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.791
       },
       "globalParameters" : {
@@ -651,6 +789,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.49,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.015
       },
       "globalParameters" : {
@@ -665,6 +806,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.55,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.118
       },
       "globalParameters" : {
@@ -679,6 +823,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.95,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.777
       },
       "globalParameters" : {
@@ -693,6 +840,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.65
       },
       "globalParameters" : {
@@ -707,6 +857,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 2.95,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.036
       },
       "globalParameters" : {
@@ -721,6 +874,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.96,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.766
       },
       "globalParameters" : {
@@ -735,6 +891,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.1,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.6
       },
       "globalParameters" : {
@@ -749,6 +908,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.65
       },
       "globalParameters" : {
@@ -763,6 +925,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 0.5,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.521
       },
       "globalParameters" : {
@@ -777,6 +942,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 0.55,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.444
       },
       "globalParameters" : {
@@ -791,6 +959,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.06,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.274
       },
       "globalParameters" : {
@@ -805,6 +976,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.65
       },
       "globalParameters" : {
@@ -819,6 +993,9 @@
         "hostTeamGoalFactor" : 1.1,
         "homeTeamGoalFactor" : 1.06,
         "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.274
       },
       "globalParameters" : {
@@ -833,6 +1010,9 @@
         "hostTeamGoalFactor" : 2.3,
         "homeTeamGoalFactor" : 1.75,
         "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
         "handicapSmoothingFactor" : 0.65
       },
       "globalParameters" : {

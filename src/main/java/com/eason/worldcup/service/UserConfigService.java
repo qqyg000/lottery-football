@@ -166,6 +166,9 @@ public class UserConfigService {
             copy.setHostTeamGoalFactor(source.getHostTeamGoalFactor());
             copy.setHomeTeamGoalFactor(source.getHomeTeamGoalFactor());
             copy.setSeedTeamGoalFactor(source.getSeedTeamGoalFactor());
+            copy.setOfficialMatchWeight(source.getOfficialMatchWeight());
+            copy.setInternationalFriendlyWeight(source.getInternationalFriendlyWeight());
+            copy.setClubFriendlyWeight(source.getClubFriendlyWeight());
             copy.setHandicapSmoothingFactor(source.getHandicapSmoothingFactor());
         }
         return copy;
@@ -207,7 +210,18 @@ public class UserConfigService {
     private boolean hasCompleteParameterProfile(ParameterProfile profile) {
         return profile != null
                 && profile.getModelFactors() != null
-                && profile.getGlobalParameters() != null;
+                && profile.getModelFactors().getHostTeamGoalFactor() != null
+                && profile.getModelFactors().getHomeTeamGoalFactor() != null
+                && profile.getModelFactors().getSeedTeamGoalFactor() != null
+                && profile.getModelFactors().getOfficialMatchWeight() != null
+                && profile.getModelFactors().getInternationalFriendlyWeight() != null
+                && profile.getModelFactors().getClubFriendlyWeight() != null
+                && profile.getModelFactors().getHandicapSmoothingFactor() != null
+                && profile.getGlobalParameters() != null
+                && profile.getGlobalParameters().getRecommendationOdds() != null
+                && profile.getGlobalParameters().getHandicapRecommendationThreshold() != null
+                && profile.getGlobalParameters().getHandicapReverseThreshold() != null
+                && profile.getGlobalParameters().getSingleRecommendationThreshold() != null;
     }
 
     private UserConfig.GlobalParameters normalizeGlobalParameters(UserConfig.GlobalParameters parameters) {
@@ -254,6 +268,9 @@ public class UserConfigService {
         normalized.setHostTeamGoalFactor(normalizeNumber(normalized.getHostTeamGoalFactor(), defaults.getHostTeamGoalFactor(), 0.1D, 3.0D));
         normalized.setHomeTeamGoalFactor(normalizeNumber(normalized.getHomeTeamGoalFactor(), defaults.getHomeTeamGoalFactor(), 0.1D, 3.0D));
         normalized.setSeedTeamGoalFactor(normalizeNumber(normalized.getSeedTeamGoalFactor(), defaults.getSeedTeamGoalFactor(), 0.1D, 3.0D));
+        normalized.setOfficialMatchWeight(normalizeNumber(normalized.getOfficialMatchWeight(), defaults.getOfficialMatchWeight(), 0.0D, 1.0D));
+        normalized.setInternationalFriendlyWeight(normalizeNumber(normalized.getInternationalFriendlyWeight(), defaults.getInternationalFriendlyWeight(), 0.0D, 1.0D));
+        normalized.setClubFriendlyWeight(normalizeNumber(normalized.getClubFriendlyWeight(), defaults.getClubFriendlyWeight(), 0.0D, 1.0D));
         normalized.setHandicapSmoothingFactor(normalizeNumber(normalized.getHandicapSmoothingFactor(), defaults.getHandicapSmoothingFactor(), 0.0D, 0.8D));
         return normalized;
     }

@@ -65,6 +65,9 @@ public class PredictionController {
             @RequestParam(value = "homeTeamGoalFactor", required = false) Double homeTeamGoalFactor,
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
+            @RequestParam(value = "officialMatchWeight", required = false) Double officialMatchWeight,
+            @RequestParam(value = "internationalFriendlyWeight", required = false) Double internationalFriendlyWeight,
+            @RequestParam(value = "clubFriendlyWeight", required = false) Double clubFriendlyWeight,
             @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition) {
         return predictionService.queryByDate(
                 parseCompetition(competition),
@@ -73,7 +76,10 @@ public class PredictionController {
                 hostTeamGoalFactor,
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
-                handicapSmoothingFactor);
+                handicapSmoothingFactor,
+                officialMatchWeight,
+                internationalFriendlyWeight,
+                clubFriendlyWeight);
     }
 
     @PostMapping("/recommendation-backtest/jobs")
@@ -84,6 +90,9 @@ public class PredictionController {
             @RequestParam(value = "homeTeamGoalFactor", required = false) Double homeTeamGoalFactor,
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
+            @RequestParam(value = "officialMatchWeight", required = false) Double officialMatchWeight,
+            @RequestParam(value = "internationalFriendlyWeight", required = false) Double internationalFriendlyWeight,
+            @RequestParam(value = "clubFriendlyWeight", required = false) Double clubFriendlyWeight,
             @RequestParam(value = "includePreviousEdition", defaultValue = "false") boolean includePreviousEdition,
             @RequestParam(value = "competition", defaultValue = "ALL") String competition,
             @RequestBody(required = false) RecommendationBacktestRequest request) {
@@ -94,6 +103,9 @@ public class PredictionController {
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
                 handicapSmoothingFactor,
+                officialMatchWeight,
+                internationalFriendlyWeight,
+                clubFriendlyWeight,
                 includePreviousEdition,
                 parseBacktestModelFactors(request));
     }
@@ -114,6 +126,9 @@ public class PredictionController {
             @RequestParam(value = "homeTeamGoalFactor", required = false) Double homeTeamGoalFactor,
             @RequestParam(value = "seedTeamGoalFactor", required = false) Double seedTeamGoalFactor,
             @RequestParam(value = "handicapSmoothingFactor", required = false) Double handicapSmoothingFactor,
+            @RequestParam(value = "officialMatchWeight", required = false) Double officialMatchWeight,
+            @RequestParam(value = "internationalFriendlyWeight", required = false) Double internationalFriendlyWeight,
+            @RequestParam(value = "clubFriendlyWeight", required = false) Double clubFriendlyWeight,
             @RequestParam(value = "includePreviousEdition", defaultValue = "false") boolean includePreviousEdition,
             @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
         return predictionService.queryRecommendationBacktest(
@@ -123,7 +138,10 @@ public class PredictionController {
                 seedTeamGoalFactor,
                 homeTeamGoalFactor,
                 handicapSmoothingFactor,
-                includePreviousEdition);
+                includePreviousEdition,
+                officialMatchWeight,
+                internationalFriendlyWeight,
+                clubFriendlyWeight);
     }
 
     @GetMapping("/head-to-head")
