@@ -3,6 +3,7 @@ package com.eason.worldcup.service;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HandicapProbability;
 import com.eason.worldcup.model.HeadToHeadMatchResponse;
+import com.eason.worldcup.model.HeadToHeadOverviewResponse;
 import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.HistoricalMatchType;
 import com.eason.worldcup.model.MatchPredictionResponse;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 
 @Service
 public class PredictionService {
@@ -583,60 +585,121 @@ public class PredictionService {
             String matchId,
             Integer limit) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
-        if (matchId == null || matchId.isBlank()) {
-            return List.of();
-        }
-
-        MatchSchedule target = dataRepository.getSchedules(effectiveCompetition).stream()
-                .filter(schedule -> matchId.equals(schedule.getMatchId()))
-                .findFirst()
-                .orElse(null);
+        MatchSchedule target = findTargetSchedule(effectiveCompetition, matchId);
         if (target == null) {
             return List.of();
         }
 
         int resultLimit = limit == null ? 10 : Math.max(1, Math.min(50, limit));
-        Map<String, HeadToHeadMatchResponse> matchesByFixture = new HashMap<>();
+        return queryMatchHistory(
+                effectiveCompetition,
+                target,
+                (homeTeam, awayTeam) -> isRequestedHistoryMatch(
+                        effectiveCompetition,
+                        homeTeam,
+                        awayTeam,
+                        getScheduleComparisonTeamName(target, true),
+                        getScheduleComparisonTeamName(target, false)),
+                resultLimit);
+    }
+
+    public HeadToHeadOverviewResponse queryHeadToHeadOverview(
+            Competition competition,
+            String matchId,
+            Integer limit) {
+        HeadToHeadOverviewResponse overview = new HeadToHeadOverviewResponse();
+        Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
+        MatchSchedule target = findTargetSchedule(effectiveCompetition, matchId);
+        if (target == null) {
+            return overview;
+        }
+
+        int resultLimit = limit == null ? 10 : Math.max(1, Math.min(10, limit));
         String targetHomeTeam = getScheduleComparisonTeamName(target, true);
         String targetAwayTeam = getScheduleComparisonTeamName(target, false);
+        String canonicalTargetHomeTeam = canonicalHistoryTeamName(effectiveCompetition, targetHomeTeam);
+        String canonicalTargetAwayTeam = canonicalHistoryTeamName(effectiveCompetition, targetAwayTeam);
+        List<HeadToHeadMatchResponse> relevantMatches = queryMatchHistory(
+                effectiveCompetition,
+                target,
+                (homeTeam, awayTeam) -> includesAnyRequestedTeam(
+                        effectiveCompetition,
+                        homeTeam,
+                        awayTeam,
+                        canonicalTargetHomeTeam,
+                        canonicalTargetAwayTeam),
+                Integer.MAX_VALUE);
+        overview.setHomeRecentMatches(filterMatchHistory(
+                relevantMatches,
+                effectiveCompetition,
+                targetHomeTeam,
+                null,
+                resultLimit));
+        overview.setHeadToHeadMatches(filterMatchHistory(
+                relevantMatches,
+                effectiveCompetition,
+                targetHomeTeam,
+                targetAwayTeam,
+                resultLimit));
+        overview.setAwayRecentMatches(filterMatchHistory(
+                relevantMatches,
+                effectiveCompetition,
+                targetAwayTeam,
+                null,
+                resultLimit));
+        return overview;
+    }
+
+    private MatchSchedule findTargetSchedule(Competition competition, String matchId) {
+        if (matchId == null || matchId.isBlank()) {
+            return null;
+        }
+        return dataRepository.getSchedules(competition).stream()
+                .filter(schedule -> matchId.equals(schedule.getMatchId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<HeadToHeadMatchResponse> queryMatchHistory(
+            Competition competition,
+            MatchSchedule target,
+            BiPredicate<String, String> matchFilter,
+            int resultLimit) {
+        Map<String, HeadToHeadMatchResponse> matchesByFixture = new HashMap<>();
         for (MatchSchedule schedule : dataRepository.getSchedules()) {
             if (!isCompletedSchedule(schedule)
                     || !isScheduleBeforeTarget(schedule, target)
-                    || !isSameTeamPair(
+                    || !matchFilter.test(
                             getScheduleComparisonTeamName(schedule, true),
-                            getScheduleComparisonTeamName(schedule, false),
-                            targetHomeTeam,
-                            targetAwayTeam)) {
+                            getScheduleComparisonTeamName(schedule, false))) {
                 continue;
             }
             HeadToHeadMatchResponse response = toHeadToHeadResponse(schedule);
             matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
                     schedule.getMatchDate(),
-                    getScheduleComparisonTeamName(schedule, true),
-                    getScheduleComparisonTeamName(schedule, false),
+                    response.getHomeTeamCn(),
+                    response.getAwayTeamCn(),
                     schedule.getHomeScore(),
                     schedule.getAwayScore()), response);
         }
 
-        List<HistoricalMatch> historicalMatches = effectiveCompetition.isClubCompetition()
+        List<HistoricalMatch> historicalMatches = competition.isClubCompetition()
                 ? dataRepository.getClubHistoricalMatches()
                 : dataRepository.getHistoricalMatches();
         for (HistoricalMatch historicalMatch : historicalMatches) {
             if (historicalMatch.getMatchDate() == null
                     || target.getMatchDate() == null
                     || !historicalMatch.getMatchDate().isBefore(target.getMatchDate())
-                    || !isSameTeamPair(
+                    || !matchFilter.test(
                             historicalMatch.getHomeTeam(),
-                            historicalMatch.getAwayTeam(),
-                            targetHomeTeam,
-                            targetAwayTeam)) {
+                            historicalMatch.getAwayTeam())) {
                 continue;
             }
             HeadToHeadMatchResponse response = toHeadToHeadResponse(historicalMatch, target);
             matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
                     historicalMatch.getMatchDate(),
-                    historicalMatch.getHomeTeam(),
-                    historicalMatch.getAwayTeam(),
+                    response.getHomeTeamCn(),
+                    response.getAwayTeamCn(),
                     historicalMatch.getHomeScore(),
                     historicalMatch.getAwayScore()), response);
         }
@@ -651,6 +714,51 @@ public class PredictionService {
                                 Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(resultLimit)
                 .toList();
+    }
+
+    private List<HeadToHeadMatchResponse> filterMatchHistory(
+            List<HeadToHeadMatchResponse> matches,
+            Competition competition,
+            String targetTeam,
+            String targetOpponent,
+            int resultLimit) {
+        return matches.stream()
+                .filter(match -> isRequestedHistoryMatch(
+                        competition,
+                        match.getHomeTeamCn(),
+                        match.getAwayTeamCn(),
+                        targetTeam,
+                        targetOpponent))
+                .limit(resultLimit)
+                .toList();
+    }
+
+    private boolean includesAnyRequestedTeam(
+            Competition competition,
+            String homeTeam,
+            String awayTeam,
+            String canonicalFirstTargetTeam,
+            String canonicalSecondTargetTeam) {
+        String home = canonicalHistoryTeamName(competition, homeTeam);
+        String away = canonicalHistoryTeamName(competition, awayTeam);
+        return home.equals(canonicalFirstTargetTeam)
+                || away.equals(canonicalFirstTargetTeam)
+                || home.equals(canonicalSecondTargetTeam)
+                || away.equals(canonicalSecondTargetTeam);
+    }
+
+    private boolean isRequestedHistoryMatch(
+            Competition competition,
+            String homeTeam,
+            String awayTeam,
+            String targetTeam,
+            String targetOpponent) {
+        if (targetOpponent == null || targetOpponent.isBlank()) {
+            String requestedTeam = canonicalHistoryTeamName(competition, targetTeam);
+            return canonicalHistoryTeamName(competition, homeTeam).equals(requestedTeam)
+                    || canonicalHistoryTeamName(competition, awayTeam).equals(requestedTeam);
+        }
+        return isSameTeamPair(competition, homeTeam, awayTeam, targetTeam, targetOpponent);
     }
 
     private boolean isCompletedSchedule(MatchSchedule schedule) {
@@ -673,16 +781,21 @@ public class PredictionService {
     }
 
     private boolean isSameTeamPair(
+            Competition competition,
             String homeTeam,
             String awayTeam,
             String targetHomeTeam,
             String targetAwayTeam) {
-        String home = canonicalTeamName(homeTeam);
-        String away = canonicalTeamName(awayTeam);
-        String targetHome = canonicalTeamName(targetHomeTeam);
-        String targetAway = canonicalTeamName(targetAwayTeam);
+        String home = canonicalHistoryTeamName(competition, homeTeam);
+        String away = canonicalHistoryTeamName(competition, awayTeam);
+        String targetHome = canonicalHistoryTeamName(competition, targetHomeTeam);
+        String targetAway = canonicalHistoryTeamName(competition, targetAwayTeam);
         return home.equals(targetHome) && away.equals(targetAway)
                 || home.equals(targetAway) && away.equals(targetHome);
+    }
+
+    private String canonicalHistoryTeamName(Competition competition, String teamName) {
+        return canonicalTeamName(ClubTeamNameTranslator.translate(competition, teamName));
     }
 
     private HeadToHeadMatchResponse toHeadToHeadResponse(MatchSchedule schedule) {
@@ -693,8 +806,8 @@ public class PredictionService {
         response.setCompetitionName(buildHeadToHeadCompetitionName(schedule));
         response.setMatchTypeName(matchType.getDisplayName());
         response.setModelWeight(matchType.getModelWeight());
-        response.setHomeTeamCn(readableTeamName(schedule.getHomeTeamCn(), schedule.getHomeTeamEn()));
-        response.setAwayTeamCn(readableTeamName(schedule.getAwayTeamCn(), schedule.getAwayTeamEn()));
+        response.setHomeTeamCn(resolveDisplayTeamName(schedule, true));
+        response.setAwayTeamCn(resolveDisplayTeamName(schedule, false));
         response.setHomeScore(schedule.getHomeScore());
         response.setAwayScore(schedule.getAwayScore());
         response.setNeutral(schedule.isNeutral());
@@ -732,7 +845,7 @@ public class PredictionService {
         if (canonicalName.equals(canonicalTeamName(getScheduleComparisonTeamName(target, false)))) {
             return readableTeamName(target.getAwayTeamCn(), target.getAwayTeamEn());
         }
-        return teamName;
+        return ClubTeamNameTranslator.translate(target.getCompetition(), teamName);
     }
 
     private String getScheduleComparisonTeamName(MatchSchedule schedule, boolean homeTeam) {

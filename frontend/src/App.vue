@@ -350,7 +350,7 @@
                   class="result-badge"
                   :class="'is-' + recommendationResult(match)"
                 >
-                  {{ recommendationResultText(match) }}
+                  <span class="result-badge-text">{{ recommendationResultText(match) }}</span>
                 </span>
               </span>
             </p>
@@ -572,28 +572,44 @@
           </div>
           <button type="button" class="dialog-close" aria-label="关闭历史交战弹窗" @click="closeHeadToHeadDialog">×</button>
         </header>
-        <p class="head-to-head-description">展示本场开赛前的正式比赛及降权友谊赛，最多显示最近 50 场</p>
-
-        <div v-if="headToHeadLoading" class="dialog-state" role="status">正在读取历史交战数据...</div>
+        <div v-if="headToHeadLoading" class="dialog-state" role="status">正在读取球队近况和历史交锋...</div>
         <div v-else-if="headToHeadError" class="dialog-state is-error">{{ headToHeadError }}</div>
-        <div v-else-if="headToHeadMatches.length === 0" class="dialog-state">暂无双方历史交战数据</div>
-        <div v-else class="head-to-head-list">
-          <article
-            v-for="(item, index) in headToHeadMatches"
-            :key="item.matchDate + '-' + item.homeTeamCn + '-' + item.awayTeamCn + '-' + index"
-            class="head-to-head-item"
+        <div v-else class="head-to-head-columns">
+          <section
+            v-for="section in headToHeadSections"
+            :key="section.key"
+            class="head-to-head-column"
           >
-            <div class="head-to-head-meta">
-              <span>{{ item.matchDate }}{{ formatHeadToHeadKickoffTime(item.kickoffTime) }}</span>
-              <span>{{ item.competitionName }}</span>
-              <span v-if="item.neutral" class="neutral-badge">中立场</span>
+            <header class="head-to-head-column-header">
+              <h4>{{ section.title }}</h4>
+              <span class="head-to-head-record">
+                <span class="is-win">{{ section.record.win }}</span>
+                <span class="record-separator">|</span>
+                <span class="is-draw">{{ section.record.draw }}</span>
+                <span class="record-separator">|</span>
+                <span class="is-lose">{{ section.record.lose }}</span>
+              </span>
+            </header>
+            <div v-if="section.matches.length === 0" class="head-to-head-empty">{{ section.emptyText }}</div>
+            <div v-else class="head-to-head-list">
+              <article
+                v-for="(item, index) in section.matches"
+                :key="item.matchDate + '-' + item.homeTeamCn + '-' + item.awayTeamCn + '-' + index"
+                class="head-to-head-item"
+              >
+                <div class="head-to-head-meta">
+                  <span>{{ item.matchDate }}{{ formatHeadToHeadKickoffTime(item.kickoffTime) }}</span>
+                  <span>{{ item.competitionName }}</span>
+                  <span v-if="item.neutral" class="neutral-badge">中立场</span>
+                </div>
+                <div class="head-to-head-score">
+                  <span class="head-to-head-team is-home">{{ item.homeTeamCn }}</span>
+                  <strong>{{ item.homeScore }} : {{ item.awayScore }}</strong>
+                  <span class="head-to-head-team is-away">{{ item.awayTeamCn }}</span>
+                </div>
+              </article>
             </div>
-            <div class="head-to-head-score">
-              <span class="head-to-head-team is-home">{{ item.homeTeamCn }}</span>
-              <strong>{{ item.homeScore }} : {{ item.awayScore }}</strong>
-              <span class="head-to-head-team is-away">{{ item.awayTeamCn }}</span>
-            </div>
-          </article>
+          </section>
         </div>
       </section>
     </div>
@@ -849,7 +865,9 @@ export default {
       headToHeadLoading: false,
       headToHeadError: '',
       headToHeadMatch: null,
+      headToHeadHomeRecentMatches: [],
       headToHeadMatches: [],
+      headToHeadAwayRecentMatches: [],
       headToHeadRequestId: 0,
       loading: false,
       updatingData: false,
@@ -894,6 +912,33 @@ export default {
         return ''
       }
       return this.headToHeadMatch.homeTeamCn + ' vs ' + this.headToHeadMatch.awayTeamCn
+    },
+    headToHeadSections() {
+      const homeTeam = this.headToHeadMatch ? this.headToHeadMatch.homeTeamCn : '主队'
+      const awayTeam = this.headToHeadMatch ? this.headToHeadMatch.awayTeamCn : '客队'
+      return [
+        {
+          key: 'home-recent',
+          title: homeTeam + '近况',
+          matches: this.headToHeadHomeRecentMatches,
+          record: this.formatHeadToHeadRecord(this.headToHeadHomeRecentMatches, homeTeam),
+          emptyText: '暂无主队比赛近况'
+        },
+        {
+          key: 'head-to-head',
+          title: '历史交锋',
+          matches: this.headToHeadMatches,
+          record: this.formatHeadToHeadRecord(this.headToHeadMatches, homeTeam),
+          emptyText: '暂无双方历史交锋'
+        },
+        {
+          key: 'away-recent',
+          title: awayTeam + '近况',
+          matches: this.headToHeadAwayRecentMatches,
+          record: this.formatHeadToHeadRecord(this.headToHeadAwayRecentMatches, awayTeam),
+          emptyText: '暂无客队比赛近况'
+        }
+      ]
     },
     backtestAverageOddsText() {
       return this.formatBacktestOdds(this.backtestSummary.averageOddsIncludingMisses)
@@ -1105,7 +1150,9 @@ export default {
       }
       const requestId = ++this.headToHeadRequestId
       this.headToHeadMatch = match
+      this.headToHeadHomeRecentMatches = []
       this.headToHeadMatches = []
+      this.headToHeadAwayRecentMatches = []
       this.headToHeadError = ''
       this.headToHeadLoading = true
       this.headToHeadDialogVisible = true
@@ -1120,8 +1167,8 @@ export default {
         const params = new URLSearchParams()
         params.append('competition', match.competition || this.activeCompetition)
         params.append('matchId', match.matchId)
-        params.append('limit', '50')
-        const res = await fetch('/api/football/head-to-head?' + params.toString())
+        params.append('limit', '10')
+        const res = await fetch('/api/football/head-to-head/overview?' + params.toString())
         if (!res.ok) {
           throw new Error('服务响应异常')
         }
@@ -1129,10 +1176,12 @@ export default {
         if (requestId !== this.headToHeadRequestId) {
           return
         }
-        this.headToHeadMatches = Array.isArray(data) ? data : []
+        this.headToHeadHomeRecentMatches = data && Array.isArray(data.homeRecentMatches) ? data.homeRecentMatches : []
+        this.headToHeadMatches = data && Array.isArray(data.headToHeadMatches) ? data.headToHeadMatches : []
+        this.headToHeadAwayRecentMatches = data && Array.isArray(data.awayRecentMatches) ? data.awayRecentMatches : []
       } catch (error) {
         if (requestId === this.headToHeadRequestId) {
-          this.headToHeadError = '读取历史交战数据失败：' + error.message
+          this.headToHeadError = '读取球队近况和历史交锋失败：' + error.message
         }
       } finally {
         if (requestId === this.headToHeadRequestId) {
@@ -1146,7 +1195,9 @@ export default {
       this.headToHeadLoading = false
       this.headToHeadError = ''
       this.headToHeadMatch = null
+      this.headToHeadHomeRecentMatches = []
       this.headToHeadMatches = []
+      this.headToHeadAwayRecentMatches = []
       document.body.classList.remove('dialog-open')
     },
     formatHeadToHeadKickoffTime(value) {
@@ -1154,6 +1205,39 @@ export default {
         return ''
       }
       return ' ' + String(value).slice(0, 5)
+    },
+    formatHeadToHeadRecord(matches, teamName) {
+      const sourceMatches = Array.isArray(matches) ? matches : []
+      const normalizedTeamName = this.normalizeHeadToHeadTeamName(teamName)
+      const record = sourceMatches.reduce((summary, match) => {
+        const homeScore = Number(match.homeScore)
+        const awayScore = Number(match.awayScore)
+        if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) {
+          return summary
+        }
+        const isHomeTeam = this.normalizeHeadToHeadTeamName(match.homeTeamCn) === normalizedTeamName
+        const isAwayTeam = this.normalizeHeadToHeadTeamName(match.awayTeamCn) === normalizedTeamName
+        if (!isHomeTeam && !isAwayTeam) {
+          return summary
+        }
+        if (homeScore === awayScore) {
+          summary.draw += 1
+          return summary
+        }
+        const teamWon = isHomeTeam ? homeScore > awayScore : awayScore > homeScore
+        summary[teamWon ? 'win' : 'lose'] += 1
+        return summary
+      }, { win: 0, draw: 0, lose: 0 })
+      const total = record.win + record.draw + record.lose
+      const percentage = count => total === 0 ? 0 : Math.round(count * 100 / total)
+      return {
+        win: record.win + '胜(' + percentage(record.win) + '%)',
+        draw: record.draw + '平(' + percentage(record.draw) + '%)',
+        lose: record.lose + '负(' + percentage(record.lose) + '%)'
+      }
+    },
+    normalizeHeadToHeadTeamName(value) {
+      return String(value || '').trim().toLocaleLowerCase().replace(/\s+/g, '')
     },
     async initializeUserConfig() {
       this.loadActiveCompetition()
@@ -3413,14 +3497,19 @@ h1 {
   line-height: 1;
 }
 
+.result-badge-text {
+  display: inline-block;
+  transform: translateY(-1px);
+}
+
 .result-badge.is-hit {
-  color: #166534;
-  background: #dcfce7;
+  color: #991b1b;
+  background: #fee2e2;
 }
 
 .result-badge.is-miss {
-  color: #991b1b;
-  background: #fee2e2;
+  color: #1e40af;
+  background: #dbeafe;
 }
 
 .goal-box {
@@ -3569,18 +3658,21 @@ h1 {
   text-align: left;
 }
 
+.handicap-table th:nth-child(3),
 .handicap-table td:nth-child(3) {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.handicap-table th:nth-child(4),
+.handicap-table td:nth-child(4) {
   color: #16a34a;
   font-weight: 700;
 }
 
-.handicap-table td:nth-child(4) {
-  color: #d97706;
-  font-weight: 700;
-}
-
+.handicap-table th:nth-child(5),
 .handicap-table td:nth-child(5) {
-  color: #dc2626;
+  color: #2563eb;
   font-weight: 700;
 }
 
@@ -3633,7 +3725,7 @@ h1 {
   padding: 0 4px;
   border-radius: 4px;
   color: #ffffff;
-  background: #ef4444;
+  background: #16a34a;
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
@@ -3648,7 +3740,7 @@ h1 {
   padding: 0 4px;
   border-radius: 4px;
   color: #ffffff;
-  background: #16a34a;
+  background: #dc2626;
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
@@ -3814,8 +3906,8 @@ body.dialog-open {
 .head-to-head-dialog {
   display: flex;
   flex-direction: column;
-  width: min(680px, calc(100vw - 48px));
-  max-height: min(720px, calc(100vh - 48px));
+  width: min(1320px, calc(100vw - 48px));
+  max-height: min(760px, calc(100vh - 48px));
   overflow: hidden;
   border: 1px solid #dbe4f0;
   border-radius: 16px;
@@ -3846,6 +3938,11 @@ body.dialog-open {
   justify-content: space-between;
   gap: 20px;
   padding: 20px 22px 10px;
+}
+
+.head-to-head-dialog > .head-to-head-dialog-header {
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .head-to-head-dialog h3,
@@ -3993,8 +4090,9 @@ body.dialog-open {
 }
 
 .recommendation-item-probability {
-  color: #334155;
-  font-weight: 800;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .recommendation-item-odds {
@@ -4010,38 +4108,124 @@ body.dialog-open {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  height: 22px;
-  border-radius: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
   color: #ffffff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
+  line-height: 1;
 }
 
 .recommendation-result-pill.is-win {
-  background: #16a34a;
+  background: #dc2626;
 }
 
 .recommendation-result-pill.is-draw {
-  background: #d97706;
+  background: #16a34a;
 }
 
 .recommendation-result-pill.is-lose {
-  background: #dc2626;
+  background: #2563eb;
+}
+
+.head-to-head-columns {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+  padding: 16px 18px 20px;
+  overflow: hidden;
+}
+
+.head-to-head-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.head-to-head-column-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #dbe4f0;
+  background: #ffffff;
+}
+
+.head-to-head-column-header h4 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.head-to-head-column-header .head-to-head-record {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.head-to-head-record .is-win {
+  color: #dc2626;
+}
+
+.head-to-head-record .is-draw {
+  color: #16a34a;
+}
+
+.head-to-head-record .is-lose {
+  color: #2563eb;
+}
+
+.head-to-head-record .record-separator {
+  color: #94a3b8;
+}
+
+.head-to-head-empty {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  padding: 24px;
+  color: #94a3b8;
+  font-size: 12px;
+  text-align: center;
 }
 
 .head-to-head-list {
   display: grid;
-  gap: 10px;
-  padding: 16px 22px 22px;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  padding: 10px;
   overflow-y: auto;
 }
 
 .head-to-head-item {
-  padding: 12px 14px;
+  padding: 10px;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #f8fafc;
+  border-radius: 9px;
+  background: #ffffff;
 }
 
 .head-to-head-meta {
@@ -4049,9 +4233,9 @@ body.dialog-open {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  margin-bottom: 9px;
+  margin-bottom: 7px;
   color: #64748b;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .head-to-head-meta span:nth-child(2) {
@@ -4075,13 +4259,13 @@ body.dialog-open {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  gap: 8px;
 }
 
 .head-to-head-score strong {
-  min-width: 66px;
+  min-width: 50px;
   color: #1d4ed8;
-  font-size: 19px;
+  font-size: 17px;
   text-align: center;
 }
 
@@ -4089,7 +4273,7 @@ body.dialog-open {
   min-width: 0;
   overflow: hidden;
   color: #0f172a;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4144,6 +4328,20 @@ body.dialog-open {
     flex: 0 0 auto;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: auto;
+  }
+
+  .head-to-head-columns {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+
+  .head-to-head-column {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .head-to-head-list {
+    overflow: visible;
   }
 }
 
@@ -4271,12 +4469,21 @@ body.dialog-open {
     padding: 17px 17px 9px;
   }
 
+  .head-to-head-dialog > .head-to-head-dialog-header {
+    padding: 17px 17px 13px;
+  }
+
   .head-to-head-description {
     padding: 0 17px 13px;
   }
 
+  .head-to-head-columns {
+    gap: 10px;
+    padding: 12px 14px 16px;
+  }
+
   .head-to-head-list {
-    padding: 13px 15px 17px;
+    padding: 9px;
   }
 
   .recommendation-table-wrap {

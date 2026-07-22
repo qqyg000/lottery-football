@@ -3,6 +3,7 @@ package com.eason.worldcup.controller;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.DataRefreshJobResponse;
 import com.eason.worldcup.model.HeadToHeadMatchResponse;
+import com.eason.worldcup.model.HeadToHeadOverviewResponse;
 import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
 import com.eason.worldcup.model.RecommendationBacktestJobResponse;
@@ -150,6 +151,14 @@ public class PredictionController {
             @RequestParam("matchId") String matchId,
             @RequestParam(value = "limit", defaultValue = "10") Integer limit) {
         return predictionService.queryHeadToHead(parseCompetition(competition), matchId, limit);
+    }
+
+    @GetMapping("/head-to-head/overview")
+    public HeadToHeadOverviewResponse headToHeadOverview(
+            @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition,
+            @RequestParam("matchId") String matchId,
+            @RequestParam(value = "limit", defaultValue = "10") Integer limit) {
+        return predictionService.queryHeadToHeadOverview(parseCompetition(competition), matchId, limit);
     }
 
     @GetMapping("/overview")

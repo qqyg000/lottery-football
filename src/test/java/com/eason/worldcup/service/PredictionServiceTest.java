@@ -1,11 +1,14 @@
 package com.eason.worldcup.service;
 
 import com.eason.worldcup.model.Competition;
+import com.eason.worldcup.model.HeadToHeadOverviewResponse;
+import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.UserConfig;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -163,6 +166,73 @@ class PredictionServiceTest {
         assertEquals("波兹南莱赫", predictionService.resolveDisplayTeamName(schedule, false));
     }
 
+    @Test
+    void shouldBuildThreeColumnMatchHistoryBeforeTargetKickoff() {
+        MatchSchedule target = schedule(
+                "TARGET",
+                LocalDate.of(2026, 7, 22),
+                LocalTime.of(20, 0),
+                "甲队",
+                "乙队",
+                "SCHEDULED");
+        MatchSchedule sameDayHeadToHead = completedSchedule(
+                "SAME-DAY-H2H",
+                LocalDate.of(2026, 7, 22),
+                LocalTime.of(18, 0),
+                "乙队",
+                "甲队",
+                1,
+                2);
+        MatchSchedule homeRecent = completedSchedule(
+                "HOME-RECENT",
+                LocalDate.of(2026, 7, 20),
+                LocalTime.of(19, 30),
+                "甲队",
+                "丙队",
+                3,
+                0);
+        MatchSchedule awayRecent = completedSchedule(
+                "AWAY-RECENT",
+                LocalDate.of(2026, 7, 19),
+                LocalTime.of(19, 30),
+                "丁队",
+                "乙队",
+                0,
+                1);
+        MatchSchedule afterTarget = completedSchedule(
+                "AFTER-TARGET",
+                LocalDate.of(2026, 7, 22),
+                LocalTime.of(21, 0),
+                "甲队",
+                "戊队",
+                1,
+                0);
+        HistoricalMatch historicalHeadToHead = historicalMatch(
+                LocalDate.of(2026, 7, 18),
+                "甲队",
+                "乙队",
+                2,
+                2);
+        DataRepository dataRepository = new StubDataRepository(
+                List.of(target),
+                List.of(target, sameDayHeadToHead, homeRecent, awayRecent, afterTarget),
+                List.of(historicalHeadToHead));
+        PredictionService service = new PredictionService(dataRepository, null, null);
+
+        HeadToHeadOverviewResponse overview = service.queryHeadToHeadOverview(
+                Competition.WORLD_CUP,
+                target.getMatchId(),
+                10);
+
+        assertEquals(3, overview.getHomeRecentMatches().size());
+        assertEquals(2, overview.getHeadToHeadMatches().size());
+        assertEquals(3, overview.getAwayRecentMatches().size());
+        assertEquals("乙队", overview.getHeadToHeadMatches().get(0).getHomeTeamCn());
+        assertEquals(LocalDate.of(2026, 7, 22), overview.getHeadToHeadMatches().get(0).getMatchDate());
+        assertFalse(overview.getHomeRecentMatches().stream()
+                .anyMatch(match -> LocalTime.of(21, 0).equals(match.getKickoffTime())));
+    }
+
     private MatchSchedule completedSchedule(String matchId, String awayTeamEn) {
         MatchSchedule schedule = new MatchSchedule();
         schedule.setCompetition(Competition.WORLD_CUP);
@@ -174,6 +244,60 @@ class PredictionServiceTest {
         schedule.setHomeScore(1);
         schedule.setAwayScore(0);
         return schedule;
+    }
+
+    private MatchSchedule schedule(
+            String matchId,
+            LocalDate matchDate,
+            LocalTime kickoffTime,
+            String homeTeam,
+            String awayTeam,
+            String status) {
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setCompetition(Competition.WORLD_CUP);
+        schedule.setMatchId(matchId);
+        schedule.setMatchDate(matchDate);
+        schedule.setKickoffTime(kickoffTime);
+        schedule.setHomeTeamCn(homeTeam);
+        schedule.setAwayTeamCn(awayTeam);
+        schedule.setStatus(status);
+        return schedule;
+    }
+
+    private MatchSchedule completedSchedule(
+            String matchId,
+            LocalDate matchDate,
+            LocalTime kickoffTime,
+            String homeTeam,
+            String awayTeam,
+            int homeScore,
+            int awayScore) {
+        MatchSchedule schedule = schedule(
+                matchId,
+                matchDate,
+                kickoffTime,
+                homeTeam,
+                awayTeam,
+                "COMPLETED");
+        schedule.setHomeScore(homeScore);
+        schedule.setAwayScore(awayScore);
+        return schedule;
+    }
+
+    private HistoricalMatch historicalMatch(
+            LocalDate matchDate,
+            String homeTeam,
+            String awayTeam,
+            int homeScore,
+            int awayScore) {
+        HistoricalMatch match = new HistoricalMatch();
+        match.setMatchDate(matchDate);
+        match.setSourceCompetition("测试赛事");
+        match.setHomeTeam(homeTeam);
+        match.setAwayTeam(awayTeam);
+        match.setHomeScore(homeScore);
+        match.setAwayScore(awayScore);
+        return match;
     }
 
     private static ExpectedBacktestPeriod period(
@@ -200,6 +324,41 @@ class PredictionServiceTest {
                 schedule,
                 backtestEndDate,
                 includePreviousEdition);
+    }
+
+    private static class StubDataRepository extends DataRepository {
+
+        private final List<MatchSchedule> competitionSchedules;
+
+        private final List<MatchSchedule> schedules;
+
+        private final List<HistoricalMatch> historicalMatches;
+
+        private StubDataRepository(
+                List<MatchSchedule> competitionSchedules,
+                List<MatchSchedule> schedules,
+                List<HistoricalMatch> historicalMatches) {
+            super(null, null, null, null, null);
+            this.competitionSchedules = competitionSchedules;
+            this.schedules = schedules;
+            this.historicalMatches = historicalMatches;
+        }
+
+        @Override
+        public List<MatchSchedule> getSchedules(Competition competition) {
+            return competitionSchedules;
+        }
+
+        @Override
+        public List<MatchSchedule> getSchedules() {
+            return schedules;
+        }
+
+        @Override
+        public List<HistoricalMatch> getHistoricalMatches() {
+            return historicalMatches;
+        }
+
     }
 
     private record ExpectedBacktestPeriod(

@@ -11,7 +11,7 @@
 - 展示双方期望进球、总进球数和比分预测
 - 读取中国体彩网开售状态、让球数及胜平负赔率
 - 使用统一球队名映射关联历史数据、赛程、体彩赔率和页面展示
-- 点击球队名称查询双方最多 50 场历史交锋
+- 点击球队名称查看主队近况、双方历史交锋和客队近况，每栏最多 10 场
 - 每类赛事维护“本届/含上届 × 稳健/激进”四套独立参数档案
 - 前端动态配置进球系数、让球阈值、赔率阈值和比赛类型权重，修改后自动重算
 - 提供参数说明提示、异步数据更新、推荐回测及进度展示
@@ -129,6 +129,7 @@ lottery-football
 | GET | `/api/football/overview` | 获取赛事概览和可查询日期 |
 | GET | `/api/football/predictions` | 查询指定日期的概率预测 |
 | GET | `/api/football/head-to-head` | 查询双方历史交锋 |
+| GET | `/api/football/head-to-head/overview` | 查询主客队近况及双方历史交锋 |
 | POST | `/api/football/data/refresh` | 同步刷新运行时数据 |
 | POST | `/api/football/data/refresh/jobs` | 创建异步数据更新任务 |
 | GET | `/api/football/data/refresh/jobs/{jobId}` | 查询数据更新进度 |
@@ -320,3 +321,18 @@ node scripts/optimize-profile-parameters.mjs --verify-only=true
 | `team_name_mappings.csv` | 体彩标准球队名与数据源别名 |
 
 修改 CSV 字段或赛事代码时，需要同步检查 Java 加载器、数据脚本和前端赛事列表。
+
+## 赞助支持
+
+如果这个项目对你有帮助，欢迎赞助。
+
+<table>
+  <tr>
+    <th>支付宝</th>
+    <th>微信</th>
+  </tr>
+  <tr>
+    <td><img src="docs/images/alipay-qr.png" alt="支付宝收款码" width="260"></td>
+    <td><img src="docs/images/wechat-pay-qr.png" alt="微信收款码" width="260"></td>
+  </tr>
+</table>
