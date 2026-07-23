@@ -559,12 +559,12 @@ public class PredictionService {
             Competition competition,
             LocalDate date,
             BiConsumer<Integer, String> progressConsumer) {
-        notifyDataRefreshProgress(progressConsumer, 5, "正在刷新15类赛事赛程与补充数据");
+        notifyDataRefreshProgress(progressConsumer, 5, "正在读取体彩最近30天赛果");
+        sportteryMarketSelectionService.forceRefresh(null);
+        notifyDataRefreshProgress(progressConsumer, 25, "体彩赛果已更新，正在刷新15类赛事赛程与补充数据");
         dataRepository.refreshSchedules();
-        notifyDataRefreshProgress(progressConsumer, 55, "赛程数据已更新，正在重建球队模型");
+        notifyDataRefreshProgress(progressConsumer, 65, "赛程数据已更新，正在重建球队模型");
         teamStrengthService.rebuildModels();
-        notifyDataRefreshProgress(progressConsumer, 70, "球队模型已重建，正在刷新竞彩数据");
-        sportteryMarketSelectionService.forceRefresh(date);
         notifyDataRefreshProgress(progressConsumer, 90, "竞彩数据已刷新，正在加载赛事概览");
         ModelOverviewResponse response = overview(competition);
         notifyDataRefreshProgress(progressConsumer, 100, "数据更新完成");
@@ -838,14 +838,15 @@ public class PredictionService {
     }
 
     private String resolveHistoricalTeamName(String teamName, MatchSchedule target) {
-        String canonicalName = canonicalTeamName(teamName);
+        String mappedTeamName = ClubTeamNameTranslator.translate(target.getCompetition(), teamName);
+        String canonicalName = canonicalTeamName(mappedTeamName);
         if (canonicalName.equals(canonicalTeamName(getScheduleComparisonTeamName(target, true)))) {
-            return readableTeamName(target.getHomeTeamCn(), target.getHomeTeamEn());
+            return resolveDisplayTeamName(target, true);
         }
         if (canonicalName.equals(canonicalTeamName(getScheduleComparisonTeamName(target, false)))) {
-            return readableTeamName(target.getAwayTeamCn(), target.getAwayTeamEn());
+            return resolveDisplayTeamName(target, false);
         }
-        return ClubTeamNameTranslator.translate(target.getCompetition(), teamName);
+        return mappedTeamName;
     }
 
     private String getScheduleComparisonTeamName(MatchSchedule schedule, boolean homeTeam) {
@@ -854,13 +855,6 @@ public class PredictionService {
             return chineseName;
         }
         return homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
-    }
-
-    private String readableTeamName(String chineseName, String englishName) {
-        if (chineseName != null && !chineseName.isBlank()) {
-            return chineseName;
-        }
-        return englishName == null ? "" : englishName;
     }
 
     private String buildHeadToHeadFixtureKey(

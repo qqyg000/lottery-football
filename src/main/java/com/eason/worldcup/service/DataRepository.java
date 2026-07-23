@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -67,6 +68,8 @@ public class DataRepository {
 
     private final HistoricalOddsScheduleLoader historicalOddsScheduleLoader;
 
+    private final SportteryMarketSelectionService sportteryMarketSelectionService;
+
     @Value("${football-data.historical-matches-path:classpath:data/historical_matches.csv}")
     private String historicalMatchesPath;
 
@@ -90,12 +93,14 @@ public class DataRepository {
             OpenFootballScheduleUpdater scheduleUpdater,
             EspnScheduleUpdater espnScheduleUpdater,
             ClubCompetitionScheduleUpdater clubCompetitionScheduleUpdater,
-            HistoricalOddsScheduleLoader historicalOddsScheduleLoader) {
+            HistoricalOddsScheduleLoader historicalOddsScheduleLoader,
+            SportteryMarketSelectionService sportteryMarketSelectionService) {
         this.resourceLoader = resourceLoader;
         this.scheduleUpdater = scheduleUpdater;
         this.espnScheduleUpdater = espnScheduleUpdater;
         this.clubCompetitionScheduleUpdater = clubCompetitionScheduleUpdater;
         this.historicalOddsScheduleLoader = historicalOddsScheduleLoader;
+        this.sportteryMarketSelectionService = sportteryMarketSelectionService;
     }
 
     @PostConstruct
@@ -314,8 +319,18 @@ public class DataRepository {
         if (clubCompetitionUpdatedCount > 0) {
             log.info("Loaded {} additional club competition schedule rows.", clubCompetitionUpdatedCount);
         }
+        if (sportteryMarketSelectionService != null) {
+            int addedSportteryScheduleCount = sportteryMarketSelectionService
+                    .mergeRecentCompletedSchedulesInto(result, refreshDaysBack);
+            if (addedSportteryScheduleCount > 0) {
+                log.info(
+                        "Loaded {} unmatched recent completed Sporttery schedule rows.",
+                        addedSportteryScheduleCount);
+            }
+        }
         historicalOddsScheduleLoader.mergeInto(result);
         normalizeScheduleTeamNames(result);
+        result = deduplicateSchedulesByFixture(result);
         result.sort(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getKickoffTime));
         return result;
     }
@@ -390,24 +405,136 @@ public class DataRepository {
     }
 
     private String buildScheduleIdentity(MatchSchedule schedule) {
-        if (schedule.getMatchId() != null && !schedule.getMatchId().isBlank()) {
-            return schedule.getCompetition() + "|" + schedule.getMatchId();
-        }
         return schedule.getCompetition()
                 + "|" + schedule.getMatchDate()
-                + "|" + normalizeTeamName(resolveTeamName(schedule.getHomeTeamEn(), schedule.getHomeTeamCn()))
-                + "|" + normalizeTeamName(resolveTeamName(schedule.getAwayTeamEn(), schedule.getAwayTeamCn()));
+                + "|" + canonicalScheduleTeamName(schedule, true)
+                + "|" + canonicalScheduleTeamName(schedule, false);
+    }
+
+    List<MatchSchedule> deduplicateSchedulesByFixture(List<MatchSchedule> schedules) {
+        Map<String, MatchSchedule> schedulesByFixture = new LinkedHashMap<>();
+        for (MatchSchedule schedule : schedules) {
+            schedulesByFixture.merge(
+                    buildScheduleIdentity(schedule),
+                    schedule,
+                    this::preferSchedule);
+        }
+        return deduplicateSchedulesByTeamResult(new ArrayList<>(schedulesByFixture.values()));
+    }
+
+    private List<MatchSchedule> deduplicateSchedulesByTeamResult(List<MatchSchedule> schedules) {
+        Map<String, MatchSchedule> schedulesByTeamResult = new HashMap<>();
+        Set<MatchSchedule> duplicateSchedules = new HashSet<>();
+        for (MatchSchedule schedule : schedules) {
+            if (schedule.getCompetition() == Competition.CLUB_FRIENDLY
+                    || schedule.getHomeScore() == null
+                    || schedule.getAwayScore() == null) {
+                continue;
+            }
+            String homeKey = buildTeamResultIdentity(schedule, true);
+            String awayKey = buildTeamResultIdentity(schedule, false);
+            MatchSchedule existing = schedulesByTeamResult.get(homeKey);
+            if (existing == null) {
+                existing = schedulesByTeamResult.get(awayKey);
+            }
+            if (existing == null) {
+                schedulesByTeamResult.put(homeKey, schedule);
+                schedulesByTeamResult.put(awayKey, schedule);
+                continue;
+            }
+            if (!isLikelyDuplicateSchedule(existing, schedule)) {
+                schedulesByTeamResult.put(homeKey, schedule);
+                schedulesByTeamResult.put(awayKey, schedule);
+                continue;
+            }
+
+            MatchSchedule preferred = preferSchedule(existing, schedule);
+            MatchSchedule duplicate = preferred == existing ? schedule : existing;
+            duplicateSchedules.add(duplicate);
+            for (String key : List.of(
+                    buildTeamResultIdentity(existing, true),
+                    buildTeamResultIdentity(existing, false),
+                    homeKey,
+                    awayKey)) {
+                schedulesByTeamResult.put(key, preferred);
+            }
+        }
+        return schedules.stream()
+                .filter(schedule -> !duplicateSchedules.contains(schedule))
+                .collect(Collectors.toList());
+    }
+
+    private String buildTeamResultIdentity(MatchSchedule schedule, boolean homeTeam) {
+        int goalsFor = homeTeam ? schedule.getHomeScore() : schedule.getAwayScore();
+        int goalsAgainst = homeTeam ? schedule.getAwayScore() : schedule.getHomeScore();
+        return schedule.getCompetition()
+                + "|" + schedule.getMatchDate()
+                + "|" + canonicalScheduleTeamName(schedule, homeTeam)
+                + "|" + goalsFor
+                + "|" + goalsAgainst;
+    }
+
+    private boolean isLikelyDuplicateSchedule(MatchSchedule left, MatchSchedule right) {
+        if (hasSportteryIdentity(left) || hasSportteryIdentity(right)) {
+            return true;
+        }
+        String leftOpponent = resolveDifferentOpponentName(left, right);
+        String rightOpponent = resolveDifferentOpponentName(right, left);
+        return areSimilarTeamNames(leftOpponent, rightOpponent);
+    }
+
+    private boolean hasSportteryIdentity(MatchSchedule schedule) {
+        return schedule.getSportteryMatchId() != null && !schedule.getSportteryMatchId().isBlank();
+    }
+
+    private String resolveDifferentOpponentName(MatchSchedule source, MatchSchedule other) {
+        String sourceHome = canonicalScheduleTeamName(source, true);
+        String otherHome = canonicalScheduleTeamName(other, true);
+        String otherAway = canonicalScheduleTeamName(other, false);
+        if (sourceHome.equals(otherHome) || sourceHome.equals(otherAway)) {
+            return source.getAwayTeamCn();
+        }
+        return source.getHomeTeamCn();
+    }
+
+    private boolean areSimilarTeamNames(String left, String right) {
+        String leftName = normalizeTeamName(left).replaceAll("[^\\p{L}\\p{N}]", "");
+        String rightName = normalizeTeamName(right).replaceAll("[^\\p{L}\\p{N}]", "");
+        return leftName.length() >= 3
+                && rightName.length() >= 3
+                && (leftName.contains(rightName) || rightName.contains(leftName));
+    }
+
+    private String canonicalScheduleTeamName(MatchSchedule schedule, boolean homeTeam) {
+        String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
+        String englishName = homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
+        String sourceName = chineseName == null || chineseName.isBlank() ? englishName : chineseName;
+        return normalizeTeamName(ClubTeamNameTranslator.translate(schedule.getCompetition(), sourceName))
+                .replaceAll("[^\\p{L}\\p{N}]", "");
+    }
+
+    private MatchSchedule preferSchedule(MatchSchedule current, MatchSchedule candidate) {
+        return scheduleQuality(candidate) > scheduleQuality(current) ? candidate : current;
+    }
+
+    private int scheduleQuality(MatchSchedule schedule) {
+        int quality = 0;
+        if (schedule.getSportteryNormalOdds() != null || schedule.getSportteryHandicapOdds() != null) {
+            quality += 4;
+        }
+        if (schedule.getSportteryMatchId() != null && !schedule.getSportteryMatchId().isBlank()) {
+            quality += 2;
+        }
+        if ("COMPLETED".equalsIgnoreCase(schedule.getStatus())
+                && schedule.getHomeScore() != null
+                && schedule.getAwayScore() != null) {
+            quality++;
+        }
+        return quality;
     }
 
     private int normalizeRefreshDays(int value) {
         return Math.max(0, Math.min(365, value));
-    }
-
-    private String resolveTeamName(String englishName, String chineseName) {
-        if (englishName != null && !englishName.isBlank()) {
-            return englishName;
-        }
-        return chineseName;
     }
 
     private String normalizeTeamName(String teamName) {

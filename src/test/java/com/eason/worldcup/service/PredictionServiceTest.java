@@ -338,7 +338,7 @@ class PredictionServiceTest {
                 List<MatchSchedule> competitionSchedules,
                 List<MatchSchedule> schedules,
                 List<HistoricalMatch> historicalMatches) {
-            super(null, null, null, null, null);
+            super(null, null, null, null, null, null);
             this.competitionSchedules = competitionSchedules;
             this.schedules = schedules;
             this.historicalMatches = historicalMatches;

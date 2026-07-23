@@ -17,6 +17,9 @@ public final class CsvUtils {
         boolean quoted = false;
         for (int i = 0; i < line.length(); i++) {
             char current = line.charAt(i);
+            if (i == 0 && current == '\uFEFF') {
+                continue;
+            }
             if (current == '"') {
                 if (quoted && i + 1 < line.length() && line.charAt(i + 1) == '"') {
                     builder.append('"');

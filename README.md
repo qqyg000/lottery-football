@@ -2,7 +2,7 @@
 
 竞彩足球胜平负概率预测与推荐回测程序。后端使用 Spring Boot，前端使用 Vue 2，支持按赛事和日期查询赛程、赛果、体彩赔率及模型预测结果。
 
-> 当前内置比赛数据快照更新至 2026-07-18，球队名映射更新至 2026-07-22。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
+> 当前内置比赛数据快照及球队名映射更新至 2026-07-23。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
 
 ## 主要功能
 
@@ -11,7 +11,7 @@
 - 展示双方期望进球、总进球数和比分预测
 - 读取中国体彩网开售状态、让球数及胜平负赔率
 - 使用统一球队名映射关联历史数据、赛程、体彩赔率和页面展示
-- 点击球队名称查看主队近况、双方历史交锋和客队近况，每栏最多 10 场
+- 点击球队名称查看主队近况、双方历史交锋和客队近况，每栏最多 10 场；近况球队名统一采用体彩标准名
 - 每类赛事维护“本届/含上届 × 稳健/激进”四套独立参数档案
 - 前端动态配置进球系数、让球阈值、赔率阈值和比赛类型权重，修改后自动重算
 - 提供参数说明提示、异步数据更新、推荐回测及进度展示
@@ -51,11 +51,11 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 56,809 | 2014-06-12 至 2026-07-18 |
-| `historical_odds_data.csv` | 30,942 | 2014-10-22 至 2026-07-17 |
-| `team_name_mappings.csv` | 4,435 | 更新至 2026-07-22 |
+| `historical_matches.csv` | 115,260 | 2014-10-22 至 2026-07-22 |
+| `historical_odds_data.csv` | 30,953 | 2014-10-22 至 2026-07-22 |
+| `team_name_mappings.csv` | 10,481 | 2014-06-24 至 2026-08-23 |
 
-主要数据来自 FotMob、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
+主要数据来自 FotMob、Futbol24、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 
 ## 快速启动
 
@@ -265,7 +265,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_team_en,away_team
 competition,standard_team_name,alias_team_name,alias_type,source,last_seen_date
 ```
 
-系统优先使用具体赛事映射，再使用 `competition=*` 的全局映射。人工别名使用 `source=MANUAL`，修改后需要重启服务。
+系统按来源优先级读取具体赛事和 `competition=*` 全局映射，体彩核验名称可以覆盖历史数据中的来源自名称。人工别名使用 `source=MANUAL`，修改后需要重启服务。
 
 重新生成自动映射：
 
@@ -277,9 +277,9 @@ node scripts/generate-team-name-mappings.mjs
 
 页面“更新数据”会异步执行以下阶段：
 
-1. 刷新近期赛程与补充比赛
-2. 重建球队模型
-3. 刷新目标日期附近的体彩数据
+1. 读取以当天为基准的体彩最近 30 天赛果
+2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源，其中包括阿塞超、阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
+3. 重建球队模型
 4. 更新赛事概览
 
 运行时缓存写入 `config`，不会直接改写内置历史 CSV。
@@ -295,11 +295,31 @@ powershell -ExecutionPolicy Bypass -File scripts/update-history-data.ps1 `
 powershell -ExecutionPolicy Bypass -File scripts/import-historical-odds.ps1 `
   -SourcePath "C:\path\to\his-data.csv"
 
+# 导入全部赛事的历史比赛，并输出赛事类型统计
+node scripts/import-all-historical-matches.mjs `
+  --source="C:\path\to\his-data.csv" --start-date=2014-10-22 --write `
+  --stats-output=reports/his-data-competition-stats.csv
+
 # 导入公共历史比赛
 node scripts/import-public-history.mjs --write
 
 # 导入参赛球队补充比赛
 node scripts/import-supplemental-history.mjs --write --compact
+
+# 仅补充俱乐部历史，跳过国家队公共源
+node scripts/import-supplemental-history.mjs --write --compact --skip-national
+
+# 只补取阿塞超、阿塞杯和巴甲
+node scripts/import-supplemental-history.mjs --write --compact --skip-national `
+  --only-sources ESPN-bra.1,FOTMOB-262,FUTBOL24-525,VERIFIED-PFL
+
+# 只补取芬超、芬兰杯、丹超、波超杯、波甲、奥甲和苏超
+node scripts/import-supplemental-history.mjs --write --compact --skip-national `
+  --only-sources FUTBOL24-322,FUTBOL24-324,FUTBOL24-28,FUTBOL24-297,FUTBOL24-107,FUTBOL24-15,FUTBOL24-51
+
+# 只补取土超、土耳其杯、丹麦杯、匈甲、匈牙利杯和克甲
+node scripts/import-supplemental-history.mjs --write --compact --skip-national `
+  --only-sources FUTBOL24-133,FUTBOL24-537,FUTBOL24-33,FUTBOL24-92,FUTBOL24-531,FUTBOL24-26
 
 # 校正比分并压缩数据
 node scripts/reconcile-historical-scores.mjs --write --compact
@@ -321,6 +341,14 @@ node scripts/optimize-profile-parameters.mjs --verify-only=true
 | `team_name_mappings.csv` | 体彩标准球队名与数据源别名 |
 
 修改 CSV 字段或赛事代码时，需要同步检查 Java 加载器、数据脚本和前端赛事列表。
+
+## 法律免责声明
+
+本项目仅供足球数据分析、算法学习、技术研究与开发验证，不构成任何形式的投注建议、投资建议、盈利承诺或结果保证。足球比赛结果、赔率及模型预测均具有不确定性，项目作者及贡献者不对数据的准确性、完整性、及时性或适用性作任何明示或暗示的保证。
+
+使用者应自行判断并承担使用本项目所产生的全部风险与责任，并遵守所在国家或地区适用的法律法规及第三方数据源的使用条款。严禁将本项目用于非法赌博、欺诈或其他违法活动；未成年人不得参与任何形式的彩票购买或博彩活动。因使用或无法使用本项目而产生的任何直接或间接损失，项目作者及贡献者在法律允许的范围内不承担责任。
+
+本项目引用的赛事、赔率及其他第三方数据，其权利归相应权利人所有。如相关内容侵犯了您的合法权益，请联系项目维护者处理。对本项目的赞助完全出于自愿，仅用于支持项目开发与维护，不代表购买投注服务，也不构成任何收益或预测结果的承诺。
 
 ## 赞助支持
 

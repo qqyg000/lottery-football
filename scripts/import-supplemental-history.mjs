@@ -7,7 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const historicalMatchesPath = path.join(root, 'src/main/resources/data/historical_matches.csv')
 const teamNameMappingsPath = path.join(root, 'src/main/resources/data/team_name_mappings.csv')
 const cacheRoot = path.join(root, 'target/supplemental-history-cache')
-const MINIMUM_HISTORY_DATE = '2014-06-12'
+const MINIMUM_HISTORY_DATE = '2014-10-22'
 
 const HISTORY_HEADERS = [
   'match_id',
@@ -21,6 +21,24 @@ const HISTORY_HEADERS = [
   'match_type',
   'source_competition'
 ]
+
+const MAPPING_HEADERS = [
+  'competition',
+  'standard_team_name',
+  'alias_team_name',
+  'alias_type',
+  'source',
+  'last_seen_date'
+]
+
+const MAPPING_SOURCE_PRIORITY = new Map([
+  ['HISTORICAL_MATCHES', 1],
+  ['HISTORICAL_ODDS', 2],
+  ['INFERRED_DUPLICATE', 3],
+  ['VERIFIED_ALIAS', 4],
+  ['MANUAL', 5],
+  ['VERIFIED_SPORTTERY', 6]
+])
 
 const NATIONAL_COMPETITIONS = new Set([
   'WORLD_CUP',
@@ -41,6 +59,12 @@ const CLUB_COMPETITIONS = new Set([
   'PRIMEIRA_LIGA',
   'EREDIVISIE',
   'ARGENTINE_PRIMERA_DIVISION'
+])
+
+const ALL_CLUB_COMPETITIONS = new Set([
+  ...CLUB_COMPETITIONS,
+  'CLUB_OFFICIAL_OTHER',
+  'CLUB_FRIENDLY'
 ])
 
 const COMPETITION_NAMES = new Map(Object.entries({
@@ -65,6 +89,356 @@ const COMPETITION_NAMES = new Map(Object.entries({
   ARGENTINE_PRIMERA_DIVISION: '阿甲'
 }))
 
+const NATIONAL_TOURNAMENT_NAMES = new Map(Object.entries({
+  Friendly: '国家队国际窗口友谊赛',
+  'FIFA World Cup': '世界杯',
+  'FIFA World Cup qualification': '世界杯预选赛',
+  'UEFA Euro': '欧洲杯',
+  'UEFA Euro qualification': '欧洲杯预选赛',
+  'UEFA Nations League': '欧国联',
+  'Copa América': '美洲杯',
+  'CONCACAF Nations League': '中北美洲及加勒比海国家联赛',
+  'CONCACAF Championship': '中北美洲及加勒比海锦标赛',
+  'Gold Cup': '中北美洲及加勒比海金杯赛',
+  'African Cup of Nations': '非洲杯',
+  'African Cup of Nations qualification': '非洲杯预选赛',
+  'AFC Asian Cup': '亚洲杯',
+  'AFC Asian Cup qualification': '亚洲杯预选赛',
+  'Oceania Nations Cup': '大洋洲国家杯',
+  'Confederations Cup': '联合会杯'
+}))
+
+const ESPN_PRIMARY_SOURCES = [
+  ['fifa.cwc', 'CLUB_WORLD_CUP'],
+  ['uefa.europa', 'EUROPA_LEAGUE'],
+  ['uefa.europa_qual', 'EUROPA_LEAGUE'],
+  ['uefa.champions', 'CHAMPIONS_LEAGUE'],
+  ['uefa.champions_qual', 'CHAMPIONS_LEAGUE'],
+  ['eng.1', 'PREMIER_LEAGUE'],
+  ['esp.1', 'LA_LIGA'],
+  ['ita.1', 'SERIE_A'],
+  ['ger.1', 'BUNDESLIGA'],
+  ['fra.1', 'LIGUE_1'],
+  ['bra.1', 'BRAZIL_SERIE_A'],
+  ['por.1', 'PRIMEIRA_LIGA'],
+  ['ned.1', 'EREDIVISIE'],
+  ['arg.1', 'ARGENTINE_PRIMERA_DIVISION']
+].map(([slug, competition]) => ({
+  slug,
+  sourceCompetition: COMPETITION_NAMES.get(competition),
+  competition,
+  matchType: 'OFFICIAL',
+  monthly: false
+}))
+
+const ESPN_OFFICIAL_SOURCES = [
+  ['uefa.europa.conf', '欧协联'],
+  ['uefa.europa.conf_qual', '欧协联资格赛'],
+  ['uefa.super_cup', '欧洲超级杯'],
+  ['eng.fa', '英格兰足总杯'],
+  ['eng.league_cup', '英格兰联赛杯'],
+  ['eng.charity', '英格兰社区盾'],
+  ['esp.copa_del_rey', '西班牙国王杯'],
+  ['esp.super_cup', '西班牙超级杯'],
+  ['ger.dfb_pokal', '德国杯'],
+  ['ger.super_cup', '德国超级杯'],
+  ['ita.coppa_italia', '意大利杯'],
+  ['ita.super_cup', '意大利超级杯'],
+  ['fra.coupe_de_france', '法国杯'],
+  ['fra.super_cup', '法国超级杯'],
+  ['por.taca.portugal', '葡萄牙杯'],
+  ['ned.cup', '荷兰杯'],
+  ['ned.supercup', '荷兰超级杯'],
+  ['bra.copa_do_brazil', '巴西杯'],
+  ['arg.copa', '阿根廷杯'],
+  ['conmebol.libertadores', '解放者杯'],
+  ['conmebol.sudamericana', '南美杯'],
+  ['conmebol.recopa', '南美优胜者杯'],
+  ['fifa.intercontinental_cup', '洲际杯']
+].map(([slug, sourceCompetition]) => ({
+  slug,
+  sourceCompetition,
+  competition: 'CLUB_OFFICIAL_OTHER',
+  matchType: 'OFFICIAL',
+  monthly: false
+}))
+
+const ESPN_FRIENDLY_SOURCES = [
+  ['club.friendly', '俱乐部友谊赛', true],
+  ['global.champs_cup', '国际冠军杯', false],
+  ['friendly.emirates_cup', '酋长杯', false],
+  ['eng.asia_trophy', '英超亚洲杯', false],
+  ['esp.joan_gamper', '甘伯杯', false]
+].map(([slug, sourceCompetition, monthly]) => ({
+  slug,
+  sourceCompetition,
+  competition: 'CLUB_FRIENDLY',
+  matchType: 'CLUB_FRIENDLY',
+  monthly
+}))
+
+const FOTMOB_LEAGUE_SOURCES = [
+  {
+    leagueId: '262',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '阿塞超',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '51',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '芬超',
+    calendarYearSeason: true
+  }
+]
+
+const SOFASCORE_CLUB_FRIENDLY_SOURCE = {
+  tournamentId: '853',
+  competition: 'CLUB_FRIENDLY',
+  matchType: 'CLUB_FRIENDLY',
+  sourceCompetition: '俱乐部友谊赛'
+}
+
+const FUTBOL24_SOURCES = [
+  {
+    leagueId: '472',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛'
+  },
+  {
+    leagueId: '525',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '阿塞杯',
+    seasonPath: 'national/Azerbaijan/Kubok',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '322',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '芬超',
+    seasonPath: 'national/Finland/Veikkausliiga',
+    crossYearSeason: false
+  },
+  {
+    leagueId: '324',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '芬兰杯',
+    seasonPath: 'national/Finland/Suomen-Cup',
+    crossYearSeason: false
+  },
+  {
+    leagueId: '28',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '丹超',
+    seasonPath: 'national/Denmark/Superligaen',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '297',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '波超杯',
+    seasonPath: 'national/Poland/Super-Cup',
+    crossYearSeason: false
+  },
+  {
+    leagueId: '107',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '波甲',
+    seasonPath: 'national/Poland/Ekstraklasa',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '15',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '奥甲',
+    seasonPath: 'national/Austria/Bundesliga',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '51',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '苏超',
+    seasonPath: 'national/Scotland/Premiership',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '133',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '土超',
+    seasonPath: 'national/Turkiye/Super-Lig',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '537',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '土耳其杯',
+    seasonPath: 'national/Turkiye/Turkiye-Kupasi',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '33',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '丹麦杯',
+    seasonPath: 'national/Denmark/DBUs-Landspokal',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '92',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '匈甲',
+    seasonPath: 'national/Hungary/NB-I',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '531',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '匈牙利杯',
+    seasonPath: 'national/Hungary/Magyar-Kupa',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '26',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '克甲',
+    seasonPath: 'national/Croatia/1-HNL',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '75',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '塞浦甲',
+    seasonPath: 'national/Cyprus/1-Division',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '269',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '哈萨超',
+    seasonPath: 'national/Kazakhstan/Super-League',
+    crossYearSeason: false
+  }
+]
+
+const VERIFIED_SUPPLEMENTAL_ROWS = [
+  {
+    provider: 'SOFASCORE',
+    providerId: '16411586',
+    source: 'VERIFIED-SOFASCORE',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-02',
+    homeTeam: 'Polissya Zhytomyr',
+    awayTeam: 'Sabah FK',
+    homeScore: 4,
+    awayScore: 1,
+    neutral: true
+  },
+  {
+    provider: 'PFL', providerId: '5384', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2024-10-12', homeTeam: 'Şahdağ Qusar', awayTeam: 'Kür-Araz',
+    homeScore: 3, awayScore: 1, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '5451', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2024-10-12', homeTeam: 'Şəfa', awayTeam: 'Araz Saatlı',
+    homeScore: 2, awayScore: 0, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '5455', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2024-10-13', homeTeam: 'Şimal', awayTeam: 'Qusar',
+    homeScore: 4, awayScore: 1, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '5461', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2024-10-13', homeTeam: 'Göygöl', awayTeam: 'Quba',
+    homeScore: 2, awayScore: 2, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '5463', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2024-10-13', homeTeam: 'Lerik', awayTeam: 'Ağdaş',
+    homeScore: 0, awayScore: 4, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '5465', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2024-10-13', homeTeam: 'Sheki City', awayTeam: 'Şəmkir',
+    homeScore: 0, awayScore: 1, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '5468', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2024-10-14', homeTeam: 'Dinamo', awayTeam: 'Füzuli',
+    homeScore: 4, awayScore: 0, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '6705', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2025-10-09', homeTeam: 'Sheki City', awayTeam: 'Araz Saatlı',
+    homeScore: 3, awayScore: 2, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '6706', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2025-10-09', homeTeam: 'Qaradağ L.', awayTeam: 'Ağdaş',
+    homeScore: 8, awayScore: 0, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '6707', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2025-10-09', homeTeam: 'Dinamo', awayTeam: 'Kür-Araz',
+    homeScore: 2, awayScore: 2, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '6708', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2025-10-09', homeTeam: 'Ağstafa Gəncləri', awayTeam: 'Şirvan',
+    homeScore: 1, awayScore: 0, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '6704', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2025-10-10', homeTeam: 'Göygöl', awayTeam: 'Şəmkir',
+    homeScore: 1, awayScore: 0, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '6709', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞杯',
+    matchDate: '2025-10-10', homeTeam: 'Quba', awayTeam: 'Xankəndi',
+    homeScore: 1, awayScore: 2, neutral: false
+  },
+  {
+    provider: 'PFL', providerId: '6777', source: 'VERIFIED-PFL',
+    competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞超',
+    matchDate: '2026-05-28', homeTeam: 'Qəbələ', awayTeam: 'Mingəçevir',
+    homeScore: 2, awayScore: 0, neutral: false
+  }
+]
+
 
 function parseArguments(argv) {
   const options = {
@@ -72,7 +446,14 @@ function parseArguments(argv) {
     compact: false,
     refreshCache: false,
     skipEspn: false,
+    skipFotMob: false,
+    skipFutbol24: false,
+    skipSofaScore: false,
+    skipNational: false,
+    resetInferredMappings: false,
+    onlySources: null,
     sourceRoot: null,
+    historySourcePath: historicalMatchesPath,
     minDate: MINIMUM_HISTORY_DATE,
     maxDate: localDate(new Date()),
     concurrency: 8
@@ -87,8 +468,25 @@ function parseArguments(argv) {
       options.refreshCache = true
     } else if (argument === '--skip-espn') {
       options.skipEspn = true
+    } else if (argument === '--skip-fotmob') {
+      options.skipFotMob = true
+    } else if (argument === '--skip-futbol24') {
+      options.skipFutbol24 = true
+    } else if (argument === '--skip-sofascore') {
+      options.skipSofaScore = true
+    } else if (argument === '--skip-national') {
+      options.skipNational = true
+    } else if (argument === '--reset-inferred-mappings') {
+      options.resetInferredMappings = true
+    } else if (argument === '--only-sources') {
+      options.onlySources = new Set(requiredArgument(argv, ++index, argument)
+        .split(',')
+        .map(value => value.trim())
+        .filter(Boolean))
     } else if (argument === '--source-root') {
       options.sourceRoot = path.resolve(requiredArgument(argv, ++index, argument))
+    } else if (argument === '--history-source-path') {
+      options.historySourcePath = path.resolve(requiredArgument(argv, ++index, argument))
     } else if (argument === '--min-date') {
       options.minDate = requiredArgument(argv, ++index, argument)
     } else if (argument === '--max-date') {
@@ -111,6 +509,10 @@ function parseArguments(argv) {
     ? Math.floor(options.concurrency)
     : 8))
   return options
+}
+
+function sourceSelected(options, sourceKey) {
+  return !options.onlySources || options.onlySources.has(sourceKey)
 }
 
 function requiredArgument(argv, index, optionName) {
@@ -183,6 +585,13 @@ function toCsv(rows) {
   ].join('\n') + '\n'
 }
 
+function toMappingCsv(rows) {
+  return [
+    MAPPING_HEADERS.join(','),
+    ...rows.map(row => MAPPING_HEADERS.map(header => escapeCsv(row[header])).join(','))
+  ].join('\n') + '\n'
+}
+
 function canonicalName(value) {
   return String(value ?? '')
     .normalize('NFKD')
@@ -239,8 +648,16 @@ function normalizeHistoryRow(row) {
 }
 
 function buildMappings(mappingRows, allowedCompetitions) {
-  const mappings = new Map()
-  for (const row of mappingRows) {
+  const global = new Map()
+  const globalSources = new Map()
+  const byCompetition = new Map()
+  const byCompetitionSources = new Map()
+  const prioritizedRows = [...mappingRows].sort((left, right) => (
+    (MAPPING_SOURCE_PRIORITY.get(left.source) ?? 0)
+      - (MAPPING_SOURCE_PRIORITY.get(right.source) ?? 0)
+    || String(left.last_seen_date ?? '').localeCompare(String(right.last_seen_date ?? ''))
+  ))
+  for (const row of prioritizedRows) {
     if (row.competition !== '*' && !allowedCompetitions.has(row.competition)) {
       continue
     }
@@ -249,21 +666,53 @@ function buildMappings(mappingRows, allowedCompetitions) {
     if (!aliasName || !standardName) {
       continue
     }
+    const mappings = row.competition === '*'
+      ? global
+      : byCompetition.get(row.competition) ?? new Map()
+    const mappingSources = row.competition === '*'
+      ? globalSources
+      : byCompetitionSources.get(row.competition) ?? new Map()
     for (const key of nameKeys(aliasName)) {
       mappings.set(key, standardName)
+      mappingSources.set(key, row.source)
+    }
+    if (row.competition !== '*') {
+      byCompetition.set(row.competition, mappings)
+      byCompetitionSources.set(row.competition, mappingSources)
     }
   }
-  return mappings
+  return { global, globalSources, byCompetition, byCompetitionSources }
 }
 
-function mappedChineseName(sourceName, mappings) {
+function mappedNameEntry(sourceName, mappings, competition) {
+  const competitionMappings = mappings.byCompetition.get(competition)
+  const competitionSources = mappings.byCompetitionSources.get(competition)
+  let selected = null
   for (const key of nameKeys(sourceName)) {
-    const mapped = mappings.get(key)
-    if (mapped) {
-      return mapped
+    for (const [standardName, source, scopePriority] of [
+      [competitionMappings?.get(key), competitionSources?.get(key), 1],
+      [mappings.global.get(key), mappings.globalSources.get(key), 0]
+    ]) {
+      if (!standardName) {
+        continue
+      }
+      const priority = MAPPING_SOURCE_PRIORITY.get(source) ?? 0
+      if (!selected
+          || priority > selected.priority
+          || priority === selected.priority && scopePriority > selected.scopePriority) {
+        selected = { standardName, source, priority, scopePriority }
+      }
     }
   }
-  return null
+  return selected
+}
+
+function mappedChineseName(sourceName, mappings, competition) {
+  return mappedNameEntry(sourceName, mappings, competition)?.standardName ?? null
+}
+
+function mappedNameSource(sourceName, mappings, competition) {
+  return mappedNameEntry(sourceName, mappings, competition)?.source ?? null
 }
 
 function extraTimeGoalCounts(goalRows) {
@@ -420,6 +869,32 @@ async function fetchTextWithRetry(url) {
       lastError = error
       if (attempt < 4) {
         await new Promise(resolve => setTimeout(resolve, attempt * 750))
+      }
+    }
+  }
+  throw new Error(`下载失败：${url}，${lastError?.message ?? '未知错误'}`)
+}
+
+async function fetchSofaScoreJsonWithRetry(url) {
+  let lastError = null
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: 'application/json, text/plain, */*',
+          Referer: 'https://www.sofascore.com/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138.0.0.0 Safari/537.36'
+        },
+        signal: AbortSignal.timeout(45_000)
+      })
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+      return await response.json()
+    } catch (error) {
+      lastError = error
+      if (attempt < 5) {
+        await new Promise(resolve => setTimeout(resolve, attempt * 2_000))
       }
     }
   }
@@ -584,6 +1059,7 @@ async function loadEspnRows(options) {
     return { rows: [], errors: [] }
   }
   const sources = [...ESPN_PRIMARY_SOURCES, ...ESPN_OFFICIAL_SOURCES, ...ESPN_FRIENDLY_SOURCES]
+    .filter(source => sourceSelected(options, `ESPN-${source.slug}`))
   const requests = sources.flatMap(source => (
     (source.monthly ? monthRanges(options.minDate, options.maxDate) : yearRanges(options.minDate, options.maxDate))
       .map(range => ({ source, range }))
@@ -609,6 +1085,532 @@ async function loadEspnRows(options) {
     }
   })
   return { rows: batches.flat(), errors }
+}
+
+function fotMobSeasonRequests(options) {
+  const requests = []
+  const firstYear = Number(options.minDate.slice(0, 4))
+  const lastYear = Number(options.maxDate.slice(0, 4))
+  for (const source of FOTMOB_LEAGUE_SOURCES
+    .filter(item => sourceSelected(options, `FOTMOB-${item.leagueId}`))) {
+    const sourceFirstYear = source.calendarYearSeason ? firstYear : firstYear - 1
+    for (let seasonStartYear = sourceFirstYear; seasonStartYear <= lastYear; seasonStartYear += 1) {
+      requests.push({ source, seasonStartYear })
+    }
+  }
+  return requests
+}
+
+async function readFotMobSeason(request, options) {
+  const season = request.source.calendarYearSeason
+    ? String(request.seasonStartYear)
+    : `${request.seasonStartYear}/${request.seasonStartYear + 1}`
+  const cacheFileName = request.source.calendarYearSeason
+    ? `${request.seasonStartYear}.json`
+    : `${request.seasonStartYear}-${request.seasonStartYear + 1}.json`
+  const cachePath = path.join(
+    cacheRoot,
+    'fotmob',
+    request.source.leagueId,
+    cacheFileName
+  )
+  if (!options.refreshCache) {
+    try {
+      return JSON.parse(await fs.readFile(cachePath, 'utf8'))
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const url = `https://www.fotmob.com/api/data/leagues?id=${request.source.leagueId}`
+    + `&ccode3=CHN&season=${encodeURIComponent(season)}`
+  const json = await fetchJsonWithRetry(url)
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, JSON.stringify(json), 'utf8')
+  return json
+}
+
+function parseFotMobRows(json, source) {
+  const rows = []
+  for (const match of json?.fixtures?.allMatches ?? []) {
+    if (!match?.status?.finished || match?.status?.cancelled) {
+      continue
+    }
+    const scoreMatch = String(match?.status?.scoreStr ?? '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/)
+    const homeTeam = String(match?.home?.longName ?? match?.home?.name ?? match?.home?.shortName ?? '').trim()
+    const awayTeam = String(match?.away?.longName ?? match?.away?.name ?? match?.away?.shortName ?? '').trim()
+    const matchDate = shanghaiDate(match?.status?.utcTime)
+    if (!scoreMatch || !homeTeam || !awayTeam || !matchDate) {
+      continue
+    }
+    rows.push({
+      provider: 'FOTMOB',
+      providerId: String(match.id ?? ''),
+      source: `FOTMOB-${source.leagueId}`,
+      competition: source.competition,
+      matchType: source.matchType,
+      sourceCompetition: source.sourceCompetition,
+      matchDate,
+      homeTeam,
+      awayTeam,
+      homeScore: Number(scoreMatch[1]),
+      awayScore: Number(scoreMatch[2]),
+      neutral: false
+    })
+  }
+  return rows
+}
+
+async function loadFotMobRows(options) {
+  if (options.skipFotMob) {
+    return { rows: [], errors: [] }
+  }
+  const requests = fotMobSeasonRequests(options)
+  const errors = []
+  const batches = await mapWithConcurrency(requests, Math.min(3, options.concurrency), async request => {
+    try {
+      return parseFotMobRows(await readFotMobSeason(request, options), request.source)
+    } catch (error) {
+      errors.push({
+        source: request.source.leagueId,
+        season: request.source.calendarYearSeason
+          ? String(request.seasonStartYear)
+          : `${request.seasonStartYear}/${request.seasonStartYear + 1}`,
+        message: error.message
+      })
+      return []
+    }
+  })
+  return { rows: batches.flat(), errors }
+}
+
+function parseFutbol24Rows(json, sources) {
+  const rows = []
+  const statuses = json?.live?.statuses ?? {}
+  const sourcesByLeagueId = new Map(sources.map(source => [source.leagueId, source]))
+  for (const [eventId, match] of Object.entries(json?.live?.matches ?? {})) {
+    const source = sourcesByLeagueId.get(String(match?.league_id ?? ''))
+    if (!source) {
+      continue
+    }
+    const status = statuses[String(match?.status_id ?? '')]
+    if (String(status?.name_short ?? '').toUpperCase() !== 'FT') {
+      continue
+    }
+    const scoreMatch = String(match?.score1 ?? '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/)
+    const homeTeam = String(match?.team1?.name ?? '').trim()
+    const awayTeam = String(match?.team2?.name ?? '').trim()
+    const matchDate = shanghaiDate(match?.date)
+    if (!scoreMatch || !homeTeam || !awayTeam || !matchDate) {
+      continue
+    }
+    rows.push({
+      provider: 'FUTBOL24',
+      providerId: String(eventId),
+      source: source.leagueId === '472'
+        ? 'FUTBOL24-CLUB-FRIENDLY'
+        : `FUTBOL24-${source.leagueId}`,
+      competition: source.competition,
+      matchType: source.matchType,
+      sourceCompetition: source.sourceCompetition,
+      matchDate,
+      homeTeam,
+      awayTeam,
+      homeScore: Number(scoreMatch[1]),
+      awayScore: Number(scoreMatch[2]),
+      neutral: false
+    })
+  }
+  return rows
+}
+
+function decodeHtml(value) {
+  return String(value ?? '')
+    .replaceAll(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replaceAll(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replaceAll('&amp;', '&')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .trim()
+}
+
+function futbol24ShanghaiDate(year, month, day, timeText) {
+  const [hour, minute] = String(timeText ?? '00:00').split(':').map(Number)
+  if (![year, month, day, hour, minute].every(Number.isInteger)) {
+    return null
+  }
+  const utcTime = Date.UTC(year, month - 1, day, hour - 2, minute)
+  return shanghaiDate(new Date(utcTime).toISOString())
+}
+
+function parseFutbol24SeasonPage(html, source) {
+  const rows = []
+  const matchPattern = /<a href="(\/match\/(\d{4})\/(\d{2})\/(\d{2})\/[^"]*\/([^\/"]+)\/vs\/([^"]+))"[^>]*>([\s\S]*?)<\/a>/g
+  for (const match of html.matchAll(matchPattern)) {
+    const score = match[7].match(/(\d+)\s*-\s*(\d+)/)
+    if (!score) {
+      continue
+    }
+    const prefix = html.slice(Math.max(0, match.index - 2_000), match.index)
+    const timeMatches = [...prefix.matchAll(
+      /f-single-match__cell--time"[^>]*>[\s\S]*?(\d{1,2}:\d{2})/g
+    )]
+    const timeText = timeMatches.at(-1)?.[1] ?? '00:00'
+    const homeTeam = decodeHtml(decodeURIComponent(match[5]).replaceAll('-', ' '))
+    const awayTeam = decodeHtml(decodeURIComponent(match[6]).replaceAll('-', ' '))
+    const matchDate = futbol24ShanghaiDate(
+      Number(match[2]),
+      Number(match[3]),
+      Number(match[4]),
+      timeText
+    )
+    if (!homeTeam || !awayTeam || !matchDate) {
+      continue
+    }
+    const providerId = crypto.createHash('sha1')
+      .update(match[1])
+      .digest('hex')
+      .slice(0, 16)
+      .toUpperCase()
+    rows.push({
+      provider: 'FUTBOL24',
+      providerId,
+      source: `FUTBOL24-${source.leagueId}`,
+      competition: source.competition,
+      matchType: source.matchType,
+      sourceCompetition: source.sourceCompetition,
+      matchDate,
+      homeTeam,
+      awayTeam,
+      homeScore: Number(score[1]),
+      awayScore: Number(score[2]),
+      neutral: false
+    })
+  }
+  return rows
+}
+
+function parseFutbol24SeasonResults(json, source) {
+  const rows = []
+  for (const match of json?.data ?? []) {
+    const score = String(match?.score1 ?? '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/)
+    const homeTeam = String(match?.team1?.name ?? '').trim()
+    const awayTeam = String(match?.team2?.name ?? '').trim()
+    const matchDate = shanghaiDate(match?.date)
+    const slug = String(match?.slug ?? '').trim()
+    if (!score || !homeTeam || !awayTeam || !matchDate || !slug) {
+      continue
+    }
+    const providerId = crypto.createHash('sha1')
+      .update(slug)
+      .digest('hex')
+      .slice(0, 16)
+      .toUpperCase()
+    rows.push({
+      provider: 'FUTBOL24',
+      providerId,
+      source: `FUTBOL24-${source.leagueId}`,
+      competition: source.competition,
+      matchType: source.matchType,
+      sourceCompetition: source.sourceCompetition,
+      matchDate,
+      homeTeam,
+      awayTeam,
+      homeScore: Number(score[1]),
+      awayScore: Number(score[2]),
+      neutral: false
+    })
+  }
+  return rows
+}
+
+function futbol24SeasonRequests(options) {
+  const firstYear = Number(options.minDate.slice(0, 4))
+  const lastYear = Number(options.maxDate.slice(0, 4))
+  const lastMonth = Number(options.maxDate.slice(5, 7))
+  const requests = []
+  for (const source of FUTBOL24_SOURCES.filter(item => (
+    item.seasonPath && sourceSelected(options, `FUTBOL24-${item.leagueId}`)
+  ))) {
+    const sourceFirstYear = source.crossYearSeason ? firstYear - 1 : firstYear
+    const sourceLastYear = source.crossYearSeason && lastMonth < 8 ? lastYear - 1 : lastYear
+    for (let seasonStartYear = sourceFirstYear; seasonStartYear <= sourceLastYear; seasonStartYear += 1) {
+      const season = source.crossYearSeason
+        ? `${seasonStartYear}-${seasonStartYear + 1}`
+        : String(seasonStartYear)
+      requests.push({ source, season })
+    }
+  }
+  return requests
+}
+
+async function readFutbol24SeasonPage(request, options) {
+  const cachePath = path.join(
+    cacheRoot,
+    'futbol24-seasons',
+    request.source.leagueId,
+    `${request.season}.html`
+  )
+  if (!options.refreshCache) {
+    try {
+      return await fs.readFile(cachePath, 'utf8')
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const url = `https://www.futbol24.com/${request.source.seasonPath}/${request.season}/results`
+  const html = await fetchTextWithRetry(url)
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, html, 'utf8')
+  return html
+}
+
+async function readFutbol24SeasonMeta(request) {
+  const slug = `${request.source.seasonPath}/${request.season}`
+  const url = `https://api.futbol24.com/api/stats/league/meta?slug=${encodeURIComponent(slug)}`
+  const meta = await fetchJsonWithRetry(url)
+  if (!meta?.id || !meta?.expire || !meta?.sign || meta?.results === false) {
+    throw new Error(`Futbol24 赛季元数据无效：${slug}`)
+  }
+  return meta
+}
+
+async function readFutbol24SeasonResultsPage(request, meta, page, options) {
+  const cachePath = path.join(
+    cacheRoot,
+    'futbol24-season-results',
+    request.source.leagueId,
+    request.season,
+    `${page}.json`
+  )
+  if (!options.refreshCache) {
+    try {
+      return JSON.parse(await fs.readFile(cachePath, 'utf8'))
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const query = new URLSearchParams()
+  query.set('expire', String(meta.expire))
+  query.set('id', String(meta.id))
+  query.set('lang', 'en')
+  query.set('page', String(page))
+  query.set('perPage', '100')
+  query.set('sign', String(meta.sign))
+  const url = `https://api.futbol24.com/api/stats/league/results?${query}`
+  const json = await fetchJsonWithRetry(url)
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, JSON.stringify(json), 'utf8')
+  return json
+}
+
+async function readFutbol24SeasonResults(request, options) {
+  const meta = await readFutbol24SeasonMeta(request)
+  const rows = []
+  for (let page = 0; page < 20; page += 1) {
+    const json = await readFutbol24SeasonResultsPage(request, meta, page, options)
+    const pageRows = parseFutbol24SeasonResults(json, request.source)
+    rows.push(...pageRows)
+    const totalItems = Number(json?.total_items)
+    if ((Number.isFinite(totalItems) && rows.length >= totalItems)
+        || !Array.isArray(json?.data)
+        || json.data.length < 100) {
+      return rows
+    }
+  }
+  throw new Error(`Futbol24 赛季分页超过安全上限：${request.source.leagueId}/${request.season}`)
+}
+
+async function loadFutbol24SeasonRows(options) {
+  const requests = futbol24SeasonRequests(options)
+  const errors = []
+  const batches = await mapWithConcurrency(requests, Math.min(4, options.concurrency), async request => {
+    try {
+      return await readFutbol24SeasonResults(request, options)
+    } catch (error) {
+      errors.push({
+        source: request.source.leagueId,
+        season: request.season,
+        message: error.message
+      })
+      return []
+    }
+  })
+  return { rows: batches.flat(), errors }
+}
+
+async function readFutbol24Date(date, options) {
+  const cachePath = path.join(cacheRoot, 'futbol24', `${date}.json`)
+  const refreshCurrentDate = date === localDate(new Date())
+  if (!options.refreshCache && !refreshCurrentDate) {
+    try {
+      return JSON.parse(await fs.readFile(cachePath, 'utf8'))
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const dateValue = encodeURIComponent(`${date}T00:00:00+08:00`)
+  const url = `https://api.futbol24.com/api/live/matches?_=0&date=${dateValue}&lang=en&sort=league`
+  const json = await fetchJsonWithRetry(url)
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, JSON.stringify(json), 'utf8')
+  return json
+}
+
+async function loadFutbol24Rows(options) {
+  if (options.skipFutbol24) {
+    return { rows: [], errors: [] }
+  }
+  const selectedSources = FUTBOL24_SOURCES.filter(source => (
+    sourceSelected(options, source.leagueId === '472'
+      ? 'FUTBOL24-CLUB-FRIENDLY'
+      : `FUTBOL24-${source.leagueId}`)
+  ))
+  const seasonData = await loadFutbol24SeasonRows(options)
+  if (selectedSources.length === 0) {
+    return seasonData
+  }
+  const recentStartDate = dateWithOffset(options.maxDate, -30) < options.minDate
+    ? options.minDate
+    : dateWithOffset(options.maxDate, -30)
+  const dates = []
+  for (let date = recentStartDate; date <= options.maxDate; date = dateWithOffset(date, 1)) {
+    dates.push(date)
+  }
+  const errors = []
+  const batches = await mapWithConcurrency(dates, Math.min(6, options.concurrency), async date => {
+    try {
+      return parseFutbol24Rows(
+        await readFutbol24Date(date, options),
+        selectedSources
+      )
+    } catch (error) {
+      errors.push({ source: 'FUTBOL24', date, message: error.message })
+      return []
+    }
+  })
+  return {
+    rows: [...seasonData.rows, ...batches.flat()],
+    errors: [...seasonData.errors, ...errors]
+  }
+}
+
+function sofaScoreValue(score) {
+  for (const field of ['normaltime', 'current', 'display']) {
+    const value = Number(score?.[field])
+    if (Number.isInteger(value) && value >= 0) {
+      return value
+    }
+  }
+  return null
+}
+
+function parseSofaScoreRows(json, source) {
+  const rows = []
+  for (const event of json?.events ?? []) {
+    if (event?.status?.type !== 'finished') {
+      continue
+    }
+    const homeTeam = String(event?.homeTeam?.name ?? '').trim()
+    const awayTeam = String(event?.awayTeam?.name ?? '').trim()
+    const homeScore = sofaScoreValue(event?.homeScore)
+    const awayScore = sofaScoreValue(event?.awayScore)
+    const matchDate = shanghaiDate(new Date(Number(event?.startTimestamp) * 1_000).toISOString())
+    if (!homeTeam || !awayTeam || homeScore === null || awayScore === null || !matchDate) {
+      continue
+    }
+    rows.push({
+      provider: 'SOFASCORE',
+      providerId: String(event.id ?? ''),
+      source: `SOFASCORE-${source.tournamentId}`,
+      competition: source.competition,
+      matchType: source.matchType,
+      sourceCompetition: source.sourceCompetition,
+      matchDate,
+      homeTeam,
+      awayTeam,
+      homeScore,
+      awayScore,
+      neutral: Boolean(event?.neutral)
+    })
+  }
+  return rows
+}
+
+async function readSofaScoreJson(cachePath, url, options) {
+  if (!options.refreshCache) {
+    try {
+      return JSON.parse(await fs.readFile(cachePath, 'utf8'))
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const json = await fetchSofaScoreJsonWithRetry(url)
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, JSON.stringify(json), 'utf8')
+  return json
+}
+
+async function loadSofaScoreRows(options) {
+  if (options.skipSofaScore || !sourceSelected(options, `SOFASCORE-${SOFASCORE_CLUB_FRIENDLY_SOURCE.tournamentId}`)) {
+    return { rows: [], errors: [] }
+  }
+  const source = SOFASCORE_CLUB_FRIENDLY_SOURCE
+  const errors = []
+  const recentStartDate = dateWithOffset(options.maxDate, -30) < options.minDate
+    ? options.minDate
+    : dateWithOffset(options.maxDate, -30)
+  try {
+    const seasonsCachePath = path.join(cacheRoot, 'sofascore', source.tournamentId, 'seasons.json')
+    const seasonsUrl = `https://www.sofascore.com/api/v1/unique-tournament/${source.tournamentId}/seasons`
+    const seasonsJson = await readSofaScoreJson(seasonsCachePath, seasonsUrl, options)
+    const firstYear = Number(recentStartDate.slice(0, 4))
+    const lastYear = Number(options.maxDate.slice(0, 4))
+    const seasons = (seasonsJson?.seasons ?? []).filter(season => {
+      const year = Number(String(season.year ?? '').match(/\d{4}/)?.[0])
+      return year >= firstYear && year <= lastYear
+    })
+    const rows = []
+    for (const season of seasons) {
+      for (let page = 0; page < 250; page += 1) {
+        const cachePath = path.join(
+          cacheRoot,
+          'sofascore',
+          source.tournamentId,
+          String(season.id),
+          `last-${page}.json`
+        )
+        const url = `https://www.sofascore.com/api/v1/unique-tournament/${source.tournamentId}`
+          + `/season/${season.id}/events/last/${page}`
+        const json = await readSofaScoreJson(cachePath, url, options)
+        rows.push(...parseSofaScoreRows(json, source))
+        const dates = (json?.events ?? [])
+          .map(event => shanghaiDate(new Date(Number(event?.startTimestamp) * 1_000).toISOString()))
+          .filter(Boolean)
+        const maximumDate = dates.sort().at(-1) ?? null
+        console.error(`Sofascore 俱乐部友谊赛进度 ${season.year} 第 ${page + 1} 页`)
+        if (!json?.hasNextPage || (maximumDate && maximumDate < recentStartDate)) {
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 800))
+      }
+    }
+    return { rows, errors }
+  } catch (error) {
+    errors.push({ source: source.tournamentId, message: error.message })
+    return { rows: [], errors }
+  }
 }
 
 async function readInternationalSource(options, fileName) {
@@ -643,23 +1645,352 @@ function dateWithOffset(dateText, days) {
   return date.toISOString().slice(0, 10)
 }
 
-function fixturePairKey(date, homeTeam, awayTeam) {
-  const teams = [canonicalChineseName(homeTeam), canonicalChineseName(awayTeam)].sort()
-  return `${date}|${teams[0]}|${teams[1]}`
+function hasChineseName(value) {
+  return /\p{Script=Han}/u.test(String(value ?? ''))
 }
 
-function fixtureResultKey(date, homeTeam, awayTeam, homeScore, awayScore) {
+function fixturePairKey(competition, date, homeTeam, awayTeam) {
+  const teams = [canonicalChineseName(homeTeam), canonicalChineseName(awayTeam)].sort()
+  return `${competition}|${date}|${teams[0]}|${teams[1]}`
+}
+
+function fixtureResultKey(competition, date, homeTeam, awayTeam, homeScore, awayScore) {
   const home = canonicalChineseName(homeTeam)
   const away = canonicalChineseName(awayTeam)
   if (home <= away) {
-    return `${date}|${home}|${away}|${homeScore}|${awayScore}`
+    return `${competition}|${date}|${home}|${away}|${homeScore}|${awayScore}`
   }
-  return `${date}|${away}|${home}|${awayScore}|${homeScore}`
+  return `${competition}|${date}|${away}|${home}|${awayScore}|${homeScore}`
+}
+
+function teamResultEntries(row) {
+  return [
+    {
+      key: `${row.competition}|${row.match_date}|${canonicalChineseName(row.home_team_cn)}`
+        + `|${row.home_score}|${row.away_score}`,
+      side: 'home'
+    },
+    {
+      key: `${row.competition}|${row.match_date}|${canonicalChineseName(row.away_team_cn)}`
+        + `|${row.away_score}|${row.home_score}`,
+      side: 'away'
+    }
+  ]
+}
+
+function sideTeamName(row, side) {
+  return side === 'home' ? row.home_team_cn : row.away_team_cn
+}
+
+function opponentTeamName(row, side) {
+  return side === 'home' ? row.away_team_cn : row.home_team_cn
+}
+
+function setOpponentTeamName(row, side, teamName) {
+  if (side === 'home') {
+    row.away_team_cn = teamName
+  } else {
+    row.home_team_cn = teamName
+  }
+}
+
+function preferredAliasStandard(leftName, rightName, mappings, competition) {
+  const leftEntry = mappedNameEntry(leftName, mappings, competition)
+  const rightEntry = mappedNameEntry(rightName, mappings, competition)
+  const mappedLeft = leftEntry?.standardName
+  const mappedRight = rightEntry?.standardName
+  if (mappedLeft && mappedRight
+      && canonicalChineseName(mappedLeft) === canonicalChineseName(mappedRight)) {
+    return leftEntry.priority >= rightEntry.priority ? mappedLeft : mappedRight
+  }
+  if (leftEntry && rightEntry && leftEntry.priority !== rightEntry.priority) {
+    const preferredEntry = leftEntry.priority > rightEntry.priority ? leftEntry : rightEntry
+    return preferredEntry.standardName
+  }
+  if (leftEntry?.priority >= (MAPPING_SOURCE_PRIORITY.get('HISTORICAL_ODDS') ?? 2)
+      && rightEntry?.priority >= (MAPPING_SOURCE_PRIORITY.get('HISTORICAL_ODDS') ?? 2)) {
+    return null
+  }
+  if (mappedLeft && hasChineseName(mappedLeft)) {
+    return mappedLeft
+  }
+  if (mappedRight && hasChineseName(mappedRight)) {
+    return mappedRight
+  }
+  if (hasChineseName(leftName) && !hasChineseName(rightName)) {
+    return leftName
+  }
+  if (hasChineseName(rightName) && !hasChineseName(leftName)) {
+    return rightName
+  }
+  const leftClubName = canonicalClubName(mappedLeft ?? leftName)
+  const rightClubName = canonicalClubName(mappedRight ?? rightName)
+  if (leftClubName && rightClubName
+      && (leftClubName.includes(rightClubName) || rightClubName.includes(leftClubName))) {
+    const leftStandard = mappedLeft ?? leftName
+    const rightStandard = mappedRight ?? rightName
+    return canonicalClubName(leftStandard).length <= canonicalClubName(rightStandard).length
+      ? leftStandard
+      : rightStandard
+  }
+  return null
+}
+
+function isSportteryBackedHistoryRow(row) {
+  const matchId = String(row?.match_id ?? '').toUpperCase()
+  return matchId.startsWith('ODDS-')
+    || matchId.startsWith('HIS-SPT-')
+    || matchId.includes('SPORTTERY')
+}
+
+function areLikelyOpponentAliases(leftName, rightName, mappings, competition) {
+  const mappedLeft = mappedChineseName(leftName, mappings, competition)
+  const mappedRight = mappedChineseName(rightName, mappings, competition)
+  if (mappedLeft && mappedRight
+      && canonicalChineseName(mappedLeft) === canonicalChineseName(mappedRight)) {
+    return true
+  }
+  const leftClubName = canonicalClubName(leftName)
+  const rightClubName = canonicalClubName(rightName)
+  return leftClubName.length >= 3
+    && rightClubName.length >= 3
+    && (leftClubName.includes(rightClubName) || rightClubName.includes(leftClubName))
+}
+
+function registerInferredAlias(inferredAliases, standardName, aliasName, lastSeenDate) {
+  const standard = String(standardName ?? '').trim()
+  const alias = String(aliasName ?? '').trim()
+  if (!standard || !alias
+      || canonicalChineseName(standard) === canonicalChineseName(alias)) {
+    return
+  }
+  const key = canonicalName(alias)
+  const current = inferredAliases.get(key)
+  if (!current || lastSeenDate >= current.last_seen_date) {
+    inferredAliases.set(key, {
+      competition: '*',
+      standard_team_name: standard,
+      alias_team_name: alias,
+      alias_type: hasChineseName(alias) ? 'ZH' : 'EN',
+      source: 'INFERRED_DUPLICATE',
+      last_seen_date: lastSeenDate
+    })
+  }
+}
+
+function collectPairAliases(inferredAliases, standardName, names, lastSeenDate) {
+  for (const name of names) {
+    registerInferredAlias(inferredAliases, standardName, name, lastSeenDate)
+  }
+}
+
+function normalizeAndDeduplicateHistoryRows(rows, nationalMappings, clubMappings) {
+  const rowsByFixture = new Map()
+  const rowsByFixtureResult = new Map()
+  const rowsByTeamResult = new Map()
+  const inferredAliases = new Map()
+  let duplicateRows = 0
+  let shiftedDateDuplicateRows = 0
+  let sameTeamScoreDuplicateRows = 0
+  const duplicateSamples = []
+  for (const row of rows) {
+    const isNational = NATIONAL_COMPETITIONS.has(row.competition)
+      || row.competition.startsWith('INTERNATIONAL_')
+    const mappings = isNational ? nationalMappings : clubMappings
+    const normalizedRow = {
+      ...row,
+      home_team_cn: mappedChineseName(row.home_team_cn, mappings, row.competition) ?? row.home_team_cn,
+      away_team_cn: mappedChineseName(row.away_team_cn, mappings, row.competition) ?? row.away_team_cn,
+      _homeMappingSource: mappedNameSource(row.home_team_cn, mappings, row.competition),
+      _awayMappingSource: mappedNameSource(row.away_team_cn, mappings, row.competition)
+    }
+    const key = fixturePairKey(
+      normalizedRow.competition,
+      normalizedRow.match_date,
+      normalizedRow.home_team_cn,
+      normalizedRow.away_team_cn
+    )
+    const existingFixture = rowsByFixture.get(key)
+    if (existingFixture) {
+      duplicateRows += 1
+      const directOrientation = canonicalChineseName(existingFixture.home_team_cn)
+        === canonicalChineseName(normalizedRow.home_team_cn)
+      for (const [existingName, candidateName] of directOrientation
+        ? [
+            [existingFixture.home_team_cn, row.home_team_cn],
+            [existingFixture.away_team_cn, row.away_team_cn]
+          ]
+        : [
+            [existingFixture.home_team_cn, row.away_team_cn],
+            [existingFixture.away_team_cn, row.home_team_cn]
+          ]) {
+        const standardName = preferredAliasStandard(
+          existingName,
+          candidateName,
+          mappings,
+          row.competition
+        )
+        if (standardName) {
+          collectPairAliases(
+            inferredAliases,
+            standardName,
+            [existingName, candidateName],
+            row.match_date
+          )
+        }
+      }
+      continue
+    }
+    const shiftedDuplicate = normalizedRow.match_type !== 'CLUB_FRIENDLY'
+      ? [-1, 1]
+        .map(offset => rowsByFixtureResult.get(fixtureResultKey(
+          normalizedRow.competition,
+          dateWithOffset(normalizedRow.match_date, offset),
+          normalizedRow.home_team_cn,
+          normalizedRow.away_team_cn,
+          normalizedRow.home_score,
+          normalizedRow.away_score
+        )))
+        .find(Boolean)
+      : null
+    if (shiftedDuplicate) {
+      duplicateRows += 1
+      shiftedDateDuplicateRows += 1
+      if (duplicateSamples.length < 30) {
+        duplicateSamples.push({
+          competition: row.competition,
+          matchDate: row.match_date,
+          shiftedFromDate: shiftedDuplicate.match_date,
+          score: `${normalizedRow.home_score}:${normalizedRow.away_score}`,
+          retainedFixture: `${shiftedDuplicate.home_team_cn} vs ${shiftedDuplicate.away_team_cn}`,
+          mergedFixture: `${normalizedRow.home_team_cn} vs ${normalizedRow.away_team_cn}`
+        })
+      }
+      continue
+    }
+    if (normalizedRow.match_type !== 'CLUB_FRIENDLY') {
+      const teamEntries = teamResultEntries(normalizedRow)
+      const duplicateEntry = teamEntries
+        .map(entry => ({ ...entry, existing: rowsByTeamResult.get(entry.key) }))
+        .find(entry => entry.existing)
+      const existingOpponent = duplicateEntry
+        ? opponentTeamName(duplicateEntry.existing.row, duplicateEntry.existing.side)
+        : null
+      const candidateOpponent = duplicateEntry
+        ? opponentTeamName(normalizedRow, duplicateEntry.side)
+        : null
+      const candidateSharedTeamMappingSource = duplicateEntry?.side === 'home'
+        ? normalizedRow._homeMappingSource
+        : normalizedRow._awayMappingSource
+      const sharedTeamMappingIsTrusted = duplicateEntry
+        && duplicateEntry.existing.mappingSource !== 'INFERRED_DUPLICATE'
+        && candidateSharedTeamMappingSource !== 'INFERRED_DUPLICATE'
+      const likelyDuplicate = duplicateEntry && (
+        isSportteryBackedHistoryRow(duplicateEntry.existing.row)
+        || isSportteryBackedHistoryRow(normalizedRow)
+        || sharedTeamMappingIsTrusted
+        || areLikelyOpponentAliases(
+          existingOpponent,
+          candidateOpponent,
+          mappings,
+          row.competition
+        )
+      )
+      if (likelyDuplicate) {
+        duplicateRows += 1
+        sameTeamScoreDuplicateRows += 1
+        const existingRow = duplicateEntry.existing.row
+        const existingSide = duplicateEntry.existing.side
+        const retainedFixture = `${existingRow.home_team_cn} vs ${existingRow.away_team_cn}`
+        const mergedFixture = `${normalizedRow.home_team_cn} vs ${normalizedRow.away_team_cn}`
+        const standardOpponent = preferredAliasStandard(
+          existingOpponent,
+          candidateOpponent,
+          mappings,
+          row.competition
+        )
+        if (standardOpponent) {
+          setOpponentTeamName(existingRow, existingSide, standardOpponent)
+          collectPairAliases(
+            inferredAliases,
+            standardOpponent,
+            [existingOpponent, candidateOpponent],
+            row.match_date
+          )
+        }
+        if (duplicateSamples.length < 30) {
+          duplicateSamples.push({
+            competition: row.competition,
+            matchDate: row.match_date,
+            sharedTeam: sideTeamName(normalizedRow, duplicateEntry.side),
+            score: `${normalizedRow.home_score}:${normalizedRow.away_score}`,
+            retainedFixture,
+            mergedFixture
+          })
+        }
+        continue
+      }
+    }
+    rowsByFixture.set(key, normalizedRow)
+    rowsByFixtureResult.set(fixtureResultKey(
+      normalizedRow.competition,
+      normalizedRow.match_date,
+      normalizedRow.home_team_cn,
+      normalizedRow.away_team_cn,
+      normalizedRow.home_score,
+      normalizedRow.away_score
+    ), normalizedRow)
+    for (const entry of teamResultEntries(normalizedRow)) {
+      rowsByTeamResult.set(entry.key, {
+        row: normalizedRow,
+        side: entry.side,
+        mappingSource: entry.side === 'home'
+          ? normalizedRow._homeMappingSource
+          : normalizedRow._awayMappingSource
+      })
+    }
+  }
+  return {
+    rows: [...rowsByFixture.values()],
+    duplicateRows,
+    shiftedDateDuplicateRows,
+    sameTeamScoreDuplicateRows,
+    inferredAliases: [...inferredAliases.values()],
+    duplicateSamples
+  }
+}
+
+function mergeInferredMappings(mappingRows, inferredAliases) {
+  const rowsByKey = new Map()
+  for (const row of [...mappingRows, ...inferredAliases]) {
+    const key = `${row.competition}|${canonicalName(row.alias_team_name)}`
+    const current = rowsByKey.get(key)
+    const rowPriority = MAPPING_SOURCE_PRIORITY.get(row.source) ?? 0
+    const currentPriority = MAPPING_SOURCE_PRIORITY.get(current?.source) ?? 0
+    if (!current
+        || rowPriority > currentPriority
+        || rowPriority === currentPriority && row.last_seen_date >= current.last_seen_date) {
+      rowsByKey.set(key, row)
+    }
+  }
+  return [...rowsByKey.values()]
 }
 
 function sourceMatchId(row) {
   if (row.provider === 'ESPN' && row.providerId) {
     return `ESPN-${row.providerId}`
+  }
+  if (row.provider === 'FOTMOB' && row.providerId) {
+    return `FOTMOB-${row.providerId}`
+  }
+  if (row.provider === 'SOFASCORE' && row.providerId) {
+    return `SOFASCORE-${row.providerId}`
+  }
+  if (row.provider === 'FUTBOL24' && row.providerId) {
+    return `FUTBOL24-${row.providerId}`
+  }
+  if (row.provider === 'PFL' && row.providerId) {
+    return `PFL-${row.providerId}`
   }
   const digest = crypto.createHash('sha1')
     .update([
@@ -708,41 +2039,64 @@ function outputSourceSummaries(summaries, compact) {
 }
 
 const options = parseArguments(process.argv.slice(2))
-const [historyText, mappingText, resultsText, goalsText, espnData] = await Promise.all([
-  fs.readFile(historicalMatchesPath, 'utf8'),
+const [historyText, mappingText, resultsText, goalsText, espnData, fotMobData] = await Promise.all([
+  fs.readFile(options.historySourcePath, 'utf8'),
   fs.readFile(teamNameMappingsPath, 'utf8'),
-  readInternationalSource(options, 'results.csv'),
-  readInternationalSource(options, 'goalscorers.csv'),
-  loadEspnRows(options)
+  options.skipNational ? Promise.resolve('') : readInternationalSource(options, 'results.csv'),
+  options.skipNational ? Promise.resolve('') : readInternationalSource(options, 'goalscorers.csv'),
+  loadEspnRows(options),
+  loadFotMobRows(options)
 ])
+const futbol24Data = await loadFutbol24Rows(options)
+const sofaScoreData = futbol24Data.rows.length > 0
+  ? { rows: [], errors: [] }
+  : await loadSofaScoreRows(options)
 
 const originalRows = parseCsv(historyText).map(normalizeHistoryRow)
-const retainedRows = originalRows.filter(row => (
-  row.match_date >= options.minDate && row.match_date <= options.maxDate
-))
 const mappingRows = parseCsv(mappingText)
-const nationalMappings = buildMappings(mappingRows, NATIONAL_COMPETITIONS)
-const clubMappings = buildMappings(mappingRows, CLUB_COMPETITIONS)
+const effectiveMappingRows = options.resetInferredMappings
+  ? mappingRows.filter(row => row.source !== 'INFERRED_DUPLICATE')
+  : mappingRows
+const nationalMappings = buildMappings(effectiveMappingRows, NATIONAL_COMPETITIONS)
+const clubMappings = buildMappings(effectiveMappingRows, ALL_CLUB_COMPETITIONS)
+const retainedHistory = normalizeAndDeduplicateHistoryRows(
+  originalRows.filter(row => row.match_date >= options.minDate && row.match_date <= options.maxDate),
+  nationalMappings,
+  clubMappings
+)
+const retainedRows = retainedHistory.rows
 const targetNationalTeams = new Set(originalRows
   .filter(row => NATIONAL_COMPETITIONS.has(row.competition))
-  .flatMap(row => [row.home_team_cn, row.away_team_cn])
+  .flatMap(row => [
+    mappedChineseName(row.home_team_cn, nationalMappings, row.competition) ?? row.home_team_cn,
+    mappedChineseName(row.away_team_cn, nationalMappings, row.competition) ?? row.away_team_cn
+  ])
   .map(canonicalChineseName))
 const targetClubTeams = new Set(originalRows
   .filter(row => CLUB_COMPETITIONS.has(row.competition))
-  .flatMap(row => [row.home_team_cn, row.away_team_cn])
+  .flatMap(row => [
+    mappedChineseName(row.home_team_cn, clubMappings, row.competition) ?? row.home_team_cn,
+    mappedChineseName(row.away_team_cn, clubMappings, row.competition) ?? row.away_team_cn
+  ])
   .map(canonicalChineseName))
 
 const sourceRows = [
-  ...parseNationalRows(parseCsv(resultsText), parseCsv(goalsText)),
-  ...espnData.rows
+  ...(options.skipNational ? [] : parseNationalRows(parseCsv(resultsText), parseCsv(goalsText))),
+  ...espnData.rows,
+  ...fotMobData.rows,
+  ...futbol24Data.rows,
+  ...sofaScoreData.rows,
+  ...VERIFIED_SUPPLEMENTAL_ROWS.filter(row => sourceSelected(options, row.source))
 ]
 const rowsById = new Map(retainedRows.map(row => [row.match_id, row]))
 const fixturePairs = new Set(retainedRows.map(row => fixturePairKey(
+  row.competition,
   row.match_date,
   row.home_team_cn,
   row.away_team_cn
 )))
 const fixtureResults = new Set(retainedRows.map(row => fixtureResultKey(
+  row.competition,
   row.match_date,
   row.home_team_cn,
   row.away_team_cn,
@@ -765,15 +2119,28 @@ for (const sourceRow of sourceRows) {
 
   const national = sourceRow.provider === 'INTL'
   const mappings = national ? nationalMappings : clubMappings
-  const homeTeam = mappedChineseName(sourceRow.homeTeam, mappings, national)
-  const awayTeam = mappedChineseName(sourceRow.awayTeam, mappings, national)
+  const mappedHomeTeam = mappedChineseName(sourceRow.homeTeam, mappings, sourceRow.competition)
+  const mappedAwayTeam = mappedChineseName(sourceRow.awayTeam, mappings, sourceRow.competition)
   const targets = national ? targetNationalTeams : targetClubTeams
-  const homeIsTarget = homeTeam && targets.has(canonicalChineseName(homeTeam))
-  const awayIsTarget = awayTeam && targets.has(canonicalChineseName(awayTeam))
-  if (!homeIsTarget && !awayIsTarget) {
+  const homeIsTarget = mappedHomeTeam && targets.has(canonicalChineseName(mappedHomeTeam))
+  const awayIsTarget = mappedAwayTeam && targets.has(canonicalChineseName(mappedAwayTeam))
+  const importsWholeCompetition = sourceRow.provider === 'FUTBOL24'
+      && ['15', '26', '28', '33', '51', '75', '92', '107', '133', '269', '297',
+        '322', '324', '525', '531', '537']
+        .includes(String(sourceRow.source).replace('FUTBOL24-', ''))
+    || sourceRow.provider === 'FOTMOB' && ['FOTMOB-51', 'FOTMOB-262'].includes(sourceRow.source)
+    || sourceRow.provider === 'ESPN' && sourceRow.source === 'ESPN-bra.1'
+    || sourceRow.provider === 'PFL'
+  if (!importsWholeCompetition && !homeIsTarget && !awayIsTarget) {
     summary.outsideTargetRows += 1
     continue
   }
+  if (national && (!mappedHomeTeam || !mappedAwayTeam)) {
+    summary.unmappedRows += 1
+    continue
+  }
+  const homeTeam = mappedHomeTeam ?? String(sourceRow.homeTeam ?? '').trim()
+  const awayTeam = mappedAwayTeam ?? String(sourceRow.awayTeam ?? '').trim()
   if (!homeTeam || !awayTeam) {
     summary.unmappedRows += 1
     for (const [sourceName, mappedName] of [
@@ -816,8 +2183,9 @@ for (const sourceRow of sourceRows) {
     continue
   }
 
-  const exactPair = fixturePairKey(sourceRow.matchDate, homeTeam, awayTeam)
+  const exactPair = fixturePairKey(sourceRow.competition, sourceRow.matchDate, homeTeam, awayTeam)
   const shiftedDuplicate = [-1, 1].some(offset => fixtureResults.has(fixtureResultKey(
+    sourceRow.competition,
     dateWithOffset(sourceRow.matchDate, offset),
     homeTeam,
     awayTeam,
@@ -833,6 +2201,7 @@ for (const sourceRow of sourceRows) {
   rowsById.set(matchId, expectedRow)
   fixturePairs.add(exactPair)
   fixtureResults.add(fixtureResultKey(
+    sourceRow.competition,
     sourceRow.matchDate,
     homeTeam,
     awayTeam,
@@ -842,14 +2211,71 @@ for (const sourceRow of sourceRows) {
   summary.addedRows += 1
 }
 
-const rebuiltRows = retainedRows.sort((left, right) => (
+let finalHistory = normalizeAndDeduplicateHistoryRows(
+  retainedRows,
+  nationalMappings,
+  clubMappings
+)
+const inferredAliasesByKey = new Map()
+function collectInferredAliases(aliases) {
+  let changed = false
+  for (const alias of aliases) {
+    const key = `${alias.competition}|${canonicalName(alias.alias_team_name)}`
+    const current = inferredAliasesByKey.get(key)
+    if (!current || alias.last_seen_date > current.last_seen_date) {
+      inferredAliasesByKey.set(key, alias)
+      changed = true
+    }
+  }
+  return changed
+}
+
+collectInferredAliases(retainedHistory.inferredAliases)
+collectInferredAliases(finalHistory.inferredAliases)
+
+let finalDuplicateRows = finalHistory.duplicateRows
+let finalShiftedDateDuplicateRows = finalHistory.shiftedDateDuplicateRows
+let finalSameTeamScoreDuplicateRows = finalHistory.sameTeamScoreDuplicateRows
+const finalDuplicateSamples = [...finalHistory.duplicateSamples]
+let refinementPasses = 0
+for (; refinementPasses < 10; refinementPasses += 1) {
+  const refinedMappingRows = mergeInferredMappings(
+    effectiveMappingRows,
+    [...inferredAliasesByKey.values()]
+  )
+  const refinedHistory = normalizeAndDeduplicateHistoryRows(
+    finalHistory.rows,
+    buildMappings(refinedMappingRows, NATIONAL_COMPETITIONS),
+    buildMappings(refinedMappingRows, ALL_CLUB_COMPETITIONS)
+  )
+  finalDuplicateRows += refinedHistory.duplicateRows
+  finalShiftedDateDuplicateRows += refinedHistory.shiftedDateDuplicateRows
+  finalSameTeamScoreDuplicateRows += refinedHistory.sameTeamScoreDuplicateRows
+  finalDuplicateSamples.push(...refinedHistory.duplicateSamples)
+  const inferredAliasesChanged = collectInferredAliases(refinedHistory.inferredAliases)
+  finalHistory = refinedHistory
+  if (refinedHistory.duplicateRows === 0 && !inferredAliasesChanged) {
+    refinementPasses += 1
+    break
+  }
+}
+
+const rebuiltRows = finalHistory.rows.sort((left, right) => (
   left.match_date.localeCompare(right.match_date)
   || left.competition.localeCompare(right.competition)
   || left.match_id.localeCompare(right.match_id)
 ))
+const inferredAliases = [...inferredAliasesByKey.values()]
 
 if (options.write) {
-  await fs.writeFile(historicalMatchesPath, toCsv(rebuiltRows), 'utf8')
+  await fs.writeFile(historicalMatchesPath, `\uFEFF${toCsv(rebuiltRows)}`, 'utf8')
+  if (options.resetInferredMappings || inferredAliases.length > 0) {
+    await fs.writeFile(
+      teamNameMappingsPath,
+      `\uFEFF${toMappingCsv(mergeInferredMappings(effectiveMappingRows, inferredAliases))}`,
+      'utf8'
+    )
+  }
   await import('./generate-team-name-mappings.mjs')
 }
 
@@ -867,6 +2293,18 @@ console.log(JSON.stringify({
   removedBeforeOrAfterRange: originalRows.length - originalRows.filter(row => (
     row.match_date >= options.minDate && row.match_date <= options.maxDate
   )).length,
+  removedDuplicateRows: retainedHistory.duplicateRows + finalDuplicateRows,
+  removedShiftedDateDuplicateRows:
+    retainedHistory.shiftedDateDuplicateRows + finalShiftedDateDuplicateRows,
+  removedSameTeamScoreDuplicateRows:
+    retainedHistory.sameTeamScoreDuplicateRows + finalSameTeamScoreDuplicateRows,
+  refinementPasses,
+  inferredTeamAliases: inferredAliases.length,
+  inferredAliasSamples: inferredAliases.slice(0, 50),
+  duplicateSamples: [
+    ...retainedHistory.duplicateSamples,
+    ...finalDuplicateSamples
+  ].slice(0, 30),
   rebuiltRows: rebuiltRows.length,
   importedRows: [...sourceSummaries.values()].reduce((sum, summary) => sum + summary.addedRows, 0),
   updatedRows: [...sourceSummaries.values()].reduce((sum, summary) => sum + summary.updatedRows, 0),
@@ -876,5 +2314,8 @@ console.log(JSON.stringify({
   competitions,
   sources: outputSourceSummaries(sourceSummaries, options.compact),
   espnRequestErrors: espnData.errors,
+  fotMobRequestErrors: fotMobData.errors,
+  futbol24RequestErrors: futbol24Data.errors,
+  sofaScoreRequestErrors: sofaScoreData.errors,
   wroteFile: options.write
 }, null, 2))

@@ -715,7 +715,7 @@ const rebuiltRows = [...historicalRows, ...addedRows].sort((left, right) => (
 ))
 
 if (options.write) {
-  await fs.writeFile(historicalMatchesPath, toCsv(rebuiltRows), 'utf8')
+  await fs.writeFile(historicalMatchesPath, `\uFEFF${toCsv(rebuiltRows)}`, 'utf8')
   await import('./generate-team-name-mappings.mjs')
 }
 

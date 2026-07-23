@@ -1,0 +1,15 @@
+﻿match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
+PFL-5384,2024-10-12,CLUB_OFFICIAL_OTHER,Shahdagh Gusar,Kür-Araz,3,1,false,OFFICIAL,阿塞杯
+PFL-5451,2024-10-12,CLUB_OFFICIAL_OTHER,Shafa Baku,Araz Saatlı,2,0,false,OFFICIAL,阿塞杯
+PFL-5455,2024-10-13,CLUB_OFFICIAL_OTHER,Simal FK,Qusar,4,1,false,OFFICIAL,阿塞杯
+PFL-5461,2024-10-13,CLUB_OFFICIAL_OTHER,Gyogol FK,Quba,2,2,false,OFFICIAL,阿塞杯
+PFL-5463,2024-10-13,CLUB_OFFICIAL_OTHER,Lerik,Agdas FK,0,4,false,OFFICIAL,阿塞杯
+PFL-5465,2024-10-13,CLUB_OFFICIAL_OTHER,Sheki City,Shamkir,0,1,false,OFFICIAL,阿塞杯
+PFL-5468,2024-10-14,CLUB_OFFICIAL_OTHER,Dinamo Baku,Füzuli,4,0,false,OFFICIAL,阿塞杯
+PFL-6705,2025-10-09,CLUB_OFFICIAL_OTHER,Sheki City,Araz Saatlı,3,2,false,OFFICIAL,阿塞杯
+PFL-6706,2025-10-09,CLUB_OFFICIAL_OTHER,Qaradag Lokb,Agdas FK,8,0,false,OFFICIAL,阿塞杯
+PFL-6707,2025-10-09,CLUB_OFFICIAL_OTHER,Dinamo Baku,Kür-Araz,2,2,false,OFFICIAL,阿塞杯
+PFL-6708,2025-10-09,CLUB_OFFICIAL_OTHER,Agstafa Gencleri,Şirvan,1,0,false,OFFICIAL,阿塞杯
+PFL-6704,2025-10-10,CLUB_OFFICIAL_OTHER,Gyogol FK,Shamkir,1,0,false,OFFICIAL,阿塞杯
+PFL-6709,2025-10-10,CLUB_OFFICIAL_OTHER,Quba,Xankendi FK,1,2,false,OFFICIAL,阿塞杯
+PFL-6777,2026-05-28,CLUB_OFFICIAL_OTHER,盖贝莱,Mingachevir FK,2,0,false,OFFICIAL,阿塞超

@@ -2,14 +2,18 @@
     [Parameter(Mandatory = $true)]
     [string]$SourcePath,
 
-    [string]$OutputPath = (Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds_data.csv"),
+    [string]$OutputPath = "",
 
-    [datetime]$StartDate = [datetime]"2014-10-22",
+    [datetime]$StartDate = [datetime]"2014-06-12",
 
     [int]$SourceRowOffset = 2
 )
 
 $ErrorActionPreference = "Stop"
+
+if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+    $OutputPath = Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds_data.csv"
+}
 
 $competitionByLeague = @{
     "世界杯" = "WORLD_CUP"

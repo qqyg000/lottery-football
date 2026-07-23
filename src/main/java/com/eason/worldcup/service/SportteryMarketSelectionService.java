@@ -25,6 +25,7 @@ import java.text.Normalizer;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -66,8 +67,7 @@ public class SportteryMarketSelectionService {
             Map.entry(17, Competition.EREDIVISIE),
             Map.entry(77, Competition.ARGENTINE_PRIMERA_DIVISION));
 
-    private static final Set<Competition> SUPPORTED_COMPETITIONS = Set.copyOf(
-            COMPETITIONS_BY_LEAGUE_ID.values());
+    private static final Set<Competition> SUPPORTED_COMPETITIONS = createSupportedCompetitions();
 
     private final ObjectMapper objectMapper;
 
@@ -107,6 +107,9 @@ public class SportteryMarketSelectionService {
     @Value("${sporttery.result-update.odds-lookback-days:30}")
     private int oddsLookbackDays;
 
+    @Value("${sporttery.result-update.result-lookback-days:30}")
+    private int resultLookbackDays;
+
     @Value("${sporttery.result-update.recent-days-back:1}")
     private int recentDaysBack;
 
@@ -126,6 +129,12 @@ public class SportteryMarketSelectionService {
 
     public SportteryMarketSelectionService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+    }
+
+    private static Set<Competition> createSupportedCompetitions() {
+        Set<Competition> competitions = new HashSet<>(COMPETITIONS_BY_LEAGUE_ID.values());
+        competitions.add(Competition.CLUB_OFFICIAL_OTHER);
+        return Set.copyOf(competitions);
     }
 
     public synchronized int updateSelections(List<MatchSchedule> schedules) {
@@ -159,6 +168,72 @@ public class SportteryMarketSelectionService {
         return matchedCount;
     }
 
+    public synchronized List<MatchSchedule> getRecentCompletedSchedules(int daysBack) {
+        ensureCacheLoaded();
+        LocalDate endDate = LocalDate.now(resolveTargetZone());
+        LocalDate startDate = endDate.minusDays(Math.max(0, Math.min(90, daysBack)));
+        return entriesByMatchId.values().stream()
+                .filter(entry -> entry.getMatchDate() != null)
+                .filter(entry -> !entry.getMatchDate().isBefore(startDate))
+                .filter(entry -> !entry.getMatchDate().isAfter(endDate))
+                .filter(entry -> entry.getHomeScore() != null && entry.getAwayScore() != null)
+                .filter(entry -> SUPPORTED_COMPETITIONS.contains(entry.getCompetition()))
+                .map(this::toCompletedSchedule)
+                .toList();
+    }
+
+    public synchronized int mergeRecentCompletedSchedulesInto(
+            List<MatchSchedule> schedules,
+            int daysBack) {
+        if (schedules == null) {
+            return 0;
+        }
+        List<MatchSchedule> recentSchedules = getRecentCompletedSchedules(daysBack);
+        applyMarketEntries(schedules, false);
+        Set<String> matchedSportteryIds = schedules.stream()
+                .map(MatchSchedule::getSportteryMatchId)
+                .filter(this::hasText)
+                .collect(java.util.stream.Collectors.toSet());
+        List<MatchSchedule> missingSchedules = recentSchedules.stream()
+                .filter(schedule -> !matchedSportteryIds.contains(schedule.getSportteryMatchId()))
+                .toList();
+        schedules.addAll(missingSchedules);
+        return missingSchedules.size();
+    }
+
+    private MatchSchedule toCompletedSchedule(SportteryMarketEntry entry) {
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setMatchId("SPORTTERY-" + entry.getSportteryMatchId());
+        schedule.setCompetition(entry.getCompetition());
+        schedule.setMatchDate(entry.getMatchDate());
+        schedule.setKickoffTime(LocalTime.MIDNIGHT);
+        schedule.setGroupName(hasText(entry.getLeagueName())
+                ? entry.getLeagueName()
+                : entry.getCompetition().getDisplayName());
+        schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(
+                entry.getCompetition(),
+                entry.getHomeTeam()));
+        schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(
+                entry.getCompetition(),
+                entry.getAwayTeam()));
+        schedule.setHomeTeamEn(entry.getHomeTeam());
+        schedule.setAwayTeamEn(entry.getAwayTeam());
+        schedule.setVenue("");
+        schedule.setNeutral(false);
+        schedule.setStatus("COMPLETED");
+        schedule.setHomeScore(entry.getHomeScore());
+        schedule.setAwayScore(entry.getAwayScore());
+        schedule.setSportteryMatchId(entry.getSportteryMatchId());
+        schedule.setSportteryMatchNumber(entry.getSportteryMatchNumber());
+        schedule.setSportteryHomeTeamName(schedule.getHomeTeamCn());
+        schedule.setSportteryAwayTeamName(schedule.getAwayTeamCn());
+        schedule.setSportteryNormalAvailable(entry.getNormalAvailable());
+        schedule.setSportteryHandicap(entry.getHandicap());
+        schedule.setSportteryNormalOdds(entry.getNormalOdds());
+        schedule.setSportteryHandicapOdds(entry.getHandicapOdds());
+        return schedule;
+    }
+
     public synchronized int forceRefresh(LocalDate referenceDate) {
         ensureCacheLoaded();
         if (!enabled) {
@@ -168,8 +243,8 @@ public class SportteryMarketSelectionService {
                 ? LocalDate.now(resolveTargetZone())
                 : referenceDate;
         refreshMarketEntries(
-                buildMissingOddsLookupDates(effectiveReferenceDate),
-                false,
+                buildRecentResultLookupDates(effectiveReferenceDate),
+                true,
                 false,
                 normalizedFutureDays());
         refreshMarketEntries(
@@ -388,14 +463,16 @@ public class SportteryMarketSelectionService {
         return dates;
     }
 
-    private TreeSet<LocalDate> buildMissingOddsLookupDates(LocalDate referenceDate) {
+    private TreeSet<LocalDate> buildRecentResultLookupDates(LocalDate referenceDate) {
         TreeSet<LocalDate> dates = new TreeSet<>();
-        int firstOffset = -normalizedOddsLookbackDays();
-        int lastOffset = -normalizedRecentDaysBack() - 1;
-        for (int offset = firstOffset; offset <= lastOffset; offset++) {
+        for (int offset = -normalizedResultLookbackDays(); offset <= 0; offset++) {
             dates.add(referenceDate.plusDays(offset));
         }
         return dates;
+    }
+
+    private int normalizedResultLookbackDays() {
+        return Math.max(0, Math.min(90, resultLookbackDays));
     }
 
     private int normalizedOddsLookbackDays() {
@@ -762,6 +839,7 @@ public class SportteryMarketSelectionService {
         entry.setSportteryMatchNumber(match.path("matchNumStr").asText(""));
         entry.setMatchDate(matchDate);
         entry.setCompetition(competition);
+        entry.setLeagueName(parseLeagueName(match));
         entry.setHomeTeam(homeTeam);
         entry.setAwayTeam(awayTeam);
         entry.setCurrentSale(false);
@@ -797,6 +875,7 @@ public class SportteryMarketSelectionService {
         entry.setSportteryMatchNumber(match.path("matchNumStr").asText(""));
         entry.setMatchDate(matchDate);
         entry.setCompetition(competition);
+        entry.setLeagueName(parseLeagueName(match));
         entry.setHomeTeam(homeTeam);
         entry.setAwayTeam(awayTeam);
         entry.setCurrentSale(true);
@@ -849,9 +928,7 @@ public class SportteryMarketSelectionService {
         if (competition != null) {
             return competition;
         }
-        String leagueName = firstNonBlank(
-                match.path("leagueNameAbbr").asText(""),
-                match.path("leagueAbbName").asText(""));
+        String leagueName = parseLeagueName(match);
         return switch (leagueName) {
             case "世界杯" -> Competition.WORLD_CUP;
             case "欧洲杯" -> Competition.EUROPEAN_CHAMPIONSHIP;
@@ -868,8 +945,28 @@ public class SportteryMarketSelectionService {
             case "葡超" -> Competition.PRIMEIRA_LIGA;
             case "荷甲" -> Competition.EREDIVISIE;
             case "阿甲" -> Competition.ARGENTINE_PRIMERA_DIVISION;
+            case "芬超", "芬兰杯", "芬杯",
+                    "丹超",
+                    "波超杯", "波兰超杯", "波甲", "波兰甲",
+                    "奥甲", "奥超", "奥地利甲",
+                    "苏超", "苏格兰超",
+                    "土超", "土耳其超", "土耳其杯", "土杯",
+                    "丹麦杯", "丹杯",
+                    "匈甲", "匈牙利甲", "匈牙利杯", "匈杯",
+                    "克甲", "克罗地亚甲",
+                    "塞浦甲", "塞甲", "哈萨超", "哈超",
+                    "韩职", "韩国职业联赛",
+                    "瑞超", "瑞典超",
+                    "挪超", "挪威超",
+                    "美职", "美职联" -> Competition.CLUB_OFFICIAL_OTHER;
             default -> null;
         };
+    }
+
+    private String parseLeagueName(JsonNode match) {
+        return firstNonBlank(
+                match.path("leagueNameAbbr").asText(""),
+                match.path("leagueAbbName").asText(""));
     }
 
     private LocalDate parseDate(String value) {
@@ -1066,15 +1163,20 @@ public class SportteryMarketSelectionService {
                 schedule.getAwayTeamCn(),
                 schedule.getAwayTeamEn(),
                 entry.getAwayTeam());
+        long dateDistance = Math.abs(ChronoUnit.DAYS.between(schedule.getMatchDate(), entry.getMatchDate()));
+        boolean scoreMatches = fullTimeScoreMatches(schedule, entry);
         if (!homeTeamMatches || !awayTeamMatches) {
-            return -1;
+            return dateDistance == 0L
+                    && (homeTeamMatches || awayTeamMatches)
+                    && (scoreMatches || fullTimeScoreUnavailable(schedule, entry))
+                    ? 80
+                    : -1;
         }
 
         int score = 100;
-        if (fullTimeScoreMatches(schedule, entry)) {
+        if (scoreMatches) {
             score += 20;
         }
-        long dateDistance = Math.abs(ChronoUnit.DAYS.between(schedule.getMatchDate(), entry.getMatchDate()));
         score += dateDistance == 0L ? 6 : 2;
         return score;
     }
@@ -1086,6 +1188,13 @@ public class SportteryMarketSelectionService {
                 && entry.getAwayScore() != null
                 && schedule.getHomeScore().equals(entry.getHomeScore())
                 && schedule.getAwayScore().equals(entry.getAwayScore());
+    }
+
+    private boolean fullTimeScoreUnavailable(MatchSchedule schedule, SportteryMarketEntry entry) {
+        return schedule.getHomeScore() == null
+                || schedule.getAwayScore() == null
+                || entry.getHomeScore() == null
+                || entry.getAwayScore() == null;
     }
 
     boolean teamNamesMatch(
@@ -1298,6 +1407,8 @@ public class SportteryMarketSelectionService {
 
         private Competition competition;
 
+        private String leagueName;
+
         private String homeTeam;
 
         private String awayTeam;
@@ -1348,6 +1459,14 @@ public class SportteryMarketSelectionService {
 
         public void setCompetition(Competition competition) {
             this.competition = competition;
+        }
+
+        public String getLeagueName() {
+            return leagueName;
+        }
+
+        public void setLeagueName(String leagueName) {
+            this.leagueName = leagueName;
         }
 
         public String getHomeTeam() {

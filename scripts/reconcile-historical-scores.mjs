@@ -332,7 +332,9 @@ for (const row of unmatchedRows) {
     continue
   }
   const totalGoals = Number(row.home_score) + Number(row.away_score)
-  if (totalGoals === 7 && !verifiedOddsOverrides.has(row.match_id)) {
+  const hasVerifiedScore = verifiedOddsOverrides.has(row.match_id)
+    || row.match_id.startsWith('HIS-SPT-')
+  if (totalGoals === 7 && !hasVerifiedScore) {
     excludedCappedScoreCount += 1
     excludedCappedRows.push({
       match_id: row.match_id,
@@ -432,8 +434,8 @@ if (shouldWrite) {
     'handicap_lose'
   ]
   await Promise.all([
-    fs.writeFile(historicalMatchesPath, toCsv(rebuiltHistoryRows, historyHeaders), 'utf8'),
-    fs.writeFile(historicalOddsPath, toCsv(oddsRows, oddsHeaders), 'utf8')
+    fs.writeFile(historicalMatchesPath, `\uFEFF${toCsv(rebuiltHistoryRows, historyHeaders)}`, 'utf8'),
+    fs.writeFile(historicalOddsPath, `\uFEFF${toCsv(oddsRows, oddsHeaders)}`, 'utf8')
   ])
   await import('./generate-team-name-mappings.mjs')
 }

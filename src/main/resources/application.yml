@@ -55,6 +55,11 @@ club-competitions:
     sportsdb-next-url-template: https://www.thesportsdb.com/api/v1/json/123/eventsnextleague.php?id={leagueId}
     sportsdb-past-url-template: https://www.thesportsdb.com/api/v1/json/123/eventspastleague.php?id={leagueId}
     fotmob-league-url-template: https://www.fotmob.com/api/data/leagues?id={leagueId}&ccode3=CHN&season={season}
+    sofascore-seasons-url-template: https://www.sofascore.com/api/v1/unique-tournament/{tournamentId}/seasons
+    sofascore-events-url-template: https://www.sofascore.com/api/v1/unique-tournament/{tournamentId}/season/{seasonId}/events/{direction}/{page}
+    sofascore-team-events-url-template: https://www.sofascore.com/api/v1/team/{teamId}/events/last/{page}
+    futbol24-live-url-template: https://api.futbol24.com/api/live/matches?_=0&date={date}&lang=en&sort=league
+    futbol24-parallelism: 16
     timeout-seconds: 15
     target-zone: ${data-refresh.target-zone}
     parallelism: 12
@@ -73,6 +78,7 @@ sporttery:
     page-size: 100
     refresh-minutes: 30
     odds-lookback-days: 30
+    result-lookback-days: 30
     recent-days-back: 1
     future-days: 2
     force-future-days: 4

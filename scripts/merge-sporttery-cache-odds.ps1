@@ -3,14 +3,24 @@
 
     [datetime]$EndDate,
 
-    [string]$SchedulePath = (Join-Path $PSScriptRoot "..\config\club-competition-schedules.json"),
+    [string]$SchedulePath = "",
 
-    [string]$CachePath = (Join-Path $PSScriptRoot "..\config\sporttery-market-selections.json"),
+    [string]$CachePath = "",
 
-    [string]$OutputPath = (Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds_data.csv")
+    [string]$OutputPath = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if ([string]::IsNullOrWhiteSpace($SchedulePath)) {
+    $SchedulePath = Join-Path $PSScriptRoot "..\config\club-competition-schedules.json"
+}
+if ([string]::IsNullOrWhiteSpace($CachePath)) {
+    $CachePath = Join-Path $PSScriptRoot "..\config\sporttery-market-selections.json"
+}
+if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+    $OutputPath = Join-Path $PSScriptRoot "..\src\main\resources\data\historical_odds_data.csv"
+}
 
 $supportedCompetitions = [Collections.Generic.HashSet[string]]::new([string[]]@(
     "WORLD_CUP",
@@ -28,6 +38,13 @@ $supportedCompetitions = [Collections.Generic.HashSet[string]]::new([string[]]@(
     "PRIMEIRA_LIGA",
     "EREDIVISIE",
     "ARGENTINE_PRIMERA_DIVISION"
+))
+
+$neutralCompetitions = [Collections.Generic.HashSet[string]]::new([string[]]@(
+    "WORLD_CUP",
+    "EUROPEAN_CHAMPIONSHIP",
+    "COPA_AMERICA",
+    "CLUB_WORLD_CUP"
 ))
 
 function Get-CanonicalTeamName {
@@ -221,14 +238,14 @@ foreach ($schedule in $schedules) {
     $null = $usedMatchIds.Add([string]$bestEntry.sportteryMatchId)
     $newRows.Add([pscustomobject][ordered]@{
         match_id = "HIS-SPT-$($bestEntry.sportteryMatchId)"
-        match_date = $schedule.matchDate
-        competition = $schedule.competition
-        home_team_cn = $schedule.homeTeamCn
-        away_team_cn = $schedule.awayTeamCn
+        match_date = $bestEntry.matchDate
+        competition = $bestEntry.competition
+        home_team_cn = $bestEntry.homeTeam
+        away_team_cn = $bestEntry.awayTeam
         home_team_en = $schedule.homeTeamEn
         away_team_en = $schedule.awayTeamEn
-        home_score = $schedule.homeScore
-        away_score = $schedule.awayScore
+        home_score = $bestEntry.homeScore
+        away_score = $bestEntry.awayScore
         neutral = ([bool]$schedule.neutral).ToString().ToLowerInvariant()
         sporttery_match_number = $bestEntry.sportteryMatchNumber
         handicap = if ($null -eq $bestEntry.handicap) { "" } else { [string]$bestEntry.handicap }
@@ -239,6 +256,41 @@ foreach ($schedule in $schedules) {
         handicap_draw = Get-OddsValue $bestEntry.handicapOdds "draw"
         handicap_lose = Get-OddsValue $bestEntry.handicapOdds "lose"
     })
+}
+
+$scheduleMatchedCount = $newRows.Count
+$directCacheCount = 0
+foreach ($entry in $entries) {
+    $sportteryMatchId = [string]$entry.sportteryMatchId
+    if ($usedMatchIds.Contains($sportteryMatchId) `
+            -or $null -eq $entry.homeScore `
+            -or $null -eq $entry.awayScore `
+            -or ($null -eq $entry.normalOdds -and $null -eq $entry.handicapOdds)) {
+        continue
+    }
+    $competition = [string]$entry.competition
+    $newRows.Add([pscustomobject][ordered]@{
+        match_id = "HIS-SPT-$sportteryMatchId"
+        match_date = $entry.matchDate
+        competition = $competition
+        home_team_cn = $entry.homeTeam
+        away_team_cn = $entry.awayTeam
+        home_team_en = ""
+        away_team_en = ""
+        home_score = $entry.homeScore
+        away_score = $entry.awayScore
+        neutral = $neutralCompetitions.Contains($competition).ToString().ToLowerInvariant()
+        sporttery_match_number = $entry.sportteryMatchNumber
+        handicap = if ($null -eq $entry.handicap) { "" } else { [string]$entry.handicap }
+        normal_win = Get-OddsValue $entry.normalOdds "win"
+        normal_draw = Get-OddsValue $entry.normalOdds "draw"
+        normal_lose = Get-OddsValue $entry.normalOdds "lose"
+        handicap_win = Get-OddsValue $entry.handicapOdds "win"
+        handicap_draw = Get-OddsValue $entry.handicapOdds "draw"
+        handicap_lose = Get-OddsValue $entry.handicapOdds "lose"
+    })
+    $null = $usedMatchIds.Add($sportteryMatchId)
+    $directCacheCount++
 }
 
 $newMatchIds = [Collections.Generic.HashSet[string]]::new()
@@ -270,7 +322,9 @@ $rowsByFixture.Values |
     Sort-Object match_date, competition, match_id |
     Export-Csv -LiteralPath $resolvedOutputPath -NoTypeInformation -Encoding UTF8
 
-Write-Host "Matched cache odds rows: $($newRows.Count)"
+Write-Host "Schedule-matched cache odds rows: $scheduleMatchedCount"
+Write-Host "Direct cache fallback odds rows: $directCacheCount"
+Write-Host "Merged cache odds rows: $($newRows.Count)"
 Write-Host "Added odds rows: $addedCount"
 Write-Host "Updated odds rows: $updatedCount"
 Write-Host "Output rows: $($rowsByFixture.Count)"

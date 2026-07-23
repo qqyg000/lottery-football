@@ -11,14 +11,25 @@ import java.text.Normalizer;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public final class ClubTeamNameTranslator {
 
     private static final String TEAM_NAME_MAPPINGS_RESOURCE = "data/team_name_mappings.csv";
+
+    private static final Map<String, Integer> SOURCE_PRIORITIES = Map.of(
+            "HISTORICAL_MATCHES", 1,
+            "HISTORICAL_ODDS", 2,
+            "ESPN_SCHEDULE", 3,
+            "INFERRED_DUPLICATE", 3,
+            "VERIFIED_ALIAS", 4,
+            "MANUAL", 5,
+            "VERIFIED_SPORTTERY", 6);
 
     private static final MappingData MAPPINGS = loadMappings();
 
@@ -34,8 +45,16 @@ public final class ClubTeamNameTranslator {
         if (normalized.isBlank()) {
             return normalized;
         }
-        String mappedName = findMappedName(competition, normalized);
-        return mappedName == null ? normalized : mappedName;
+        String currentName = normalized;
+        Set<String> visitedNames = new HashSet<>();
+        while (visitedNames.add(canonicalName(currentName))) {
+            String mappedName = findMappedName(competition, currentName);
+            if (mappedName == null || mappedName.equals(currentName)) {
+                return currentName;
+            }
+            currentName = mappedName;
+        }
+        return currentName;
     }
 
     public static boolean hasMapping(String teamName) {
@@ -48,21 +67,26 @@ public final class ClubTeamNameTranslator {
     }
 
     private static String findMappedName(Competition competition, String teamName) {
+        MappingValue competitionMapping = null;
         if (competition != null) {
             NameMappings competitionMappings = MAPPINGS.byCompetition().get(competition);
-            String mappedName = lookup(competitionMappings, teamName);
-            if (mappedName != null) {
-                return mappedName;
-            }
+            competitionMapping = lookup(competitionMappings, teamName);
         }
-        return lookup(MAPPINGS.global(), teamName);
+        MappingValue globalMapping = lookup(MAPPINGS.global(), teamName);
+        if (competitionMapping == null) {
+            return globalMapping == null ? null : globalMapping.standardName();
+        }
+        if (globalMapping == null || competitionMapping.priority() >= globalMapping.priority()) {
+            return competitionMapping.standardName();
+        }
+        return globalMapping.standardName();
     }
 
-    private static String lookup(NameMappings mappings, String teamName) {
+    private static MappingValue lookup(NameMappings mappings, String teamName) {
         if (mappings == null) {
             return null;
         }
-        String exactMatch = mappings.exact().get(canonicalName(teamName));
+        MappingValue exactMatch = mappings.exact().get(canonicalName(teamName));
         if (exactMatch != null) {
             return exactMatch;
         }
@@ -92,6 +116,7 @@ public final class ClubTeamNameTranslator {
             int competitionColumn = requiredColumn(headerIndexes, "competition");
             int standardNameColumn = requiredColumn(headerIndexes, "standard_team_name");
             int aliasNameColumn = requiredColumn(headerIndexes, "alias_team_name");
+            int sourceColumn = requiredColumn(headerIndexes, "source");
             String line;
             int lineNumber = 1;
             while ((line = reader.readLine()) != null) {
@@ -103,6 +128,7 @@ public final class ClubTeamNameTranslator {
                 String competitionCode = CsvUtils.get(row, competitionColumn).trim();
                 String standardName = CsvUtils.get(row, standardNameColumn).trim();
                 String aliasName = CsvUtils.get(row, aliasNameColumn).trim();
+                String source = CsvUtils.get(row, sourceColumn).trim();
                 if (standardName.isBlank() || aliasName.isBlank()) {
                     throw new IllegalStateException("球队名映射存在空名称，第 " + lineNumber + " 行");
                 }
@@ -115,7 +141,7 @@ public final class ClubTeamNameTranslator {
                             competition,
                             ignored -> new MutableNameMappings());
                 }
-                register(mappings, aliasName, standardName, lineNumber);
+                register(mappings, aliasName, standardName, source, lineNumber);
             }
         } catch (IOException ex) {
             throw new IllegalStateException("读取球队名映射失败：" + TEAM_NAME_MAPPINGS_RESOURCE, ex);
@@ -142,17 +168,27 @@ public final class ClubTeamNameTranslator {
             MutableNameMappings mappings,
             String aliasName,
             String standardName,
+            String source,
             int lineNumber) {
+        MappingValue candidate = new MappingValue(
+                standardName,
+                SOURCE_PRIORITIES.getOrDefault(source, 0));
         String exactKey = canonicalName(aliasName);
-        String current = mappings.exact.putIfAbsent(exactKey, standardName);
-        if (current != null && !current.equals(standardName)) {
+        MappingValue current = mappings.exact.get(exactKey);
+        if (current == null || candidate.priority() > current.priority()) {
+            mappings.exact.put(exactKey, candidate);
+        } else if (candidate.priority() == current.priority()
+                && !current.standardName().equals(standardName)) {
             throw new IllegalStateException(
                     "球队名映射冲突，第 " + lineNumber + " 行：" + aliasName + " -> " + standardName
-                            + "，已有标准名 " + current);
+                            + "，已有标准名 " + current.standardName());
         }
         String clubKey = canonicalClubName(aliasName);
         if (!clubKey.isBlank()) {
-            mappings.withoutClubTokens.putIfAbsent(clubKey, standardName);
+            MappingValue clubCurrent = mappings.withoutClubTokens.get(clubKey);
+            if (clubCurrent == null || candidate.priority() > clubCurrent.priority()) {
+                mappings.withoutClubTokens.put(clubKey, candidate);
+            }
         }
     }
 
@@ -180,16 +216,20 @@ public final class ClubTeamNameTranslator {
     }
 
     private record NameMappings(
-            Map<String, String> exact,
-            Map<String, String> withoutClubTokens) {
+            Map<String, MappingValue> exact,
+            Map<String, MappingValue> withoutClubTokens) {
+
+    }
+
+    private record MappingValue(String standardName, int priority) {
 
     }
 
     private static class MutableNameMappings {
 
-        private final Map<String, String> exact = new HashMap<>();
+        private final Map<String, MappingValue> exact = new HashMap<>();
 
-        private final Map<String, String> withoutClubTokens = new HashMap<>();
+        private final Map<String, MappingValue> withoutClubTokens = new HashMap<>();
 
         private NameMappings toImmutable() {
             return new NameMappings(
