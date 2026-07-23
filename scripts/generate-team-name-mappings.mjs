@@ -53,6 +53,27 @@ const REJECTED_MAPPING_KEYS = new Set([
 const VERIFIED_SPORTTERY_ENGLISH_ALIASES = [
   {
     competition: 'CLUB_OFFICIAL_OTHER',
+    standardName: '竞技俱乐部MG',
+    aliasName: 'Athletic Club (MG)',
+    lastSeenDate: '2026-07-23',
+    source: 'VERIFIED_ALIAS'
+  },
+  {
+    competition: 'CLUB_OFFICIAL_OTHER',
+    standardName: 'FK IMT Beograd',
+    aliasName: 'IMT Novi Beograd',
+    lastSeenDate: '2026-07-20',
+    source: 'VERIFIED_ALIAS'
+  },
+  {
+    competition: 'CLUB_OFFICIAL_OTHER',
+    standardName: '利特克斯',
+    aliasName: 'Litex Lovech',
+    lastSeenDate: '2015-12-12',
+    source: 'VERIFIED_ALIAS'
+  },
+  {
+    competition: 'CLUB_OFFICIAL_OTHER',
     standardName: '皇家盐湖城',
     aliasName: 'Real Salt Lake',
     lastSeenDate: '2026-07-23',

@@ -18,18 +18,27 @@
             <span class="competition-select-arrow" :class="{ 'is-open': competitionDropdownOpen }" aria-hidden="true"></span>
           </button>
           <div v-if="competitionDropdownOpen" class="competition-select-dropdown">
-            <div class="competition-option-list" role="listbox" aria-label="联赛单选">
+            <div
+              class="competition-option-list"
+              role="listbox"
+              aria-label="联赛多选"
+              aria-multiselectable="true"
+            >
               <button
                 v-for="competition in getConcreteCompetitions()"
                 :key="competition.code"
                 type="button"
                 class="competition-option"
                 role="option"
-                :aria-selected="activeCompetition === competition.code ? 'true' : 'false'"
+                :aria-selected="isCompetitionSelected(competition.code) ? 'true' : 'false'"
                 @click="selectCompetition(competition.code)"
               >
                 <span>{{ competition.name }}</span>
-                <span v-if="activeCompetition === competition.code" class="competition-option-check" aria-hidden="true">✓</span>
+                <span
+                  v-if="isCompetitionSelected(competition.code)"
+                  class="competition-option-check"
+                  aria-hidden="true"
+                >✓</span>
               </button>
             </div>
           </div>
@@ -242,7 +251,7 @@
               <button
                 type="button"
                 class="factor-recalculate factor-column-action"
-                :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
+                :disabled="loading || updatingData || backtesting"
                 @click="toggleParameterPreset"
               >
                 {{ parameterPresetToggleText }}
@@ -869,6 +878,8 @@ export default {
       headToHeadMatches: [],
       headToHeadAwayRecentMatches: [],
       headToHeadRequestId: 0,
+      overviewRequestId: 0,
+      predictionRequestId: 0,
       loading: false,
       updatingData: false,
       dataRefreshProgress: 0,
@@ -881,8 +892,10 @@ export default {
       return this.getSelectedCompetitionCodes()[0] || 'WORLD_CUP'
     },
     activeCompetitionLabel() {
-      const selectedCompetition = this.getSelectedCompetitions()[0]
-      return selectedCompetition ? selectedCompetition.name : '世界杯'
+      const selectedCompetitions = this.getSelectedCompetitions()
+      return selectedCompetitions.length > 0
+        ? selectedCompetitions.map(competition => competition.name).join('、')
+        : '世界杯'
     },
     activeParameterProfileEditable() {
       return this.getSelectedCompetitionCodes().length === 1
@@ -1067,22 +1080,26 @@ export default {
       }
     },
     async selectCompetition(code) {
-      if (this.loading || this.updatingData || this.backtesting) {
+      if (this.updatingData || this.backtesting) {
         return
       }
       const selectedCompetition = this.getConcreteCompetitions().find(item => item.code === code)
       if (!selectedCompetition) {
         return
       }
-      const selectionChanged = selectedCompetition.code !== this.activeCompetition
-      this.competitionDropdownOpen = false
-      if (!selectionChanged) {
+      const selectedCodes = this.getSelectedCompetitionCodes()
+      const selectionIndex = selectedCodes.indexOf(selectedCompetition.code)
+      if (selectionIndex >= 0 && selectedCodes.length === 1) {
         return
       }
       const currentDate = this.queryDate
       this.storeActiveParameterProfile()
       this.clearBacktestResults()
-      this.activeCompetitions = [selectedCompetition.code]
+      this.activeCompetitions = selectionIndex >= 0
+        ? selectedCodes.filter(selectedCode => selectedCode !== selectedCompetition.code)
+        : [...selectedCodes, selectedCompetition.code]
+      this.predictionRequestId += 1
+      this.loading = false
       this.loadActiveParameterProfile()
       this.saveActiveCompetition()
       this.saveUserConfig()
@@ -1284,12 +1301,16 @@ export default {
       }
     },
     async loadOverview(preferredDate) {
+      const requestId = ++this.overviewRequestId
       this.errorMessage = ''
       try {
         const selectedCompetitions = this.getSelectedCompetitions()
         const overviewEntries = await Promise.all(selectedCompetitions.map(async competition => {
           return [competition.code, await this.fetchCompetitionOverview(competition.code)]
         }))
+        if (requestId !== this.overviewRequestId) {
+          return
+        }
         this.competitionOverviews = Object.fromEntries(overviewEntries)
         const data = overviewEntries.length === 1
           ? overviewEntries[0][1]
@@ -1299,7 +1320,9 @@ export default {
           await this.loadPredictions()
         }
       } catch (error) {
-        this.errorMessage = '读取赛程概览失败：' + error.message
+        if (requestId === this.overviewRequestId) {
+          this.errorMessage = '读取赛程概览失败：' + error.message
+        }
       }
     },
     getConcreteCompetitions() {
@@ -1308,12 +1331,22 @@ export default {
     getSelectedCompetitionCodes() {
       const concreteCompetitions = this.getConcreteCompetitions()
       const validCodes = new Set(concreteCompetitions.map(competition => competition.code))
-      const selectedCode = this.activeCompetitions.find(code => validCodes.has(code))
-      return selectedCode ? [selectedCode] : concreteCompetitions.slice(0, 1).map(competition => competition.code)
+      const selectedCodes = Array.from(new Set(this.activeCompetitions))
+        .filter(code => validCodes.has(code))
+      return selectedCodes.length > 0
+        ? selectedCodes
+        : concreteCompetitions.slice(0, 1).map(competition => competition.code)
     },
     getSelectedCompetitions() {
-      const selectedCodes = new Set(this.getSelectedCompetitionCodes())
-      return this.getConcreteCompetitions().filter(competition => selectedCodes.has(competition.code))
+      const competitionsByCode = new Map(
+        this.getConcreteCompetitions().map(competition => [competition.code, competition])
+      )
+      return this.getSelectedCompetitionCodes()
+        .map(code => competitionsByCode.get(code))
+        .filter(Boolean)
+    },
+    isCompetitionSelected(code) {
+      return this.getSelectedCompetitionCodes().includes(code)
     },
     getParameterProfileKey(
       competition,
@@ -1413,7 +1446,7 @@ export default {
     },
     loadActiveParameterProfile() {
       const competition = this.getSelectedCompetitionCodes()[0]
-      if (!this.activeParameterProfileEditable || !competition) {
+      if (!competition) {
         return
       }
       this.applyParameterProfile(this.getParameterProfile(competition))
@@ -1560,6 +1593,7 @@ export default {
       this.dataRefreshMessage = '正在准备更新数据...'
     },
     async loadPredictions() {
+      const requestId = ++this.predictionRequestId
       if (!this.queryDate) {
         this.errorMessage = '请选择比赛日期'
         return
@@ -1572,6 +1606,9 @@ export default {
         const responses = await Promise.all(competitions.map(competition => this.fetchCompetitionPredictions(competition)))
         const competitionOrder = new Map(this.getConcreteCompetitions().map((competition, index) => [competition.code, index]))
         const matches = responses.flatMap(response => response.matches || [])
+        if (requestId !== this.predictionRequestId) {
+          return
+        }
         matches.sort((left, right) => {
           const leftTime = (left.matchDate || '') + ' ' + (left.kickoffTime || '')
           const rightTime = (right.matchDate || '') + ' ' + (right.kickoffTime || '')
@@ -1588,9 +1625,13 @@ export default {
           matches
         }
       } catch (error) {
-        this.errorMessage = '查询概率失败：' + error.message
+        if (requestId === this.predictionRequestId) {
+          this.errorMessage = '查询概率失败：' + error.message
+        }
       } finally {
-        this.loading = false
+        if (requestId === this.predictionRequestId) {
+          this.loading = false
+        }
       }
     },
     getPredictionCompetitions() {
@@ -1994,13 +2035,17 @@ export default {
       const concreteCompetitions = this.getConcreteCompetitions()
       const validCodes = new Set(concreteCompetitions.map(item => item.code))
       const fallbackCode = concreteCompetitions[0] ? concreteCompetitions[0].code : 'WORLD_CUP'
-      const selectedCode = value === 'ALL'
-        ? fallbackCode
-        : value.split(',').map(code => code.trim()).find(code => validCodes.has(code))
-      this.activeCompetitions = [selectedCode || fallbackCode]
+      const selectedCodes = value === 'ALL'
+        ? concreteCompetitions.map(competition => competition.code)
+        : Array.from(new Set(
+          value.split(',')
+            .map(code => code.trim())
+            .filter(code => validCodes.has(code))
+        ))
+      this.activeCompetitions = selectedCodes.length > 0 ? selectedCodes : [fallbackCode]
     },
     saveActiveCompetition() {
-      const value = this.getSelectedCompetitionCodes()[0] || 'WORLD_CUP'
+      const value = this.getSelectedCompetitionCodes().join(',') || 'WORLD_CUP'
       this.setCookie(ACTIVE_COMPETITION_COOKIE, value, ACTIVE_COMPETITION_COOKIE_MAX_AGE)
     },
     loadGlobalParameters() {

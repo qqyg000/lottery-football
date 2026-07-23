@@ -76,7 +76,7 @@ public class DataRepository {
     @Value("${data-refresh.days-back:30}")
     private int refreshDaysBack;
 
-    @Value("${data-refresh.days-forward:30}")
+    @Value("${data-refresh.days-forward:7}")
     private int refreshDaysForward;
 
     @Value("${data-refresh.target-zone:Asia/Shanghai}")

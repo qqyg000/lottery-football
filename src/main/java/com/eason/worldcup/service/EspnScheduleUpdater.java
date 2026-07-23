@@ -56,7 +56,7 @@ public class EspnScheduleUpdater {
     @Value("${data-refresh.days-back:30}")
     private int daysBack;
 
-    @Value("${data-refresh.days-forward:30}")
+    @Value("${data-refresh.days-forward:7}")
     private int daysForward;
 
     @Value("${data-refresh.target-zone:Asia/Shanghai}")

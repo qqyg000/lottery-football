@@ -10,7 +10,7 @@ spring:
 
 data-refresh:
   days-back: 30
-  days-forward: 30
+  days-forward: 7
   target-zone: Asia/Shanghai
 
 football-data:

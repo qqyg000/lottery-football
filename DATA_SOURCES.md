@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 125 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 115,260 场，日期范围为 2014-10-22 至 2026-07-22；导入流程以 2014-10-22 作为历史数据最早截点。15 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 145 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 152,240 场，日期范围为 2014-10-22 至 2026-07-23；导入流程以 2014-10-22 作为历史数据最早截点。15 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
@@ -19,6 +19,8 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - FotMob 各赛事赛季接口、阿塞拜疆超级联赛、芬兰超级联赛，以及上述来源未覆盖且不重复的竞彩场次
 - ESPN Scoreboard：国内杯赛、超级杯、洲际俱乐部赛事和俱乐部友谊赛
 - Futbol24 按日及赛季比赛接口：补充 ESPN 未收录的俱乐部友谊赛、阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
+- FotMob 按赛季接口：补充瑞超、荷甲、欧协联、比甲、比利时杯、瑞士杯、瑞士超、巴乙、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
+- Futbol24 按赛季接口：补齐 FotMob 历史覆盖不足的塞杯、卢森杯、法罗杯和威联杯
 - 阿塞拜疆职业足球联盟（PFL）官方接口：补齐 Futbol24 未收录的阿塞杯第一资格轮和阿塞超升降级附加赛
 - Sofascore Club Friendly Games：Futbol24 不可用时的俱乐部友谊赛降级来源
 
@@ -45,11 +47,11 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - `uefa.champions_qual`：资格赛与附加赛
 - `uefa.champions`：联赛阶段与淘汰赛
 
-应用只动态加载当前日期前 30 天至后 30 天，历史样本直接使用本地 `historical_matches.csv` 中 `competition=CHAMPIONS_LEAGUE` 的记录，其中可映射球队的样本已扩展到 1955-56 赛季。目标时区为 `Asia/Shanghai`，相关地址和超时时间配置位于 `src/main/resources/application.yml` 的 `champions-league.espn-update` 节点，日期窗口和计算时区配置位于 `data-refresh` 节点。
+应用只动态加载当前日期前 30 天至后 7 天，历史样本直接使用本地 `historical_matches.csv` 中 `competition=CHAMPIONS_LEAGUE` 的记录，其中可映射球队的样本已扩展到 1955-56 赛季。目标时区为 `Asia/Shanghai`，相关地址和超时时间配置位于 `src/main/resources/application.yml` 的 `champions-league.espn-update` 节点，日期窗口和计算时区配置位于 `data-refresh` 节点。
 
 ## 其他赛事
 
-以下赛事由 ESPN Scoreboard 动态加载当前日期前 30 天至后 30 天：
+以下赛事由 ESPN Scoreboard 动态加载当前日期前 30 天至后 7 天：
 
 - `uefa.euro`：欧洲杯
 - `conmebol.america`：美洲杯
@@ -73,6 +75,11 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - `club.friendly`、国际冠军杯、酋长杯、英超亚洲杯和甘伯杯：俱乐部正常阵容友谊赛
 - FotMob `leagueId=262`：阿塞超正式比赛
 - FotMob `leagueId=51`：芬超完整赛季历史
+- FotMob `leagueId=67/57`：瑞超、荷甲完整赛季历史
+- FotMob `leagueId=10216/10615`：欧协联正赛和资格赛完整赛季历史
+- FotMob `leagueId=40/149/164/69/8814`：比甲、比利时杯、瑞士杯、瑞士超和巴乙完整赛季历史
+- FotMob `leagueId=271/270/126/182/183/176/177`：保杯、保超、爱超、塞超、塞杯、斯洛伐超和斯洛伐杯完整赛季历史
+- FotMob `leagueId=229/9527/250/9523/232/215/217/116`：卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超完整赛季历史
 - Futbol24 `league_id=472`：ESPN 未覆盖的俱乐部友谊赛
 - Futbol24 `league_id=525`：阿塞杯历史和近期比赛
 - Futbol24 `league_id=322`：芬超完整赛季历史和近期比赛
@@ -90,12 +97,13 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - Futbol24 `league_id=26`：克甲完整赛季历史和近期比赛
 - Futbol24 `league_id=75`：塞浦甲完整赛季历史和近期比赛
 - Futbol24 `league_id=269`：哈萨超完整赛季历史和近期比赛
+- Futbol24 `league_id=70/534/868/291`：威联杯、塞杯、卢森杯和法罗杯完整赛季历史及近期比赛
 - PFL 官方 `games/show/{id}`：阿塞杯第一资格轮和阿塞超升降级附加赛的核验赛果
 - Sofascore `tournamentId=853`：Futbol24 不可用时的俱乐部友谊赛降级来源
 
-阿塞超、阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超等可信固定联赛按整项赛事进入运行时缓存，即使新升班马暂时没有映射也不会被丢弃；开放式俱乐部友谊赛仍要求至少一方能映射到系统球队。已映射球队使用统一名称，未被体彩收录的低级别或预备队对手保留数据源官方名称并写入自映射。国家队和俱乐部补充源使用内部赛事代码，不会改变前端 15 类赛事加“全部”的下拉选项。
+上述 FotMob、Futbol24 可信固定联赛和杯赛按整项赛事进入运行时缓存，即使新升班马暂时没有映射也不会被丢弃；开放式俱乐部友谊赛仍要求至少一方能映射到系统球队。已映射球队使用统一名称，未被体彩收录的低级别或预备队对手保留数据源官方名称并写入自映射。国家队和俱乐部补充源使用内部赛事代码，不会改变前端 15 类赛事加“全部”的下拉选项。
 
-所有成功结果都会缓存到 `config/club-competition-schedules.json`；点击“更新数据”时，常规赛程和俱乐部杯赛等补充赛事统一按 `data-refresh.days-back` 回溯，默认只补取过去 30 天，窗口外历史缓存继续保留。2014-10-22 起的长期历史由 `historical_matches.csv` 提供。服务启动时读取已有补充缓存，只有点击“更新数据”或调用刷新接口时才主动请求补充远程源。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 和 `data-refresh` 节点。
+所有成功结果都会缓存到 `config/club-competition-schedules.json`；点击“更新数据”时，常规赛程和俱乐部杯赛等补充赛事统一回溯过去 30 天并读取未来 7 天，窗口外历史缓存继续保留。2014-10-22 起的长期历史由 `historical_matches.csv` 提供。服务启动时读取已有补充缓存，只有点击“更新数据”或调用刷新接口时才主动请求补充远程源。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 和 `data-refresh` 节点。
 
 ## 全场比分口径
 

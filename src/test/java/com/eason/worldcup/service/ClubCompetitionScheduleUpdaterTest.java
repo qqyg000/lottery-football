@@ -11,9 +11,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClubCompetitionScheduleUpdaterTest {
 
@@ -70,12 +72,33 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
-    void shouldUseThirtyDayRefreshWindow() {
+    void shouldUseThirtyDayLookbackAndSevenDayForwardWindow() {
         ReflectionTestUtils.setField(updater, "daysBack", 30);
+        ReflectionTestUtils.setField(updater, "daysForward", 7);
 
         assertEquals(
                 LocalDate.of(2026, 6, 22),
                 updater.resolveRefreshStartDate(LocalDate.of(2026, 7, 22)));
+        assertEquals(
+                LocalDate.of(2026, 7, 29),
+                updater.resolveRefreshEndDate(LocalDate.of(2026, 7, 22)));
+    }
+
+    @Test
+    void shouldFilterReplacedSeasonsFromImmutableSourceList() {
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        schedule.setMatchDate(LocalDate.of(2026, 7, 23));
+
+        List<MatchSchedule> filtered = updater.removeReplacedCachedSchedules(
+                List.of(schedule),
+                Set.of(new ClubCompetitionScheduleUpdater.CompetitionSeason(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        2026)),
+                LocalDate.of(2026, 6, 23),
+                LocalDate.of(2026, 8, 22));
+
+        assertTrue(filtered.isEmpty());
     }
 
     @Test
@@ -452,7 +475,11 @@ class ClubCompetitionScheduleUpdaterTest {
                 List.of("33", "丹麦杯"),
                 List.of("92", "匈甲"),
                 List.of("531", "匈牙利杯"),
-                List.of("26", "克甲"));
+                List.of("26", "克甲"),
+                List.of("70", "威联杯"),
+                List.of("534", "塞杯"),
+                List.of("868", "卢森杯"),
+                List.of("291", "法罗杯"));
 
         for (List<String> source : sources) {
             JsonNode match = objectMapper.readTree("""
@@ -477,6 +504,145 @@ class ClubCompetitionScheduleUpdaterTest {
             assertEquals(2, schedule.getHomeScore());
             assertEquals(1, schedule.getAwayScore());
         }
+    }
+
+    @Test
+    void shouldParseRequestedFotMobCompetitionsWithoutReversingHomeAndAway() throws Exception {
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "id": 900001,
+                  "round": "3",
+                  "home": { "longName": "Home Team" },
+                  "away": { "longName": "Away Team" },
+                  "status": {
+                    "utcTime": "2026-07-18T14:00:00Z",
+                    "finished": true,
+                    "cancelled": false,
+                    "scoreStr": "2 - 1"
+                  }
+                }
+                """);
+        List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources = List.of(
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "67", "瑞超", true),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.EREDIVISIE, "57", "荷甲", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "10216", "欧协联", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "10615", "欧协联资格赛", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "40", "比甲", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "149", "比利时杯", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "164", "瑞士杯", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "69", "瑞士超", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "8814", "巴乙", true),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "271", "保杯", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "270", "保超", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "126", "爱超", true),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "182", "塞超", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "183", "塞杯", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "176", "斯洛伐超", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "177", "斯洛伐杯", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "229", "卢森联", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "9527", "卢森杯", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "250", "法罗超", true),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "9523", "法罗杯", true),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "232", "黑山甲", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "215", "冰超", true),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "217", "冰岛杯", true),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "116", "威尔士超", false));
+
+        for (ClubCompetitionScheduleUpdater.FotMobLeagueSource source : sources) {
+            MatchSchedule schedule = updater.parseFotMobLeagueMatch(
+                    match,
+                    source,
+                    ZoneId.of("Asia/Shanghai"));
+
+            assertNotNull(schedule, source.sourceCompetition());
+            assertTrue(schedule.getGroupName().startsWith(source.sourceCompetition()));
+            assertEquals("Home Team", schedule.getHomeTeamCn());
+            assertEquals("Away Team", schedule.getAwayTeamCn());
+            assertEquals(2, schedule.getHomeScore());
+            assertEquals(1, schedule.getAwayScore());
+        }
+    }
+
+    @Test
+    void shouldDisambiguateBrazilianAthleticClubFromAthleticBilbao() throws Exception {
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "id": "5190441",
+                  "home": {"longName": "Athletic Club"},
+                  "away": {"longName": "Ponte Preta"},
+                  "status": {
+                    "utcTime": "2026-03-23T22:00:00.000Z",
+                    "finished": true,
+                    "scoreStr": "2 - 1"
+                  }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFotMobLeagueMatch(
+                match,
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "8814",
+                        "巴乙",
+                        true),
+                ZoneId.of("Asia/Shanghai"));
+
+        assertEquals("竞技俱乐部MG", schedule.getHomeTeamCn());
+        assertEquals("Athletic Club (MG)", schedule.getHomeTeamEn());
+        assertEquals("庞普雷塔", schedule.getAwayTeamCn());
+    }
+
+    @Test
+    void shouldKeepPreRenameLitexMatchesSeparateFromCskaSofia() throws Exception {
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "id": "1940759",
+                  "home": {"id": "10127", "longName": "CSKA Sofia"},
+                  "away": {"id": "10128", "longName": "PFC Lokomotiv Sofia 1929"},
+                  "status": {
+                    "utcTime": "2015-04-20T17:00:00.000Z",
+                    "finished": true,
+                    "scoreStr": "0 - 1"
+                  }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFotMobLeagueMatch(
+                match,
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "270",
+                        "保超",
+                        false),
+                ZoneId.of("Asia/Shanghai"));
+
+        assertEquals("利特克斯", schedule.getHomeTeamCn());
+        assertEquals("Litex Lovech", schedule.getHomeTeamEn());
+        assertEquals("PFC Lokomotiv Sofia 1929", schedule.getAwayTeamCn());
     }
 
     @Test

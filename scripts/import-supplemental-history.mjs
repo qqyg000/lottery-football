@@ -191,6 +191,176 @@ const FOTMOB_LEAGUE_SOURCES = [
     matchType: 'OFFICIAL',
     sourceCompetition: '芬超',
     calendarYearSeason: true
+  },
+  {
+    leagueId: '67',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '瑞超',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '57',
+    competition: 'EREDIVISIE',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '荷甲',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '10216',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '欧协联',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2021
+  },
+  {
+    leagueId: '10615',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '欧协联资格赛',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2021
+  },
+  {
+    leagueId: '40',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '比甲',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '149',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '比利时杯',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '164',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '瑞士杯',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '69',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '瑞士超',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '8814',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '巴乙',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '271',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '保杯',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '270',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '保超',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '126',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '爱超',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '182',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '塞超',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '183',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '塞杯',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '176',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '斯洛伐超',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '177',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '斯洛伐杯',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '229',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '卢森联',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '9527',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '卢森杯',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '250',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '法罗超',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '9523',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '法罗杯',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '232',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '黑山甲',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '215',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '冰超',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '217',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '冰岛杯',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '116',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '威尔士超',
+    calendarYearSeason: false
   }
 ]
 
@@ -334,6 +504,38 @@ const FUTBOL24_SOURCES = [
     matchType: 'OFFICIAL',
     sourceCompetition: '哈萨超',
     seasonPath: 'national/Kazakhstan/Super-League',
+    crossYearSeason: false
+  },
+  {
+    leagueId: '70',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '威联杯',
+    seasonPath: 'national/Wales/League-Cup',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '534',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '塞杯',
+    seasonPath: 'national/Serbia/Kup',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '868',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '卢森杯',
+    seasonPath: 'national/Luxemburg/Coupe-de-Luxembourg',
+    crossYearSeason: true
+  },
+  {
+    leagueId: '291',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '法罗杯',
+    seasonPath: 'national/Faroe-Islands/Logmanssteypid',
     crossYearSeason: false
   }
 ]
@@ -715,6 +917,14 @@ function mappedNameSource(sourceName, mappings, competition) {
   return mappedNameEntry(sourceName, mappings, competition)?.source ?? null
 }
 
+function disambiguateSourceTeamName(sourceRow, teamName) {
+  if (sourceRow.source === 'FOTMOB-8814'
+      && canonicalName(teamName) === 'ATHLETICCLUB') {
+    return 'Athletic Club (MG)'
+  }
+  return teamName
+}
+
 function extraTimeGoalCounts(goalRows) {
   const counts = new Map()
   for (const row of goalRows) {
@@ -1093,7 +1303,10 @@ function fotMobSeasonRequests(options) {
   const lastYear = Number(options.maxDate.slice(0, 4))
   for (const source of FOTMOB_LEAGUE_SOURCES
     .filter(item => sourceSelected(options, `FOTMOB-${item.leagueId}`))) {
-    const sourceFirstYear = source.calendarYearSeason ? firstYear : firstYear - 1
+    const sourceFirstYear = Math.max(
+      source.calendarYearSeason ? firstYear : firstYear - 1,
+      source.firstSeasonStartYear ?? Number.MIN_SAFE_INTEGER
+    )
     for (let seasonStartYear = sourceFirstYear; seasonStartYear <= lastYear; seasonStartYear += 1) {
       requests.push({ source, seasonStartYear })
     }
@@ -1138,9 +1351,18 @@ function parseFotMobRows(json, source) {
       continue
     }
     const scoreMatch = String(match?.status?.scoreStr ?? '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/)
-    const homeTeam = String(match?.home?.longName ?? match?.home?.name ?? match?.home?.shortName ?? '').trim()
-    const awayTeam = String(match?.away?.longName ?? match?.away?.name ?? match?.away?.shortName ?? '').trim()
     const matchDate = shanghaiDate(match?.status?.utcTime)
+    const sourceTeamName = team => {
+      const rawName = String(team?.longName ?? team?.name ?? team?.shortName ?? '').trim()
+      if (source.leagueId === '270'
+          && String(team?.id ?? '') === '10127'
+          && matchDate < '2016-06-06') {
+        return 'Litex Lovech'
+      }
+      return rawName
+    }
+    const homeTeam = sourceTeamName(match?.home)
+    const awayTeam = sourceTeamName(match?.away)
     if (!scoreMatch || !homeTeam || !awayTeam || !matchDate) {
       continue
     }
@@ -2119,16 +2341,20 @@ for (const sourceRow of sourceRows) {
 
   const national = sourceRow.provider === 'INTL'
   const mappings = national ? nationalMappings : clubMappings
-  const mappedHomeTeam = mappedChineseName(sourceRow.homeTeam, mappings, sourceRow.competition)
-  const mappedAwayTeam = mappedChineseName(sourceRow.awayTeam, mappings, sourceRow.competition)
+  const sourceHomeTeam = disambiguateSourceTeamName(sourceRow, sourceRow.homeTeam)
+  const sourceAwayTeam = disambiguateSourceTeamName(sourceRow, sourceRow.awayTeam)
+  const mappedHomeTeam = mappedChineseName(sourceHomeTeam, mappings, sourceRow.competition)
+  const mappedAwayTeam = mappedChineseName(sourceAwayTeam, mappings, sourceRow.competition)
   const targets = national ? targetNationalTeams : targetClubTeams
   const homeIsTarget = mappedHomeTeam && targets.has(canonicalChineseName(mappedHomeTeam))
   const awayIsTarget = mappedAwayTeam && targets.has(canonicalChineseName(mappedAwayTeam))
   const importsWholeCompetition = sourceRow.provider === 'FUTBOL24'
       && ['15', '26', '28', '33', '51', '75', '92', '107', '133', '269', '297',
-        '322', '324', '525', '531', '537']
+        '291', '322', '324', '525', '531', '534', '537', '70', '868']
         .includes(String(sourceRow.source).replace('FUTBOL24-', ''))
-    || sourceRow.provider === 'FOTMOB' && ['FOTMOB-51', 'FOTMOB-262'].includes(sourceRow.source)
+    || sourceRow.provider === 'FOTMOB' && FOTMOB_LEAGUE_SOURCES.some(
+      source => `FOTMOB-${source.leagueId}` === sourceRow.source
+    )
     || sourceRow.provider === 'ESPN' && sourceRow.source === 'ESPN-bra.1'
     || sourceRow.provider === 'PFL'
   if (!importsWholeCompetition && !homeIsTarget && !awayIsTarget) {
@@ -2139,8 +2365,8 @@ for (const sourceRow of sourceRows) {
     summary.unmappedRows += 1
     continue
   }
-  const homeTeam = mappedHomeTeam ?? String(sourceRow.homeTeam ?? '').trim()
-  const awayTeam = mappedAwayTeam ?? String(sourceRow.awayTeam ?? '').trim()
+  const homeTeam = mappedHomeTeam ?? String(sourceHomeTeam ?? '').trim()
+  const awayTeam = mappedAwayTeam ?? String(sourceAwayTeam ?? '').trim()
   if (!homeTeam || !awayTeam) {
     summary.unmappedRows += 1
     for (const [sourceName, mappedName] of [
