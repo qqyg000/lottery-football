@@ -604,6 +604,32 @@ const VERIFIED_SPORTTERY_ENGLISH_ALIASES = [
 ]
 
 const REQUESTED_DOMESTIC_COMPETITION_ALIASES = [
+  ['安养FC', 'FC Anyang', 'VERIFIED_SPORTTERY'],
+  ['城南FC', 'Seongnam FC'],
+  ['大邱FC', 'Daegu FC'],
+  ['大田市民', 'Daejeon Hana Citizen', 'VERIFIED_SPORTTERY'],
+  ['釜山偶像', "Busan I'Park"],
+  ['富川FC', 'Bucheon FC 1995', 'VERIFIED_SPORTTERY'],
+  ['光州FC', 'Gwangju FC', 'VERIFIED_SPORTTERY'],
+  ['济州SK', 'Jeju SK', 'VERIFIED_SPORTTERY'],
+  ['济州SK', 'Jeju United'],
+  ['济州SK', '济州联'],
+  ['江原FC', 'Gangwon FC', 'VERIFIED_SPORTTERY'],
+  ['金泉尚武', 'Gimcheon Sangmu', 'VERIFIED_SPORTTERY'],
+  ['金泉尚武', 'Sangju Sangmu'],
+  ['浦项制铁', 'Pohang Steelers', 'VERIFIED_SPORTTERY'],
+  ['庆南FC', 'Gyeongnam FC'],
+  ['全北现代', 'Jeonbuk Hyundai Motors FC', 'VERIFIED_SPORTTERY'],
+  ['全南天龙', 'Jeonnam Dragons'],
+  ['仁川联', 'Incheon United', 'VERIFIED_SPORTTERY'],
+  ['仁川联', 'Incheon', 'VERIFIED_ALIAS'],
+  ['首尔FC', 'FC Seoul', 'VERIFIED_SPORTTERY'],
+  ['首尔FC', 'Seoul', 'VERIFIED_ALIAS'],
+  ['水原FC', 'Suwon FC'],
+  ['水原三星', 'Suwon Samsung Bluewings'],
+  ['蔚山现代', 'Ulsan HD FC', 'VERIFIED_SPORTTERY'],
+  ['蔚山现代', 'Ulsan HD', 'VERIFIED_ALIAS'],
+  ['蔚山现代', 'Ulsan Hyundai'],
   ['埃克纳斯', 'EIF Ekenas'],
   ['洪卡', 'FC Honka Espoo'],
   ['拉赫蒂', 'FC Lahti', 'VERIFIED_SPORTTERY'],
@@ -968,6 +994,20 @@ function addHistoricalMatchNames(historyRows, rowsByKey) {
   }
 }
 
+function selectableCompetition(sourceCompetition, fallback) {
+  const sourceName = String(sourceCompetition ?? '').trim()
+  if (sourceName.startsWith('瑞超') || sourceName.startsWith('瑞典超')) {
+    return 'SWEDISH_ALLSVENSKAN'
+  }
+  if (sourceName.startsWith('芬超')) {
+    return 'FINNISH_VEIKKAUSLIIGA'
+  }
+  if (sourceName.startsWith('韩职') || sourceName.startsWith('韩国职业联赛')) {
+    return 'K_LEAGUE_1'
+  }
+  return fallback
+}
+
 function addPreservedMappings(rowsByKey, existingRows) {
   for (const row of existingRows) {
     const key = `${row.competition}|${canonicalName(row.alias_team_name)}`
@@ -1235,13 +1275,22 @@ const [
   Promise.all(supplementalOddsPaths.map(supplementalPath => fs.readFile(supplementalPath, 'utf8'))),
   Promise.all(supplementalMappingPaths.map(supplementalPath => fs.readFile(supplementalPath, 'utf8')))
 ])
-const historyRows = parseCsv(historyText)
+const historyRows = parseCsv(historyText).map(row => ({
+  ...row,
+  competition: selectableCompetition(row.source_competition, row.competition)
+}))
 const oddsRows = parseCsv(oddsText)
 const supplementalOddsRows = supplementalOddsTexts.flatMap(parseCsv)
 const supplementalMappingRows = supplementalMappingTexts.flatMap(parseCsv)
 const existingRows = existingMappingText ? parseCsv(existingMappingText) : []
-const clubSchedules = JSON.parse(clubSchedulesText)
-const sportteryEntries = JSON.parse(sportteryCacheText).entries ?? []
+const clubSchedules = JSON.parse(clubSchedulesText).map(schedule => ({
+  ...schedule,
+  competition: selectableCompetition(schedule.groupName, schedule.competition)
+}))
+const sportteryEntries = (JSON.parse(sportteryCacheText).entries ?? []).map(entry => ({
+  ...entry,
+  competition: selectableCompetition(entry.leagueName, entry.competition)
+}))
 const rowsByKey = new Map()
 buildOddsMappings([...supplementalOddsRows, ...oddsRows], rowsByKey)
 addPreservedMappings(rowsByKey, supplementalMappingRows)

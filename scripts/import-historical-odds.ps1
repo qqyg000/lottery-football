@@ -24,13 +24,15 @@ $competitionByLeague = @{
     "欧冠" = "CHAMPIONS_LEAGUE"
     "英超" = "PREMIER_LEAGUE"
     "西甲" = "LA_LIGA"
-    "意甲" = "SERIE_A"
     "德甲" = "BUNDESLIGA"
+    "意甲" = "SERIE_A"
     "法甲" = "LIGUE_1"
-    "巴甲" = "BRAZIL_SERIE_A"
     "葡超" = "PRIMEIRA_LIGA"
     "荷甲" = "EREDIVISIE"
     "阿甲" = "ARGENTINE_PRIMERA_DIVISION"
+    "瑞超" = "SWEDISH_ALLSVENSKAN"
+    "芬超" = "FINNISH_VEIKKAUSLIIGA"
+    "韩职" = "K_LEAGUE_1"
 }
 
 $supportedCompetitions = [Collections.Generic.HashSet[string]]::new(

@@ -1,8 +1,9 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import {
   calculateFlatStakeBacktest,
+  calculateMinimumCoveredMatchCount,
   calculateSamplingRate
 } from '../frontend/src/backtest-roi.mjs'
 
@@ -18,9 +19,16 @@ const MODEL_FACTOR_MIN = 0.1
 const MODEL_FACTOR_MAX = 3
 const SMOOTHING_MIN = 0
 const SMOOTHING_MAX = 0.8
+const MATCH_TYPE_WEIGHT_MIN = 0
+const MATCH_TYPE_WEIGHT_MAX = 1
+const OFFICIAL_MATCH_WEIGHT_MIN = 1
+const OFFICIAL_MATCH_WEIGHT_MAX = 3
+const DEFAULT_OFFICIAL_MATCH_WEIGHT = 1
+const DEFAULT_INTERNATIONAL_FRIENDLY_WEIGHT = 0.5
+const DEFAULT_CLUB_FRIENDLY_WEIGHT = 0.3
 const ROI_EPSILON = 1e-12
-const DEFAULT_MINIMUM_STABLE_SAMPLING_RATE = 0.8
-const DEFAULT_MINIMUM_AGGRESSIVE_SAMPLING_RATE = 0.6
+const DEFAULT_MINIMUM_STABLE_SAMPLING_RATE = 0.666
+const DEFAULT_MINIMUM_AGGRESSIVE_SAMPLING_RATE = 0.5
 const PARAMETER_PRESETS = ['STABLE', 'AGGRESSIVE']
 const DEFAULT_OPTIMIZED_PARAMETER_PRESETS = PARAMETER_PRESETS
 
@@ -33,13 +41,15 @@ const COMPETITIONS = [
   { code: 'CHAMPIONS_LEAGUE', name: '欧冠', currentStartDate: '2026-07-07' },
   { code: 'PREMIER_LEAGUE', name: '英超', currentStartDate: '2026-08-21' },
   { code: 'LA_LIGA', name: '西甲', currentStartDate: '2026-08-15' },
-  { code: 'SERIE_A', name: '意甲', currentStartDate: '2026-08-22' },
   { code: 'BUNDESLIGA', name: '德甲', currentStartDate: '2026-08-28' },
+  { code: 'SERIE_A', name: '意甲', currentStartDate: '2026-08-22' },
   { code: 'LIGUE_1', name: '法甲', currentStartDate: '2026-08-20' },
-  { code: 'BRAZIL_SERIE_A', name: '巴甲', currentStartDate: '2026-01-28' },
   { code: 'PRIMEIRA_LIGA', name: '葡超', currentStartDate: '2026-08-07' },
   { code: 'EREDIVISIE', name: '荷甲', currentStartDate: '2026-08-07' },
-  { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲', currentStartDate: '2026-01-25' }
+  { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲', currentStartDate: '2026-01-25' },
+  { code: 'SWEDISH_ALLSVENSKAN', name: '瑞超', currentStartDate: '2026-04-04' },
+  { code: 'FINNISH_VEIKKAUSLIIGA', name: '芬超', currentStartDate: '2026-04-04' },
+  { code: 'K_LEAGUE_1', name: '韩职', currentStartDate: '2026-02-28' }
 ]
 
 const argumentsMap = new Map(
@@ -55,6 +65,7 @@ const quickCandidateCount = numberArgument('quick-candidates', 2500, 100, 100000
 const refineCandidateCount = numberArgument('refine-candidates', 5000, 100, 200000)
 const finalCandidateCount = numberArgument('final-candidates', 60000, 1000, 1000000)
 const applyResults = argumentsMap.get('apply') !== 'false'
+const resetProfiles = argumentsMap.get('reset-profiles') === 'true'
 const requestedProfile = argumentsMap.get('profile') || ''
 const verifyOnly = argumentsMap.get('verify-only') === 'true'
 const verboseRequests = argumentsMap.get('verbose-requests') === 'true'
@@ -76,10 +87,21 @@ const minimumAggressiveSamplingRate = decimalArgument(
 const minimumRoi = decimalArgument('minimum-roi', -1, -1, 10)
 const fineTuneRatio = decimalArgument('fine-tune-ratio', 0, 0, 0.5)
 const fineTuneEnabled = fineTuneRatio > 0
+const samplingRateTolerance = decimalArgument('sampling-rate-tolerance', 0, 0, 1)
+const unconstrainedSamplingProfiles = new Set(
+  String(argumentsMap.get('unconstrained-sampling-profiles') || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean)
+)
+const verificationBaselineReportPath = argumentsMap.has('baseline-report')
+  ? path.resolve(argumentsMap.get('baseline-report'))
+  : REPORT_PATH
 const optimizationPriority = argumentsMap.get('priority') === 'sampling-rate'
   ? 'SAMPLING_RATE'
   : 'ROI'
 const requestCache = new Map()
+let activeModelWeightKey = ''
 
 function numberArgument(name, fallback, minimum, maximum) {
   const value = Number(argumentsMap.get(name))
@@ -240,17 +262,22 @@ function prepareMatches(matches) {
   return (matches || []).map(match => {
     const handicap = Number(match.sportteryHandicap)
     const score = parseScore(match.scoreText)
+    const normalOdds = toOddsArray(match.sportteryNormalOdds)
+    const handicapOdds = toOddsArray(match.sportteryHandicapOdds)
     return {
       matchId: match.matchId,
       matchDate: match.matchDate,
       competition: match.competition,
-      normalAvailable: match.sportteryNormalAvailable === true,
-      handicapAvailable: Number.isInteger(handicap) && handicap !== 0,
+      normalAvailable: match.sportteryNormalAvailable === true &&
+        normalOdds.some(value => value !== null),
+      handicapAvailable: Number.isInteger(handicap) &&
+        handicap !== 0 &&
+        handicapOdds.some(value => value !== null),
       handicap,
       normalProbability: toProbabilityArray(match.adjustedNormalProbability),
       rawHandicapProbability: findHandicapProbability(match),
-      normalOdds: toOddsArray(match.sportteryNormalOdds),
-      handicapOdds: toOddsArray(match.sportteryHandicapOdds),
+      normalOdds,
+      handicapOdds,
       normalActualIndex: actualProbabilityIndex(score, 0),
       handicapActualIndex: actualProbabilityIndex(score, handicap)
     }
@@ -390,13 +417,13 @@ function evaluate(matches, parameters) {
     recommendedSelectionCount,
     recommendedMatchCount
   )
-  const totalMatchCount = Math.max(
+  const oddsMatchCount = Math.max(
     matches.length,
-    Number(matches.totalMatchCount) || 0
+    Number(matches.oddsMatchCount) || 0
   )
   return {
-    sampleCount: totalMatchCount,
-    samplingRate: calculateSamplingRate(recommendedMatchCount, totalMatchCount),
+    sampleCount: oddsMatchCount,
+    samplingRate: calculateSamplingRate(recommendedMatchCount, oddsMatchCount),
     recommendedMatchCount,
     recommendedSelectionCount,
     hitMatchCount,
@@ -412,39 +439,129 @@ function evaluate(matches, parameters) {
   }
 }
 
-function minimumSamplingRateForPreset(preset, target = null) {
-  if (target?.range === 'PREVIOUS' && target.code === 'PREMIER_LEAGUE') {
-    return preset === 'AGGRESSIVE' ? 0.5 : 0.65
-  }
-  if (target?.range === 'PREVIOUS' && target.code === 'LIGUE_1') {
-    return preset === 'AGGRESSIVE' ? 0.5 : 0.666
-  }
+function minimumSamplingRateForPreset(preset) {
   return preset === 'AGGRESSIVE' ? minimumAggressiveSamplingRate : minimumStableSamplingRate
 }
 
-function minimumRecommendedMatches(sampleCount, minimumSamplingRateInclusive) {
+function minimumRecommendedMatches(sampleCount, minimumSamplingRate, exclusive) {
   if (sampleCount <= 0) {
     return 0
   }
-  return Math.ceil(sampleCount * minimumSamplingRateInclusive - ROI_EPSILON)
+  return exclusive
+    ? calculateMinimumCoveredMatchCount(sampleCount, minimumSamplingRate)
+    : Math.ceil(sampleCount * minimumSamplingRate - ROI_EPSILON)
 }
 
-function createObjective(preset, target = null) {
-  const minimumSamplingRateInclusive = minimumSamplingRateForPreset(preset, target)
+function maximumRecommendedMatches(sampleCount, maximumSamplingRate) {
+  if (sampleCount <= 0) {
+    return 0
+  }
+  return Math.floor(sampleCount * maximumSamplingRate + ROI_EPSILON)
+}
+
+function buildObjective({
+  preset,
+  minimumSamplingRateInclusive,
+  maximumSamplingRateInclusive = 1,
+  samplingRateExclusive = false,
+  samplingRatePolicy = 'MINIMUM',
+  baselineSamplingRate = null
+}) {
   return {
     preset,
     minimumSamplingRateInclusive,
+    maximumSamplingRateInclusive,
+    samplingRateExclusive,
+    samplingRatePolicy,
+    baselineSamplingRate,
     minimumRoiInclusive: minimumRoi,
     priority: optimizationPriority,
+    canReachSamplingRate(maximumSamplingRate) {
+      if (samplingRatePolicy === 'NONE') {
+        return true
+      }
+      if (maximumSamplingRate === null || !Number.isFinite(maximumSamplingRate)) {
+        return false
+      }
+      return samplingRateExclusive
+        ? maximumSamplingRate > minimumSamplingRateInclusive + ROI_EPSILON
+        : maximumSamplingRate + ROI_EPSILON >= minimumSamplingRateInclusive
+    },
+    isSamplingRateSatisfied(samplingRate) {
+      if (samplingRate === null || !Number.isFinite(samplingRate)) {
+        return false
+      }
+      if (samplingRatePolicy === 'NONE') {
+        return true
+      }
+      const lowerBoundSatisfied = samplingRateExclusive
+        ? samplingRate > minimumSamplingRateInclusive + ROI_EPSILON
+        : samplingRate + ROI_EPSILON >= minimumSamplingRateInclusive
+      return lowerBoundSatisfied &&
+        samplingRate <= maximumSamplingRateInclusive + ROI_EPSILON
+    },
     isEligible(metrics) {
       return metrics.recommendedMatchCount > 0 &&
         metrics.hitMatchCount > 0 &&
-        metrics.samplingRate !== null &&
-        metrics.samplingRate + ROI_EPSILON >= minimumSamplingRateInclusive &&
+        this.isSamplingRateSatisfied(metrics.samplingRate) &&
         Number.isFinite(metrics.roi) &&
         metrics.roi + ROI_EPSILON >= minimumRoi
     }
   }
+}
+
+function createObjective(preset, target = null) {
+  const minimumSamplingRateInclusive = minimumSamplingRateForPreset(preset)
+  const samplingRateExclusive = preset === 'STABLE'
+  const key = target ? profileKey(target.code, target.range, preset) : ''
+  if (unconstrainedSamplingProfiles.has(key)) {
+    return buildObjective({
+      preset,
+      minimumSamplingRateInclusive: 0,
+      samplingRatePolicy: 'NONE'
+    })
+  }
+  return buildObjective({
+    preset,
+    minimumSamplingRateInclusive,
+    samplingRateExclusive
+  })
+}
+
+function withSamplingRateTolerance(objective, baselineSamplingRate) {
+  if (samplingRateTolerance <= 0 ||
+      objective.samplingRatePolicy === 'NONE' ||
+      baselineSamplingRate === null ||
+      !Number.isFinite(baselineSamplingRate)) {
+    return objective
+  }
+  return buildObjective({
+    preset: objective.preset,
+    minimumSamplingRateInclusive: Math.max(0, baselineSamplingRate - samplingRateTolerance),
+    maximumSamplingRateInclusive: Math.min(1, baselineSamplingRate + samplingRateTolerance),
+    samplingRatePolicy: 'BAND',
+    baselineSamplingRate
+  })
+}
+
+function samplingRateConstraintLabel(objective) {
+  if (objective.samplingRatePolicy === 'NONE') {
+    return '不限制'
+  }
+  if (objective.samplingRatePolicy === 'BAND') {
+    return `${(objective.minimumSamplingRateInclusive * 100).toFixed(2)}%` +
+      ` ~ ${(objective.maximumSamplingRateInclusive * 100).toFixed(2)}%`
+  }
+  const operator = objective.samplingRateExclusive ? '>' : '>='
+  return `${operator} ${(objective.minimumSamplingRateInclusive * 100).toFixed(1)}%`
+}
+
+function maximumPossibleSamplingRate(matches) {
+  const oddsMatchCount = Math.max(
+    matches.length,
+    Number(matches.oddsMatchCount) || 0
+  )
+  return calculateSamplingRate(matches.length, oddsMatchCount)
 }
 
 function isBetter(left, right, objective) {
@@ -505,15 +622,51 @@ function observedOdds(matches) {
 }
 
 function normalizeParameters(parameters) {
+  function finiteValue(value, fallback) {
+    const numberValue = Number(value)
+    return Number.isFinite(numberValue) ? numberValue : fallback
+  }
+
   return {
-    hostTeamGoalFactor: round(clamp(Number(parameters.hostTeamGoalFactor), MODEL_FACTOR_MIN, MODEL_FACTOR_MAX), 2),
-    homeTeamGoalFactor: round(clamp(Number(parameters.homeTeamGoalFactor), MODEL_FACTOR_MIN, MODEL_FACTOR_MAX), 2),
-    seedTeamGoalFactor: round(clamp(Number(parameters.seedTeamGoalFactor), MODEL_FACTOR_MIN, MODEL_FACTOR_MAX), 2),
-    handicapSmoothingFactor: round(clamp(Number(parameters.handicapSmoothingFactor), SMOOTHING_MIN, SMOOTHING_MAX), 3),
-    recommendationOdds: round(clamp(Number(parameters.recommendationOdds), 1, 100), 2),
-    handicapRecommendationThreshold: round(clamp(Number(parameters.handicapRecommendationThreshold), 0, 100), 2),
-    handicapReverseThreshold: round(clamp(Number(parameters.handicapReverseThreshold), 0, 100), 2),
-    singleRecommendationThreshold: round(clamp(Number(parameters.singleRecommendationThreshold), 0, 100), 2)
+    hostTeamGoalFactor: round(clamp(finiteValue(parameters.hostTeamGoalFactor, 1.1), MODEL_FACTOR_MIN, MODEL_FACTOR_MAX), 2),
+    homeTeamGoalFactor: round(clamp(finiteValue(parameters.homeTeamGoalFactor, 1.06), MODEL_FACTOR_MIN, MODEL_FACTOR_MAX), 2),
+    seedTeamGoalFactor: round(clamp(finiteValue(parameters.seedTeamGoalFactor, 1.85), MODEL_FACTOR_MIN, MODEL_FACTOR_MAX), 2),
+    officialMatchWeight: round(clamp(
+      finiteValue(parameters.officialMatchWeight, DEFAULT_OFFICIAL_MATCH_WEIGHT),
+      OFFICIAL_MATCH_WEIGHT_MIN,
+      OFFICIAL_MATCH_WEIGHT_MAX
+    ), 2),
+    internationalFriendlyWeight: round(clamp(
+      finiteValue(parameters.internationalFriendlyWeight, DEFAULT_INTERNATIONAL_FRIENDLY_WEIGHT),
+      MATCH_TYPE_WEIGHT_MIN,
+      MATCH_TYPE_WEIGHT_MAX
+    ), 2),
+    clubFriendlyWeight: round(clamp(
+      finiteValue(parameters.clubFriendlyWeight, DEFAULT_CLUB_FRIENDLY_WEIGHT),
+      MATCH_TYPE_WEIGHT_MIN,
+      MATCH_TYPE_WEIGHT_MAX
+    ), 2),
+    handicapSmoothingFactor: round(clamp(
+      finiteValue(parameters.handicapSmoothingFactor, 0.274),
+      SMOOTHING_MIN,
+      SMOOTHING_MAX
+    ), 3),
+    recommendationOdds: round(clamp(finiteValue(parameters.recommendationOdds, 1.03), 1, 100), 2),
+    handicapRecommendationThreshold: round(clamp(
+      finiteValue(parameters.handicapRecommendationThreshold, 68.16),
+      0,
+      100
+    ), 2),
+    handicapReverseThreshold: round(clamp(
+      finiteValue(parameters.handicapReverseThreshold, 46.78),
+      0,
+      100
+    ), 2),
+    singleRecommendationThreshold: round(clamp(
+      finiteValue(parameters.singleRecommendationThreshold, 71.72),
+      0,
+      100
+    ), 2)
   }
 }
 
@@ -531,6 +684,9 @@ function expandProfile(parameters) {
       hostTeamGoalFactor: normalized.hostTeamGoalFactor,
       homeTeamGoalFactor: normalized.homeTeamGoalFactor,
       seedTeamGoalFactor: normalized.seedTeamGoalFactor,
+      officialMatchWeight: normalized.officialMatchWeight,
+      internationalFriendlyWeight: normalized.internationalFriendlyWeight,
+      clubFriendlyWeight: normalized.clubFriendlyWeight,
       handicapSmoothingFactor: normalized.handicapSmoothingFactor
     },
     globalParameters: {
@@ -546,6 +702,9 @@ const FINE_TUNE_PARAMETER_SPECS = {
   hostTeamGoalFactor: { minimum: MODEL_FACTOR_MIN, maximum: MODEL_FACTOR_MAX, scale: 2, step: 0.01 },
   homeTeamGoalFactor: { minimum: MODEL_FACTOR_MIN, maximum: MODEL_FACTOR_MAX, scale: 2, step: 0.01 },
   seedTeamGoalFactor: { minimum: MODEL_FACTOR_MIN, maximum: MODEL_FACTOR_MAX, scale: 2, step: 0.01 },
+  officialMatchWeight: { minimum: OFFICIAL_MATCH_WEIGHT_MIN, maximum: OFFICIAL_MATCH_WEIGHT_MAX, scale: 2, step: 0.01 },
+  internationalFriendlyWeight: { minimum: MATCH_TYPE_WEIGHT_MIN, maximum: MATCH_TYPE_WEIGHT_MAX, scale: 2, step: 0.01 },
+  clubFriendlyWeight: { minimum: MATCH_TYPE_WEIGHT_MIN, maximum: MATCH_TYPE_WEIGHT_MAX, scale: 2, step: 0.01 },
   handicapSmoothingFactor: { minimum: SMOOTHING_MIN, maximum: SMOOTHING_MAX, scale: 3, step: 0.001 },
   recommendationOdds: { minimum: 1, maximum: 100, scale: 2, step: 0.01 },
   handicapRecommendationThreshold: { minimum: 0, maximum: 100, scale: 2, step: 0.05 },
@@ -650,7 +809,17 @@ function buildRandomCandidates(matches, modelFactors, center, count, seed, local
   const random = createRandom(seed)
   const allOdds = observedOdds(matches)
   const localOdds = allOdds.filter(value => Math.abs(value - center.recommendationOdds) <= 0.75)
-  const candidates = [normalizeParameters({ ...center, ...modelFactors })]
+  const candidates = [
+    normalizeParameters({ ...center, ...modelFactors }),
+    normalizeParameters({
+      ...modelFactors,
+      handicapSmoothingFactor: 0,
+      recommendationOdds: 1,
+      handicapRecommendationThreshold: 100,
+      handicapReverseThreshold: 0,
+      singleRecommendationThreshold: 0
+    })
+  ]
   for (let index = 0; index < count; index++) {
     const local = random() < localRatio
     const oddsValues = local && localOdds.length > 0 ? localOdds : allOdds
@@ -784,12 +953,16 @@ function fineTuneModelFactorCandidates(target, original) {
       homeTeamGoalFactor
     }))
   }
+  const officialMatchWeights = fineTuneValues(original, 'officialMatchWeight')
   return fineTuneValues(original, 'hostTeamGoalFactor').flatMap(hostTeamGoalFactor => {
-    return fineTuneValues(original, 'seedTeamGoalFactor').map(seedTeamGoalFactor => ({
-      ...original,
-      hostTeamGoalFactor,
-      seedTeamGoalFactor
-    }))
+    return fineTuneValues(original, 'seedTeamGoalFactor').flatMap(seedTeamGoalFactor => {
+      return officialMatchWeights.map(officialMatchWeight => ({
+        ...original,
+        hostTeamGoalFactor,
+        seedTeamGoalFactor,
+        officialMatchWeight
+      }))
+    })
   })
 }
 
@@ -847,6 +1020,41 @@ function localModelFactorValues(centers, radius = 0.25, step = 0.05) {
   }), 2)
 }
 
+function matchTypeWeightValues(center, values) {
+  return uniqueNumbers([center, ...values], 2)
+}
+
+function localMatchTypeWeightValues(center, radius = 0.1, step = 0.1) {
+  return uniqueNumbers([
+    center,
+    ...range(
+      Math.max(MATCH_TYPE_WEIGHT_MIN, center - radius),
+      Math.min(MATCH_TYPE_WEIGHT_MAX, center + radius),
+      step,
+      2
+    )
+  ], 2)
+}
+
+function officialMatchWeightValues(center, step = 0.5) {
+  return uniqueNumbers([
+    center,
+    ...range(OFFICIAL_MATCH_WEIGHT_MIN, OFFICIAL_MATCH_WEIGHT_MAX, step, 2)
+  ], 2)
+}
+
+function localOfficialMatchWeightValues(center, radius = 0.25, step = 0.05) {
+  return uniqueNumbers([
+    center,
+    ...range(
+      Math.max(OFFICIAL_MATCH_WEIGHT_MIN, center - radius),
+      Math.min(OFFICIAL_MATCH_WEIGHT_MAX, center + radius),
+      step,
+      2
+    )
+  ], 2)
+}
+
 async function fetchJson(url, options = {}) {
   let lastError = null
   for (let attempt = 1; attempt <= 4; attempt++) {
@@ -884,11 +1092,19 @@ async function fetchBacktest(target, factors, simulations) {
     simulations,
     normalizedFactors.hostTeamGoalFactor,
     normalizedFactors.homeTeamGoalFactor,
-    normalizedFactors.seedTeamGoalFactor
+    normalizedFactors.seedTeamGoalFactor,
+    normalizedFactors.officialMatchWeight,
+    normalizedFactors.internationalFriendlyWeight,
+    normalizedFactors.clubFriendlyWeight
   ].join('|')
   if (requestCache.has(cacheKey)) {
     return requestCache.get(cacheKey)
   }
+  const modelWeightKey = [
+    normalizedFactors.officialMatchWeight,
+    normalizedFactors.internationalFriendlyWeight,
+    normalizedFactors.clubFriendlyWeight
+  ].join('|')
   const url = new URL(BACKTEST_URL)
   url.searchParams.set('competition', target.code)
   url.searchParams.set('includePreviousEdition', String(target.includePreviousEdition))
@@ -896,10 +1112,25 @@ async function fetchBacktest(target, factors, simulations) {
   url.searchParams.set('hostTeamGoalFactor', normalizedFactors.hostTeamGoalFactor)
   url.searchParams.set('homeTeamGoalFactor', normalizedFactors.homeTeamGoalFactor)
   url.searchParams.set('seedTeamGoalFactor', normalizedFactors.seedTeamGoalFactor)
+  url.searchParams.set('officialMatchWeight', normalizedFactors.officialMatchWeight)
+  url.searchParams.set('internationalFriendlyWeight', normalizedFactors.internationalFriendlyWeight)
+  url.searchParams.set('clubFriendlyWeight', normalizedFactors.clubFriendlyWeight)
   url.searchParams.set('handicapSmoothingFactor', 0)
+  if (activeModelWeightKey !== modelWeightKey) {
+    url.searchParams.set('clearModelCacheBefore', 'true')
+  }
   const startedAt = Date.now()
   const response = await fetchJson(url)
+  activeModelWeightKey = modelWeightKey
   const prepared = prepareMatches(response.matches)
+  prepared.completedMatchCount = Math.max(
+    prepared.length,
+    Number(response.completedMatchCount) || 0
+  )
+  prepared.oddsMatchCount = Math.max(
+    prepared.length,
+    Number(response.oddsMatchCount) || 0
+  )
   prepared.totalMatchCount = Math.max(
     prepared.length,
     Number(response.completedMatchCount) || 0
@@ -909,6 +1140,8 @@ async function fetchBacktest(target, factors, simulations) {
     process.stderr.write(
       `${targetLabel(target)} ${simulations} 次模拟，模型因子 ` +
       `${normalizedFactors.hostTeamGoalFactor}/${normalizedFactors.homeTeamGoalFactor}/${normalizedFactors.seedTeamGoalFactor}，` +
+      `比赛权重 ${normalizedFactors.officialMatchWeight}/` +
+      `${normalizedFactors.internationalFriendlyWeight}/${normalizedFactors.clubFriendlyWeight}，` +
       `${prepared.length} 场，${((Date.now() - startedAt) / 1000).toFixed(1)} 秒\n`
     )
   }
@@ -979,9 +1212,115 @@ async function optimizeNonWorldCupFactors(target, original, seed, objective) {
     seed + 1000,
     objective
   )
+  let current = refinedRanked[0] || coarseRanked[0]
+  if (!current) {
+    return {
+      coarseTop: coarseRanked.slice(0, 5),
+      refinedTop: []
+    }
+  }
+
+  const allRefined = []
+  refinedRanked.forEach(result => {
+    addRankedResult(allRefined, result.candidate, result.metrics, objective, 8)
+  })
+
+  const officialFactors = officialMatchWeightValues(
+    current.candidate.officialMatchWeight
+  ).map(officialMatchWeight => ({
+    ...current.candidate,
+    officialMatchWeight
+  }))
+  const officialRanked = await rankFactorCandidates(
+    target,
+    current.candidate,
+    officialFactors,
+    refineSimulations,
+    refineCandidateCount,
+    seed + 2000,
+    objective
+  )
+  if (officialRanked[0]) {
+    current = officialRanked[0]
+  }
+  officialRanked.forEach(result => {
+    addRankedResult(allRefined, result.candidate, result.metrics, objective, 8)
+  })
+
+  const clubFriendlyFactors = matchTypeWeightValues(
+    current.candidate.clubFriendlyWeight,
+    [0, 0.15, 0.3, 0.5, 0.75, 1]
+  ).map(clubFriendlyWeight => ({
+    ...current.candidate,
+    clubFriendlyWeight
+  }))
+  const clubFriendlyRanked = await rankFactorCandidates(
+    target,
+    current.candidate,
+    clubFriendlyFactors,
+    refineSimulations,
+    refineCandidateCount,
+    seed + 3000,
+    objective
+  )
+  if (clubFriendlyRanked[0]) {
+    current = clubFriendlyRanked[0]
+  }
+  clubFriendlyRanked.forEach(result => {
+    addRankedResult(allRefined, result.candidate, result.metrics, objective, 8)
+  })
+
+  const localHomeFactors = localModelFactorValues(
+    [current.candidate.homeTeamGoalFactor],
+    0.15,
+    0.05
+  ).map(homeTeamGoalFactor => ({
+    ...current.candidate,
+    homeTeamGoalFactor
+  }))
+  const localHomeRanked = await rankFactorCandidates(
+    target,
+    current.candidate,
+    localHomeFactors,
+    refineSimulations,
+    refineCandidateCount,
+    seed + 4000,
+    objective
+  )
+  if (localHomeRanked[0]) {
+    current = localHomeRanked[0]
+  }
+  localHomeRanked.forEach(result => {
+    addRankedResult(allRefined, result.candidate, result.metrics, objective, 8)
+  })
+
+  const localOfficialWeights = localOfficialMatchWeightValues(
+    current.candidate.officialMatchWeight
+  )
+  const localClubFriendlyWeights = localMatchTypeWeightValues(current.candidate.clubFriendlyWeight)
+  const localWeightFactors = localOfficialWeights.flatMap(officialMatchWeight => {
+    return localClubFriendlyWeights.map(clubFriendlyWeight => ({
+      ...current.candidate,
+      officialMatchWeight,
+      clubFriendlyWeight
+    }))
+  })
+  const localWeightRanked = await rankFactorCandidates(
+    target,
+    current.candidate,
+    localWeightFactors,
+    refineSimulations,
+    refineCandidateCount,
+    seed + 5000,
+    objective
+  )
+  localWeightRanked.forEach(result => {
+    addRankedResult(allRefined, result.candidate, result.metrics, objective, 8)
+  })
+
   return {
     coarseTop: coarseRanked.slice(0, 5),
-    refinedTop: refinedRanked.slice(0, 3)
+    refinedTop: allRefined.slice(0, 5)
   }
 }
 
@@ -1040,13 +1379,29 @@ async function optimizeWorldCupFactors(target, original, seed, objective) {
     seed + 2000,
     objective
   )
+  const officialFactors = refinedRanked.slice(0, 3).flatMap(result => {
+    return officialMatchWeightValues(result.candidate.officialMatchWeight)
+      .map(officialMatchWeight => ({
+        ...result.candidate,
+        officialMatchWeight
+      }))
+  })
+  const officialRanked = await rankFactorCandidates(
+    target,
+    original,
+    officialFactors,
+    refineSimulations,
+    refineCandidateCount,
+    seed + 3000,
+    objective
+  )
   return {
     coarseTop: hostRanked.slice(0, 5),
-    refinedTop: refinedRanked.slice(0, 3)
+    refinedTop: (officialRanked.length > 0 ? officialRanked : refinedRanked).slice(0, 3)
   }
 }
 
-function chronologicalMetrics(matches, parameters, minimumSamplingRateInclusive) {
+function chronologicalMetrics(matches, parameters, objective) {
   const sorted = [...matches].sort((left, right) => {
     const dateOrder = String(left.matchDate).localeCompare(String(right.matchDate))
     return dateOrder || String(left.matchId).localeCompare(String(right.matchId))
@@ -1059,18 +1414,23 @@ function chronologicalMetrics(matches, parameters, minimumSamplingRateInclusive)
       period: index + 1,
       startDate: fold[0]?.matchDate || null,
       endDate: fold[fold.length - 1]?.matchDate || null,
-      metrics: printableMetrics(evaluate(fold, parameters), minimumSamplingRateInclusive)
+      metrics: printableMetrics(evaluate(fold, parameters), objective)
     }
   })
 }
 
-function printableMetrics(metrics, minimumSamplingRateInclusive) {
+function printableMetrics(metrics, objective) {
   return {
     sampleCount: metrics.sampleCount,
     samplingRate: metrics.samplingRate === null ? null : round(metrics.samplingRate * 100, 2),
     minimumRecommendedMatches: minimumRecommendedMatches(
       metrics.sampleCount,
-      minimumSamplingRateInclusive
+      objective.minimumSamplingRateInclusive,
+      objective.samplingRateExclusive
+    ),
+    maximumRecommendedMatches: maximumRecommendedMatches(
+      metrics.sampleCount,
+      objective.maximumSamplingRateInclusive
     ),
     recommendedMatchCount: metrics.recommendedMatchCount,
     recommendedSelectionCount: metrics.recommendedSelectionCount,
@@ -1087,10 +1447,10 @@ function printableMetrics(metrics, minimumSamplingRateInclusive) {
   }
 }
 
-function printableRanked(results, minimumSamplingRateInclusive) {
+function printableRanked(results, objective) {
   return results.map(result => ({
     parameters: result.candidate,
-    metrics: printableMetrics(result.metrics, minimumSamplingRateInclusive)
+    metrics: printableMetrics(result.metrics, objective)
   }))
 }
 
@@ -1100,24 +1460,43 @@ async function optimizeFineTunedProfile(target, preset, originalProfile, objecti
   const original = flattenProfile(originalProfile)
   const seed = stringSeed(key)
   const originalMatches = await fetchBacktest(scopedTarget, original, finalSimulations)
+  const maximumSamplingRate = maximumPossibleSamplingRate(originalMatches)
   if (originalMatches.length === 0) {
     return {
       key,
       competitionName: target.name,
       range: target.range,
       preset,
-      status: 'SKIPPED_NO_SAMPLES',
-      sampleCount: 0
+      status: maximumSamplingRate === null
+        ? 'SKIPPED_NO_SAMPLES'
+        : 'FAILED_INSUFFICIENT_ODDS_COVERAGE',
+      sampleCount: Number(originalMatches.totalMatchCount) || 0,
+      oddsMatchCount: 0,
+      maximumPossibleSamplingRate: maximumSamplingRate
+    }
+  }
+  const baselineMetrics = evaluate(originalMatches, original)
+  objective = withSamplingRateTolerance(objective, baselineMetrics.samplingRate)
+  if (!objective.canReachSamplingRate(maximumSamplingRate)) {
+    return {
+      key,
+      competitionName: target.name,
+      range: target.range,
+      preset,
+      status: 'FAILED_INSUFFICIENT_ODDS_COVERAGE',
+      sampleCount: Number(originalMatches.totalMatchCount) || originalMatches.length,
+      oddsMatchCount: originalMatches.length,
+      maximumPossibleSamplingRate: round(maximumSamplingRate * 100, 2),
+      requiredSamplingRate: samplingRateConstraintLabel(objective)
     }
   }
 
-  const baselineMetrics = evaluate(originalMatches, original)
   const factorCandidates = fineTuneModelFactorCandidates(target, original)
   const factorRanked = []
   process.stderr.write(
     `开始精调 ${key}，样本 ${baselineMetrics.sampleCount} 场` +
     `，参数范围 ±${(fineTuneRatio * 100).toFixed(1)}%` +
-    `，采样率要求 >= ${(objective.minimumSamplingRateInclusive * 100).toFixed(1)}%\n`
+    `，采样率要求 ${samplingRateConstraintLabel(objective)}\n`
   )
   for (let index = 0; index < factorCandidates.length; index++) {
     const factors = factorCandidates[index]
@@ -1139,10 +1518,46 @@ async function optimizeFineTunedProfile(target, preset, originalProfile, objecti
     }
   }
 
-  const finalFactorCandidates = factorRanked.slice(0, 3).map(result => result.candidate)
+  const combinedFactorRanked = [...factorRanked]
+  const factorLeader = factorRanked[0]
+  if (factorLeader && target.code !== 'WORLD_CUP') {
+    const officialFactorCandidates = fineTuneValues(original, 'officialMatchWeight')
+      .map(officialMatchWeight => ({
+        ...factorLeader.candidate,
+        officialMatchWeight
+      }))
+    for (let index = 0; index < officialFactorCandidates.length; index++) {
+      const factors = officialFactorCandidates[index]
+      const matches = await fetchBacktest(scopedTarget, factors, refineSimulations)
+      const best = findBestCandidate(
+        matches,
+        buildFineTuneCandidates(
+          matches,
+          factors,
+          original,
+          refineCandidateCount,
+          seed + 2000 + index
+        ),
+        objective
+      )
+      if (best) {
+        const coordinated = coordinateFineTune(matches, best.candidate, original, objective)
+        addRankedResult(combinedFactorRanked, coordinated.candidate, coordinated.metrics, objective, 8)
+      }
+    }
+  }
+
+  const finalFactorCandidates = combinedFactorRanked.slice(0, 3).map(result => result.candidate)
   finalFactorCandidates.push(original)
   const uniqueFinalFactors = [...new Map(finalFactorCandidates.map(candidate => [
-    [candidate.hostTeamGoalFactor, candidate.homeTeamGoalFactor, candidate.seedTeamGoalFactor].join('|'),
+    [
+      candidate.hostTeamGoalFactor,
+      candidate.homeTeamGoalFactor,
+      candidate.seedTeamGoalFactor,
+      candidate.officialMatchWeight,
+      candidate.internationalFriendlyWeight,
+      candidate.clubFriendlyWeight
+    ].join('|'),
     candidate
   ])).values()]
   const finalRanked = []
@@ -1154,7 +1569,10 @@ async function optimizeFineTunedProfile(target, preset, originalProfile, objecti
       {
         hostTeamGoalFactor: factorCandidate.hostTeamGoalFactor,
         homeTeamGoalFactor: factorCandidate.homeTeamGoalFactor,
-        seedTeamGoalFactor: factorCandidate.seedTeamGoalFactor
+        seedTeamGoalFactor: factorCandidate.seedTeamGoalFactor,
+        officialMatchWeight: factorCandidate.officialMatchWeight,
+        internationalFriendlyWeight: factorCandidate.internationalFriendlyWeight,
+        clubFriendlyWeight: factorCandidate.clubFriendlyWeight
       },
       original,
       seed + 5000 + index,
@@ -1184,21 +1602,26 @@ async function optimizeFineTunedProfile(target, preset, originalProfile, objecti
     preset,
     status: 'OPTIMIZED',
     fineTuneRatio,
+    baselineSamplingRate: baselineMetrics.samplingRate,
     minimumSamplingRateInclusive: objective.minimumSamplingRateInclusive,
+    maximumSamplingRateInclusive: objective.maximumSamplingRateInclusive,
+    samplingRateExclusive: objective.samplingRateExclusive,
+    samplingRatePolicy: objective.samplingRatePolicy,
+    samplingRateConstraint: samplingRateConstraintLabel(objective),
     optimizedRoi: best.metrics.roi,
     lowSampleWarning: finalMatches.length < 20,
     originalParameters: original,
     optimizedParameters: best.candidate,
-    baselineMetrics: printableMetrics(baselineMetrics, objective.minimumSamplingRateInclusive),
-    optimizedMetrics: printableMetrics(best.metrics, objective.minimumSamplingRateInclusive),
+    baselineMetrics: printableMetrics(baselineMetrics, objective),
+    optimizedMetrics: printableMetrics(best.metrics, objective),
     chronologicalMetrics: chronologicalMetrics(
       finalMatches,
       best.candidate,
-      objective.minimumSamplingRateInclusive
+      objective
     ),
     coarseTop: [],
-    refinedTop: printableRanked(factorRanked, objective.minimumSamplingRateInclusive),
-    finalTop: printableRanked(finalRanked, objective.minimumSamplingRateInclusive)
+    refinedTop: printableRanked(combinedFactorRanked, objective),
+    finalTop: printableRanked(finalRanked, objective)
   }
   process.stderr.write(
     `完成 ${key}：ROI ${result.baselineMetrics.roi}% -> ${result.optimizedMetrics.roi}%` +
@@ -1217,20 +1640,56 @@ async function optimizeProfile(target, preset, originalProfile, objective) {
   const original = flattenProfile(originalProfile)
   const seed = stringSeed(key)
   const sampleMatches = await fetchBacktest(scopedTarget, original, coarseSimulations)
+  const maximumSamplingRate = maximumPossibleSamplingRate(sampleMatches)
   if (sampleMatches.length === 0) {
     return {
       key,
       competitionName: target.name,
       range: target.range,
       preset,
-      status: 'SKIPPED_NO_SAMPLES',
-      sampleCount: 0
+      status: maximumSamplingRate === null
+        ? 'SKIPPED_NO_SAMPLES'
+        : 'FAILED_INSUFFICIENT_ODDS_COVERAGE',
+      sampleCount: Number(sampleMatches.totalMatchCount) || 0,
+      oddsMatchCount: 0,
+      maximumPossibleSamplingRate: maximumSamplingRate
+    }
+  }
+  const coarseBaselineMetrics = evaluate(sampleMatches, original)
+  objective = withSamplingRateTolerance(objective, coarseBaselineMetrics.samplingRate)
+  if (verboseRequests) {
+    const maximumCoverageMetrics = evaluate(sampleMatches, normalizeParameters({
+      ...original,
+      handicapSmoothingFactor: 0,
+      recommendationOdds: 1,
+      handicapRecommendationThreshold: 100,
+      handicapReverseThreshold: 0,
+      singleRecommendationThreshold: 0
+    }))
+    process.stderr.write(
+      `${key} 最大覆盖候选：推荐 ${maximumCoverageMetrics.recommendedMatchCount}/` +
+      `${maximumCoverageMetrics.sampleCount} 场，命中 ${maximumCoverageMetrics.hitMatchCount} 场，` +
+      `采样率 ${round(maximumCoverageMetrics.samplingRate * 100, 2)}%，` +
+      `ROI ${round(maximumCoverageMetrics.roi * 100, 2)}%\n`
+    )
+  }
+  if (!objective.canReachSamplingRate(maximumSamplingRate)) {
+    return {
+      key,
+      competitionName: target.name,
+      range: target.range,
+      preset,
+      status: 'FAILED_INSUFFICIENT_ODDS_COVERAGE',
+      sampleCount: Number(sampleMatches.totalMatchCount) || sampleMatches.length,
+      oddsMatchCount: sampleMatches.length,
+      maximumPossibleSamplingRate: round(maximumSamplingRate * 100, 2),
+      requiredSamplingRate: samplingRateConstraintLabel(objective)
     }
   }
 
   process.stderr.write(
     `开始优化 ${key}，样本 ${sampleMatches.length} 场` +
-    `，采样率要求 >= ${(objective.minimumSamplingRateInclusive * 100).toFixed(1)}%\n`
+    `，采样率要求 ${samplingRateConstraintLabel(objective)}\n`
   )
   const factorSearch = target.code === 'WORLD_CUP'
     ? await optimizeWorldCupFactors(scopedTarget, original, seed, objective)
@@ -1241,7 +1700,10 @@ async function optimizeProfile(target, preset, originalProfile, objective) {
   if (!finalFactorCandidates.some(candidate => {
     return candidate.hostTeamGoalFactor === original.hostTeamGoalFactor &&
       candidate.homeTeamGoalFactor === original.homeTeamGoalFactor &&
-      candidate.seedTeamGoalFactor === original.seedTeamGoalFactor
+      candidate.seedTeamGoalFactor === original.seedTeamGoalFactor &&
+      candidate.officialMatchWeight === original.officialMatchWeight &&
+      candidate.internationalFriendlyWeight === original.internationalFriendlyWeight &&
+      candidate.clubFriendlyWeight === original.clubFriendlyWeight
   })) {
     finalFactorCandidates.push(original)
   }
@@ -1253,7 +1715,10 @@ async function optimizeProfile(target, preset, originalProfile, objective) {
     const modelFactors = {
       hostTeamGoalFactor: factorCandidate.hostTeamGoalFactor,
       homeTeamGoalFactor: factorCandidate.homeTeamGoalFactor,
-      seedTeamGoalFactor: factorCandidate.seedTeamGoalFactor
+      seedTeamGoalFactor: factorCandidate.seedTeamGoalFactor,
+      officialMatchWeight: factorCandidate.officialMatchWeight,
+      internationalFriendlyWeight: factorCandidate.internationalFriendlyWeight,
+      clubFriendlyWeight: factorCandidate.clubFriendlyWeight
     }
     const optimized = deepOptimize(
       matches,
@@ -1277,12 +1742,17 @@ async function optimizeProfile(target, preset, originalProfile, objective) {
       range: target.range,
       preset,
       status: 'FAILED_SAMPLING_RATE_CONSTRAINT',
+      baselineSamplingRate: baselineMetrics.samplingRate,
       minimumSamplingRateInclusive: objective.minimumSamplingRateInclusive,
+      maximumSamplingRateInclusive: objective.maximumSamplingRateInclusive,
+      samplingRateExclusive: objective.samplingRateExclusive,
+      samplingRatePolicy: objective.samplingRatePolicy,
+      samplingRateConstraint: samplingRateConstraintLabel(objective),
       sampleCount: baselineMetrics.sampleCount,
       originalParameters: original,
-      baselineMetrics: printableMetrics(baselineMetrics, objective.minimumSamplingRateInclusive),
-      coarseTop: printableRanked(factorSearch.coarseTop, objective.minimumSamplingRateInclusive),
-      refinedTop: printableRanked(factorSearch.refinedTop, objective.minimumSamplingRateInclusive)
+      baselineMetrics: printableMetrics(baselineMetrics, objective),
+      coarseTop: printableRanked(factorSearch.coarseTop, objective),
+      refinedTop: printableRanked(factorSearch.refinedTop, objective)
     }
     process.stderr.write(`未找到满足采样率约束的 ${key}\n`)
     return failedResult
@@ -1299,21 +1769,26 @@ async function optimizeProfile(target, preset, originalProfile, objective) {
     range: target.range,
     preset,
     status: 'OPTIMIZED',
+    baselineSamplingRate: baselineMetrics.samplingRate,
     minimumSamplingRateInclusive: objective.minimumSamplingRateInclusive,
+    maximumSamplingRateInclusive: objective.maximumSamplingRateInclusive,
+    samplingRateExclusive: objective.samplingRateExclusive,
+    samplingRatePolicy: objective.samplingRatePolicy,
+    samplingRateConstraint: samplingRateConstraintLabel(objective),
     optimizedRoi: best.metrics.roi,
     lowSampleWarning: finalMatches.length < 20,
     originalParameters: original,
     optimizedParameters: best.candidate,
-    baselineMetrics: printableMetrics(baselineMetrics, objective.minimumSamplingRateInclusive),
-    optimizedMetrics: printableMetrics(best.metrics, objective.minimumSamplingRateInclusive),
+    baselineMetrics: printableMetrics(baselineMetrics, objective),
+    optimizedMetrics: printableMetrics(best.metrics, objective),
     chronologicalMetrics: chronologicalMetrics(
       finalMatches,
       best.candidate,
-      objective.minimumSamplingRateInclusive
+      objective
     ),
-    coarseTop: printableRanked(factorSearch.coarseTop, objective.minimumSamplingRateInclusive),
-    refinedTop: printableRanked(factorSearch.refinedTop, objective.minimumSamplingRateInclusive),
-    finalTop: printableRanked(finalRanked, objective.minimumSamplingRateInclusive)
+    coarseTop: printableRanked(factorSearch.coarseTop, objective),
+    refinedTop: printableRanked(factorSearch.refinedTop, objective),
+    finalTop: printableRanked(finalRanked, objective)
   }
   process.stderr.write(
     `完成 ${key}：ROI ${result.baselineMetrics.roi}% -> ${result.optimizedMetrics.roi}%` +
@@ -1329,14 +1804,38 @@ async function writeReport(report) {
   await writeFile(REPORT_PATH, JSON.stringify(report, null, 2) + '\n', 'utf8')
 }
 
+async function loadVerificationBaselineSamplingRates() {
+  if (samplingRateTolerance <= 0) {
+    return new Map()
+  }
+  const report = JSON.parse(await readFile(verificationBaselineReportPath, 'utf8'))
+  return new Map((report.results || []).flatMap(result => {
+    const rawSamplingRate = Number(result.baselineSamplingRate)
+    if (!result.key || !Number.isFinite(rawSamplingRate)) {
+      return []
+    }
+    return [[result.key, rawSamplingRate]]
+  }))
+}
+
+function createVerificationObjective(preset, target, baselineSamplingRates) {
+  const objective = createObjective(preset, target)
+  const key = profileKey(target.code, target.range, preset)
+  return withSamplingRateTolerance(objective, baselineSamplingRates.get(key))
+}
+
 async function verifySavedProfiles(config, targets) {
+  const baselineSamplingRates = await loadVerificationBaselineSamplingRates()
   const report = {
     generatedAt: new Date().toISOString(),
     today: todayInShanghai(),
     simulations: finalSimulations,
     savedProfileCount: Object.keys(config.parameterProfiles || {}).length,
-    minimumStableSamplingRateInclusive: minimumStableSamplingRate,
+    minimumStableSamplingRateExclusive: minimumStableSamplingRate,
     minimumAggressiveSamplingRateInclusive: minimumAggressiveSamplingRate,
+    samplingRateTolerance,
+    unconstrainedSamplingProfiles: [...unconstrainedSamplingProfiles],
+    baselineReportPath: samplingRateTolerance > 0 ? verificationBaselineReportPath : null,
     optimizationPriority,
     results: []
   }
@@ -1359,18 +1858,23 @@ async function verifySavedProfiles(config, targets) {
       const parameters = flattenProfile(profile)
       const matches = await fetchBacktest({ ...target, preset }, parameters, finalSimulations)
       const metrics = evaluate(matches, parameters)
-      const objective = createObjective(preset, target)
+      const objective = createVerificationObjective(preset, target, baselineSamplingRates)
       pair.profiles[preset] = {
         key,
         status: matches.length > 0 ? 'VERIFIED' : 'SKIPPED_NO_SAMPLES',
+        samplingRateConstraint: samplingRateConstraintLabel(objective),
+        completedMatchCount: Number(matches.completedMatchCount) ||
+          Number(matches.totalMatchCount) || 0,
+        oddsMatchCount: Number(matches.oddsMatchCount) || matches.length,
+        maximumPossibleSamplingRate: maximumPossibleSamplingRate(matches),
         parameters,
         rawRoi: metrics.roi,
         rawSamplingRate: metrics.samplingRate,
-        metrics: printableMetrics(metrics, objective.minimumSamplingRateInclusive),
+        metrics: printableMetrics(metrics, objective),
         chronologicalMetrics: chronologicalMetrics(
           matches,
           parameters,
-          objective.minimumSamplingRateInclusive
+          objective
         )
       }
     }
@@ -1391,7 +1895,11 @@ async function verifySavedProfiles(config, targets) {
     }
     for (const preset of PARAMETER_PRESETS) {
       const profile = pair.profiles[preset]
-      profile.eligible = createObjective(preset, target).isEligible({
+      profile.eligible = createVerificationObjective(
+        preset,
+        target,
+        baselineSamplingRates
+      ).isEligible({
         recommendedMatchCount: profile.metrics.recommendedMatchCount,
         hitMatchCount: profile.metrics.hitMatchCount,
         samplingRate: profile.rawSamplingRate,
@@ -1440,8 +1948,20 @@ async function applyOptimizedProfiles(config, results) {
   })
 }
 
+async function resetAllParameterProfiles(config) {
+  const resetConfig = structuredClone(config)
+  resetConfig.parameterProfiles = {}
+  return fetchJson(USER_CONFIG_URL, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8'
+    },
+    body: JSON.stringify(resetConfig)
+  })
+}
+
 async function main() {
-  const config = await fetchJson(USER_CONFIG_URL)
+  let config = await fetchJson(USER_CONFIG_URL)
   await mkdir(OUTPUT_DIRECTORY, { recursive: true })
   const targets = buildTargets()
   if (verifyOnly) {
@@ -1449,6 +1969,9 @@ async function main() {
     return
   }
   await writeFile(BEFORE_CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf8')
+  if (resetProfiles) {
+    config = await resetAllParameterProfiles(config)
+  }
   const report = {
     generatedAt: new Date().toISOString(),
     today: todayInShanghai(),
@@ -1460,12 +1983,15 @@ async function main() {
       refineCandidateCount,
       finalCandidateCount,
       applyResults,
+      resetProfiles,
       fineTuneRatio,
       fineTuneEnabled,
+      samplingRateTolerance,
+      unconstrainedSamplingProfiles: [...unconstrainedSamplingProfiles],
       objective: optimizationPriority === 'SAMPLING_RATE'
-        ? `各档满足采样率下限后优先最大化采样率`
-        : `各档满足采样率下限后优先最大化 ROI`,
-      minimumStableSamplingRateInclusive: minimumStableSamplingRate,
+        ? `满足当前采样率策略后优先最大化采样率`
+        : `满足当前采样率策略后优先最大化 ROI`,
+      minimumStableSamplingRateExclusive: minimumStableSamplingRate,
       minimumAggressiveSamplingRateInclusive: minimumAggressiveSamplingRate,
       minimumRoiInclusive: minimumRoi,
       optimizationPriority

@@ -5,8 +5,10 @@ import com.eason.worldcup.model.MatchSchedule;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -14,12 +16,14 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClubCompetitionScheduleUpdaterTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
     private final ClubCompetitionScheduleUpdater updater = new ClubCompetitionScheduleUpdater(objectMapper);
 
@@ -85,6 +89,20 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
+    void shouldResolveHybridAfcChampionsLeagueSeasonNames() {
+        ClubCompetitionScheduleUpdater.FotMobLeagueSource source =
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "525",
+                        "亚冠精英",
+                        false,
+                        2023);
+
+        assertEquals("2022", source.seasonValue(2022));
+        assertEquals("2023%2F2024", source.seasonValue(2023));
+    }
+
+    @Test
     void shouldFilterReplacedSeasonsFromImmutableSourceList() {
         MatchSchedule schedule = new MatchSchedule();
         schedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
@@ -104,33 +122,33 @@ class ClubCompetitionScheduleUpdaterTest {
     @Test
     void shouldDeduplicateMappedTeamsAcrossProviders() {
         MatchSchedule espn = completedSchedule(
-                "ESPN-BRAZIL_SERIE_A-401841108",
-                "米内罗竞技",
-                "Botafogo");
+                "ESPN-CHAMPIONS_LEAGUE-401841108",
+                "库奥皮奥",
+                "AGF");
         MatchSchedule fotMob = completedSchedule(
-                "FOTMOB-BRAZIL_SERIE_A-5103509",
-                "米竞技",
-                "博塔弗戈");
+                "FOTMOB-CHAMPIONS_LEAGUE-5103509",
+                "KuPS Kuopio",
+                "奥胡斯");
 
         List<MatchSchedule> schedules = updater.deduplicateSchedulesByFixture(List.of(espn, fotMob));
 
         assertEquals(1, schedules.size());
-        assertEquals("米内罗竞技", schedules.get(0).getHomeTeamCn());
-        assertEquals("博塔弗戈", schedules.get(0).getAwayTeamCn());
+        assertEquals("库奥皮奥", schedules.get(0).getHomeTeamCn());
+        assertEquals("奥胡斯", schedules.get(0).getAwayTeamCn());
     }
 
     @Test
     void shouldDeduplicateSameOfficialTeamDateAndScoreWithOpponentAlias() {
         MatchSchedule first = completedSchedule(
                 "SOURCE-001",
-                "巴伊亚",
-                "Chapecoense Unknown");
+                "测试主队",
+                "Unknown Opponent");
         first.setHomeScore(2);
         first.setAwayScore(0);
         MatchSchedule second = completedSchedule(
                 "SOURCE-002",
-                "巴伊亚",
-                "沙佩科未知别名");
+                "测试主队",
+                "未知对手别名");
         second.setHomeScore(2);
         second.setAwayScore(0);
         second.setSportteryMatchId("20260718-001");
@@ -447,12 +465,120 @@ class ClubCompetitionScheduleUpdaterTest {
                 ZoneId.of("Asia/Shanghai"));
 
         assertNotNull(schedule);
+        assertEquals(Competition.FINNISH_VEIKKAUSLIIGA, schedule.getCompetition());
         assertEquals(LocalDate.of(2026, 7, 18), schedule.getMatchDate());
         assertEquals("芬超", schedule.getGroupName());
         assertEquals("塞伊奈约基", schedule.getHomeTeamCn());
         assertEquals("库奥皮奥", schedule.getAwayTeamCn());
         assertEquals(0, schedule.getHomeScore());
         assertEquals(2, schedule.getAwayScore());
+    }
+
+    @Test
+    void shouldParseUpcomingFinnishVeikkausliigaMatch() throws Exception {
+        JsonNode statuses = objectMapper.readTree("""
+                {
+                  "1": { "name": "Not started", "name_short": "NS", "is_ended": false }
+                }
+                """);
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "league_id": 322,
+                  "status_id": 1,
+                  "date": "2026-07-24T16:00:00+00:00",
+                  "team1": { "name": "FF Jaro" },
+                  "team2": { "name": "Seinajoen JK" }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFutbol24Match(
+                "3311966",
+                match,
+                statuses,
+                ZoneId.of("Asia/Shanghai"));
+
+        assertNotNull(schedule);
+        assertEquals(Competition.FINNISH_VEIKKAUSLIIGA, schedule.getCompetition());
+        assertEquals(LocalDate.of(2026, 7, 25), schedule.getMatchDate());
+        assertEquals(LocalTime.MIDNIGHT, schedule.getKickoffTime());
+        assertEquals("FF Jaro", schedule.getHomeTeamCn());
+        assertEquals("塞伊奈约基", schedule.getAwayTeamCn());
+        assertEquals("SCHEDULED", schedule.getStatus());
+        assertNull(schedule.getHomeScore());
+        assertNull(schedule.getAwayScore());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldConfigureFotMobFinnishVeikkausliigaSource() {
+        List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources =
+                (List<ClubCompetitionScheduleUpdater.FotMobLeagueSource>)
+                        ReflectionTestUtils.getField(
+                                ClubCompetitionScheduleUpdater.class,
+                                "FOTMOB_SOURCES");
+
+        assertNotNull(sources);
+        assertTrue(sources.stream().anyMatch(source ->
+                source.competition() == Competition.FINNISH_VEIKKAUSLIIGA
+                        && "51".equals(source.leagueId())));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldNotConfigureRemovedBrazilianCompetitionSources() {
+        List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources =
+                (List<ClubCompetitionScheduleUpdater.FotMobLeagueSource>)
+                        ReflectionTestUtils.getField(
+                                ClubCompetitionScheduleUpdater.class,
+                                "FOTMOB_SOURCES");
+
+        assertNotNull(sources);
+        assertFalse(sources.stream().anyMatch(source ->
+                "8814".equals(source.leagueId())
+                        || "巴乙".equals(source.sourceCompetition())
+                        || "圣保罗锦".equals(source.sourceCompetition())));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldRemoveExcludedBrazilianCompetitionsFromScheduleCache(@TempDir Path tempDir)
+            throws Exception {
+        Path cachePath = tempDir.resolve("club-competition-schedules.json");
+        MatchSchedule brazilSerieB = completedSchedule(
+                "FOTMOB-CLUB_OFFICIAL_OTHER-5190620",
+                "Novorizontino",
+                "克里西");
+        brazilSerieB.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        brazilSerieB.setGroupName("巴乙 第19轮");
+        MatchSchedule swissSuperLeague = completedSchedule(
+                "FOTMOB-CLUB_OFFICIAL_OTHER-5000000",
+                "巴塞尔",
+                "苏黎世");
+        swissSuperLeague.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        swissSuperLeague.setGroupName("瑞士超 第1轮");
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(
+                cachePath.toFile(),
+                List.of(brazilSerieB, swissSuperLeague));
+        ReflectionTestUtils.setField(updater, "cachePath", cachePath.toString());
+
+        List<MatchSchedule> loadedSchedules =
+                (List<MatchSchedule>) ReflectionTestUtils.invokeMethod(
+                        updater,
+                        "loadCachedSchedules");
+
+        assertNotNull(loadedSchedules);
+        assertEquals(1, loadedSchedules.size());
+        assertEquals("瑞士超 第1轮", loadedSchedules.get(0).getGroupName());
+
+        ReflectionTestUtils.invokeMethod(
+                updater,
+                "saveCachedSchedules",
+                List.of(brazilSerieB, swissSuperLeague));
+        MatchSchedule[] savedSchedules =
+                objectMapper.readValue(cachePath.toFile(), MatchSchedule[].class);
+
+        assertEquals(1, savedSchedules.length);
+        assertEquals("瑞士超 第1轮", savedSchedules[0].getGroupName());
     }
 
     @Test
@@ -524,7 +650,9 @@ class ClubCompetitionScheduleUpdaterTest {
                 """);
         List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources = List.of(
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
-                        Competition.CLUB_OFFICIAL_OTHER, "67", "瑞超", true),
+                        Competition.K_LEAGUE_1, "9080", "韩职", true),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.SWEDISH_ALLSVENSKAN, "67", "瑞超", true),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.EREDIVISIE, "57", "荷甲", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
@@ -539,8 +667,6 @@ class ClubCompetitionScheduleUpdaterTest {
                         Competition.CLUB_OFFICIAL_OTHER, "164", "瑞士杯", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "69", "瑞士超", false),
-                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
-                        Competition.CLUB_OFFICIAL_OTHER, "8814", "巴乙", true),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "271", "保杯", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
@@ -585,35 +711,6 @@ class ClubCompetitionScheduleUpdaterTest {
             assertEquals(2, schedule.getHomeScore());
             assertEquals(1, schedule.getAwayScore());
         }
-    }
-
-    @Test
-    void shouldDisambiguateBrazilianAthleticClubFromAthleticBilbao() throws Exception {
-        JsonNode match = objectMapper.readTree("""
-                {
-                  "id": "5190441",
-                  "home": {"longName": "Athletic Club"},
-                  "away": {"longName": "Ponte Preta"},
-                  "status": {
-                    "utcTime": "2026-03-23T22:00:00.000Z",
-                    "finished": true,
-                    "scoreStr": "2 - 1"
-                  }
-                }
-                """);
-
-        MatchSchedule schedule = updater.parseFotMobLeagueMatch(
-                match,
-                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
-                        Competition.CLUB_OFFICIAL_OTHER,
-                        "8814",
-                        "巴乙",
-                        true),
-                ZoneId.of("Asia/Shanghai"));
-
-        assertEquals("竞技俱乐部MG", schedule.getHomeTeamCn());
-        assertEquals("Athletic Club (MG)", schedule.getHomeTeamEn());
-        assertEquals("庞普雷塔", schedule.getAwayTeamCn());
     }
 
     @Test
@@ -716,7 +813,7 @@ class ClubCompetitionScheduleUpdaterTest {
     private MatchSchedule completedSchedule(String matchId, String homeTeam, String awayTeam) {
         MatchSchedule schedule = new MatchSchedule();
         schedule.setMatchId(matchId);
-        schedule.setCompetition(Competition.BRAZIL_SERIE_A);
+        schedule.setCompetition(Competition.CHAMPIONS_LEAGUE);
         schedule.setMatchDate(LocalDate.of(2026, 5, 11));
         schedule.setKickoffTime(LocalTime.of(3, 0));
         schedule.setHomeTeamCn(homeTeam);

@@ -23,12 +23,6 @@ class ClubTeamNameTranslatorTest {
     void shouldTranslateSupplementalClubCupAliases() throws IOException {
         assumeMappingsImported();
 
-        assertEquals("沙佩科恩斯", ClubTeamNameTranslator.translate(
-                Competition.BRAZIL_SERIE_A,
-                "Chapecoense"));
-        assertEquals("沙佩科恩斯", ClubTeamNameTranslator.translate(
-                Competition.BRAZIL_SERIE_A,
-                "沙佩科恩斯"));
         assertEquals("巴伊亚", ClubTeamNameTranslator.translate(
                 Competition.CLUB_FRIENDLY,
                 "Bahia/BA"));
@@ -47,15 +41,6 @@ class ClubTeamNameTranslatorTest {
     void shouldUseSportteryStandardNamesForCurrentAliases() throws IOException {
         assumeMappingsImported();
 
-        assertEquals("博塔弗戈", ClubTeamNameTranslator.translate(
-                Competition.BRAZIL_SERIE_A,
-                "Botafogo"));
-        assertEquals("米内罗竞技", ClubTeamNameTranslator.translate(
-                Competition.BRAZIL_SERIE_A,
-                "米竞技"));
-        assertEquals("米内罗竞技", ClubTeamNameTranslator.translate(
-                Competition.BRAZIL_SERIE_A,
-                "Atlético-MG"));
         assertEquals("库奥皮奥", ClubTeamNameTranslator.translate(
                 Competition.CHAMPIONS_LEAGUE,
                 "KuPS Kuopio"));
@@ -107,12 +92,6 @@ class ClubTeamNameTranslatorTest {
         assertEquals("Admira Wacker", ClubTeamNameTranslator.translate(
                 Competition.CLUB_FRIENDLY,
                 "FC Admira Wacker Modling"));
-        assertEquals("巴拉纳竞技", ClubTeamNameTranslator.translate(
-                Competition.BRAZIL_SERIE_A,
-                "Athletico-PR"));
-        assertEquals("里莫", ClubTeamNameTranslator.translate(
-                Competition.BRAZIL_SERIE_A,
-                "瑞模贝雷"));
         assertEquals("伏伊伏丁那", ClubTeamNameTranslator.translate(
                 Competition.EUROPA_LEAGUE,
                 "Vojvodina"));
@@ -149,6 +128,15 @@ class ClubTeamNameTranslatorTest {
         assertEquals("拉赫蒂", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "FC Lahti"));
+        assertEquals("大邱FC", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Daegu FC"));
+        assertEquals("济州SK", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "济州联"));
+        assertEquals("水原三星", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Suwon Samsung Bluewings"));
         assertEquals("奥胡斯", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "AGF Aarhus"));

@@ -128,7 +128,7 @@
                 <span><i class="help-icon" tabindex="0" role="img" aria-label="控制让球概率向普通胜平负概率平滑修正的强度，数值越大修正越明显" data-tooltip="控制让球概率向普通胜平负概率平滑修正的强度，数值越大修正越明显">i</i>让球平滑系数</span>
                 <input
                   type="number"
-                  min="0"
+                  min="1"
                   max="0.8"
                   step="0.001"
                   v-model.number="modelFactors.handicapSmoothingFactor"
@@ -213,8 +213,8 @@
                 <span><i class="help-icon" tabindex="0" role="img" aria-label="正式比赛在球队强度计算中的样本权重，1.00 表示完整计入" data-tooltip="正式比赛在球队强度计算中的样本权重，1.00 表示完整计入">i</i>正式比赛权重</span>
                 <input
                   type="number"
-                  min="0"
-                  max="1"
+                  min="1"
+                  max="3"
                   step="0.01"
                   v-model.number="modelFactors.officialMatchWeight"
                   :disabled="loading || updatingData || backtesting || !activeParameterProfileEditable"
@@ -272,7 +272,7 @@
               </div>
               <div>
                 <strong>{{ backtestSamplingRateText }}</strong>
-                <span><i class="help-icon" tabindex="0" role="img" aria-label="产生推荐的比赛数除以回测已完赛比赛总数" data-tooltip="产生推荐的比赛数除以回测已完赛比赛总数">i</i>采样率</span>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="产生推荐的比赛数除以回测已完赛且有赔率的比赛数" data-tooltip="产生推荐的比赛数除以回测已完赛且有赔率的比赛数">i</i>采样率</span>
               </div>
               <div>
                 <strong>{{ backtestHitRateText }}</strong>
@@ -664,13 +664,15 @@ const COMPETITIONS = [
   { code: 'CHAMPIONS_LEAGUE', name: '欧冠' },
   { code: 'PREMIER_LEAGUE', name: '英超' },
   { code: 'LA_LIGA', name: '西甲' },
-  { code: 'SERIE_A', name: '意甲' },
   { code: 'BUNDESLIGA', name: '德甲' },
+  { code: 'SERIE_A', name: '意甲' },
   { code: 'LIGUE_1', name: '法甲' },
-  { code: 'BRAZIL_SERIE_A', name: '巴甲' },
   { code: 'PRIMEIRA_LIGA', name: '葡超' },
   { code: 'EREDIVISIE', name: '荷甲' },
-  { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲' }
+  { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲' },
+  { code: 'SWEDISH_ALLSVENSKAN', name: '瑞超' },
+  { code: 'FINNISH_VEIKKAUSLIIGA', name: '芬超' },
+  { code: 'K_LEAGUE_1', name: '韩职' }
 ]
 const CURRENT_EDITION_START_DATES = {
   WORLD_CUP: '2026-06-11',
@@ -684,10 +686,12 @@ const CURRENT_EDITION_START_DATES = {
   SERIE_A: '2026-08-22',
   BUNDESLIGA: '2026-08-28',
   LIGUE_1: '2026-08-20',
-  BRAZIL_SERIE_A: '2026-01-28',
   PRIMEIRA_LIGA: '2026-08-07',
   EREDIVISIE: '2026-08-07',
-  ARGENTINE_PRIMERA_DIVISION: '2026-01-25'
+  ARGENTINE_PRIMERA_DIVISION: '2026-01-25',
+  SWEDISH_ALLSVENSKAN: '2026-04-04',
+  FINNISH_VEIKKAUSLIIGA: '2026-04-04',
+  K_LEAGUE_1: '2026-02-28'
 }
 const SELECTION_COOKIE = 'worldcup_recommendation_rows'
 const SELECTION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
@@ -718,6 +722,8 @@ const HANDICAP_SMOOTHING_MIN = 0
 const HANDICAP_SMOOTHING_MAX = 0.8
 const MATCH_TYPE_WEIGHT_MIN = 0
 const MATCH_TYPE_WEIGHT_MAX = 1
+const OFFICIAL_MATCH_WEIGHT_MIN = 1
+const OFFICIAL_MATCH_WEIGHT_MAX = 3
 const MATCH_TYPE_WEIGHT_KEYS = [
   'officialMatchWeight',
   'internationalFriendlyWeight',
@@ -1799,11 +1805,11 @@ export default {
         recommendedSelectionCount,
         recommendedMatches.length
       )
-      const totalMatchCount = Number(this.backtestSummary.completedMatchCount) || this.backtestSourceMatches.length
+      const oddsMatchCount = Number(this.backtestSummary.oddsMatchCount) || this.backtestSourceMatches.length
       this.backtestMatches = recommendedMatches
       this.backtestSummary = {
         ...this.backtestSummary,
-        samplingRate: calculateSamplingRate(recommendedMatches.length, totalMatchCount),
+        samplingRate: calculateSamplingRate(recommendedMatches.length, oddsMatchCount),
         recommendedMatchCount: recommendedMatches.length,
         recommendedSelectionCount,
         hitMatchCount: hitMatches.length,
@@ -2269,11 +2275,17 @@ export default {
       if (key === 'handicapSmoothingFactor') {
         return HANDICAP_SMOOTHING_MIN
       }
+      if (key === 'officialMatchWeight') {
+        return OFFICIAL_MATCH_WEIGHT_MIN
+      }
       return MATCH_TYPE_WEIGHT_KEYS.includes(key) ? MATCH_TYPE_WEIGHT_MIN : MODEL_FACTOR_MIN
     },
     getModelFactorMax(key) {
       if (key === 'handicapSmoothingFactor') {
         return HANDICAP_SMOOTHING_MAX
+      }
+      if (key === 'officialMatchWeight') {
+        return OFFICIAL_MATCH_WEIGHT_MAX
       }
       return MATCH_TYPE_WEIGHT_KEYS.includes(key) ? MATCH_TYPE_WEIGHT_MAX : MODEL_FACTOR_MAX
     },
@@ -3212,7 +3224,7 @@ h1 {
   grid-column: 2;
   grid-row: 1;
   color: #ffffff;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1;
   text-align: right;
 }
@@ -3230,6 +3242,7 @@ h1 {
 .backtest-average-grid > div > span {
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .backtest-result.is-empty strong {

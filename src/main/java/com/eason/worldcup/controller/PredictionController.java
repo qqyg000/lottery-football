@@ -130,8 +130,12 @@ public class PredictionController {
             @RequestParam(value = "officialMatchWeight", required = false) Double officialMatchWeight,
             @RequestParam(value = "internationalFriendlyWeight", required = false) Double internationalFriendlyWeight,
             @RequestParam(value = "clubFriendlyWeight", required = false) Double clubFriendlyWeight,
+            @RequestParam(value = "clearModelCacheBefore", defaultValue = "false") boolean clearModelCacheBefore,
             @RequestParam(value = "includePreviousEdition", defaultValue = "false") boolean includePreviousEdition,
             @RequestParam(value = "competition", defaultValue = "ALL") String competition) {
+        if (clearModelCacheBefore) {
+            predictionService.clearDynamicModelCaches();
+        }
         return predictionService.queryRecommendationBacktest(
                 parseBacktestCompetitions(competition),
                 simulations,

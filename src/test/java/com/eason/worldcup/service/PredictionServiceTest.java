@@ -43,14 +43,18 @@ class PredictionServiceTest {
                     "2025-08-22", "2026-05-16", "2026-08-28", "2027-05-22")),
             Map.entry(Competition.LIGUE_1, period(
                     "2025-08-15", "2026-05-16", "2026-08-20", "2027-05-29")),
-            Map.entry(Competition.BRAZIL_SERIE_A, period(
-                    "2025-03-29", "2025-12-07", "2026-01-28", "2026-12-02")),
             Map.entry(Competition.PRIMEIRA_LIGA, period(
                     "2025-08-08", "2026-05-17", "2026-08-07", "2027-05-16")),
             Map.entry(Competition.EREDIVISIE, period(
                     "2025-08-08", "2026-05-17", "2026-08-07", "2027-05-23")),
             Map.entry(Competition.ARGENTINE_PRIMERA_DIVISION, period(
-                    "2025-01-24", "2025-12-13", "2026-01-25", "2026-12-13")));
+                    "2025-01-24", "2025-12-13", "2026-01-25", "2026-12-13")),
+            Map.entry(Competition.SWEDISH_ALLSVENSKAN, period(
+                    "2025-03-29", "2025-11-09", "2026-04-04", "2026-11-29")),
+            Map.entry(Competition.FINNISH_VEIKKAUSLIIGA, period(
+                    "2025-04-05", "2025-11-09", "2026-04-04", "2026-11-08")),
+            Map.entry(Competition.K_LEAGUE_1, period(
+                    "2025-02-15", "2025-11-30", "2026-02-28", "2026-12-06")));
 
     private final PredictionService predictionService = new PredictionService(null, null, null);
 

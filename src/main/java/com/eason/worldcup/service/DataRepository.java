@@ -7,6 +7,7 @@ import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.SportteryOdds;
 import com.eason.worldcup.util.ApplicationTime;
 import com.eason.worldcup.util.ClubTeamNameTranslator;
+import com.eason.worldcup.util.CompetitionDataPolicy;
 import com.eason.worldcup.util.CsvUtils;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -129,6 +130,7 @@ public class DataRepository {
 
         List<MatchSchedule> refreshedSchedules = loadSchedules(true);
         preserveSchedulesOutsideRefreshWindow(refreshedSchedules, schedules);
+        removeExcludedCompetitionSchedules(refreshedSchedules);
         refreshedSchedules.sort(Comparator
                 .comparing(MatchSchedule::getMatchDate)
                 .thenComparing(MatchSchedule::getKickoffTime));
@@ -268,7 +270,13 @@ public class DataRepository {
                     continue;
                 }
                 List<String> row = CsvUtils.parseLine(line);
-                Competition competition = Competition.fromCode(CsvUtils.get(row, COMPETITION_COLUMN));
+                String sourceCompetition = CsvUtils.get(row, SOURCE_COMPETITION_COLUMN);
+                if (CompetitionDataPolicy.isExcludedSourceCompetition(sourceCompetition)) {
+                    continue;
+                }
+                Competition competition = Competition.fromSourceCompetition(
+                        sourceCompetition,
+                        Competition.fromCode(CsvUtils.get(row, COMPETITION_COLUMN)));
                 if (competition.isClubCompetition() != clubCompetition) {
                     continue;
                 }
@@ -285,7 +293,6 @@ public class DataRepository {
                 match.setAwayScore(Integer.parseInt(CsvUtils.get(row, AWAY_SCORE_COLUMN)));
                 match.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, NEUTRAL_COLUMN)));
                 match.setMatchType(HistoricalMatchType.fromCode(CsvUtils.get(row, MATCH_TYPE_COLUMN)));
-                String sourceCompetition = CsvUtils.get(row, SOURCE_COMPETITION_COLUMN);
                 match.setSourceCompetition(sourceCompetition.isBlank()
                         ? competition.getDisplayName()
                         : sourceCompetition);
@@ -321,23 +328,35 @@ public class DataRepository {
         }
         if (sportteryMarketSelectionService != null) {
             int addedSportteryScheduleCount = sportteryMarketSelectionService
-                    .mergeRecentCompletedSchedulesInto(result, refreshDaysBack);
+                    .mergeRecentAndUpcomingSchedulesInto(
+                            result,
+                            refreshDaysBack,
+                            refreshDaysForward);
             if (addedSportteryScheduleCount > 0) {
                 log.info(
-                        "Loaded {} unmatched recent completed Sporttery schedule rows.",
+                        "Loaded {} unmatched recent or upcoming Sporttery schedule rows.",
                         addedSportteryScheduleCount);
             }
         }
         historicalOddsScheduleLoader.mergeInto(result);
         normalizeScheduleTeamNames(result);
         result = deduplicateSchedulesByFixture(result);
+        removeExcludedCompetitionSchedules(result);
         result.sort(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getKickoffTime));
         return result;
     }
 
+    private void removeExcludedCompetitionSchedules(List<MatchSchedule> schedules) {
+        schedules.removeIf(schedule -> schedule != null
+                && CompetitionDataPolicy.isExcludedSourceCompetition(schedule.getGroupName()));
+    }
+
     private void normalizeScheduleTeamNames(List<MatchSchedule> schedules) {
         for (MatchSchedule schedule : schedules) {
-            Competition competition = schedule.getCompetition();
+            Competition competition = Competition.fromSourceCompetition(
+                    schedule.getGroupName(),
+                    schedule.getCompetition());
+            schedule.setCompetition(competition);
             schedule.setHomeTeamCn(resolveStandardTeamName(
                     competition,
                     schedule.getHomeTeamCn(),

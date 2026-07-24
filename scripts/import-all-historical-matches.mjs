@@ -28,13 +28,34 @@ const DIRECT_COMPETITIONS = new Map([
   ['欧冠', 'CHAMPIONS_LEAGUE'],
   ['英超', 'PREMIER_LEAGUE'],
   ['西甲', 'LA_LIGA'],
-  ['意甲', 'SERIE_A'],
   ['德甲', 'BUNDESLIGA'],
+  ['意甲', 'SERIE_A'],
   ['法甲', 'LIGUE_1'],
-  ['巴甲', 'BRAZIL_SERIE_A'],
   ['葡超', 'PRIMEIRA_LIGA'],
   ['荷甲', 'EREDIVISIE'],
-  ['阿甲', 'ARGENTINE_PRIMERA_DIVISION']
+  ['阿甲', 'ARGENTINE_PRIMERA_DIVISION'],
+  ['瑞超', 'SWEDISH_ALLSVENSKAN'],
+  ['芬超', 'FINNISH_VEIKKAUSLIIGA'],
+  ['韩职', 'K_LEAGUE_1']
+])
+
+const EXCLUDED_SOURCE_COMPETITIONS = new Set([
+  '巴甲',
+  '巴乙',
+  '巴西乙',
+  '巴西乙级联赛',
+  '巴西杯',
+  '巴东北',
+  '巴东北杯',
+  '巴西东北杯',
+  '圣保罗锦',
+  '圣保罗州锦标赛',
+  'BRAZIL SERIE B',
+  'CAMPEONATO BRASILEIRO SERIE B',
+  'CAMPEONATO PAULISTA',
+  'PAULISTA A1',
+  'COPA DO BRASIL',
+  'COPA DO NORDESTE'
 ])
 
 const INTERNATIONAL_OFFICIAL_LEAGUES = new Set([
@@ -175,6 +196,11 @@ function competitionFor(sourceCompetition) {
   return 'CLUB_OFFICIAL_OTHER'
 }
 
+function isExcludedCompetition(competition, sourceCompetition) {
+  return competition === 'BRAZIL_SERIE_A'
+    || EXCLUDED_SOURCE_COMPETITIONS.has(String(sourceCompetition ?? '').trim().toUpperCase())
+}
+
 function matchTypeFor(competition) {
   if (competition === 'INTERNATIONAL_FRIENDLY') {
     return 'INTERNATIONAL_FRIENDLY'
@@ -246,6 +272,7 @@ const importedRows = []
 const sourceCompetitionCounts = new Map()
 let skippedBeforeStart = 0
 let skippedInvalidScore = 0
+let skippedExcludedCompetition = 0
 
 for (let index = 0; index < sourceRows.length; index += 1) {
   const source = sourceRows[index]
@@ -259,6 +286,10 @@ for (let index = 0; index < sourceRows.length; index += 1) {
     continue
   }
   const sourceCompetition = String(source['联赛'] ?? '').trim()
+  if (isExcludedCompetition('', sourceCompetition)) {
+    skippedExcludedCompetition += 1
+    continue
+  }
   const competition = competitionFor(sourceCompetition)
   sourceCompetitionCounts.set(sourceCompetition, (sourceCompetitionCounts.get(sourceCompetition) ?? 0) + 1)
   importedRows.push({
@@ -302,7 +333,9 @@ let preservedExistingRows = 0
 let correctedSourceRows = 0
 const preservedExistingExamples = []
 for (const row of existingRows) {
-  if (row.match_date < options.startDate || matchIds.has(row.match_id)) {
+  if (row.match_date < options.startDate
+      || matchIds.has(row.match_id)
+      || isExcludedCompetition(row.competition, row.source_competition)) {
     continue
   }
   const key = fixtureKey(aliases, row)
@@ -368,6 +401,7 @@ console.log(JSON.stringify({
   outputRows: outputRows.length,
   skippedBeforeStart,
   skippedInvalidScore,
+  skippedExcludedCompetition,
   outputPath,
   statsOutputPath: options.statsOutputPath,
   wroteFile: options.write

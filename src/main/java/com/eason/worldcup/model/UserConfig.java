@@ -36,10 +36,12 @@ public class UserConfig {
             Competition.SERIE_A,
             Competition.BUNDESLIGA,
             Competition.LIGUE_1,
-            Competition.BRAZIL_SERIE_A,
             Competition.PRIMEIRA_LIGA,
             Competition.EREDIVISIE,
-            Competition.ARGENTINE_PRIMERA_DIVISION);
+            Competition.ARGENTINE_PRIMERA_DIVISION,
+            Competition.SWEDISH_ALLSVENSKAN,
+            Competition.FINNISH_VEIKKAUSLIIGA,
+            Competition.K_LEAGUE_1);
 
     private String modelMode = "after";
 

@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 145 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 152,240 场，日期范围为 2014-10-22 至 2026-07-23；导入流程以 2014-10-22 作为历史数据最早截点。15 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 144 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 151,100 场，日期范围为 2014-10-22 至 2026-07-24；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
@@ -16,10 +16,11 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - [Mart Jürisoo international_results](https://github.com/martj42/international_results)：成年男子国家队正式比赛和国际友谊赛，结合进球分钟剔除加时赛进球
 - [FootballCSV europe-champions-league](https://github.com/footballcsv/europe-champions-league)：1955-56 至 2015-16 赛季欧冠，使用 `FT` 常规时间比分
 - [OpenFootball club-world-cup](https://github.com/openfootball/club-world-cup)：2000 年起世俱杯，点球和加时场次读取括号中的 90 分钟比分
-- FotMob 各赛事赛季接口、阿塞拜疆超级联赛、芬兰超级联赛，以及上述来源未覆盖且不重复的竞彩场次
+- FotMob 各赛事赛季接口、阿塞拜疆超级联赛、韩国职业联赛、芬兰超级联赛，以及上述来源未覆盖且不重复的竞彩场次
 - ESPN Scoreboard：国内杯赛、超级杯、洲际俱乐部赛事和俱乐部友谊赛
 - Futbol24 按日及赛季比赛接口：补充 ESPN 未收录的俱乐部友谊赛、阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
-- FotMob 按赛季接口：补充瑞超、荷甲、欧协联、比甲、比利时杯、瑞士杯、瑞士超、巴乙、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
+- FotMob 按赛季接口：补充俱乐部赛、联赛杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、欧协联、比甲、比利时杯、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
+- Soccerway 韩国杯赛季结果页：补齐 FotMob 旧赛季接口仅返回后期轮次的问题
 - Futbol24 按赛季接口：补齐 FotMob 历史覆盖不足的塞杯、卢森杯、法罗杯和威联杯
 - 阿塞拜疆职业足球联盟（PFL）官方接口：补齐 Futbol24 未收录的阿塞杯第一资格轮和阿塞超升降级附加赛
 - Sofascore Club Friendly Games：Futbol24 不可用时的俱乐部友谊赛降级来源
@@ -28,7 +29,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 公共历史源通过 `scripts/import-public-history.mjs` 导入。脚本默认只检查增量，传入 `--write` 才会写文件；下载缓存位于 `target/public-history-cache`。公共源比赛使用 `OPEN-{source}-{hash}` ID，比分重建脚本会保留这些记录。
 
-参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同日对阵、相邻日期同比分及“正式比赛中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。ESPN、FotMob、Futbol24、Sofascore、PFL 比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`FUTBOL24-{id}`、`SOFASCORE-{id}`、`PFL-{id}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。
+参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。ESPN、FotMob、Soccerway、Futbol24、Sofascore、PFL 比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`SOFASCORE-{id}`、`PFL-{id}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。
 
 历史比赛使用以下内部类型和回测权重：
 
@@ -62,22 +63,27 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - `ita.1`：意甲
 - `ger.1`：德甲
 - `fra.1`：法甲
-- `bra.1`：巴甲
 - `por.1`：葡超
 - `ned.1`：荷甲
 - `arg.1`：阿甲
 
-为补足上述 15 类赛事参赛球队的近期样本，同一刷新流程还会加载：
+为补足上述 17 类赛事参赛球队的近期样本，同一刷新流程还会加载：
 
 - `fifa.friendly`：国家队国际友谊赛
 - 世界杯各大洲预选赛、欧预赛、欧国联、金杯赛、非洲杯和亚洲杯：国家队其他正式比赛
 - 国内杯赛、超级杯、欧协联、解放者杯、南美杯等：俱乐部其他正式比赛
 - `club.friendly`、国际冠军杯、酋长杯、英超亚洲杯和甘伯杯：俱乐部正常阵容友谊赛
+- FotMob `leagueId=489`：俱乐部赛，其中该接口只提供当前赛季，长期历史由 ESPN 补齐
+- FotMob `leagueId=180/168/172`：联赛杯、瑞甲和 Play-offs 1/2 完整赛季历史
+- FotMob `leagueId=525`：亚冠精英及其改制前赛事历史；2014 至 2022 使用自然年赛季，2023-24 起使用跨年赛季
+- FotMob `leagueId=9116/9551`：韩挑战联和韩国杯赛程
+- Soccerway 韩国杯赛季结果页：补齐 FotMob 旧赛季接口遗漏的早期轮次，历史赛季按比赛 ID 去重合并
 - FotMob `leagueId=262`：阿塞超正式比赛
 - FotMob `leagueId=51`：芬超完整赛季历史
+- FotMob `leagueId=9080`：韩职完整赛季历史
 - FotMob `leagueId=67/57`：瑞超、荷甲完整赛季历史
 - FotMob `leagueId=10216/10615`：欧协联正赛和资格赛完整赛季历史
-- FotMob `leagueId=40/149/164/69/8814`：比甲、比利时杯、瑞士杯、瑞士超和巴乙完整赛季历史
+- FotMob `leagueId=40/149/164/69`：比甲、比利时杯、瑞士杯和瑞士超完整赛季历史
 - FotMob `leagueId=271/270/126/182/183/176/177`：保杯、保超、爱超、塞超、塞杯、斯洛伐超和斯洛伐杯完整赛季历史
 - FotMob `leagueId=229/9527/250/9523/232/215/217/116`：卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超完整赛季历史
 - Futbol24 `league_id=472`：ESPN 未覆盖的俱乐部友谊赛
@@ -101,7 +107,9 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - PFL 官方 `games/show/{id}`：阿塞杯第一资格轮和阿塞超升降级附加赛的核验赛果
 - Sofascore `tournamentId=853`：Futbol24 不可用时的俱乐部友谊赛降级来源
 
-上述 FotMob、Futbol24 可信固定联赛和杯赛按整项赛事进入运行时缓存，即使新升班马暂时没有映射也不会被丢弃；开放式俱乐部友谊赛仍要求至少一方能映射到系统球队。已映射球队使用统一名称，未被体彩收录的低级别或预备队对手保留数据源官方名称并写入自映射。国家队和俱乐部补充源使用内部赛事代码，不会改变前端 15 类赛事加“全部”的下拉选项。
+上述 FotMob、Futbol24 可信固定联赛、杯赛和 FotMob 俱乐部赛按整项赛事进入运行时缓存，即使新升班马暂时没有映射也不会被丢弃；ESPN 开放式俱乐部友谊赛仍要求至少一方能映射到系统球队。已映射球队使用统一名称，未被体彩收录的低级别、预备队或临时对手保留数据源官方名称并写入自映射。瑞超、芬超和韩职使用独立赛事代码，其余国家队和俱乐部补充源仍使用内部分类代码，不会加入前端 17 类赛事加“全部”的下拉选项。
+
+巴甲、巴乙、巴西杯、巴西东北杯（Copa do Nordeste）和圣保罗州锦标赛（Campeonato Paulista）在历史导入、运行时赛程和体彩结果入口统一排除，不会写入静态数据或运行时缓存。
 
 所有成功结果都会缓存到 `config/club-competition-schedules.json`；点击“更新数据”时，常规赛程和俱乐部杯赛等补充赛事统一回溯过去 30 天并读取未来 7 天，窗口外历史缓存继续保留。2014-10-22 起的长期历史由 `historical_matches.csv` 提供。服务启动时读取已有补充缓存，只有点击“更新数据”或调用刷新接口时才主动请求补充远程源。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 和 `data-refresh` 节点。
 
@@ -137,7 +145,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 match_id,match_date,competition,home_team_cn,away_team_cn,home_team_en,away_team_en,home_score,away_score,neutral,sporttery_match_number,handicap,normal_win,normal_draw,normal_lose,handicap_win,handicap_draw,handicap_lose
 ```
 
-导入脚本只保留 15 类赛事、有完场比分且至少包含一组完整初盘赔率的记录。接口英文球队名与赔率表英文名关联后，统一转换为赔率表中的最新中文名。脚本会继续执行 `reconcile-historical-scores.mjs`，用 FotMob 或已核验接口赛果纠正原始文件中合计 7 球的压缩比分、跨日日期和主客顺序，再重建去重后的历史比赛文件。
+导入脚本只保留 17 类赛事、有完场比分且至少包含一组完整初盘赔率的记录。接口英文球队名与赔率表英文名关联后，统一转换为赔率表中的最新中文名。脚本会继续执行 `reconcile-historical-scores.mjs`，用 FotMob 或已核验接口赛果纠正原始文件中合计 7 球的压缩比分、跨日日期和主客顺序，再重建去重后的历史比赛文件。
 
 运行以下命令可以从新的原始赔率文件重新生成：
 
@@ -145,7 +153,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_team_en,away_team
 powershell -ExecutionPolicy Bypass -File scripts/import-historical-odds.ps1 -SourcePath "C:\path\to\his-data.csv"
 ```
 
-指定日期范围的官方赔率可以先通过接口写入缓存，再用脚本合并到内置文件。历史补取接口只保留系统支持的 15 类赛事，并从 `hadList`、`hhadList` 中选择更新时间最早的有效记录作为初盘：
+指定日期范围的官方赔率可以先通过接口写入缓存，再用脚本合并到内置文件。历史补取接口只保留系统支持的 17 类赛事，并从 `hadList`、`hhadList` 中选择更新时间最早的有效记录作为初盘：
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri "http://localhost:8080/api/football/data/refresh-historical-odds?startDate=2026-04-21&endDate=2026-06-10"

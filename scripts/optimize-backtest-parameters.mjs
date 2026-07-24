@@ -9,13 +9,15 @@ const NON_WORLD_CUP_COMPETITIONS = [
   'CHAMPIONS_LEAGUE',
   'PREMIER_LEAGUE',
   'LA_LIGA',
-  'SERIE_A',
   'BUNDESLIGA',
+  'SERIE_A',
   'LIGUE_1',
-  'BRAZIL_SERIE_A',
   'PRIMEIRA_LIGA',
   'EREDIVISIE',
-  'ARGENTINE_PRIMERA_DIVISION'
+  'ARGENTINE_PRIMERA_DIVISION',
+  'SWEDISH_ALLSVENSKAN',
+  'FINNISH_VEIKKAUSLIIGA',
+  'K_LEAGUE_1'
 ].join(',')
 const PROBABILITY_KEYS = ['win', 'draw', 'lose']
 const PROBABILITY_MASKS = [1, 2, 4]
@@ -178,6 +180,10 @@ function withSmoothing(matches, smoothingFactor) {
     smoothedMatches.length,
     Number(matches.totalMatchCount) || 0
   )
+  smoothedMatches.oddsMatchCount = Math.max(
+    smoothedMatches.length,
+    Number(matches.oddsMatchCount) || 0
+  )
   return smoothedMatches
 }
 
@@ -315,13 +321,13 @@ function evaluate(matches, parameters) {
     recommendedSelectionCount,
     recommendedMatchCount
   )
-  const totalMatchCount = Math.max(
+  const oddsMatchCount = Math.max(
     matches.length,
-    Number(matches.totalMatchCount) || 0
+    Number(matches.oddsMatchCount) || 0
   )
   return {
-    sampleCount: totalMatchCount,
-    samplingRate: calculateSamplingRate(recommendedMatchCount, totalMatchCount),
+    sampleCount: oddsMatchCount,
+    samplingRate: calculateSamplingRate(recommendedMatchCount, oddsMatchCount),
     recommendedMatchCount,
     recommendedSelectionCount,
     hitMatchCount,
@@ -375,6 +381,10 @@ async function fetchBacktest(competition, factors, effectiveModelMode = modelMod
     throw lastError || new Error('回测接口未返回数据')
   }
   const result = prepareMatches(data.matches, effectiveModelMode)
+  result.oddsMatchCount = Math.max(
+    result.length,
+    Number(data.oddsMatchCount) || 0
+  )
   result.totalMatchCount = Math.max(
     result.length,
     Number(data.completedMatchCount) || 0
@@ -394,6 +404,9 @@ async function loadPresetMatches(preset, effectiveModelMode = modelMode) {
 
 function combineMatchGroups(...groups) {
   const matches = groups.flat()
+  matches.oddsMatchCount = groups.reduce((sum, group) => {
+    return sum + Math.max(group.length, Number(group.oddsMatchCount) || 0)
+  }, 0)
   matches.totalMatchCount = groups.reduce((sum, group) => {
     return sum + Math.max(group.length, Number(group.totalMatchCount) || 0)
   }, 0)

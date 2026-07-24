@@ -25,7 +25,7 @@ class UserConfigServiceTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void shouldMigrateLegacyParametersToSixtyIndependentProfiles() throws Exception {
+    void shouldMigrateLegacyParametersToSixtyEightIndependentProfiles() throws Exception {
         Path configPath = tempDirectory.resolve("user-config.json");
         Files.writeString(configPath, """
                 {
@@ -50,7 +50,7 @@ class UserConfigServiceTest {
 
         UserConfig config = service.load();
 
-        assertEquals(60, config.getParameterProfiles().size());
+        assertEquals(68, config.getParameterProfiles().size());
         ParameterProfile currentProfile = config.getParameterProfiles().get(UserConfig.parameterProfileKey(
                 Competition.WORLD_CUP,
                 UserConfig.CURRENT_EDITION_PROFILE,
@@ -88,7 +88,7 @@ class UserConfigServiceTest {
     }
 
     @Test
-    void shouldPersistOnlySixtyProfileStructureAfterMigration() throws Exception {
+    void shouldPersistOnlySixtyEightProfileStructureAfterMigration() throws Exception {
         Path configPath = tempDirectory.resolve("user-config.json");
         Files.writeString(configPath, """
                 {
@@ -108,7 +108,7 @@ class UserConfigServiceTest {
         assertFalse(persisted.has("modelFactors"));
         assertFalse(persisted.has("globalParameters"));
         assertTrue(persisted.has("parameterProfiles"));
-        assertEquals(60, persisted.get("parameterProfiles").size());
+        assertEquals(68, persisted.get("parameterProfiles").size());
         JsonNode modelFactors = persisted.get("parameterProfiles")
                 .get("WORLD_CUP:CURRENT:STABLE")
                 .get("modelFactors");
@@ -161,6 +161,35 @@ class UserConfigServiceTest {
         assertFalse(persistedProfiles.has("PREMIER_LEAGUE:PREVIOUS"));
         assertTrue(persistedProfiles.has("PREMIER_LEAGUE:PREVIOUS:STABLE"));
         assertTrue(persistedProfiles.has("PREMIER_LEAGUE:PREVIOUS:AGGRESSIVE"));
+    }
+
+    @Test
+    void shouldKeepOfficialMatchWeightAtOrAboveOne() {
+        Path configPath = tempDirectory.resolve("user-config.json");
+        UserConfigService service = createService(configPath);
+        UserConfig config = service.load();
+        ParameterProfile profile = config.getParameterProfiles().get(UserConfig.parameterProfileKey(
+                Competition.WORLD_CUP,
+                UserConfig.CURRENT_EDITION_PROFILE,
+                UserConfig.STABLE_PARAMETER_PRESET));
+        profile.getModelFactors().setOfficialMatchWeight(0.25D);
+
+        UserConfig saved = service.save(config);
+
+        ParameterProfile savedProfile = saved.getParameterProfiles().get(UserConfig.parameterProfileKey(
+                Competition.WORLD_CUP,
+                UserConfig.CURRENT_EDITION_PROFILE,
+                UserConfig.STABLE_PARAMETER_PRESET));
+        assertEquals(1.0D, savedProfile.getModelFactors().getOfficialMatchWeight());
+
+        savedProfile.getModelFactors().setOfficialMatchWeight(2.5D);
+        UserConfig savedAgain = service.save(saved);
+
+        ParameterProfile savedAgainProfile = savedAgain.getParameterProfiles().get(UserConfig.parameterProfileKey(
+                Competition.WORLD_CUP,
+                UserConfig.CURRENT_EDITION_PROFILE,
+                UserConfig.STABLE_PARAMETER_PRESET));
+        assertEquals(2.5D, savedAgainProfile.getModelFactors().getOfficialMatchWeight());
     }
 
     private UserConfigService createService(Path configPath) {

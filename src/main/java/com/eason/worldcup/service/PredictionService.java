@@ -80,9 +80,6 @@ public class PredictionService {
             Map.entry(Competition.LIGUE_1, new CompetitionBacktestPeriod(
                     LocalDate.of(2025, 8, 15), LocalDate.of(2026, 5, 16),
                     LocalDate.of(2026, 8, 20), LocalDate.of(2027, 5, 29))),
-            Map.entry(Competition.BRAZIL_SERIE_A, new CompetitionBacktestPeriod(
-                    LocalDate.of(2025, 3, 29), LocalDate.of(2025, 12, 7),
-                    LocalDate.of(2026, 1, 28), LocalDate.of(2026, 12, 2))),
             Map.entry(Competition.PRIMEIRA_LIGA, new CompetitionBacktestPeriod(
                     LocalDate.of(2025, 8, 8), LocalDate.of(2026, 5, 17),
                     LocalDate.of(2026, 8, 7), LocalDate.of(2027, 5, 16))),
@@ -91,7 +88,16 @@ public class PredictionService {
                     LocalDate.of(2026, 8, 7), LocalDate.of(2027, 5, 23))),
             Map.entry(Competition.ARGENTINE_PRIMERA_DIVISION, new CompetitionBacktestPeriod(
                     LocalDate.of(2025, 1, 24), LocalDate.of(2025, 12, 13),
-                    LocalDate.of(2026, 1, 25), LocalDate.of(2026, 12, 13))));
+                    LocalDate.of(2026, 1, 25), LocalDate.of(2026, 12, 13))),
+            Map.entry(Competition.SWEDISH_ALLSVENSKAN, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 3, 29), LocalDate.of(2025, 11, 9),
+                    LocalDate.of(2026, 4, 4), LocalDate.of(2026, 11, 29))),
+            Map.entry(Competition.FINNISH_VEIKKAUSLIIGA, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 4, 5), LocalDate.of(2025, 11, 9),
+                    LocalDate.of(2026, 4, 4), LocalDate.of(2026, 11, 8))),
+            Map.entry(Competition.K_LEAGUE_1, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 2, 15), LocalDate.of(2025, 11, 30),
+                    LocalDate.of(2026, 2, 28), LocalDate.of(2026, 12, 6))));
 
     private final DataRepository dataRepository;
 
@@ -115,6 +121,10 @@ public class PredictionService {
         this.dataRepository = dataRepository;
         this.teamStrengthService = teamStrengthService;
         this.sportteryMarketSelectionService = sportteryMarketSelectionService;
+    }
+
+    public void clearDynamicModelCaches() {
+        teamStrengthService.clearDynamicModelCaches();
     }
 
     public PredictionQueryResponse queryByDate(LocalDate date, Integer simulations) {
@@ -561,7 +571,7 @@ public class PredictionService {
             BiConsumer<Integer, String> progressConsumer) {
         notifyDataRefreshProgress(progressConsumer, 5, "正在读取体彩最近30天赛果");
         sportteryMarketSelectionService.forceRefresh(null);
-        notifyDataRefreshProgress(progressConsumer, 25, "体彩赛果已更新，正在刷新15类赛事赛程与补充数据");
+        notifyDataRefreshProgress(progressConsumer, 25, "体彩赛果已更新，正在刷新17类赛事赛程与补充数据");
         dataRepository.refreshSchedules();
         notifyDataRefreshProgress(progressConsumer, 65, "赛程数据已更新，正在重建球队模型");
         teamStrengthService.rebuildModels();

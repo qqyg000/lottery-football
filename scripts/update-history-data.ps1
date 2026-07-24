@@ -10,13 +10,15 @@ param(
         "CHAMPIONS_LEAGUE",
         "PREMIER_LEAGUE",
         "LA_LIGA",
-        "SERIE_A",
         "BUNDESLIGA",
+        "SERIE_A",
         "LIGUE_1",
-        "BRAZIL_SERIE_A",
         "PRIMEIRA_LIGA",
         "EREDIVISIE",
-        "ARGENTINE_PRIMERA_DIVISION"
+        "ARGENTINE_PRIMERA_DIVISION",
+        "SWEDISH_ALLSVENSKAN",
+        "FINNISH_VEIKKAUSLIIGA",
+        "K_LEAGUE_1"
     )]
     [string]$Competition = "WORLD_CUP",
 

@@ -9,6 +9,27 @@ const teamNameMappingsPath = path.join(root, 'src/main/resources/data/team_name_
 const cacheRoot = path.join(root, 'target/public-history-cache')
 const MINIMUM_HISTORY_DATE = '2014-06-12'
 
+const EXCLUDED_COMPETITIONS = new Set(['BRAZIL_SERIE_A'])
+
+const EXCLUDED_SOURCE_COMPETITIONS = new Set([
+  '巴甲',
+  '巴乙',
+  '巴西乙',
+  '巴西乙级联赛',
+  '巴西杯',
+  '巴东北',
+  '巴东北杯',
+  '巴西东北杯',
+  '圣保罗锦',
+  '圣保罗州锦标赛',
+  'BRAZIL SERIE B',
+  'CAMPEONATO BRASILEIRO SERIE B',
+  'CAMPEONATO PAULISTA',
+  'PAULISTA A1',
+  'COPA DO BRASIL',
+  'COPA DO NORDESTE'
+])
+
 const COMPETITION_NAMES = new Map(Object.entries({
   WORLD_CUP: '世界杯',
   EUROPEAN_CHAMPIONSHIP: '欧洲杯',
@@ -18,13 +39,15 @@ const COMPETITION_NAMES = new Map(Object.entries({
   CHAMPIONS_LEAGUE: '欧冠',
   PREMIER_LEAGUE: '英超',
   LA_LIGA: '西甲',
-  SERIE_A: '意甲',
   BUNDESLIGA: '德甲',
+  SERIE_A: '意甲',
   LIGUE_1: '法甲',
-  BRAZIL_SERIE_A: '巴甲',
   PRIMEIRA_LIGA: '葡超',
   EREDIVISIE: '荷甲',
-  ARGENTINE_PRIMERA_DIVISION: '阿甲'
+  ARGENTINE_PRIMERA_DIVISION: '阿甲',
+  SWEDISH_ALLSVENSKAN: '瑞超',
+  FINNISH_VEIKKAUSLIIGA: '芬超',
+  K_LEAGUE_1: '韩职'
 }))
 
 const WORLD_CUP_YEARS = [
@@ -171,6 +194,13 @@ function normalizeHistoricalRow(row) {
       || COMPETITION_NAMES.get(competition)
       || competition
   }
+}
+
+function isExcludedHistoricalRow(row) {
+  return EXCLUDED_COMPETITIONS.has(String(row.competition ?? '').trim().toUpperCase())
+    || EXCLUDED_SOURCE_COMPETITIONS.has(
+      String(row.source_competition ?? '').trim().toUpperCase()
+    )
 }
 
 function canonicalName(value) {
@@ -588,6 +618,7 @@ const [historicalText, mappingText, sourceRows] = await Promise.all([
 const originalHistoricalRows = parseCsv(historicalText).map(normalizeHistoricalRow)
 const historicalRows = originalHistoricalRows.filter(row => (
   row.match_date >= options.minDate && row.match_date <= options.maxDate
+  && !isExcludedHistoricalRow(row)
 ))
 const mappingRows = parseCsv(mappingText)
 const mappings = buildMappings(mappingRows)

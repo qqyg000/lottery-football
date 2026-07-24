@@ -268,7 +268,7 @@ public class UserConfigService {
         normalized.setHostTeamGoalFactor(normalizeNumber(normalized.getHostTeamGoalFactor(), defaults.getHostTeamGoalFactor(), 0.1D, 3.0D));
         normalized.setHomeTeamGoalFactor(normalizeNumber(normalized.getHomeTeamGoalFactor(), defaults.getHomeTeamGoalFactor(), 0.1D, 3.0D));
         normalized.setSeedTeamGoalFactor(normalizeNumber(normalized.getSeedTeamGoalFactor(), defaults.getSeedTeamGoalFactor(), 0.1D, 3.0D));
-        normalized.setOfficialMatchWeight(normalizeNumber(normalized.getOfficialMatchWeight(), defaults.getOfficialMatchWeight(), 0.0D, 1.0D));
+        normalized.setOfficialMatchWeight(normalizeNumber(normalized.getOfficialMatchWeight(), defaults.getOfficialMatchWeight(), 1.0D, 3.0D));
         normalized.setInternationalFriendlyWeight(normalizeNumber(normalized.getInternationalFriendlyWeight(), defaults.getInternationalFriendlyWeight(), 0.0D, 1.0D));
         normalized.setClubFriendlyWeight(normalizeNumber(normalized.getClubFriendlyWeight(), defaults.getClubFriendlyWeight(), 0.0D, 1.0D));
         normalized.setHandicapSmoothingFactor(normalizeNumber(normalized.getHandicapSmoothingFactor(), defaults.getHandicapSmoothingFactor(), 0.0D, 0.8D));

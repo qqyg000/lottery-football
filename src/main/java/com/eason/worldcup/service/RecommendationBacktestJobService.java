@@ -104,6 +104,7 @@ public class RecommendationBacktestJobService {
             Map<Competition, UserConfig.ModelFactors> modelFactorsByCompetition) {
         job.start();
         try {
+            predictionService.clearDynamicModelCaches();
             RecommendationBacktestResponse result = predictionService.queryRecommendationBacktest(
                     competitions,
                     simulations,
@@ -121,6 +122,8 @@ public class RecommendationBacktestJobService {
         } catch (Exception ex) {
             log.error("Recommendation backtest job {} failed", job.getJobId(), ex);
             job.fail(resolveErrorMessage(ex));
+        } finally {
+            predictionService.clearDynamicModelCaches();
         }
     }
 

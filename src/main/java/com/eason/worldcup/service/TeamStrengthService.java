@@ -111,17 +111,21 @@ public class TeamStrengthService {
         List<HistoricalMatch> historicalMatches = dataRepository.getHistoricalMatches();
         LocalDate today = ApplicationTime.today();
         currentModelExcludedDates = parseExcludedDates(currentModelExcludedDateText);
-        preTournamentModelByMatchTypeWeights.clear();
-        currentModelByMatchTypeWeights.clear();
-        currentModelByPredictionDate.clear();
-        clubPreSeasonModelByStartDate.clear();
-        clubModelByPredictionDate.clear();
+        clearDynamicModelCaches();
         preTournamentModel = buildStrengthModel(
                 filterPreTournamentMatches(historicalMatches),
                 TOURNAMENT_START_DATE);
         currentModel = buildStrengthModel(
                 buildCurrentMatches(historicalMatches, today),
                 today);
+    }
+
+    public synchronized void clearDynamicModelCaches() {
+        preTournamentModelByMatchTypeWeights.clear();
+        currentModelByMatchTypeWeights.clear();
+        currentModelByPredictionDate.clear();
+        clubPreSeasonModelByStartDate.clear();
+        clubModelByPredictionDate.clear();
     }
 
     public AdjustedExpectedGoals calculatePreTournamentExpectedGoals(MatchSchedule schedule) {
@@ -677,11 +681,18 @@ public class TeamStrengthService {
             Double internationalFriendlyWeightOverride,
             Double clubFriendlyWeightOverride) {
         return new MatchTypeWeights(
-                normalizeMatchTypeWeight(officialMatchWeightOverride, DEFAULT_MATCH_TYPE_WEIGHTS.officialMatchWeight()),
+                normalizeOfficialMatchWeight(officialMatchWeightOverride),
                 normalizeMatchTypeWeight(
                         internationalFriendlyWeightOverride,
                         DEFAULT_MATCH_TYPE_WEIGHTS.internationalFriendlyWeight()),
                 normalizeMatchTypeWeight(clubFriendlyWeightOverride, DEFAULT_MATCH_TYPE_WEIGHTS.clubFriendlyWeight()));
+    }
+
+    private double normalizeOfficialMatchWeight(Double value) {
+        if (value == null || !Double.isFinite(value)) {
+            return DEFAULT_MATCH_TYPE_WEIGHTS.officialMatchWeight();
+        }
+        return Math.max(1.0D, Math.min(3.0D, value));
     }
 
     private double normalizeMatchTypeWeight(Double value, double defaultValue) {

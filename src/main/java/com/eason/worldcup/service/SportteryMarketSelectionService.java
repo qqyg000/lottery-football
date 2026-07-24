@@ -5,6 +5,7 @@ import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.SportteryOdds;
 import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
 import com.eason.worldcup.util.ClubTeamNameTranslator;
+import com.eason.worldcup.util.CompetitionDataPolicy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -62,7 +63,6 @@ public class SportteryMarketSelectionService {
             Map.entry(40, Competition.SERIE_A),
             Map.entry(37, Competition.BUNDESLIGA),
             Map.entry(32, Competition.LIGUE_1),
-            Map.entry(6, Competition.BRAZIL_SERIE_A),
             Map.entry(55, Competition.PRIMEIRA_LIGA),
             Map.entry(17, Competition.EREDIVISIE),
             Map.entry(77, Competition.ARGENTINE_PRIMERA_DIVISION));
@@ -134,6 +134,10 @@ public class SportteryMarketSelectionService {
     private static Set<Competition> createSupportedCompetitions() {
         Set<Competition> competitions = new HashSet<>(COMPETITIONS_BY_LEAGUE_ID.values());
         competitions.add(Competition.CLUB_OFFICIAL_OTHER);
+        competitions.add(Competition.CLUB_FRIENDLY);
+        competitions.add(Competition.SWEDISH_ALLSVENSKAN);
+        competitions.add(Competition.FINNISH_VEIKKAUSLIIGA);
+        competitions.add(Competition.K_LEAGUE_1);
         return Set.copyOf(competitions);
     }
 
@@ -189,12 +193,40 @@ public class SportteryMarketSelectionService {
             return 0;
         }
         List<MatchSchedule> recentSchedules = getRecentCompletedSchedules(daysBack);
+        return mergeUnmatchedMarketSchedulesInto(schedules, recentSchedules);
+    }
+
+    public synchronized int mergeRecentAndUpcomingSchedulesInto(
+            List<MatchSchedule> schedules,
+            int daysBack,
+            int daysForward) {
+        if (schedules == null) {
+            return 0;
+        }
+        ensureCacheLoaded();
+        LocalDate today = LocalDate.now(resolveTargetZone());
+        LocalDate startDate = today.minusDays(Math.max(0, Math.min(90, daysBack)));
+        LocalDate endDate = today.plusDays(Math.max(0, Math.min(7, daysForward)));
+        List<MatchSchedule> marketSchedules = entriesByMatchId.values().stream()
+                .filter(entry -> entry.getMatchDate() != null)
+                .filter(entry -> !entry.getMatchDate().isBefore(startDate))
+                .filter(entry -> !entry.getMatchDate().isAfter(endDate))
+                .filter(entry -> SUPPORTED_COMPETITIONS.contains(entry.getCompetition()))
+                .filter(entry -> hasCompletedScore(entry) || hasMarketOdds(entry))
+                .map(this::toMarketSchedule)
+                .toList();
+        return mergeUnmatchedMarketSchedulesInto(schedules, marketSchedules);
+    }
+
+    private int mergeUnmatchedMarketSchedulesInto(
+            List<MatchSchedule> schedules,
+            List<MatchSchedule> marketSchedules) {
         applyMarketEntries(schedules, false);
         Set<String> matchedSportteryIds = schedules.stream()
                 .map(MatchSchedule::getSportteryMatchId)
                 .filter(this::hasText)
                 .collect(java.util.stream.Collectors.toSet());
-        List<MatchSchedule> missingSchedules = recentSchedules.stream()
+        List<MatchSchedule> missingSchedules = marketSchedules.stream()
                 .filter(schedule -> !matchedSportteryIds.contains(schedule.getSportteryMatchId()))
                 .toList();
         schedules.addAll(missingSchedules);
@@ -202,11 +234,18 @@ public class SportteryMarketSelectionService {
     }
 
     private MatchSchedule toCompletedSchedule(SportteryMarketEntry entry) {
+        return toMarketSchedule(entry);
+    }
+
+    private MatchSchedule toMarketSchedule(SportteryMarketEntry entry) {
+        boolean completed = hasCompletedScore(entry);
         MatchSchedule schedule = new MatchSchedule();
         schedule.setMatchId("SPORTTERY-" + entry.getSportteryMatchId());
         schedule.setCompetition(entry.getCompetition());
         schedule.setMatchDate(entry.getMatchDate());
-        schedule.setKickoffTime(LocalTime.MIDNIGHT);
+        schedule.setKickoffTime(entry.getKickoffTime() == null
+                ? LocalTime.MIDNIGHT
+                : entry.getKickoffTime());
         schedule.setGroupName(hasText(entry.getLeagueName())
                 ? entry.getLeagueName()
                 : entry.getCompetition().getDisplayName());
@@ -220,9 +259,11 @@ public class SportteryMarketSelectionService {
         schedule.setAwayTeamEn(entry.getAwayTeam());
         schedule.setVenue("");
         schedule.setNeutral(false);
-        schedule.setStatus("COMPLETED");
-        schedule.setHomeScore(entry.getHomeScore());
-        schedule.setAwayScore(entry.getAwayScore());
+        schedule.setStatus(completed ? "COMPLETED" : "SCHEDULED");
+        if (completed) {
+            schedule.setHomeScore(entry.getHomeScore());
+            schedule.setAwayScore(entry.getAwayScore());
+        }
         schedule.setSportteryMatchId(entry.getSportteryMatchId());
         schedule.setSportteryMatchNumber(entry.getSportteryMatchNumber());
         schedule.setSportteryHomeTeamName(schedule.getHomeTeamCn());
@@ -232,6 +273,14 @@ public class SportteryMarketSelectionService {
         schedule.setSportteryNormalOdds(entry.getNormalOdds());
         schedule.setSportteryHandicapOdds(entry.getHandicapOdds());
         return schedule;
+    }
+
+    private boolean hasCompletedScore(SportteryMarketEntry entry) {
+        return entry.getHomeScore() != null && entry.getAwayScore() != null;
+    }
+
+    private boolean hasMarketOdds(SportteryMarketEntry entry) {
+        return entry.getNormalOdds() != null || entry.getHandicapOdds() != null;
     }
 
     public synchronized int forceRefresh(LocalDate referenceDate) {
@@ -345,6 +394,7 @@ public class SportteryMarketSelectionService {
         return schedules.stream()
                 .filter(schedule -> schedule != null && schedule.getMatchDate() != null)
                 .filter(schedule -> SUPPORTED_COMPETITIONS.contains(schedule.getCompetition()))
+                .filter(schedule -> !CompetitionDataPolicy.isExcludedSourceCompetition(schedule.getGroupName()))
                 .toList();
     }
 
@@ -838,6 +888,7 @@ public class SportteryMarketSelectionService {
         entry.setSportteryMatchId(sportteryMatchId);
         entry.setSportteryMatchNumber(match.path("matchNumStr").asText(""));
         entry.setMatchDate(matchDate);
+        entry.setKickoffTime(parseTime(match.path("matchTime").asText("")));
         entry.setCompetition(competition);
         entry.setLeagueName(parseLeagueName(match));
         entry.setHomeTeam(homeTeam);
@@ -874,6 +925,7 @@ public class SportteryMarketSelectionService {
         entry.setSportteryMatchId(sportteryMatchId);
         entry.setSportteryMatchNumber(match.path("matchNumStr").asText(""));
         entry.setMatchDate(matchDate);
+        entry.setKickoffTime(parseTime(match.path("matchTime").asText("")));
         entry.setCompetition(competition);
         entry.setLeagueName(parseLeagueName(match));
         entry.setHomeTeam(homeTeam);
@@ -924,11 +976,14 @@ public class SportteryMarketSelectionService {
     }
 
     private Competition parseCompetition(JsonNode match) {
+        String leagueName = parseLeagueName(match);
+        if (CompetitionDataPolicy.isExcludedSourceCompetition(leagueName)) {
+            return null;
+        }
         Competition competition = COMPETITIONS_BY_LEAGUE_ID.get(match.path("leagueId").asInt(-1));
         if (competition != null) {
             return competition;
         }
-        String leagueName = parseLeagueName(match);
         return switch (leagueName) {
             case "世界杯" -> Competition.WORLD_CUP;
             case "欧洲杯" -> Competition.EUROPEAN_CHAMPIONSHIP;
@@ -941,11 +996,20 @@ public class SportteryMarketSelectionService {
             case "意甲" -> Competition.SERIE_A;
             case "德甲" -> Competition.BUNDESLIGA;
             case "法甲" -> Competition.LIGUE_1;
-            case "巴甲" -> Competition.BRAZIL_SERIE_A;
             case "葡超" -> Competition.PRIMEIRA_LIGA;
             case "荷甲" -> Competition.EREDIVISIE;
             case "阿甲" -> Competition.ARGENTINE_PRIMERA_DIVISION;
-            case "芬超", "芬兰杯", "芬杯",
+            case "瑞超", "瑞典超" -> Competition.SWEDISH_ALLSVENSKAN;
+            case "芬超" -> Competition.FINNISH_VEIKKAUSLIIGA;
+            case "韩职", "韩国职业联赛" -> Competition.K_LEAGUE_1;
+            case "俱乐部赛", "俱乐部友谊赛" -> Competition.CLUB_FRIENDLY;
+            case "联赛杯", "苏联赛杯",
+                    "瑞甲",
+                    "亚冠精英", "亚洲冠军联赛精英",
+                    "Play-offs 1/2",
+                    "韩挑战联", "K联赛2",
+                    "韩国杯", "韩足总杯",
+                    "芬兰杯", "芬杯",
                     "丹超",
                     "波超杯", "波兰超杯", "波甲", "波兰甲",
                     "奥甲", "奥超", "奥地利甲",
@@ -955,9 +1019,6 @@ public class SportteryMarketSelectionService {
                     "匈甲", "匈牙利甲", "匈牙利杯", "匈杯",
                     "克甲", "克罗地亚甲",
                     "塞浦甲", "塞甲", "哈萨超", "哈超",
-                    "韩职", "韩国职业联赛",
-                    "瑞超", "瑞典超",
-                    "挪超", "挪威超",
                     "美职", "美职联" -> Competition.CLUB_OFFICIAL_OTHER;
             default -> null;
         };
@@ -975,6 +1036,17 @@ public class SportteryMarketSelectionService {
         }
         try {
             return LocalDate.parse(value);
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
+    }
+
+    private LocalTime parseTime(String value) {
+        if (!hasText(value)) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(value);
         } catch (DateTimeParseException ex) {
             return null;
         }
@@ -1246,6 +1318,9 @@ public class SportteryMarketSelectionService {
         try {
             SportteryMarketCache cache = objectMapper.readValue(path.toFile(), SportteryMarketCache.class);
             for (SportteryMarketEntry entry : cache.getEntries()) {
+                entry.setCompetition(Competition.fromSourceCompetition(
+                        entry.getLeagueName(),
+                        entry.getCompetition()));
                 if (isValidCacheEntry(entry)) {
                     entriesByMatchId.put(entry.getSportteryMatchId(), entry);
                 }
@@ -1274,6 +1349,7 @@ public class SportteryMarketSelectionService {
                 && hasText(entry.getSportteryMatchId())
                 && entry.getMatchDate() != null
                 && SUPPORTED_COMPETITIONS.contains(entry.getCompetition())
+                && !CompetitionDataPolicy.isExcludedSourceCompetition(entry.getLeagueName())
                 && hasText(entry.getHomeTeam())
                 && hasText(entry.getAwayTeam());
     }
@@ -1286,6 +1362,7 @@ public class SportteryMarketSelectionService {
         SportteryMarketCache cache = new SportteryMarketCache();
         List<SportteryMarketEntry> entries = entriesByMatchId.values().stream()
                 .filter(entry -> SUPPORTED_COMPETITIONS.contains(entry.getCompetition()))
+                .filter(entry -> !CompetitionDataPolicy.isExcludedSourceCompetition(entry.getLeagueName()))
                 .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
         entries.sort(Comparator
                 .comparing(SportteryMarketEntry::getMatchDate)
@@ -1405,6 +1482,8 @@ public class SportteryMarketSelectionService {
 
         private LocalDate matchDate;
 
+        private LocalTime kickoffTime;
+
         private Competition competition;
 
         private String leagueName;
@@ -1451,6 +1530,14 @@ public class SportteryMarketSelectionService {
 
         public void setMatchDate(LocalDate matchDate) {
             this.matchDate = matchDate;
+        }
+
+        public LocalTime getKickoffTime() {
+            return kickoffTime;
+        }
+
+        public void setKickoffTime(LocalTime kickoffTime) {
+            this.kickoffTime = kickoffTime;
         }
 
         public Competition getCompetition() {

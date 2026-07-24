@@ -31,13 +31,15 @@ $supportedCompetitions = [Collections.Generic.HashSet[string]]::new([string[]]@(
     "CHAMPIONS_LEAGUE",
     "PREMIER_LEAGUE",
     "LA_LIGA",
-    "SERIE_A",
     "BUNDESLIGA",
+    "SERIE_A",
     "LIGUE_1",
-    "BRAZIL_SERIE_A",
     "PRIMEIRA_LIGA",
     "EREDIVISIE",
-    "ARGENTINE_PRIMERA_DIVISION"
+    "ARGENTINE_PRIMERA_DIVISION",
+    "SWEDISH_ALLSVENSKAN",
+    "FINNISH_VEIKKAUSLIIGA",
+    "K_LEAGUE_1"
 ))
 
 $neutralCompetitions = [Collections.Generic.HashSet[string]]::new([string[]]@(
@@ -108,6 +110,25 @@ function Get-CanonicalSourceName {
     $normalized = $normalized.Normalize([Text.NormalizationForm]::FormKD).ToUpperInvariant()
     $normalized = [Text.RegularExpressions.Regex]::Replace($normalized, "\p{M}", "")
     return [Text.RegularExpressions.Regex]::Replace($normalized, "[^\p{L}\p{N}]", "")
+}
+
+function Get-SelectableCompetition {
+    param(
+        [string]$Competition,
+        [string]$SourceCompetition
+    )
+
+    $sourceName = $SourceCompetition.Trim()
+    if ($sourceName.StartsWith("瑞超") -or $sourceName.StartsWith("瑞典超")) {
+        return "SWEDISH_ALLSVENSKAN"
+    }
+    if ($sourceName.StartsWith("芬超")) {
+        return "FINNISH_VEIKKAUSLIIGA"
+    }
+    if ($sourceName.StartsWith("韩职") -or $sourceName.StartsWith("韩国职业联赛")) {
+        return "K_LEAGUE_1"
+    }
+    return $Competition
 }
 
 function Get-MatchScore {
@@ -182,6 +203,16 @@ foreach ($row in $existingRows) {
 
 $schedules = Get-Content -LiteralPath $resolvedSchedulePath -Raw -Encoding UTF8 | ConvertFrom-Json
 $cache = Get-Content -LiteralPath $resolvedCachePath -Raw -Encoding UTF8 | ConvertFrom-Json
+foreach ($schedule in @($schedules)) {
+    $schedule.competition = Get-SelectableCompetition `
+        -Competition ([string]$schedule.competition) `
+        -SourceCompetition ([string]$schedule.groupName)
+}
+foreach ($entry in @($cache.entries)) {
+    $entry.competition = Get-SelectableCompetition `
+        -Competition ([string]$entry.competition) `
+        -SourceCompetition ([string]$entry.leagueName)
+}
 $entries = @($cache.entries | Where-Object {
     $supportedCompetitions.Contains([string]$_.competition) `
         -and ([datetime]$_.matchDate).Date -ge $StartDate.Date `

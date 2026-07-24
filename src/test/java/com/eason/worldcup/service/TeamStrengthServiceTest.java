@@ -114,7 +114,7 @@ class TeamStrengthServiceTest {
                 null,
                 null,
                 null));
-        assertEquals(0.82D, teamStrengthService.resolveMatchTypeWeight(
+        assertEquals(1.0D, teamStrengthService.resolveMatchTypeWeight(
                 HistoricalMatchType.OFFICIAL,
                 0.82D,
                 0.44D,
@@ -129,9 +129,14 @@ class TeamStrengthServiceTest {
                 0.82D,
                 0.44D,
                 0.21D));
-        assertEquals(1.0D, teamStrengthService.resolveMatchTypeWeight(
+        assertEquals(2.0D, teamStrengthService.resolveMatchTypeWeight(
                 HistoricalMatchType.OFFICIAL,
                 2.0D,
+                -1.0D,
+                0.21D));
+        assertEquals(3.0D, teamStrengthService.resolveMatchTypeWeight(
+                HistoricalMatchType.OFFICIAL,
+                4.0D,
                 -1.0D,
                 0.21D));
         assertEquals(0.0D, teamStrengthService.resolveMatchTypeWeight(

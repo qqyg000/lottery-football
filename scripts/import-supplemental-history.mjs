@@ -9,6 +9,27 @@ const teamNameMappingsPath = path.join(root, 'src/main/resources/data/team_name_
 const cacheRoot = path.join(root, 'target/supplemental-history-cache')
 const MINIMUM_HISTORY_DATE = '2014-10-22'
 
+const EXCLUDED_COMPETITIONS = new Set(['BRAZIL_SERIE_A'])
+
+const EXCLUDED_SOURCE_COMPETITIONS = new Set([
+  '巴甲',
+  '巴乙',
+  '巴西乙',
+  '巴西乙级联赛',
+  '巴西杯',
+  '巴东北',
+  '巴东北杯',
+  '巴西东北杯',
+  '圣保罗锦',
+  '圣保罗州锦标赛',
+  'BRAZIL SERIE B',
+  'CAMPEONATO BRASILEIRO SERIE B',
+  'CAMPEONATO PAULISTA',
+  'PAULISTA A1',
+  'COPA DO BRASIL',
+  'COPA DO NORDESTE'
+])
+
 const HISTORY_HEADERS = [
   'match_id',
   'match_date',
@@ -40,6 +61,11 @@ const MAPPING_SOURCE_PRIORITY = new Map([
   ['VERIFIED_SPORTTERY', 6]
 ])
 
+const SOURCE_COMPETITION_ALIASES = new Map([
+  ['韩足总杯', '韩国杯'],
+  ['韩国足总杯', '韩国杯']
+])
+
 const NATIONAL_COMPETITIONS = new Set([
   'WORLD_CUP',
   'EUROPEAN_CHAMPIONSHIP',
@@ -52,13 +78,15 @@ const CLUB_COMPETITIONS = new Set([
   'CHAMPIONS_LEAGUE',
   'PREMIER_LEAGUE',
   'LA_LIGA',
-  'SERIE_A',
   'BUNDESLIGA',
+  'SERIE_A',
   'LIGUE_1',
-  'BRAZIL_SERIE_A',
   'PRIMEIRA_LIGA',
   'EREDIVISIE',
-  'ARGENTINE_PRIMERA_DIVISION'
+  'ARGENTINE_PRIMERA_DIVISION',
+  'SWEDISH_ALLSVENSKAN',
+  'FINNISH_VEIKKAUSLIIGA',
+  'K_LEAGUE_1'
 ])
 
 const ALL_CLUB_COMPETITIONS = new Set([
@@ -80,14 +108,23 @@ const COMPETITION_NAMES = new Map(Object.entries({
   CHAMPIONS_LEAGUE: '欧冠',
   PREMIER_LEAGUE: '英超',
   LA_LIGA: '西甲',
-  SERIE_A: '意甲',
   BUNDESLIGA: '德甲',
+  SERIE_A: '意甲',
   LIGUE_1: '法甲',
-  BRAZIL_SERIE_A: '巴甲',
   PRIMEIRA_LIGA: '葡超',
   EREDIVISIE: '荷甲',
-  ARGENTINE_PRIMERA_DIVISION: '阿甲'
+  ARGENTINE_PRIMERA_DIVISION: '阿甲',
+  SWEDISH_ALLSVENSKAN: '瑞超',
+  FINNISH_VEIKKAUSLIIGA: '芬超',
+  K_LEAGUE_1: '韩职'
 }))
+
+function isExcludedCompetition(competition, sourceCompetition) {
+  return EXCLUDED_COMPETITIONS.has(String(competition ?? '').trim().toUpperCase())
+    || EXCLUDED_SOURCE_COMPETITIONS.has(
+      String(sourceCompetition ?? '').trim().toUpperCase()
+    )
+}
 
 const NATIONAL_TOURNAMENT_NAMES = new Map(Object.entries({
   Friendly: '国家队国际窗口友谊赛',
@@ -119,7 +156,6 @@ const ESPN_PRIMARY_SOURCES = [
   ['ita.1', 'SERIE_A'],
   ['ger.1', 'BUNDESLIGA'],
   ['fra.1', 'LIGUE_1'],
-  ['bra.1', 'BRAZIL_SERIE_A'],
   ['por.1', 'PRIMEIRA_LIGA'],
   ['ned.1', 'EREDIVISIE'],
   ['arg.1', 'ARGENTINE_PRIMERA_DIVISION']
@@ -149,7 +185,6 @@ const ESPN_OFFICIAL_SOURCES = [
   ['por.taca.portugal', '葡萄牙杯'],
   ['ned.cup', '荷兰杯'],
   ['ned.supercup', '荷兰超级杯'],
-  ['bra.copa_do_brazil', '巴西杯'],
   ['arg.copa', '阿根廷杯'],
   ['conmebol.libertadores', '解放者杯'],
   ['conmebol.sudamericana', '南美杯'],
@@ -164,7 +199,7 @@ const ESPN_OFFICIAL_SOURCES = [
 }))
 
 const ESPN_FRIENDLY_SOURCES = [
-  ['club.friendly', '俱乐部友谊赛', true],
+  ['club.friendly', '俱乐部赛', true],
   ['global.champs_cup', '国际冠军杯', false],
   ['friendly.emirates_cup', '酋长杯', false],
   ['eng.asia_trophy', '英超亚洲杯', false],
@@ -179,6 +214,58 @@ const ESPN_FRIENDLY_SOURCES = [
 
 const FOTMOB_LEAGUE_SOURCES = [
   {
+    leagueId: '489',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部赛',
+    calendarYearSeason: true,
+    firstSeasonStartYear: 2026
+  },
+  {
+    leagueId: '180',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '联赛杯',
+    calendarYearSeason: false
+  },
+  {
+    leagueId: '168',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '瑞甲',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '172',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: 'Play-offs 1/2',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '525',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '亚冠精英',
+    calendarYearSeason: false,
+    crossYearSeasonFrom: 2023
+  },
+  {
+    leagueId: '9116',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '韩挑战联',
+    calendarYearSeason: true
+  },
+  {
+    leagueId: '9551',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '韩国杯',
+    calendarYearSeason: true,
+    firstSeasonStartYear: 2015
+  },
+  {
     leagueId: '262',
     competition: 'CLUB_OFFICIAL_OTHER',
     matchType: 'OFFICIAL',
@@ -187,14 +274,21 @@ const FOTMOB_LEAGUE_SOURCES = [
   },
   {
     leagueId: '51',
-    competition: 'CLUB_OFFICIAL_OTHER',
+    competition: 'FINNISH_VEIKKAUSLIIGA',
     matchType: 'OFFICIAL',
     sourceCompetition: '芬超',
     calendarYearSeason: true
   },
   {
+    leagueId: '9080',
+    competition: 'K_LEAGUE_1',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '韩职',
+    calendarYearSeason: true
+  },
+  {
     leagueId: '67',
-    competition: 'CLUB_OFFICIAL_OTHER',
+    competition: 'SWEDISH_ALLSVENSKAN',
     matchType: 'OFFICIAL',
     sourceCompetition: '瑞超',
     calendarYearSeason: true
@@ -249,13 +343,6 @@ const FOTMOB_LEAGUE_SOURCES = [
     matchType: 'OFFICIAL',
     sourceCompetition: '瑞士超',
     calendarYearSeason: false
-  },
-  {
-    leagueId: '8814',
-    competition: 'CLUB_OFFICIAL_OTHER',
-    matchType: 'OFFICIAL',
-    sourceCompetition: '巴乙',
-    calendarYearSeason: true
   },
   {
     leagueId: '271',
@@ -364,6 +451,13 @@ const FOTMOB_LEAGUE_SOURCES = [
   }
 ]
 
+const SOCCERWAY_KOREA_CUP_SOURCE = {
+  competition: 'CLUB_OFFICIAL_OTHER',
+  matchType: 'OFFICIAL',
+  sourceCompetition: '韩国杯',
+  firstSeasonStartYear: 2014
+}
+
 const SOFASCORE_CLUB_FRIENDLY_SOURCE = {
   tournamentId: '853',
   competition: 'CLUB_FRIENDLY',
@@ -388,7 +482,7 @@ const FUTBOL24_SOURCES = [
   },
   {
     leagueId: '322',
-    competition: 'CLUB_OFFICIAL_OTHER',
+    competition: 'FINNISH_VEIKKAUSLIIGA',
     matchType: 'OFFICIAL',
     sourceCompetition: '芬超',
     seasonPath: 'national/Finland/Veikkausliiga',
@@ -649,6 +743,7 @@ function parseArguments(argv) {
     refreshCache: false,
     skipEspn: false,
     skipFotMob: false,
+    skipSoccerway: false,
     skipFutbol24: false,
     skipSofaScore: false,
     skipNational: false,
@@ -672,6 +767,8 @@ function parseArguments(argv) {
       options.skipEspn = true
     } else if (argument === '--skip-fotmob') {
       options.skipFotMob = true
+    } else if (argument === '--skip-soccerway') {
+      options.skipSoccerway = true
     } else if (argument === '--skip-futbol24') {
       options.skipFutbol24 = true
     } else if (argument === '--skip-sofascore') {
@@ -828,6 +925,9 @@ function canonicalChineseName(value) {
 
 function normalizeHistoryRow(row) {
   const competition = String(row.competition ?? '').trim()
+  const sourceCompetition = String(row.source_competition ?? '').trim()
+    || COMPETITION_NAMES.get(competition)
+    || competition
   const defaultType = competition === 'INTERNATIONAL_FRIENDLY'
     ? 'INTERNATIONAL_FRIENDLY'
     : competition === 'CLUB_FRIENDLY'
@@ -843,9 +943,8 @@ function normalizeHistoryRow(row) {
     away_score: String(row.away_score ?? '').trim(),
     neutral: String(row.neutral ?? '').trim().toLowerCase(),
     match_type: String(row.match_type ?? '').trim() || defaultType,
-    source_competition: String(row.source_competition ?? '').trim()
-      || COMPETITION_NAMES.get(competition)
-      || competition
+    source_competition: SOURCE_COMPETITION_ALIASES.get(sourceCompetition)
+      ?? sourceCompetition
   }
 }
 
@@ -915,14 +1014,6 @@ function mappedChineseName(sourceName, mappings, competition) {
 
 function mappedNameSource(sourceName, mappings, competition) {
   return mappedNameEntry(sourceName, mappings, competition)?.source ?? null
-}
-
-function disambiguateSourceTeamName(sourceRow, teamName) {
-  if (sourceRow.source === 'FOTMOB-8814'
-      && canonicalName(teamName) === 'ATHLETICCLUB') {
-    return 'Athletic Club (MG)'
-  }
-  return teamName
 }
 
 function extraTimeGoalCounts(goalRows) {
@@ -1303,8 +1394,11 @@ function fotMobSeasonRequests(options) {
   const lastYear = Number(options.maxDate.slice(0, 4))
   for (const source of FOTMOB_LEAGUE_SOURCES
     .filter(item => sourceSelected(options, `FOTMOB-${item.leagueId}`))) {
+    const previousYear = firstYear - 1
+    const includesPreviousCrossYearSeason = !source.calendarYearSeason
+      && (!source.crossYearSeasonFrom || previousYear >= source.crossYearSeasonFrom)
     const sourceFirstYear = Math.max(
-      source.calendarYearSeason ? firstYear : firstYear - 1,
+      includesPreviousCrossYearSeason ? previousYear : firstYear,
       source.firstSeasonStartYear ?? Number.MIN_SAFE_INTEGER
     )
     for (let seasonStartYear = sourceFirstYear; seasonStartYear <= lastYear; seasonStartYear += 1) {
@@ -1315,12 +1409,13 @@ function fotMobSeasonRequests(options) {
 }
 
 async function readFotMobSeason(request, options) {
-  const season = request.source.calendarYearSeason
-    ? String(request.seasonStartYear)
-    : `${request.seasonStartYear}/${request.seasonStartYear + 1}`
-  const cacheFileName = request.source.calendarYearSeason
-    ? `${request.seasonStartYear}.json`
-    : `${request.seasonStartYear}-${request.seasonStartYear + 1}.json`
+  const crossYearSeason = !request.source.calendarYearSeason
+    && (!request.source.crossYearSeasonFrom
+      || request.seasonStartYear >= request.source.crossYearSeasonFrom)
+  const season = crossYearSeason
+    ? `${request.seasonStartYear}/${request.seasonStartYear + 1}`
+    : String(request.seasonStartYear)
+  const cacheFileName = `${season.replace('/', '-')}.json`
   const cachePath = path.join(
     cacheRoot,
     'fotmob',
@@ -1396,14 +1491,143 @@ async function loadFotMobRows(options) {
     } catch (error) {
       errors.push({
         source: request.source.leagueId,
-        season: request.source.calendarYearSeason
-          ? String(request.seasonStartYear)
-          : `${request.seasonStartYear}/${request.seasonStartYear + 1}`,
+        season: !request.source.calendarYearSeason
+            && (!request.source.crossYearSeasonFrom
+              || request.seasonStartYear >= request.source.crossYearSeasonFrom)
+          ? `${request.seasonStartYear}/${request.seasonStartYear + 1}`
+          : String(request.seasonStartYear),
         message: error.message
       })
       return []
     }
   })
+  return { rows: batches.flat(), errors }
+}
+
+function soccerwayKoreaCupSeasonYears(options) {
+  const firstYear = Math.max(
+    SOCCERWAY_KOREA_CUP_SOURCE.firstSeasonStartYear,
+    Number(options.minDate.slice(0, 4))
+  )
+  const requestedLastYear = Number(options.maxDate.slice(0, 4))
+  const currentYear = new Date().getFullYear()
+  const lastArchivedYear = requestedLastYear < currentYear
+    ? requestedLastYear
+    : currentYear - 1
+  const years = []
+  for (let year = firstYear; year <= lastArchivedYear; year += 1) {
+    years.push(year)
+  }
+  return years
+}
+
+async function readSoccerwayKoreaCupSeason(year, options) {
+  const cachePath = path.join(cacheRoot, 'soccerway', 'korea-cup', `${year}.html`)
+  if (!options.refreshCache) {
+    try {
+      return await fs.readFile(cachePath, 'utf8')
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const url = `https://www.soccerway.com/south-korea/korean-cup-${year}/results/`
+  const html = await fetchTextWithRetry(url)
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, html, 'utf8')
+  return html
+}
+
+function decodeSoccerwayText(value) {
+  return String(value ?? '')
+    .replaceAll('&amp;', '&')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&#x27;', "'")
+    .replaceAll('&nbsp;', ' ')
+    .replace(/<[^>]*>/g, '')
+    .trim()
+}
+
+function parseSoccerwayKoreaCupRows(html) {
+  const source = SOCCERWAY_KOREA_CUP_SOURCE
+  const fieldSeparator = String.fromCodePoint(172)
+  const valueSeparator = String.fromCodePoint(247)
+  const eventSeparator = `${fieldSeparator}~AA${valueSeparator}`
+  const rows = []
+  const seenProviderIds = new Set()
+  for (const segment of String(html ?? '').split(eventSeparator).slice(1)) {
+    const record = segment.split(`${fieldSeparator}~`)[0]
+    const fields = new Map()
+    for (const part of `AA${valueSeparator}${record}`.split(fieldSeparator)) {
+      const separatorIndex = part.indexOf(valueSeparator)
+      if (separatorIndex > 0) {
+        fields.set(part.slice(0, separatorIndex), part.slice(separatorIndex + 1))
+      }
+    }
+    const providerId = fields.get('AA')
+    if (fields.get('AB') !== '3' || !providerId || seenProviderIds.has(providerId)) {
+      continue
+    }
+    const timestamp = Number(fields.get('AD'))
+    const homeScore = integerScore(fields.get('AT') || fields.get('REA') || fields.get('AG'))
+    const awayScore = integerScore(fields.get('AU') || fields.get('REB') || fields.get('AH'))
+    const homeTeam = decodeSoccerwayText(fields.get('AE'))
+    const awayTeam = decodeSoccerwayText(fields.get('AF'))
+    const matchDate = Number.isFinite(timestamp)
+      ? shanghaiDate(new Date(timestamp * 1_000).toISOString())
+      : null
+    if (!homeTeam
+        || !awayTeam
+        || !matchDate
+        || homeScore === null
+        || awayScore === null) {
+      continue
+    }
+    seenProviderIds.add(providerId)
+    rows.push({
+      provider: 'SOCCERWAY',
+      providerId,
+      source: 'SOCCERWAY-KOREA-CUP',
+      competition: source.competition,
+      matchType: source.matchType,
+      sourceCompetition: source.sourceCompetition,
+      matchDate,
+      homeTeam,
+      awayTeam,
+      homeScore,
+      awayScore,
+      neutral: false
+    })
+  }
+  return rows
+}
+
+async function loadSoccerwayKoreaCupRows(options) {
+  if (options.skipSoccerway || !sourceSelected(options, 'SOCCERWAY-KOREA-CUP')) {
+    return { rows: [], errors: [] }
+  }
+  const errors = []
+  const years = soccerwayKoreaCupSeasonYears(options)
+  const batches = await mapWithConcurrency(
+    years,
+    Math.min(3, options.concurrency),
+    async year => {
+      try {
+        return parseSoccerwayKoreaCupRows(
+          await readSoccerwayKoreaCupSeason(year, options)
+        )
+      } catch (error) {
+        errors.push({
+          source: 'KOREA-CUP',
+          range: String(year),
+          message: error.message
+        })
+        return []
+      }
+    }
+  )
   return { rows: batches.flat(), errors }
 }
 
@@ -1871,29 +2095,46 @@ function hasChineseName(value) {
   return /\p{Script=Han}/u.test(String(value ?? ''))
 }
 
-function fixturePairKey(competition, date, homeTeam, awayTeam) {
-  const teams = [canonicalChineseName(homeTeam), canonicalChineseName(awayTeam)].sort()
-  return `${competition}|${date}|${teams[0]}|${teams[1]}`
+function fixtureScope(competition, sourceCompetition) {
+  return competition === 'CLUB_OFFICIAL_OTHER'
+    ? `${competition}|${canonicalName(sourceCompetition)}`
+    : competition
 }
 
-function fixtureResultKey(competition, date, homeTeam, awayTeam, homeScore, awayScore) {
+function fixturePairKey(competition, sourceCompetition, date, homeTeam, awayTeam) {
+  const teams = [canonicalChineseName(homeTeam), canonicalChineseName(awayTeam)].sort()
+  return `${fixtureScope(competition, sourceCompetition)}|${date}|${teams[0]}|${teams[1]}`
+}
+
+function fixtureResultKey(
+  competition,
+  sourceCompetition,
+  date,
+  homeTeam,
+  awayTeam,
+  homeScore,
+  awayScore
+) {
   const home = canonicalChineseName(homeTeam)
   const away = canonicalChineseName(awayTeam)
   if (home <= away) {
-    return `${competition}|${date}|${home}|${away}|${homeScore}|${awayScore}`
+    return `${fixtureScope(competition, sourceCompetition)}`
+      + `|${date}|${home}|${away}|${homeScore}|${awayScore}`
   }
-  return `${competition}|${date}|${away}|${home}|${awayScore}|${homeScore}`
+  return `${fixtureScope(competition, sourceCompetition)}`
+    + `|${date}|${away}|${home}|${awayScore}|${homeScore}`
 }
 
 function teamResultEntries(row) {
+  const scope = fixtureScope(row.competition, row.source_competition)
   return [
     {
-      key: `${row.competition}|${row.match_date}|${canonicalChineseName(row.home_team_cn)}`
+      key: `${scope}|${row.match_date}|${canonicalChineseName(row.home_team_cn)}`
         + `|${row.home_score}|${row.away_score}`,
       side: 'home'
     },
     {
-      key: `${row.competition}|${row.match_date}|${canonicalChineseName(row.away_team_cn)}`
+      key: `${scope}|${row.match_date}|${canonicalChineseName(row.away_team_cn)}`
         + `|${row.away_score}|${row.home_score}`,
       side: 'away'
     }
@@ -2028,6 +2269,7 @@ function normalizeAndDeduplicateHistoryRows(rows, nationalMappings, clubMappings
     }
     const key = fixturePairKey(
       normalizedRow.competition,
+      normalizedRow.source_competition,
       normalizedRow.match_date,
       normalizedRow.home_team_cn,
       normalizedRow.away_team_cn
@@ -2067,6 +2309,7 @@ function normalizeAndDeduplicateHistoryRows(rows, nationalMappings, clubMappings
       ? [-1, 1]
         .map(offset => rowsByFixtureResult.get(fixtureResultKey(
           normalizedRow.competition,
+          normalizedRow.source_competition,
           dateWithOffset(normalizedRow.match_date, offset),
           normalizedRow.home_team_cn,
           normalizedRow.away_team_cn,
@@ -2156,6 +2399,7 @@ function normalizeAndDeduplicateHistoryRows(rows, nationalMappings, clubMappings
     rowsByFixture.set(key, normalizedRow)
     rowsByFixtureResult.set(fixtureResultKey(
       normalizedRow.competition,
+      normalizedRow.source_competition,
       normalizedRow.match_date,
       normalizedRow.home_team_cn,
       normalizedRow.away_team_cn,
@@ -2207,6 +2451,9 @@ function sourceMatchId(row) {
   }
   if (row.provider === 'SOFASCORE' && row.providerId) {
     return `SOFASCORE-${row.providerId}`
+  }
+  if (row.provider === 'SOCCERWAY' && row.providerId) {
+    return `SOCCERWAY-${row.providerId}`
   }
   if (row.provider === 'FUTBOL24' && row.providerId) {
     return `FUTBOL24-${row.providerId}`
@@ -2261,13 +2508,22 @@ function outputSourceSummaries(summaries, compact) {
 }
 
 const options = parseArguments(process.argv.slice(2))
-const [historyText, mappingText, resultsText, goalsText, espnData, fotMobData] = await Promise.all([
+const [
+  historyText,
+  mappingText,
+  resultsText,
+  goalsText,
+  espnData,
+  fotMobData,
+  soccerwayKoreaCupData
+] = await Promise.all([
   fs.readFile(options.historySourcePath, 'utf8'),
   fs.readFile(teamNameMappingsPath, 'utf8'),
   options.skipNational ? Promise.resolve('') : readInternationalSource(options, 'results.csv'),
   options.skipNational ? Promise.resolve('') : readInternationalSource(options, 'goalscorers.csv'),
   loadEspnRows(options),
-  loadFotMobRows(options)
+  loadFotMobRows(options),
+  loadSoccerwayKoreaCupRows(options)
 ])
 const futbol24Data = await loadFutbol24Rows(options)
 const sofaScoreData = futbol24Data.rows.length > 0
@@ -2282,7 +2538,10 @@ const effectiveMappingRows = options.resetInferredMappings
 const nationalMappings = buildMappings(effectiveMappingRows, NATIONAL_COMPETITIONS)
 const clubMappings = buildMappings(effectiveMappingRows, ALL_CLUB_COMPETITIONS)
 const retainedHistory = normalizeAndDeduplicateHistoryRows(
-  originalRows.filter(row => row.match_date >= options.minDate && row.match_date <= options.maxDate),
+  originalRows.filter(row => (
+    row.match_date >= options.minDate
+    && row.match_date <= options.maxDate
+  )),
   nationalMappings,
   clubMappings
 )
@@ -2306,6 +2565,7 @@ const sourceRows = [
   ...(options.skipNational ? [] : parseNationalRows(parseCsv(resultsText), parseCsv(goalsText))),
   ...espnData.rows,
   ...fotMobData.rows,
+  ...soccerwayKoreaCupData.rows,
   ...futbol24Data.rows,
   ...sofaScoreData.rows,
   ...VERIFIED_SUPPLEMENTAL_ROWS.filter(row => sourceSelected(options, row.source))
@@ -2313,12 +2573,24 @@ const sourceRows = [
 const rowsById = new Map(retainedRows.map(row => [row.match_id, row]))
 const fixturePairs = new Set(retainedRows.map(row => fixturePairKey(
   row.competition,
+  row.source_competition,
   row.match_date,
   row.home_team_cn,
   row.away_team_cn
 )))
+const rowsByFixturePair = new Map(retainedRows.map(row => [
+  fixturePairKey(
+    row.competition,
+    row.source_competition,
+    row.match_date,
+    row.home_team_cn,
+    row.away_team_cn
+  ),
+  row
+]))
 const fixtureResults = new Set(retainedRows.map(row => fixtureResultKey(
   row.competition,
+  row.source_competition,
   row.match_date,
   row.home_team_cn,
   row.away_team_cn,
@@ -2332,6 +2604,10 @@ for (const sourceRow of sourceRows) {
   sourceSummaries.set(sourceRow.source, summary)
   summary.parsedRows += 1
   summary.correctedExtraTimeGoals += sourceRow.correctedExtraTimeGoals ?? 0
+  if (isExcludedCompetition(sourceRow.competition, sourceRow.sourceCompetition)) {
+    summary.outsideTargetRows += 1
+    continue
+  }
   if (!sourceRow.matchDate
       || sourceRow.matchDate < options.minDate
       || sourceRow.matchDate > options.maxDate) {
@@ -2341,8 +2617,8 @@ for (const sourceRow of sourceRows) {
 
   const national = sourceRow.provider === 'INTL'
   const mappings = national ? nationalMappings : clubMappings
-  const sourceHomeTeam = disambiguateSourceTeamName(sourceRow, sourceRow.homeTeam)
-  const sourceAwayTeam = disambiguateSourceTeamName(sourceRow, sourceRow.awayTeam)
+  const sourceHomeTeam = sourceRow.homeTeam
+  const sourceAwayTeam = sourceRow.awayTeam
   const mappedHomeTeam = mappedChineseName(sourceHomeTeam, mappings, sourceRow.competition)
   const mappedAwayTeam = mappedChineseName(sourceAwayTeam, mappings, sourceRow.competition)
   const targets = national ? targetNationalTeams : targetClubTeams
@@ -2355,7 +2631,7 @@ for (const sourceRow of sourceRows) {
     || sourceRow.provider === 'FOTMOB' && FOTMOB_LEAGUE_SOURCES.some(
       source => `FOTMOB-${source.leagueId}` === sourceRow.source
     )
-    || sourceRow.provider === 'ESPN' && sourceRow.source === 'ESPN-bra.1'
+    || sourceRow.provider === 'SOCCERWAY'
     || sourceRow.provider === 'PFL'
   if (!importsWholeCompetition && !homeIsTarget && !awayIsTarget) {
     summary.outsideTargetRows += 1
@@ -2409,16 +2685,47 @@ for (const sourceRow of sourceRows) {
     continue
   }
 
-  const exactPair = fixturePairKey(sourceRow.competition, sourceRow.matchDate, homeTeam, awayTeam)
+  const exactPair = fixturePairKey(
+    sourceRow.competition,
+    sourceRow.sourceCompetition,
+    sourceRow.matchDate,
+    homeTeam,
+    awayTeam
+  )
   const shiftedDuplicate = [-1, 1].some(offset => fixtureResults.has(fixtureResultKey(
     sourceRow.competition,
+    sourceRow.sourceCompetition,
     dateWithOffset(sourceRow.matchDate, offset),
     homeTeam,
     awayTeam,
     sourceRow.homeScore,
     sourceRow.awayScore
   )))
-  if (fixturePairs.has(exactPair) || shiftedDuplicate) {
+  const existingFixture = rowsByFixturePair.get(exactPair)
+  if (existingFixture
+      && sourceRow.provider === 'SOCCERWAY'
+      && sourceRow.sourceCompetition === '韩国杯') {
+    const directOrientation = canonicalChineseName(existingFixture.home_team_cn)
+      === canonicalChineseName(homeTeam)
+    const expectedHomeScore = String(
+      directOrientation ? sourceRow.homeScore : sourceRow.awayScore
+    )
+    const expectedAwayScore = String(
+      directOrientation ? sourceRow.awayScore : sourceRow.homeScore
+    )
+    if (existingFixture.home_score !== expectedHomeScore
+        || existingFixture.away_score !== expectedAwayScore
+        || existingFixture.source_competition !== sourceRow.sourceCompetition) {
+      existingFixture.home_score = expectedHomeScore
+      existingFixture.away_score = expectedAwayScore
+      existingFixture.source_competition = sourceRow.sourceCompetition
+      summary.updatedRows += 1
+    } else {
+      summary.duplicateRows += 1
+    }
+    continue
+  }
+  if (existingFixture || shiftedDuplicate) {
     summary.duplicateRows += 1
     continue
   }
@@ -2426,8 +2733,10 @@ for (const sourceRow of sourceRows) {
   retainedRows.push(expectedRow)
   rowsById.set(matchId, expectedRow)
   fixturePairs.add(exactPair)
+  rowsByFixturePair.set(exactPair, expectedRow)
   fixtureResults.add(fixtureResultKey(
     sourceRow.competition,
+    sourceRow.sourceCompetition,
     sourceRow.matchDate,
     homeTeam,
     awayTeam,
@@ -2495,6 +2804,14 @@ const inferredAliases = [...inferredAliasesByKey.values()]
 
 if (options.write) {
   await fs.writeFile(historicalMatchesPath, `\uFEFF${toCsv(rebuiltRows)}`, 'utf8')
+  const writtenHistoryRows = parseCsv(
+    await fs.readFile(historicalMatchesPath, 'utf8')
+  ).length
+  if (writtenHistoryRows !== rebuiltRows.length) {
+    throw new Error(
+      `历史比赛写入校验失败：预期 ${rebuiltRows.length} 行，实际 ${writtenHistoryRows} 行`
+    )
+  }
   if (options.resetInferredMappings || inferredAliases.length > 0) {
     await fs.writeFile(
       teamNameMappingsPath,
@@ -2541,6 +2858,7 @@ console.log(JSON.stringify({
   sources: outputSourceSummaries(sourceSummaries, options.compact),
   espnRequestErrors: espnData.errors,
   fotMobRequestErrors: fotMobData.errors,
+  soccerwayRequestErrors: soccerwayKoreaCupData.errors,
   futbol24RequestErrors: futbol24Data.errors,
   sofaScoreRequestErrors: sofaScoreData.errors,
   wroteFile: options.write

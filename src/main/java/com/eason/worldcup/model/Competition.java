@@ -22,10 +22,12 @@ public enum Competition {
     SERIE_A("意甲", true, true),
     BUNDESLIGA("德甲", true, true),
     LIGUE_1("法甲", true, true),
-    BRAZIL_SERIE_A("巴甲", true, false),
     PRIMEIRA_LIGA("葡超", true, true),
     EREDIVISIE("荷甲", true, true),
-    ARGENTINE_PRIMERA_DIVISION("阿甲", true, false);
+    ARGENTINE_PRIMERA_DIVISION("阿甲", true, false),
+    SWEDISH_ALLSVENSKAN("瑞超", true, false),
+    FINNISH_VEIKKAUSLIIGA("芬超", true, false),
+    K_LEAGUE_1("韩职", true, false);
 
     private final String displayName;
 
@@ -88,12 +90,28 @@ public enum Competition {
             case "LALIGA" -> LA_LIGA;
             case "SERIEA" -> SERIE_A;
             case "LIGUE1" -> LIGUE_1;
-            case "BRAZILSERIEA" -> BRAZIL_SERIE_A;
             case "PRIMEIRALIGA" -> PRIMEIRA_LIGA;
             case "ARGENTINEPRIMERADIVISION", "ARGENTINA_PRIMERA_DIVISION" ->
                     ARGENTINE_PRIMERA_DIVISION;
+            case "ALLSVENSKAN", "SWEDISHALLSVENSKAN" -> SWEDISH_ALLSVENSKAN;
+            case "VEIKKAUSLIIGA", "FINNISHVEIKKAUSLIIGA" -> FINNISH_VEIKKAUSLIIGA;
+            case "KLEAGUE", "KLEAGUE1" -> K_LEAGUE_1;
             default -> Competition.valueOf(normalized);
         };
+    }
+
+    public static Competition fromSourceCompetition(String sourceCompetition, Competition fallback) {
+        String normalized = sourceCompetition == null ? "" : sourceCompetition.trim();
+        if (normalized.startsWith("瑞超") || normalized.startsWith("瑞典超")) {
+            return SWEDISH_ALLSVENSKAN;
+        }
+        if (normalized.startsWith("芬超")) {
+            return FINNISH_VEIKKAUSLIIGA;
+        }
+        if (normalized.startsWith("韩职") || normalized.startsWith("韩国职业联赛")) {
+            return K_LEAGUE_1;
+        }
+        return fallback;
     }
 
 }

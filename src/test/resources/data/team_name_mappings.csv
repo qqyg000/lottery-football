@@ -1,4 +1,10 @@
-competition,standard_team_name,alias_team_name,alias_type,source,last_seen_date
+﻿competition,standard_team_name,alias_team_name,alias_type,source,last_seen_date
+*,大邱FC,Daegu FC,EN,VERIFIED_ALIAS,2026-07-24
+*,济州SK,济州联,ZH,VERIFIED_ALIAS,2026-07-24
+*,水原三星,Suwon Samsung Bluewings,EN,VERIFIED_ALIAS,2026-07-24
+CLUB_OFFICIAL_OTHER,大邱FC,Daegu FC,EN,VERIFIED_ALIAS,2026-07-24
+CLUB_OFFICIAL_OTHER,济州SK,济州联,ZH,VERIFIED_ALIAS,2026-07-24
+CLUB_OFFICIAL_OTHER,水原三星,Suwon Samsung Bluewings,EN,VERIFIED_ALIAS,2026-07-24
 *,竞技俱乐部MG,Athletic Club (MG),EN,VERIFIED_ALIAS,2026-07-23
 *,庞普雷塔,Ponte Preta,EN,HISTORICAL_ODDS,2017-12-04
 *,利特克斯,Litex Lovech,EN,VERIFIED_ALIAS,2015-12-12

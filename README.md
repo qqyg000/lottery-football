@@ -2,11 +2,11 @@
 
 竞彩足球胜平负概率预测与推荐回测程序。后端使用 Spring Boot，前端使用 Vue 2，支持按赛事和日期查询赛程、赛果、体彩赔率及模型预测结果。
 
-> 当前内置比赛数据快照及球队名映射更新至 2026-07-23。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
+> 当前内置比赛数据快照及球队名映射更新至 2026-07-24。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
 
 ## 主要功能
 
-- 支持 15 类赛事，按赛事和日期查询近期赛程、完场比分与比赛状态
+- 支持 17 类赛事，按赛事和日期查询近期赛程、完场比分与比赛状态
 - 使用泊松分布和蒙特卡洛模拟计算常规及让球胜平负概率
 - 展示双方期望进球、总进球数和比分预测
 - 读取中国体彩网开售状态、让球数及胜平负赔率
@@ -31,13 +31,15 @@
 | 欧冠 | `CHAMPIONS_LEAGUE` |
 | 英超 | `PREMIER_LEAGUE` |
 | 西甲 | `LA_LIGA` |
-| 意甲 | `SERIE_A` |
 | 德甲 | `BUNDESLIGA` |
+| 意甲 | `SERIE_A` |
 | 法甲 | `LIGUE_1` |
-| 巴甲 | `BRAZIL_SERIE_A` |
 | 葡超 | `PRIMEIRA_LIGA` |
 | 荷甲 | `EREDIVISIE` |
 | 阿甲 | `ARGENTINE_PRIMERA_DIVISION` |
+| 瑞超 | `SWEDISH_ALLSVENSKAN` |
+| 芬超 | `FINNISH_VEIKKAUSLIIGA` |
+| 韩职 | `K_LEAGUE_1` |
 
 前端支持多选具体赛事。多选时参数区展示首个所选赛事的参数方案并禁止编辑具体数值，但仍允许统一切换稳健/激进方案；普通预测和推荐回测会按比赛所属赛事分别使用所选方案下各自的参数档案。推荐回测接口同时兼容 `ALL` 或逗号分隔的多个赛事代码，供脚本批量调用。
 
@@ -51,9 +53,9 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 115,260 | 2014-10-22 至 2026-07-22 |
-| `historical_odds_data.csv` | 30,953 | 2014-10-22 至 2026-07-22 |
-| `team_name_mappings.csv` | 10,481 | 2014-06-24 至 2026-08-23 |
+| `historical_matches.csv` | 151,100 | 2014-10-22 至 2026-07-24 |
+| `historical_odds_data.csv` | 28,318 | 2014-10-22 至 2026-07-22 |
+| `team_name_mappings.csv` | 14,817 | 2014-06-24 至 2026-08-23 |
 
 主要数据来自 FotMob、Futbol24、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 
@@ -158,7 +160,7 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 
 ## 参数档案
 
-每类赛事在 `config/user-config.json` 中保存四套参数档案，共 15 × 4 = 60 套：
+每类赛事在 `config/user-config.json` 中保存四套参数档案，共 17 × 4 = 68 套：
 
 | 后缀 | 范围 | 方案 |
 |---|---|---|
@@ -208,10 +210,54 @@ ROI = (totalReturn / totalStake - 1) × 100%
 场均投注 = totalStake / recommendedMatchCount
 场均返奖 = totalReturn / recommendedMatchCount
 命中率 = hitMatchCount / recommendedMatchCount × 100%
-采样率 = recommendedMatchCount / completedMatchCount × 100%
+采样率 = recommendedMatchCount / oddsMatchCount × 100%
 ```
 
 没有推荐项时 ROI 为空；存在推荐项但全部未命中时 ROI 为 `-100%`。
+
+采样率相关计数定义：
+
+- `completedMatchCount`：方案回测时间范围内全部已完赛比赛数，仅用于展示回测数据覆盖情况
+- `oddsMatchCount`：上述已完赛比赛中至少有一类体彩赔率的比赛数，是采样率分母
+- `recommendedMatchCount`：有赔率比赛中产生推荐的比赛数，是采样率分子
+
+参数优化器默认以 ROI 为第一目标，并执行以下硬约束：
+
+- 正式比赛权重范围为 `1.00` 至 `3.00`
+- 稳健方案采样率严格大于 `66.6%`
+- 激进方案采样率大于等于 `50.0%`
+- 采样率分母使用方案回测时间范围内全部已完赛且有赔率的比赛数
+
+全量删除旧参数方案、恢复默认方案并重新优化：
+
+```powershell
+node scripts/optimize-profile-parameters.mjs --reset-profiles=true
+```
+
+优化前会把原配置备份到 `target/user-config-before-profile-optimization.json`。没有已完赛且有赔率的比赛时，优化器会跳过对应方案；有赔率样本存在时，采样率上限为 `100%`。
+
+在现有参数附近精调，并把每个普通方案的采样率限制为精调前采样率上下 2 个百分点：
+
+```powershell
+node scripts/optimize-profile-parameters.mjs `
+  --fine-tune-ratio=0.02 `
+  --sampling-rate-tolerance=0.02 `
+  --unconstrained-sampling-profiles=EUROPA_LEAGUE:CURRENT:STABLE,CHAMPIONS_LEAGUE:CURRENT:STABLE,CHAMPIONS_LEAGUE:CURRENT:AGGRESSIVE
+```
+
+`--fine-tune-ratio=0.02` 表示各参数在现有值附近上下精调 2%。`--sampling-rate-tolerance=0.02` 表示采样率上下浮动 2 个百分点，不是相对变化 2%。`--unconstrained-sampling-profiles` 接受逗号分隔的完整参数档案键，列出的方案仍要求有推荐、有命中且满足最低 ROI，但不检查采样率。
+
+使用本轮精调生成的同口径报告复核已保存参数：
+
+```powershell
+node scripts/optimize-profile-parameters.mjs `
+  --verify-only=true `
+  --sampling-rate-tolerance=0.02 `
+  --baseline-report=target/profile-optimization-report.json `
+  --unconstrained-sampling-profiles=EUROPA_LEAGUE:CURRENT:STABLE,CHAMPIONS_LEAGUE:CURRENT:STABLE,CHAMPIONS_LEAGUE:CURRENT:AGGRESSIVE
+```
+
+`--baseline-report` 必须来自当前采样率定义下的同一次优化。旧的 `target/profile-sampling-fine-tune-report.json` 使用“全部已完赛比赛数”作为分母，不得继续作为新口径的采样率基线。采样率口径修正及历史数据失真范围见 [采样率口径与历史方案数据审计](reports/sampling-rate-definition-audit-2026-07-24.md)。
 
 ## 模型说明
 
@@ -278,7 +324,7 @@ node scripts/generate-team-name-mappings.mjs
 页面“更新数据”会异步执行以下阶段：
 
 1. 读取以当天为基准的体彩最近 30 天赛果
-2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源，其中包括阿塞超、阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
+2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源
 3. 重建球队模型
 4. 更新赛事概览
 
@@ -309,13 +355,17 @@ node scripts/import-supplemental-history.mjs --write --compact
 # 仅补充俱乐部历史，跳过国家队公共源
 node scripts/import-supplemental-history.mjs --write --compact --skip-national
 
-# 只补取阿塞超、阿塞杯和巴甲
+# 只补取阿塞超和阿塞杯
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
-  --only-sources ESPN-bra.1,FOTMOB-262,FUTBOL24-525,VERIFIED-PFL
+  --only-sources FOTMOB-262,FUTBOL24-525,VERIFIED-PFL
 
 # 只补取芬超、芬兰杯、丹超、波超杯、波甲、奥甲和苏超
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
   --only-sources FUTBOL24-322,FUTBOL24-324,FUTBOL24-28,FUTBOL24-297,FUTBOL24-107,FUTBOL24-15,FUTBOL24-51
+
+# 只补取韩职、芬超和瑞超
+node scripts/import-supplemental-history.mjs --write --compact --skip-national `
+  --only-sources FOTMOB-9080,FOTMOB-51,FOTMOB-67,FUTBOL24-322
 
 # 只补取土超、土耳其杯、丹麦杯、匈甲、匈牙利杯和克甲
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
@@ -335,10 +385,11 @@ node scripts/optimize-profile-parameters.mjs --verify-only=true
 | 文件或节点 | 用途 |
 |---|---|
 | `src/main/resources/application.yml` | 数据源、时区、刷新窗口和缓存路径 |
-| `config/user-config.json` | 60 套参数档案和页面配置 |
+| `config/user-config.json` | 68 套参数档案和页面配置 |
 | `config/club-competition-schedules.json` | 俱乐部赛事运行时赛程缓存 |
 | `config/sporttery-market-selections.json` | 体彩玩法及赔率缓存 |
 | `team_name_mappings.csv` | 体彩标准球队名与数据源别名 |
+| `reports/sampling-rate-definition-audit-2026-07-24.md` | 新旧采样率口径、历史方案数据失真及复核结果 |
 
 修改 CSV 字段或赛事代码时，需要同步检查 Java 加载器、数据脚本和前端赛事列表。
 
