@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 144 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 151,100 场，日期范围为 2014-10-22 至 2026-07-24；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 145 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 174,578 场，日期范围为 2014-10-22 至 2026-07-26；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
@@ -18,18 +18,20 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - [OpenFootball club-world-cup](https://github.com/openfootball/club-world-cup)：2000 年起世俱杯，点球和加时场次读取括号中的 90 分钟比分
 - FotMob 各赛事赛季接口、阿塞拜疆超级联赛、韩国职业联赛、芬兰超级联赛，以及上述来源未覆盖且不重复的竞彩场次
 - ESPN Scoreboard：国内杯赛、超级杯、洲际俱乐部赛事和俱乐部友谊赛
-- Futbol24 按日及赛季比赛接口：补充 ESPN 未收录的俱乐部友谊赛、阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
-- FotMob 按赛季接口：补充俱乐部赛、联赛杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、欧协联、比甲、比利时杯、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
+- Futbol24 按日及赛季比赛接口：按年度回补 2014 年以来 ESPN、FotMob 未收录的俱乐部友谊赛，并补充阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
+- [Foot Mercato 俱乐部友谊赛日历](https://www.footmercato.net/international/amicaux-club/calendrier/)：补齐 Futbol24 和 FotMob 在 2026 当前赛季遗漏的已完场友谊赛
+- FotMob 按赛季接口：补充俱乐部赛、苏格兰联赛杯、芬兰联赛杯、瑞典杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、欧协联、比甲、比利时杯、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
 - Soccerway 韩国杯赛季结果页：补齐 FotMob 旧赛季接口仅返回后期轮次的问题
 - Futbol24 按赛季接口：补齐 FotMob 历史覆盖不足的塞杯、卢森杯、法罗杯和威联杯
 - 阿塞拜疆职业足球联盟（PFL）官方接口：补齐 Futbol24 未收录的阿塞杯第一资格轮和阿塞超升降级附加赛
 - Sofascore Club Friendly Games：Futbol24 不可用时的俱乐部友谊赛降级来源
+- VietnamPlus（越通社）援引 VFF 的已核验赛报：补齐公开赛程接口通常漏掉的国家队对俱乐部训练赛，包括越南赴韩集训 [6-0 始兴市民](https://www.vietnamplus.vn/doi-tuyen-viet-nam-gianh-chien-thang-dam-6-0-tai-han-quoc-post1122468.vnp)、[2-1 龙仁FC](https://www.vietnamplus.vn/doi-tuyen-viet-nam-gianh-chien-thang-thu-2-tai-han-quoc-post1123089.vnp) 和 [2-1 江原FC](https://www.vietnamplus.vn/doi-tuyen-viet-nam-toan-thang-trong-chuyen-tap-huan-tai-han-quoc-post1123941.amp) 的 3 场比赛
 
 上述四个公共仓库均采用 CC0 公共领域许可。中文球队名优先复用 `historical_odds_data.csv`；赔率表未出现过的国家队采用已核验兜底名称，无法可靠映射的俱乐部比赛不导入。
 
 公共历史源通过 `scripts/import-public-history.mjs` 导入。脚本默认只检查增量，传入 `--write` 才会写文件；下载缓存位于 `target/public-history-cache`。公共源比赛使用 `OPEN-{source}-{hash}` ID，比分重建脚本会保留这些记录。
 
-参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。ESPN、FotMob、Soccerway、Futbol24、Sofascore、PFL 比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`SOFASCORE-{id}`、`PFL-{id}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。
+参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。Futbol24 俱乐部友谊赛从 2014 年起读取完整年度赛果，旧数据不再受最近 30 天按日接口的限制；Foot Mercato 分页日历用于补齐当前赛季的来源内缺口。ESPN、FotMob、Soccerway、Futbol24、Foot Mercato、Sofascore、PFL 和 VietnamPlus 核验比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`FOOTMERCATO-{id}`、`SOFASCORE-{id}`、`PFL-{id}`、`VIETNAMPLUS-{postId}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。国家队对俱乐部训练赛按 `CLUB_FRIENDLY` 归类；无传统主客场且在集训地进行的比赛标记为中立场。
 
 历史比赛使用以下内部类型和回测权重：
 
@@ -74,7 +76,8 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - 国内杯赛、超级杯、欧协联、解放者杯、南美杯等：俱乐部其他正式比赛
 - `club.friendly`、国际冠军杯、酋长杯、英超亚洲杯和甘伯杯：俱乐部正常阵容友谊赛
 - FotMob `leagueId=489`：俱乐部赛，其中该接口只提供当前赛季，长期历史由 ESPN 补齐
-- FotMob `leagueId=180/168/172`：联赛杯、瑞甲和 Play-offs 1/2 完整赛季历史
+- FotMob `leagueId=180/342/171/168`：苏格兰联赛杯、芬兰联赛杯、瑞典杯和瑞甲完整赛季历史
+- FotMob `leagueId=172/9422`：瑞典与韩国 Play-offs 1/2 完整赛季历史，统一保留来源赛事名 `Play-offs 1/2`
 - FotMob `leagueId=525`：亚冠精英及其改制前赛事历史；2014 至 2022 使用自然年赛季，2023-24 起使用跨年赛季
 - FotMob `leagueId=9116/9551`：韩挑战联和韩国杯赛程
 - Soccerway 韩国杯赛季结果页：补齐 FotMob 旧赛季接口遗漏的早期轮次，历史赛季按比赛 ID 去重合并
@@ -87,6 +90,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - FotMob `leagueId=271/270/126/182/183/176/177`：保杯、保超、爱超、塞超、塞杯、斯洛伐超和斯洛伐杯完整赛季历史
 - FotMob `leagueId=229/9527/250/9523/232/215/217/116`：卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超完整赛季历史
 - Futbol24 `league_id=472`：ESPN 未覆盖的俱乐部友谊赛
+- Foot Mercato `FOOTMERCATO-CLUB-FRIENDLY`：分页补齐 2026 当前赛季 Futbol24、FotMob 未收录的俱乐部友谊赛
 - Futbol24 `league_id=525`：阿塞杯历史和近期比赛
 - Futbol24 `league_id=322`：芬超完整赛季历史和近期比赛
 - Futbol24 `league_id=324`：芬兰杯完整赛季历史和近期比赛
@@ -106,8 +110,9 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - Futbol24 `league_id=70/534/868/291`：威联杯、塞杯、卢森杯和法罗杯完整赛季历史及近期比赛
 - PFL 官方 `games/show/{id}`：阿塞杯第一资格轮和阿塞超升降级附加赛的核验赛果
 - Sofascore `tournamentId=853`：Futbol24 不可用时的俱乐部友谊赛降级来源
+- VietnamPlus/VFF 已核验赛报：国家队对俱乐部训练赛，使用 `VERIFIED-VIETNAMPLUS` 来源键定向导入
 
-上述 FotMob、Futbol24 可信固定联赛、杯赛和 FotMob 俱乐部赛按整项赛事进入运行时缓存，即使新升班马暂时没有映射也不会被丢弃；ESPN 开放式俱乐部友谊赛仍要求至少一方能映射到系统球队。已映射球队使用统一名称，未被体彩收录的低级别、预备队或临时对手保留数据源官方名称并写入自映射。瑞超、芬超和韩职使用独立赛事代码，其余国家队和俱乐部补充源仍使用内部分类代码，不会加入前端 17 类赛事加“全部”的下拉选项。
+上述 FotMob、Futbol24 可信固定联赛、杯赛和 FotMob 俱乐部赛按整项赛事进入运行时缓存，即使新升班马暂时没有映射也不会被丢弃；ESPN 和 Foot Mercato 开放式俱乐部友谊赛仍要求至少一方能映射到系统球队。已映射球队使用统一名称，未被体彩收录的低级别、预备队或临时对手保留数据源官方名称并写入自映射。瑞超、芬超和韩职使用独立赛事代码，其余国家队和俱乐部补充源仍使用内部分类代码，不会加入前端 17 类赛事加“全部”的下拉选项。
 
 巴甲、巴乙、巴西杯、巴西东北杯（Copa do Nordeste）和圣保罗州锦标赛（Campeonato Paulista）在历史导入、运行时赛程和体彩结果入口统一排除，不会写入静态数据或运行时缓存。
 
@@ -115,7 +120,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 ## 全场比分口径
 
-系统只保存 90 分钟加伤停补时的全场比分，不抓取半场比分。ESPN 赛事会根据进球明细排除加时赛和点球大战；OpenFootball 标记为加时赛的最终比分不会直接写入常规时间赛果。
+系统只保存 90 分钟加伤停补时的全场比分，不抓取半场比分。ESPN 赛事会根据进球明细排除加时赛和点球大战；FotMob 对 `AET` 和点球决胜场次读取比赛详情中的 90 分钟 `FT` 检查点，详情缺失时不使用加时后的最终比分；Futbol24 加时场次读取分段比分中的 90 分钟赛果；Sofascore 优先读取 `normaltime`；OpenFootball 标记为加时赛的最终比分不会直接写入常规时间赛果。
 
 ## 体彩玩法开售状态与让球数
 

@@ -271,6 +271,51 @@ class SportteryMarketSelectionServiceTest {
     }
 
     @Test
+    void shouldRefreshCalculatorForKnownScheduleBeyondNormalTwoDayWindow() {
+        ReflectionTestUtils.setField(service, "targetZone", "Asia/Shanghai");
+        ReflectionTestUtils.setField(service, "futureDays", 2);
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setMatchDate(LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(3));
+
+        boolean containsUpcomingSchedule = Boolean.TRUE.equals(
+                ReflectionTestUtils.invokeMethod(
+                        service,
+                        "containsUpcomingSchedule",
+                        List.of(schedule)));
+
+        assertTrue(containsUpcomingSchedule);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldCacheAllCalculatorRowsWithinSevenDayWindow() {
+        LocalDate today = LocalDate.of(2026, 7, 25);
+        SportteryMarketSelectionService.SportteryMarketEntry targetEntry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        targetEntry.setSportteryMatchId("2040641");
+        targetEntry.setMatchDate(today.plusDays(3));
+        targetEntry.setCurrentSale(true);
+        SportteryMarketSelectionService.SportteryMarketEntry distantEntry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        distantEntry.setSportteryMatchId("2040999");
+        distantEntry.setMatchDate(today.plusDays(8));
+        distantEntry.setCurrentSale(true);
+
+        int storedCount = ReflectionTestUtils.invokeMethod(
+                service,
+                "replaceUpcomingEntries",
+                List.of(targetEntry, distantEntry),
+                today);
+        Map<String, SportteryMarketSelectionService.SportteryMarketEntry> entries =
+                (Map<String, SportteryMarketSelectionService.SportteryMarketEntry>)
+                        ReflectionTestUtils.getField(service, "entriesByMatchId");
+
+        assertEquals(1, storedCount);
+        assertTrue(entries.containsKey("2040641"));
+        assertFalse(entries.containsKey("2040999"));
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void shouldMatchUpcomingFixtureWhenOneTeamNameIsConfirmed() {
         SportteryMarketSelectionService.SportteryMarketEntry entry =
@@ -366,6 +411,50 @@ class SportteryMarketSelectionServiceTest {
         assertEquals(0, addedCount);
         assertEquals(1, schedules.size());
         assertEquals("2040535", schedules.get(0).getSportteryMatchId());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldMatchRequestedSwedishCompletedFixtureAfterRefresh() {
+        SportteryMarketSelectionService.SportteryMarketEntry entry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        entry.setSportteryMatchId("2040532");
+        entry.setSportteryMatchNumber("周五201");
+        entry.setMatchDate(LocalDate.of(2026, 7, 18));
+        entry.setCompetition(Competition.SWEDISH_ALLSVENSKAN);
+        entry.setLeagueName("瑞超");
+        entry.setHomeTeam("IFK哥德堡");
+        entry.setAwayTeam("布鲁马波卡纳");
+        entry.setHomeScore(2);
+        entry.setAwayScore(1);
+        entry.setNormalOdds(new SportteryOdds(1.93, 3.40, 3.15, "2026-07-17 21:17:42"));
+        entry.setHandicap(-1);
+        entry.setHandicapOdds(new SportteryOdds(3.70, 3.90, 1.66, "2026-07-17 21:18:24"));
+        Map<String, SportteryMarketSelectionService.SportteryMarketEntry> entries =
+                (Map<String, SportteryMarketSelectionService.SportteryMarketEntry>)
+                        ReflectionTestUtils.getField(service, "entriesByMatchId");
+        entries.put(entry.getSportteryMatchId(), entry);
+
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setMatchId("FOTMOB-SWEDISH_ALLSVENSKAN-5107535");
+        schedule.setCompetition(Competition.SWEDISH_ALLSVENSKAN);
+        schedule.setMatchDate(LocalDate.of(2026, 7, 18));
+        schedule.setGroupName("瑞超 第13轮");
+        schedule.setHomeTeamCn("IFK哥德堡");
+        schedule.setAwayTeamCn("布鲁马波卡纳");
+        schedule.setHomeTeamEn("IFK Göteborg");
+        schedule.setAwayTeamEn("Brommapojkarna");
+        schedule.setHomeScore(2);
+        schedule.setAwayScore(1);
+        List<MatchSchedule> schedules = new ArrayList<>(List.of(schedule));
+
+        int matchedCount = service.applyCachedSelections(schedules);
+
+        assertEquals(1, matchedCount);
+        assertEquals("2040532", schedule.getSportteryMatchId());
+        assertEquals(1.93, schedule.getSportteryNormalOdds().getWin());
+        assertEquals(-1, schedule.getSportteryHandicap());
+        assertEquals(3.70, schedule.getSportteryHandicapOdds().getWin());
     }
 
     @Test

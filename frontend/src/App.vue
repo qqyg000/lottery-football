@@ -128,7 +128,7 @@
                 <span><i class="help-icon" tabindex="0" role="img" aria-label="控制让球概率向普通胜平负概率平滑修正的强度，数值越大修正越明显" data-tooltip="控制让球概率向普通胜平负概率平滑修正的强度，数值越大修正越明显">i</i>让球平滑系数</span>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
                   max="0.8"
                   step="0.001"
                   v-model.number="modelFactors.handicapSmoothingFactor"
@@ -144,7 +144,7 @@
                 <span class="percentage-input">
                   <input
                     type="number"
-                    min="0"
+                    min="1"
                     max="100"
                     step="0.01"
                     inputmode="decimal"
@@ -277,6 +277,10 @@
               <div>
                 <strong>{{ backtestHitRateText }}</strong>
                 <span><i class="help-icon" tabindex="0" role="img" aria-label="至少命中一个推荐项的比赛数除以推荐比赛数" data-tooltip="至少命中一个推荐项的比赛数除以推荐比赛数">i</i>命中率</span>
+              </div>
+              <div title="推荐比赛逐场收益率的样本标准差，数值越低表示回测收益越稳定，少于 2 场不计算">
+                <strong>{{ backtestVolatilityText }}</strong>
+                <span><i class="help-icon" tabindex="0" role="img" aria-label="推荐比赛逐场收益率的样本标准差，数值越低表示回测收益越稳定，少于 2 场不计算" data-tooltip="推荐比赛逐场收益率的样本标准差，数值越低表示回测收益越稳定，少于 2 场不计算">i</i>波动率</span>
               </div>
               <div class="backtest-roi-card" title="ROI = [(总返奖 ÷ 总投入) - 1] × 100%，每个推荐项按 1 单位投入">
                 <strong>{{ backtestRoiText }}</strong>
@@ -647,7 +651,11 @@
 </template>
 
 <script>
-import { calculateFlatStakeBacktest, calculateSamplingRate } from './backtest-roi.mjs'
+import {
+  calculateFlatStakeBacktest,
+  calculateReturnVolatility,
+  calculateSamplingRate
+} from './backtest-roi.mjs'
 
 const FIXED_SIMULATIONS = 50000
 const BACKTEST_PROGRESS_POLL_INTERVAL = 300
@@ -820,6 +828,7 @@ function createEmptyBacktestSummary() {
     totalStake: 0,
     totalReturn: 0,
     netProfit: 0,
+    volatility: null,
     roi: null
   }
 }
@@ -994,6 +1003,15 @@ export default {
       }
       const hitMatchCount = Number(this.backtestSummary.hitMatchCount) || 0
       return ((hitMatchCount / recommendedMatchCount) * 100).toFixed(1) + '%'
+    },
+    backtestVolatilityText() {
+      if (!this.backtestActive) {
+        return '--'
+      }
+      const volatility = this.backtestSummary.volatility
+      return typeof volatility === 'number' && Number.isFinite(volatility)
+        ? (volatility * 100).toFixed(1) + '%'
+        : '--'
     },
     backtestRoiText() {
       if (!this.backtestActive) {
@@ -1779,6 +1797,7 @@ export default {
       const recommendedMatches = []
       const hitMatches = []
       const winningMatchOdds = []
+      const matchReturnRates = []
       let recommendedSelectionCount = 0
       let winningSelectionCount = 0
       this.backtestSourceMatches.forEach(match => {
@@ -1788,15 +1807,16 @@ export default {
         }
         recommendedMatches.push(match)
         recommendedSelectionCount += recommendationKeys.size
+        const matchWinningOdds = this.getRecommendationOddsDetails(match)
+          .filter(item => item.winning)
+          .map(item => item.odds)
+        const winningOdds = matchWinningOdds.reduce((sum, odds) => sum + odds, 0)
+        matchReturnRates.push(winningOdds / recommendationKeys.size - 1)
         if (this.recommendationResult(match) !== 'hit') {
           return
         }
         hitMatches.push(match)
-        const matchWinningOdds = this.getRecommendationOddsDetails(match)
-          .filter(item => item.winning)
-          .map(item => item.odds)
         winningSelectionCount += matchWinningOdds.length
-        const winningOdds = matchWinningOdds.reduce((sum, odds) => sum + odds, 0)
         winningMatchOdds.push(winningOdds)
       })
       const missMatchCount = recommendedMatches.length - hitMatches.length
@@ -1820,6 +1840,7 @@ export default {
         totalStake: financials.totalStake,
         totalReturn: financials.totalReturn,
         netProfit: financials.netProfit,
+        volatility: calculateReturnVolatility(matchReturnRates),
         roi: financials.roi
       }
     },
@@ -3206,7 +3227,7 @@ h1 {
 
 .backtest-average-grid > div {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
   align-items: center;
   min-width: 0;
@@ -3216,17 +3237,13 @@ h1 {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.backtest-average-grid > .backtest-roi-card {
-  grid-column: 1 / -1;
-}
-
 .backtest-result strong {
   grid-column: 2;
   grid-row: 1;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1;
-  text-align: right;
+  text-align: center;
 }
 
 .backtest-result span {
@@ -3236,12 +3253,13 @@ h1 {
   font-size: 10px;
   font-weight: 800;
   line-height: 1.1;
-  text-align: left;
+  text-align: center;
 }
 
 .backtest-average-grid > div > span {
   display: flex;
   align-items: center;
+  justify-content: center;
   white-space: nowrap;
 }
 

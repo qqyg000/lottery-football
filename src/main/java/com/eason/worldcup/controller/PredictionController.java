@@ -202,9 +202,11 @@ public class PredictionController {
     @PostMapping("/data/refresh-historical-odds")
     public SportteryHistoricalOddsRefreshResponse refreshHistoricalOdds(
             @RequestParam("startDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-            @RequestParam("endDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+            @RequestParam("endDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(value = "competition", required = false)
+            Set<Competition> competitions) {
         try {
-            return predictionService.refreshHistoricalOdds(startDate, endDate);
+            return predictionService.refreshHistoricalOdds(startDate, endDate, competitions);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }

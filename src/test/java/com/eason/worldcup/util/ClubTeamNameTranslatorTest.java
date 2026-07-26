@@ -137,6 +137,21 @@ class ClubTeamNameTranslatorTest {
         assertEquals("水原三星", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "Suwon Samsung Bluewings"));
+        assertEquals("金泉尚武", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Gimcheon Sangmu"));
+        assertEquals("大田市民", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Daejeon Hana Citizen"));
+        assertEquals("金浦FC", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Gimpo FC"));
+        assertEquals("首尔衣恋", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Seoul E-Land FC"));
+        assertEquals("忠南牙山", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Chungnam Asan FC"));
         assertEquals("奥胡斯", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "AGF Aarhus"));
@@ -164,6 +179,48 @@ class ClubTeamNameTranslatorTest {
         assertEquals("兹林", ClubTeamNameTranslator.translate(
                 Competition.CLUB_FRIENDLY,
                 "FK Zlin"));
+        assertEquals("瓦尔达尔", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Vardar"));
+        assertEquals("高利宁", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Coleraine"));
+        assertEquals("利瓦迪亚", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "FC Levadia Tallinn"));
+        assertEquals("利瓦迪亚", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "FCI Levadia"));
+        assertEquals("汉坎", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "Hamarkameratene"));
+        assertEquals("汉坎", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "HamKam"));
+        assertEquals("越南", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "Vietnam"));
+        assertEquals("始兴市民", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "Siheung FC"));
+        assertEquals("始兴市民", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "Siheung Citizen"));
+        assertEquals("龙仁FC", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "Yongin FC"));
+        assertEquals("特罗姆瑟", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Tromsø"));
+        assertEquals("江原FC", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "Gangwon FC"));
+        assertEquals("萨拉热窝", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "FK Sarajevo"));
+        assertEquals("AIK索尔纳", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "AIK Fotboll"));
     }
 
     @Test

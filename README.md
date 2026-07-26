@@ -2,7 +2,7 @@
 
 竞彩足球胜平负概率预测与推荐回测程序。后端使用 Spring Boot，前端使用 Vue 2，支持按赛事和日期查询赛程、赛果、体彩赔率及模型预测结果。
 
-> 当前内置比赛数据快照及球队名映射更新至 2026-07-24。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
+> 当前内置比赛数据快照更新至 2026-07-26，球队名映射更新至 2026-08-23。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
 
 ## 主要功能
 
@@ -53,11 +53,11 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 151,100 | 2014-10-22 至 2026-07-24 |
-| `historical_odds_data.csv` | 28,318 | 2014-10-22 至 2026-07-22 |
-| `team_name_mappings.csv` | 14,817 | 2014-06-24 至 2026-08-23 |
+| `historical_matches.csv` | 174,578 | 2014-10-22 至 2026-07-26 |
+| `historical_odds_data.csv` | 28,694 | 2014-10-22 至 2026-07-22 |
+| `team_name_mappings.csv` | 20,874 | 2014-06-24 至 2026-08-23 |
 
-主要数据来自 FotMob、Futbol24、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
+主要数据来自 FotMob、Futbol24、Foot Mercato、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 
 ## 快速启动
 
@@ -207,13 +207,15 @@ totalStake = recommendedSelectionCount
 totalReturn = sum(winningSelectionOdds)
 netProfit = totalReturn - totalStake
 ROI = (totalReturn / totalStake - 1) × 100%
+逐场收益率 = matchReturn / matchStake - 1
+波动率 = stddev.s(逐场收益率) × 100%
 场均投注 = totalStake / recommendedMatchCount
 场均返奖 = totalReturn / recommendedMatchCount
 命中率 = hitMatchCount / recommendedMatchCount × 100%
 采样率 = recommendedMatchCount / oddsMatchCount × 100%
 ```
 
-没有推荐项时 ROI 为空；存在推荐项但全部未命中时 ROI 为 `-100%`。
+没有推荐项时 ROI 为空；存在推荐项但全部未命中时 ROI 为 `-100%`。波动率采用推荐比赛逐场收益率的样本标准差，数值越低表示回测收益越稳定，少于 2 场推荐比赛时为空。
 
 采样率相关计数定义：
 
@@ -221,43 +223,23 @@ ROI = (totalReturn / totalStake - 1) × 100%
 - `oddsMatchCount`：上述已完赛比赛中至少有一类体彩赔率的比赛数，是采样率分母
 - `recommendedMatchCount`：有赔率比赛中产生推荐的比赛数，是采样率分子
 
-参数优化器默认以 ROI 为第一目标，并执行以下硬约束：
+当前保存的参数档案以 ROI 为第一目标，并执行以下硬约束：
 
-- 正式比赛权重范围为 `1.00` 至 `3.00`
-- 稳健方案采样率严格大于 `66.6%`
-- 激进方案采样率大于等于 `50.0%`
+- 正式比赛权重不低于 `1.00`
+- 默认稳健方案采样率大于等于 `60.0%`
+- 默认激进方案采样率大于等于 `50.0%`
+- 欧洲杯仅本届稳健方案采样率大于等于 `40.0%`
+- 欧洲杯仅本届和芬超仅本届激进方案采样率严格大于 `33.3%`
+- 欧洲杯仅本届激进方案优先限制在 `49.0%` 至 `51.0%` 内
+- 芬超仅本届激进方案优先限制在 `48.0%` 至 `52.0%` 内
+- 韩职仅本届激进方案采样率大于等于 `40.0%`
+- 最新精调在上述现有方案采样率基础上允许上下 `3` 个百分点浮动，最终以逐方案窗口为准
+- 所有有可结算样本的稳健方案 ROI 大于等于 `5.0%`
+- 同赛事、同时段的激进方案 ROI 必须严格高于稳健方案
+- 当方案不满足上述 ROI 关系时，允许突破原采样率限制重新优化，但正式比赛权重仍不得低于 `1.00`
 - 采样率分母使用方案回测时间范围内全部已完赛且有赔率的比赛数
 
-全量删除旧参数方案、恢复默认方案并重新优化：
-
-```powershell
-node scripts/optimize-profile-parameters.mjs --reset-profiles=true
-```
-
-优化前会把原配置备份到 `target/user-config-before-profile-optimization.json`。没有已完赛且有赔率的比赛时，优化器会跳过对应方案；有赔率样本存在时，采样率上限为 `100%`。
-
-在现有参数附近精调，并把每个普通方案的采样率限制为精调前采样率上下 2 个百分点：
-
-```powershell
-node scripts/optimize-profile-parameters.mjs `
-  --fine-tune-ratio=0.02 `
-  --sampling-rate-tolerance=0.02 `
-  --unconstrained-sampling-profiles=EUROPA_LEAGUE:CURRENT:STABLE,CHAMPIONS_LEAGUE:CURRENT:STABLE,CHAMPIONS_LEAGUE:CURRENT:AGGRESSIVE
-```
-
-`--fine-tune-ratio=0.02` 表示各参数在现有值附近上下精调 2%。`--sampling-rate-tolerance=0.02` 表示采样率上下浮动 2 个百分点，不是相对变化 2%。`--unconstrained-sampling-profiles` 接受逗号分隔的完整参数档案键，列出的方案仍要求有推荐、有命中且满足最低 ROI，但不检查采样率。
-
-使用本轮精调生成的同口径报告复核已保存参数：
-
-```powershell
-node scripts/optimize-profile-parameters.mjs `
-  --verify-only=true `
-  --sampling-rate-tolerance=0.02 `
-  --baseline-report=target/profile-optimization-report.json `
-  --unconstrained-sampling-profiles=EUROPA_LEAGUE:CURRENT:STABLE,CHAMPIONS_LEAGUE:CURRENT:STABLE,CHAMPIONS_LEAGUE:CURRENT:AGGRESSIVE
-```
-
-`--baseline-report` 必须来自当前采样率定义下的同一次优化。旧的 `target/profile-sampling-fine-tune-report.json` 使用“全部已完赛比赛数”作为分母，不得继续作为新口径的采样率基线。采样率口径修正及历史数据失真范围见 [采样率口径与历史方案数据审计](reports/sampling-rate-definition-audit-2026-07-24.md)。
+没有已完赛且有赔率的比赛时，对应档案保留默认参数，不计算采样率和 ROI。采样率口径修正及历史数据失真范围见 [采样率口径与历史方案数据审计](reports/sampling-rate-definition-audit-2026-07-24.md)。
 
 ## 模型说明
 
@@ -355,9 +337,18 @@ node scripts/import-supplemental-history.mjs --write --compact
 # 仅补充俱乐部历史，跳过国家队公共源
 node scripts/import-supplemental-history.mjs --write --compact --skip-national
 
+# 回补 2025 年以来的俱乐部友谊赛年度赛果
+node scripts/import-supplemental-history.mjs --write --compact --skip-national `
+  --only-sources FUTBOL24-CLUB-FRIENDLY `
+  --source-min-date 2025-01-01 --source-max-date 2025-12-31
+
 # 只补取阿塞超和阿塞杯
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
   --only-sources FOTMOB-262,FUTBOL24-525,VERIFIED-PFL
+
+# 只导入已核验的国家队对俱乐部训练赛
+node scripts/import-supplemental-history.mjs --write --compact --skip-national `
+  --only-sources VERIFIED-VIETNAMPLUS
 
 # 只补取芬超、芬兰杯、丹超、波超杯、波甲、奥甲和苏超
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
@@ -374,8 +365,6 @@ node scripts/import-supplemental-history.mjs --write --compact --skip-national `
 # 校正比分并压缩数据
 node scripts/reconcile-historical-scores.mjs --write --compact
 
-# 核验参数档案
-node scripts/optimize-profile-parameters.mjs --verify-only=true
 ```
 
 执行会写入正式 CSV 的脚本前，建议先省略 `--write` 检查增量和汇总结果。
@@ -389,6 +378,7 @@ node scripts/optimize-profile-parameters.mjs --verify-only=true
 | `config/club-competition-schedules.json` | 俱乐部赛事运行时赛程缓存 |
 | `config/sporttery-market-selections.json` | 体彩玩法及赔率缓存 |
 | `team_name_mappings.csv` | 体彩标准球队名与数据源别名 |
+| `reports/parameter-reoptimization-2026-07-25.md` | 全赛事方案参数重新优化和独立复核结果 |
 | `reports/sampling-rate-definition-audit-2026-07-24.md` | 新旧采样率口径、历史方案数据失真及复核结果 |
 
 修改 CSV 字段或赛事代码时，需要同步检查 Java 加载器、数据脚本和前端赛事列表。

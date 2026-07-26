@@ -19,6 +19,15 @@ class DataRepositoryTest {
     private final DataRepository repository = new DataRepository(null, null, null, null, null, null);
 
     @Test
+    void shouldMapClubCompetitionProgressIntoScheduleRefreshRange() {
+        assertEquals(36, DataRepository.mapClubCompetitionProgress(0));
+        assertEquals(47, DataRepository.mapClubCompetitionProgress(50));
+        assertEquals(58, DataRepository.mapClubCompetitionProgress(100));
+        assertEquals(36, DataRepository.mapClubCompetitionProgress(-1));
+        assertEquals(58, DataRepository.mapClubCompetitionProgress(101));
+    }
+
+    @Test
     void shouldDeduplicateMappedFixtureAndKeepSportteryOdds() {
         MatchSchedule officialSchedule = completedSchedule(
                 "ESPN-CHAMPIONS_LEAGUE-401841108",
@@ -73,6 +82,35 @@ class DataRepositoryTest {
         List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(List.of(first, second));
 
         assertEquals(2, schedules.size());
+    }
+
+    @Test
+    void shouldDeduplicateSameClubFriendlyAcrossProviders() {
+        MatchSchedule futbol24 = completedSchedule(
+                "FUTBOL24-CLUB_FRIENDLY-3337082",
+                "AIK Fotboll",
+                "韦斯特罗斯");
+        futbol24.setCompetition(Competition.CLUB_FRIENDLY);
+        futbol24.setMatchDate(LocalDate.of(2026, 6, 28));
+        futbol24.setKickoffTime(LocalTime.of(20, 0));
+        futbol24.setHomeScore(3);
+        futbol24.setAwayScore(2);
+        MatchSchedule fotMob = completedSchedule(
+                "FOTMOB-CLUB_FRIENDLY-5838835",
+                "AIK索尔纳",
+                "韦斯特罗斯");
+        fotMob.setCompetition(Competition.CLUB_FRIENDLY);
+        fotMob.setMatchDate(LocalDate.of(2026, 6, 28));
+        fotMob.setKickoffTime(LocalTime.of(20, 0));
+        fotMob.setHomeScore(3);
+        fotMob.setAwayScore(2);
+
+        List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(List.of(
+                futbol24,
+                fotMob));
+
+        assertEquals(1, schedules.size());
+        assertEquals("AIK索尔纳", schedules.get(0).getHomeTeamCn());
     }
 
     @Test

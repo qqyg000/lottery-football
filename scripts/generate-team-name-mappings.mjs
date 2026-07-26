@@ -52,6 +52,97 @@ const REJECTED_MAPPING_KEYS = new Set([
 
 const VERIFIED_SPORTTERY_ENGLISH_ALIASES = [
   {
+    competition: '*',
+    standardName: 'AIK索尔纳',
+    aliasName: 'AIK Fotboll',
+    lastSeenDate: '2026-06-28',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '特罗姆瑟',
+    aliasName: 'Tromsø',
+    lastSeenDate: '2026-07-26',
+    source: 'VERIFIED_ALIAS'
+  },
+  {
+    competition: '*',
+    standardName: '利瓦迪亚',
+    aliasName: 'FC Levadia Tallinn',
+    lastSeenDate: '2026-07-22',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '利瓦迪亚',
+    aliasName: 'FCI Levadia',
+    lastSeenDate: '2026-07-31',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '汉坎',
+    aliasName: 'Hamarkameratene',
+    lastSeenDate: '2026-06-27',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '汉坎',
+    aliasName: 'HamKam',
+    lastSeenDate: '2026-06-27',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '萨拉热窝',
+    aliasName: 'FK Sarajevo',
+    lastSeenDate: '2026-07-16',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '瓦尔达尔',
+    aliasName: 'Vardar',
+    lastSeenDate: '2026-07-23',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '高利宁',
+    aliasName: 'Coleraine',
+    lastSeenDate: '2021-07-16',
+    source: 'MANUAL'
+  },
+  {
+    competition: 'CLUB_FRIENDLY',
+    standardName: '越南',
+    aliasName: 'Vietnam',
+    lastSeenDate: '2026-07-13',
+    source: 'VERIFIED_ALIAS'
+  },
+  {
+    competition: 'CLUB_FRIENDLY',
+    standardName: '始兴市民',
+    aliasName: 'Siheung FC',
+    lastSeenDate: '2026-07-05',
+    source: 'VERIFIED_ALIAS'
+  },
+  {
+    competition: 'CLUB_FRIENDLY',
+    standardName: '始兴市民',
+    aliasName: 'Siheung Citizen',
+    lastSeenDate: '2026-07-15',
+    source: 'VERIFIED_ALIAS'
+  },
+  {
+    competition: 'CLUB_FRIENDLY',
+    standardName: '龙仁FC',
+    aliasName: 'Yongin FC',
+    lastSeenDate: '2026-07-19',
+    source: 'VERIFIED_ALIAS'
+  },
+  {
     competition: 'CLUB_OFFICIAL_OTHER',
     standardName: '竞技俱乐部MG',
     aliasName: 'Athletic Club (MG)',
@@ -611,6 +702,7 @@ const REQUESTED_DOMESTIC_COMPETITION_ALIASES = [
   ['釜山偶像', "Busan I'Park"],
   ['富川FC', 'Bucheon FC 1995', 'VERIFIED_SPORTTERY'],
   ['光州FC', 'Gwangju FC', 'VERIFIED_SPORTTERY'],
+  ['金浦FC', 'Gimpo FC', 'VERIFIED_ALIAS'],
   ['济州SK', 'Jeju SK', 'VERIFIED_SPORTTERY'],
   ['济州SK', 'Jeju United'],
   ['济州SK', '济州联'],
@@ -625,8 +717,10 @@ const REQUESTED_DOMESTIC_COMPETITION_ALIASES = [
   ['仁川联', 'Incheon', 'VERIFIED_ALIAS'],
   ['首尔FC', 'FC Seoul', 'VERIFIED_SPORTTERY'],
   ['首尔FC', 'Seoul', 'VERIFIED_ALIAS'],
+  ['首尔衣恋', 'Seoul E-Land FC', 'VERIFIED_ALIAS'],
   ['水原FC', 'Suwon FC'],
   ['水原三星', 'Suwon Samsung Bluewings'],
+  ['忠南牙山', 'Chungnam Asan FC', 'VERIFIED_ALIAS'],
   ['蔚山现代', 'Ulsan HD FC', 'VERIFIED_SPORTTERY'],
   ['蔚山现代', 'Ulsan HD', 'VERIFIED_ALIAS'],
   ['蔚山现代', 'Ulsan Hyundai'],

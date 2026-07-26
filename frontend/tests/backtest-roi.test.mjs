@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import {
   calculateFlatStakeBacktest,
   calculateMinimumCoveredMatchCount,
+  calculateReturnVolatility,
   calculateSamplingRate
 } from '../src/backtest-roi.mjs'
 
@@ -58,6 +59,19 @@ test('采样率等于推荐比赛数除以已完赛且有赔率比赛数', () =>
 
 test('没有已完赛且有赔率比赛时采样率为空', () => {
   assert.equal(calculateSamplingRate(0, 0), null)
+})
+
+test('波动率按逐场收益率的样本标准差计算', () => {
+  assert.equal(calculateReturnVolatility([-1, 0, 1]), 1)
+})
+
+test('少于两场有效收益率时不计算波动率', () => {
+  assert.equal(calculateReturnVolatility([]), null)
+  assert.equal(calculateReturnVolatility([0.5]), null)
+})
+
+test('计算波动率时忽略无效收益率', () => {
+  assert.equal(calculateReturnVolatility([-1, 'invalid', 1]), Math.SQRT2)
 })
 
 test('最少推荐场次按有赔率比赛数保证采样率严格大于约束值', () => {

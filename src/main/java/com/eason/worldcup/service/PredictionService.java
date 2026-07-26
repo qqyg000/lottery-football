@@ -409,10 +409,23 @@ public class PredictionService {
     public SportteryHistoricalOddsRefreshResponse refreshHistoricalOdds(
             LocalDate startDate,
             LocalDate endDate) {
+        return refreshHistoricalOdds(startDate, endDate, Set.of());
+    }
+
+    public SportteryHistoricalOddsRefreshResponse refreshHistoricalOdds(
+            LocalDate startDate,
+            LocalDate endDate,
+            Set<Competition> competitions) {
+        Set<Competition> targetCompetitions = competitions == null ? Set.of() : Set.copyOf(competitions);
         SportteryHistoricalOddsRefreshResponse response =
-                sportteryMarketSelectionService.refreshHistoricalRange(startDate, endDate);
+                sportteryMarketSelectionService.refreshHistoricalRange(
+                        startDate,
+                        endDate,
+                        targetCompetitions);
         List<MatchSchedule> schedules = dataRepository.getSchedules().stream()
                 .filter(schedule -> schedule.getMatchDate() != null)
+                .filter(schedule -> targetCompetitions.isEmpty()
+                        || targetCompetitions.contains(schedule.getCompetition()))
                 .filter(schedule -> !schedule.getMatchDate().isBefore(startDate))
                 .filter(schedule -> !schedule.getMatchDate().isAfter(endDate))
                 .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
@@ -572,7 +585,7 @@ public class PredictionService {
         notifyDataRefreshProgress(progressConsumer, 5, "正在读取体彩最近30天赛果");
         sportteryMarketSelectionService.forceRefresh(null);
         notifyDataRefreshProgress(progressConsumer, 25, "体彩赛果已更新，正在刷新17类赛事赛程与补充数据");
-        dataRepository.refreshSchedules();
+        dataRepository.refreshSchedules(progressConsumer);
         notifyDataRefreshProgress(progressConsumer, 65, "赛程数据已更新，正在重建球队模型");
         teamStrengthService.rebuildModels();
         notifyDataRefreshProgress(progressConsumer, 90, "竞彩数据已刷新，正在加载赛事概览");

@@ -225,8 +225,24 @@ const FOTMOB_LEAGUE_SOURCES = [
     leagueId: '180',
     competition: 'CLUB_OFFICIAL_OTHER',
     matchType: 'OFFICIAL',
-    sourceCompetition: '联赛杯',
+    sourceCompetition: '苏联赛杯',
     calendarYearSeason: false
+  },
+  {
+    leagueId: '342',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '联赛杯',
+    calendarYearSeason: true,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '171',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '瑞典杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
   },
   {
     leagueId: '168',
@@ -241,6 +257,14 @@ const FOTMOB_LEAGUE_SOURCES = [
     matchType: 'OFFICIAL',
     sourceCompetition: 'Play-offs 1/2',
     calendarYearSeason: true
+  },
+  {
+    leagueId: '9422',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: 'Play-offs 1/2',
+    calendarYearSeason: true,
+    firstSeasonStartYear: 2014
   },
   {
     leagueId: '525',
@@ -465,12 +489,23 @@ const SOFASCORE_CLUB_FRIENDLY_SOURCE = {
   sourceCompetition: '俱乐部友谊赛'
 }
 
+const FOOTMERCATO_CLUB_FRIENDLY_SOURCE = {
+  sourceKey: 'FOOTMERCATO-CLUB-FRIENDLY',
+  competition: 'CLUB_FRIENDLY',
+  matchType: 'CLUB_FRIENDLY',
+  sourceCompetition: '俱乐部友谊赛',
+  calendarUrl: 'https://www.footmercato.net/international/amicaux-club/calendrier/'
+}
+
 const FUTBOL24_SOURCES = [
   {
     leagueId: '472',
     competition: 'CLUB_FRIENDLY',
     matchType: 'CLUB_FRIENDLY',
-    sourceCompetition: '俱乐部友谊赛'
+    sourceCompetition: '俱乐部友谊赛',
+    seasonPath: 'international/International/Club-Friendly',
+    crossYearSeason: false,
+    firstSeasonStartYear: 2014
   },
   {
     leagueId: '525',
@@ -636,6 +671,48 @@ const FUTBOL24_SOURCES = [
 
 const VERIFIED_SUPPLEMENTAL_ROWS = [
   {
+    provider: 'VIETNAMPLUS',
+    providerId: '1122468',
+    source: 'VERIFIED-VIETNAMPLUS',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-05',
+    homeTeam: 'Vietnam',
+    awayTeam: 'Siheung FC',
+    homeScore: 6,
+    awayScore: 0,
+    neutral: true
+  },
+  {
+    provider: 'VIETNAMPLUS',
+    providerId: '1123089',
+    source: 'VERIFIED-VIETNAMPLUS',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-08',
+    homeTeam: 'Vietnam',
+    awayTeam: 'Yongin FC',
+    homeScore: 2,
+    awayScore: 1,
+    neutral: true
+  },
+  {
+    provider: 'VIETNAMPLUS',
+    providerId: '1123941',
+    source: 'VERIFIED-VIETNAMPLUS',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-13',
+    homeTeam: 'Vietnam',
+    awayTeam: 'Gangwon FC',
+    homeScore: 2,
+    awayScore: 1,
+    neutral: true
+  },
+  {
     provider: 'SOFASCORE',
     providerId: '16411586',
     source: 'VERIFIED-SOFASCORE',
@@ -746,6 +823,7 @@ function parseArguments(argv) {
     skipSoccerway: false,
     skipFutbol24: false,
     skipSofaScore: false,
+    skipFootMercato: false,
     skipNational: false,
     resetInferredMappings: false,
     onlySources: null,
@@ -753,6 +831,9 @@ function parseArguments(argv) {
     historySourcePath: historicalMatchesPath,
     minDate: MINIMUM_HISTORY_DATE,
     maxDate: localDate(new Date()),
+    sourceMinDate: null,
+    sourceMaxDate: null,
+    replaceSourceCompetitions: new Set(),
     concurrency: 8
   }
   for (let index = 0; index < argv.length; index += 1) {
@@ -773,6 +854,8 @@ function parseArguments(argv) {
       options.skipFutbol24 = true
     } else if (argument === '--skip-sofascore') {
       options.skipSofaScore = true
+    } else if (argument === '--skip-footmercato') {
+      options.skipFootMercato = true
     } else if (argument === '--skip-national') {
       options.skipNational = true
     } else if (argument === '--reset-inferred-mappings') {
@@ -790,19 +873,41 @@ function parseArguments(argv) {
       options.minDate = requiredArgument(argv, ++index, argument)
     } else if (argument === '--max-date') {
       options.maxDate = requiredArgument(argv, ++index, argument)
+    } else if (argument === '--source-min-date') {
+      options.sourceMinDate = requiredArgument(argv, ++index, argument)
+    } else if (argument === '--source-max-date') {
+      options.sourceMaxDate = requiredArgument(argv, ++index, argument)
+    } else if (argument === '--replace-source-competitions') {
+      options.replaceSourceCompetitions = new Set(requiredArgument(argv, ++index, argument)
+        .split(',')
+        .map(value => value.trim())
+        .filter(Boolean))
     } else if (argument === '--concurrency') {
       options.concurrency = Number(requiredArgument(argv, ++index, argument))
     } else {
       throw new Error(`未知参数：${argument}`)
     }
   }
-  for (const [name, value] of [['--min-date', options.minDate], ['--max-date', options.maxDate]]) {
+  options.sourceMinDate ??= options.minDate
+  options.sourceMaxDate ??= options.maxDate
+  for (const [name, value] of [
+    ['--min-date', options.minDate],
+    ['--max-date', options.maxDate],
+    ['--source-min-date', options.sourceMinDate],
+    ['--source-max-date', options.sourceMaxDate]
+  ]) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
       throw new Error(`${name} 必须使用 yyyy-MM-dd 格式：${value}`)
     }
   }
   if (options.minDate > options.maxDate) {
     throw new Error('--min-date 不能晚于 --max-date')
+  }
+  if (options.sourceMinDate > options.sourceMaxDate) {
+    throw new Error('--source-min-date 不能晚于 --source-max-date')
+  }
+  if (options.sourceMinDate < options.minDate || options.sourceMaxDate > options.maxDate) {
+    throw new Error('来源数据日期范围必须位于历史数据保留范围内')
   }
   options.concurrency = Math.max(1, Math.min(16, Number.isFinite(options.concurrency)
     ? Math.floor(options.concurrency)
@@ -920,7 +1025,7 @@ function canonicalChineseName(value) {
     .toUpperCase()
     .replace(/[\s·•，,.'’`´()（）\[\]【】_\/&-]+/gu, '')
     .replace(/^(FC|SC|CF)(?=\p{Script=Han})/u, '')
-    .replace(/(AIF|FC|SC|CF|SK|FK|IF|BK|FF)$/u, '')
+    .replace(/(?<=\p{Script=Han})(AIF|FC|SC|CF|SK|FK|IF|BK|FF)$/u, '')
 }
 
 function normalizeHistoryRow(row) {
@@ -1390,13 +1495,15 @@ async function loadEspnRows(options) {
 
 function fotMobSeasonRequests(options) {
   const requests = []
-  const firstYear = Number(options.minDate.slice(0, 4))
-  const lastYear = Number(options.maxDate.slice(0, 4))
+  const firstYear = Number(options.sourceMinDate.slice(0, 4))
+  const lastYear = Number(options.sourceMaxDate.slice(0, 4))
   for (const source of FOTMOB_LEAGUE_SOURCES
     .filter(item => sourceSelected(options, `FOTMOB-${item.leagueId}`))) {
     const previousYear = firstYear - 1
-    const includesPreviousCrossYearSeason = !source.calendarYearSeason
-      && (!source.crossYearSeasonFrom || previousYear >= source.crossYearSeasonFrom)
+    const includesPreviousCrossYearSeason = usesFotMobCrossYearSeason(
+      source,
+      previousYear
+    )
     const sourceFirstYear = Math.max(
       includesPreviousCrossYearSeason ? previousYear : firstYear,
       source.firstSeasonStartYear ?? Number.MIN_SAFE_INTEGER
@@ -1408,10 +1515,103 @@ function fotMobSeasonRequests(options) {
   return requests
 }
 
+function usesFotMobCrossYearSeason(source, seasonStartYear) {
+  if (source.calendarYearSeason) {
+    return false
+  }
+  if (source.leagueId === '180'
+      && seasonStartYear >= 2016
+      && seasonStartYear <= 2021) {
+    return false
+  }
+  return !source.crossYearSeasonFrom
+    || seasonStartYear >= source.crossYearSeasonFrom
+}
+
+function fotMobStatusNeedsRegulationDetails(status) {
+  const reason = status?.reason ?? {}
+  const reasonText = [reason.short, reason.shortKey, reason.long, reason.longKey]
+    .join(' ')
+    .toLowerCase()
+  return reasonText.includes('aet')
+    || reasonText.includes('extra time')
+    || reasonText.includes('afterextra')
+    || reasonText.includes('penalt')
+    || reasonText.includes('afterpen')
+}
+
+function regulationFotMobScore(match, details) {
+  const scoreMatch = String(match?.status?.scoreStr ?? '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/)
+  if (!scoreMatch) {
+    return null
+  }
+  const fullHomeScore = Number(scoreMatch[1])
+  const fullAwayScore = Number(scoreMatch[2])
+  if (!fotMobStatusNeedsRegulationDetails(match?.status)) {
+    return {
+      homeScore: fullHomeScore,
+      awayScore: fullAwayScore,
+      correctedExtraTimeGoals: 0
+    }
+  }
+
+  const events = details?.content?.matchFacts?.events?.events
+  if (!Array.isArray(events)) {
+    return null
+  }
+  const fullTimeEvent = events.find(event => (
+    event?.type === 'Half'
+    && Number(event?.time) === 90
+    && String(event?.halfStrShort ?? '').toUpperCase() === 'FT'
+  ))
+  const checkpointHomeScore = integerScore(fullTimeEvent?.homeScore)
+  const checkpointAwayScore = integerScore(fullTimeEvent?.awayScore)
+  if (checkpointHomeScore !== null && checkpointAwayScore !== null) {
+    return {
+      homeScore: checkpointHomeScore,
+      awayScore: checkpointAwayScore,
+      correctedExtraTimeGoals: Math.max(
+        0,
+        fullHomeScore + fullAwayScore - checkpointHomeScore - checkpointAwayScore
+      )
+    }
+  }
+
+  let homeScore = 0
+  let awayScore = 0
+  let sawGoal = false
+  for (const event of events) {
+    if (event?.type !== 'Goal' || event?.isPenaltyShootoutEvent) {
+      continue
+    }
+    sawGoal = true
+    if (Number(event?.time) > 90) {
+      continue
+    }
+    if (event?.isHome === true) {
+      homeScore += 1
+    } else if (event?.isHome === false) {
+      awayScore += 1
+    }
+  }
+  if (!sawGoal && fullHomeScore + fullAwayScore > 0) {
+    return null
+  }
+  return {
+    homeScore,
+    awayScore,
+    correctedExtraTimeGoals: Math.max(
+      0,
+      fullHomeScore + fullAwayScore - homeScore - awayScore
+    )
+  }
+}
+
 async function readFotMobSeason(request, options) {
-  const crossYearSeason = !request.source.calendarYearSeason
-    && (!request.source.crossYearSeasonFrom
-      || request.seasonStartYear >= request.source.crossYearSeasonFrom)
+  const crossYearSeason = usesFotMobCrossYearSeason(
+    request.source,
+    request.seasonStartYear
+  )
   const season = crossYearSeason
     ? `${request.seasonStartYear}/${request.seasonStartYear + 1}`
     : String(request.seasonStartYear)
@@ -1439,14 +1639,59 @@ async function readFotMobSeason(request, options) {
   return json
 }
 
-function parseFotMobRows(json, source) {
+async function readFotMobMatchDetails(matchId, options) {
+  const cachePath = path.join(cacheRoot, 'fotmob-match-details', `${matchId}.json`)
+  if (!options.refreshCache) {
+    try {
+      return JSON.parse(await fs.readFile(cachePath, 'utf8'))
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const url = `https://www.fotmob.com/api/data/matchDetails?matchId=${encodeURIComponent(matchId)}`
+  const json = await fetchJsonWithRetry(url)
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, JSON.stringify(json), 'utf8')
+  return json
+}
+
+async function parseFotMobRows(json, source, options) {
   const rows = []
-  for (const match of json?.fixtures?.allMatches ?? []) {
+  const matches = (json?.fixtures?.allMatches ?? []).filter(match => (
+    match?.status?.finished && !match?.status?.cancelled
+  ))
+  const detailMatches = matches.filter(match => {
+    const matchDate = shanghaiDate(match?.status?.utcTime)
+    return matchDate
+      && matchDate >= options.sourceMinDate
+      && matchDate <= options.sourceMaxDate
+      && fotMobStatusNeedsRegulationDetails(match?.status)
+  })
+  const detailEntries = await mapWithConcurrency(
+    detailMatches,
+    Math.min(4, options.concurrency),
+    async match => {
+      const matchId = String(match?.id ?? '')
+      try {
+        return [matchId, await readFotMobMatchDetails(matchId, options)]
+      } catch (error) {
+        console.error(`FotMob 常规时间比分读取失败 ${matchId}: ${error.message}`)
+        return [matchId, null]
+      }
+    }
+  )
+  const detailsByMatchId = new Map(detailEntries)
+  for (const match of matches) {
     if (!match?.status?.finished || match?.status?.cancelled) {
       continue
     }
-    const scoreMatch = String(match?.status?.scoreStr ?? '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/)
     const matchDate = shanghaiDate(match?.status?.utcTime)
+    const score = regulationFotMobScore(
+      match,
+      detailsByMatchId.get(String(match?.id ?? ''))
+    )
     const sourceTeamName = team => {
       const rawName = String(team?.longName ?? team?.name ?? team?.shortName ?? '').trim()
       if (source.leagueId === '270'
@@ -1458,7 +1703,7 @@ function parseFotMobRows(json, source) {
     }
     const homeTeam = sourceTeamName(match?.home)
     const awayTeam = sourceTeamName(match?.away)
-    if (!scoreMatch || !homeTeam || !awayTeam || !matchDate) {
+    if (!score || !homeTeam || !awayTeam || !matchDate) {
       continue
     }
     rows.push({
@@ -1471,9 +1716,10 @@ function parseFotMobRows(json, source) {
       matchDate,
       homeTeam,
       awayTeam,
-      homeScore: Number(scoreMatch[1]),
-      awayScore: Number(scoreMatch[2]),
-      neutral: false
+      homeScore: score.homeScore,
+      awayScore: score.awayScore,
+      neutral: false,
+      correctedExtraTimeGoals: score.correctedExtraTimeGoals
     })
   }
   return rows
@@ -1487,13 +1733,14 @@ async function loadFotMobRows(options) {
   const errors = []
   const batches = await mapWithConcurrency(requests, Math.min(3, options.concurrency), async request => {
     try {
-      return parseFotMobRows(await readFotMobSeason(request, options), request.source)
+      return await parseFotMobRows(await readFotMobSeason(request, options), request.source, options)
     } catch (error) {
       errors.push({
         source: request.source.leagueId,
-        season: !request.source.calendarYearSeason
-            && (!request.source.crossYearSeasonFrom
-              || request.seasonStartYear >= request.source.crossYearSeasonFrom)
+        season: usesFotMobCrossYearSeason(
+          request.source,
+          request.seasonStartYear
+        )
           ? `${request.seasonStartYear}/${request.seasonStartYear + 1}`
           : String(request.seasonStartYear),
         message: error.message
@@ -1641,14 +1888,17 @@ function parseFutbol24Rows(json, sources) {
       continue
     }
     const status = statuses[String(match?.status_id ?? '')]
-    if (String(status?.name_short ?? '').toUpperCase() !== 'FT') {
+    const statusText = `${status?.name_short ?? ''} ${status?.name ?? ''}`.toUpperCase()
+    if (!status?.is_ended
+        || statusText.includes('CANCEL')
+        || statusText.includes('ABANDON')) {
       continue
     }
-    const scoreMatch = String(match?.score1 ?? '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/)
+    const score = futbol24RegulationScore(match, status)
     const homeTeam = String(match?.team1?.name ?? '').trim()
     const awayTeam = String(match?.team2?.name ?? '').trim()
     const matchDate = shanghaiDate(match?.date)
-    if (!scoreMatch || !homeTeam || !awayTeam || !matchDate) {
+    if (!score || !homeTeam || !awayTeam || !matchDate) {
       continue
     }
     rows.push({
@@ -1663,8 +1913,8 @@ function parseFutbol24Rows(json, sources) {
       matchDate,
       homeTeam,
       awayTeam,
-      homeScore: Number(scoreMatch[1]),
-      awayScore: Number(scoreMatch[2]),
+      homeScore: score.homeScore,
+      awayScore: score.awayScore,
       neutral: false
     })
   }
@@ -1739,6 +1989,25 @@ function parseFutbol24SeasonPage(html, source) {
   return rows
 }
 
+function futbol24RegulationScore(match, status) {
+  const statusText = `${status?.name_short ?? ''} ${status?.name ?? ''}`.toUpperCase()
+  const afterExtraTime = statusText.includes('AET')
+    || statusText.includes('W/ET')
+    || statusText.includes('EXTRA TIME')
+  const scoreText = afterExtraTime
+    ? String(match?.score2 ?? '').replace(/p\.?\s*\d+\s*-\s*\d+/giu, '')
+    : String(match?.score1 ?? '')
+  const scores = [...scoreText.matchAll(/(\d+)\s*-\s*(\d+)/g)]
+  const score = scores.at(-1)
+  if (!score) {
+    return null
+  }
+  return {
+    homeScore: Number(score[1]),
+    awayScore: Number(score[2])
+  }
+}
+
 function parseFutbol24SeasonResults(json, source) {
   const rows = []
   for (const match of json?.data ?? []) {
@@ -1758,7 +2027,7 @@ function parseFutbol24SeasonResults(json, source) {
     rows.push({
       provider: 'FUTBOL24',
       providerId,
-      source: `FUTBOL24-${source.leagueId}`,
+      source: futbol24SourceKey(source),
       competition: source.competition,
       matchType: source.matchType,
       sourceCompetition: source.sourceCompetition,
@@ -1773,15 +2042,24 @@ function parseFutbol24SeasonResults(json, source) {
   return rows
 }
 
+function futbol24SourceKey(source) {
+  return source.leagueId === '472'
+    ? 'FUTBOL24-CLUB-FRIENDLY'
+    : `FUTBOL24-${source.leagueId}`
+}
+
 function futbol24SeasonRequests(options) {
-  const firstYear = Number(options.minDate.slice(0, 4))
-  const lastYear = Number(options.maxDate.slice(0, 4))
-  const lastMonth = Number(options.maxDate.slice(5, 7))
+  const firstYear = Number(options.sourceMinDate.slice(0, 4))
+  const lastYear = Number(options.sourceMaxDate.slice(0, 4))
+  const lastMonth = Number(options.sourceMaxDate.slice(5, 7))
   const requests = []
   for (const source of FUTBOL24_SOURCES.filter(item => (
-    item.seasonPath && sourceSelected(options, `FUTBOL24-${item.leagueId}`)
+    item.seasonPath && sourceSelected(options, futbol24SourceKey(item))
   ))) {
-    const sourceFirstYear = source.crossYearSeason ? firstYear - 1 : firstYear
+    const sourceFirstYear = Math.max(
+      Number(source.firstSeasonStartYear ?? Number.MIN_SAFE_INTEGER),
+      source.crossYearSeason ? firstYear - 1 : firstYear
+    )
     const sourceLastYear = source.crossYearSeason && lastMonth < 8 ? lastYear - 1 : lastYear
     for (let seasonStartYear = sourceFirstYear; seasonStartYear <= sourceLastYear; seasonStartYear += 1) {
       const season = source.crossYearSeason
@@ -1860,7 +2138,7 @@ async function readFutbol24SeasonResultsPage(request, meta, page, options) {
 async function readFutbol24SeasonResults(request, options) {
   const meta = await readFutbol24SeasonMeta(request)
   const rows = []
-  for (let page = 0; page < 20; page += 1) {
+  for (let page = 0; page < 250; page += 1) {
     const json = await readFutbol24SeasonResultsPage(request, meta, page, options)
     const pageRows = parseFutbol24SeasonResults(json, request.source)
     rows.push(...pageRows)
@@ -1912,24 +2190,50 @@ async function readFutbol24Date(date, options) {
   return json
 }
 
+function deduplicateFutbol24Rows(rows) {
+  const rowsByProviderId = new Map()
+  for (const row of rows) {
+    rowsByProviderId.set(`${row.provider}|${row.providerId}`, row)
+  }
+  const fixtureKeys = new Set()
+  return [...rowsByProviderId.values()].filter(row => {
+    const fixtureKey = [
+      row.competition,
+      row.matchDate,
+      canonicalName(row.homeTeam),
+      canonicalName(row.awayTeam),
+      row.homeScore,
+      row.awayScore
+    ].join('|')
+    if (fixtureKeys.has(fixtureKey)) {
+      return false
+    }
+    fixtureKeys.add(fixtureKey)
+    return true
+  })
+}
+
 async function loadFutbol24Rows(options) {
   if (options.skipFutbol24) {
     return { rows: [], errors: [] }
   }
   const selectedSources = FUTBOL24_SOURCES.filter(source => (
-    sourceSelected(options, source.leagueId === '472'
-      ? 'FUTBOL24-CLUB-FRIENDLY'
-      : `FUTBOL24-${source.leagueId}`)
+    sourceSelected(options, futbol24SourceKey(source))
   ))
   const seasonData = await loadFutbol24SeasonRows(options)
   if (selectedSources.length === 0) {
     return seasonData
   }
-  const recentStartDate = dateWithOffset(options.maxDate, -30) < options.minDate
-    ? options.minDate
-    : dateWithOffset(options.maxDate, -30)
+  const currentDate = localDate(new Date())
+  const recentApiMinDate = dateWithOffset(currentDate, -30)
+  const recentStartDate = recentApiMinDate < options.sourceMinDate
+    ? options.sourceMinDate
+    : recentApiMinDate
+  const recentEndDate = currentDate < options.sourceMaxDate
+    ? currentDate
+    : options.sourceMaxDate
   const dates = []
-  for (let date = recentStartDate; date <= options.maxDate; date = dateWithOffset(date, 1)) {
+  for (let date = recentStartDate; date <= recentEndDate; date = dateWithOffset(date, 1)) {
     dates.push(date)
   }
   const errors = []
@@ -1945,7 +2249,7 @@ async function loadFutbol24Rows(options) {
     }
   })
   return {
-    rows: [...seasonData.rows, ...batches.flat()],
+    rows: deduplicateFutbol24Rows([...seasonData.rows, ...batches.flat()]),
     errors: [...seasonData.errors, ...errors]
   }
 }
@@ -2057,6 +2361,161 @@ async function loadSofaScoreRows(options) {
     errors.push({ source: source.tournamentId, message: error.message })
     return { rows: [], errors }
   }
+}
+
+const FOOTMERCATO_MONTHS = new Map(Object.entries({
+  JANVIER: '01',
+  FEVRIER: '02',
+  MARS: '03',
+  AVRIL: '04',
+  MAI: '05',
+  JUIN: '06',
+  JUILLET: '07',
+  AOUT: '08',
+  SEPTEMBRE: '09',
+  OCTOBRE: '10',
+  NOVEMBRE: '11',
+  DECEMBRE: '12'
+}))
+
+function footMercatoDate(value) {
+  const dateMatch = String(value ?? '').trim().match(/(\d{1,2})\s+(\S+)\s+(\d{4})$/u)
+  if (!dateMatch) {
+    return null
+  }
+  const month = FOOTMERCATO_MONTHS.get(canonicalName(dateMatch[2]))
+  if (!month) {
+    return null
+  }
+  return `${dateMatch[3]}-${month}-${dateMatch[1].padStart(2, '0')}`
+}
+
+function parseFootMercatoRows(html, source) {
+  const rows = []
+  const dateBlocks = String(html ?? '').split(/<div class="blockVertical\b/u).slice(1)
+  for (const dateBlock of dateBlocks) {
+    const dateTitle = dateBlock.match(/title__left[^>]*>\s*([^<]+?)\s*<\/p>/u)?.[1]
+    const matchDate = footMercatoDate(decodeHtml(dateTitle))
+    if (!matchDate) {
+      continue
+    }
+    const matchPattern = /<div class="matchFull"([^>]*)>([\s\S]*?)<\/a>\s*<\/div>/gu
+    for (const match of dateBlock.matchAll(matchPattern)) {
+      const attributes = match[1]
+      if (!/data-live-value="played/iu.test(attributes)) {
+        continue
+      }
+      const providerId = attributes.match(/data-live-id="(\d+)"/u)?.[1]
+      const teams = [...match[2].matchAll(
+        /matchTeam__name">\s*([^<]+?)\s*<\/span>/gu
+      )].map(item => decodeHtml(item[1]))
+      const scores = [...match[2].matchAll(
+        /matchFull__score[^>]*>\s*(\d+)\s*<\/span>/gu
+      )].map(item => Number(item[1]))
+      if (!providerId || teams.length !== 2 || scores.length !== 2) {
+        continue
+      }
+      rows.push({
+        provider: 'FOOTMERCATO',
+        providerId,
+        source: source.sourceKey,
+        competition: source.competition,
+        matchType: source.matchType,
+        sourceCompetition: source.sourceCompetition,
+        matchDate,
+        homeTeam: teams[0],
+        awayTeam: teams[1],
+        homeScore: scores[0],
+        awayScore: scores[1],
+        neutral: false
+      })
+    }
+  }
+  return rows
+}
+
+async function readFootMercatoPage(source, page, options) {
+  const year = Number(options.sourceMaxDate.slice(0, 4))
+  const cachePath = path.join(
+    cacheRoot,
+    'footmercato',
+    'club-friendly',
+    String(year),
+    `${page}.html`
+  )
+  if (!options.refreshCache) {
+    try {
+      return await fs.readFile(cachePath, 'utf8')
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const separator = source.calendarUrl.includes('?') ? '&' : '?'
+  const url = `${source.calendarUrl}${separator}page=${page}`
+  const html = await fetchTextWithRetry(url)
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, html, 'utf8')
+  return html
+}
+
+async function loadFootMercatoRows(options) {
+  const source = FOOTMERCATO_CLUB_FRIENDLY_SOURCE
+  const currentYear = new Date().getFullYear()
+  if (options.skipFootMercato
+      || !sourceSelected(options, source.sourceKey)
+      || Number(options.sourceMinDate.slice(0, 4)) > currentYear
+      || Number(options.sourceMaxDate.slice(0, 4)) < currentYear) {
+    return { rows: [], errors: [] }
+  }
+  const rows = []
+  const errors = []
+  const batchSize = Math.min(2, options.concurrency)
+  for (let firstPage = 1; firstPage <= 250; firstPage += batchSize) {
+    const pages = Array.from(
+      { length: Math.min(batchSize, 251 - firstPage) },
+      (_, index) => firstPage + index
+    )
+    const batches = await mapWithConcurrency(pages, batchSize, async page => {
+      try {
+        const html = await readFootMercatoPage(source, page, options)
+        return {
+          page,
+          rows: parseFootMercatoRows(html, source),
+          failed: false,
+          hasMatches: /<div class="matchFull"/u.test(html),
+          hasNextPage: /data-pagination=[^\s>]*[?&]page=\d+/u.test(html)
+        }
+      } catch (error) {
+        errors.push({ source: source.sourceKey, page, message: error.message })
+        return {
+          page,
+          rows: [],
+          failed: true,
+          hasMatches: false,
+          hasNextPage: false
+        }
+      }
+    })
+    let reachedLastPage = false
+    for (const batch of batches.sort((left, right) => left.page - right.page)) {
+      if (reachedLastPage) {
+        continue
+      }
+      rows.push(...batch.rows)
+      if (!batch.failed && !batch.hasNextPage) {
+        reachedLastPage = true
+      }
+    }
+    console.error(`Foot Mercato 俱乐部友谊赛进度 第 ${firstPage}-${pages.at(-1)} 页`)
+    if (reachedLastPage || batches.every(batch => batch.failed)) {
+      return { rows, errors }
+    }
+    await new Promise(resolve => setTimeout(resolve, 500))
+  }
+  errors.push({ source: source.sourceKey, message: '分页超过安全上限' })
+  return { rows, errors }
 }
 
 async function readInternationalSource(options, fileName) {
@@ -2461,6 +2920,12 @@ function sourceMatchId(row) {
   if (row.provider === 'PFL' && row.providerId) {
     return `PFL-${row.providerId}`
   }
+  if (row.provider === 'FOOTMERCATO' && row.providerId) {
+    return `FOOTMERCATO-${row.providerId}`
+  }
+  if (row.provider === 'VIETNAMPLUS' && row.providerId) {
+    return `VIETNAMPLUS-${row.providerId}`
+  }
   const digest = crypto.createHash('sha1')
     .update([
       row.source,
@@ -2515,7 +2980,8 @@ const [
   goalsText,
   espnData,
   fotMobData,
-  soccerwayKoreaCupData
+  soccerwayKoreaCupData,
+  footMercatoData
 ] = await Promise.all([
   fs.readFile(options.historySourcePath, 'utf8'),
   fs.readFile(teamNameMappingsPath, 'utf8'),
@@ -2523,7 +2989,8 @@ const [
   options.skipNational ? Promise.resolve('') : readInternationalSource(options, 'goalscorers.csv'),
   loadEspnRows(options),
   loadFotMobRows(options),
-  loadSoccerwayKoreaCupRows(options)
+  loadSoccerwayKoreaCupRows(options),
+  loadFootMercatoRows(options)
 ])
 const futbol24Data = await loadFutbol24Rows(options)
 const sofaScoreData = futbol24Data.rows.length > 0
@@ -2537,10 +3004,18 @@ const effectiveMappingRows = options.resetInferredMappings
   : mappingRows
 const nationalMappings = buildMappings(effectiveMappingRows, NATIONAL_COMPETITIONS)
 const clubMappings = buildMappings(effectiveMappingRows, ALL_CLUB_COMPETITIONS)
+const replacedRows = originalRows.filter(row => (
+  row.competition === 'CLUB_OFFICIAL_OTHER'
+  && options.replaceSourceCompetitions.has(row.source_competition)
+  && row.match_date >= options.sourceMinDate
+  && row.match_date <= options.sourceMaxDate
+))
+const replacedRowSet = new Set(replacedRows)
 const retainedHistory = normalizeAndDeduplicateHistoryRows(
   originalRows.filter(row => (
     row.match_date >= options.minDate
     && row.match_date <= options.maxDate
+    && !replacedRowSet.has(row)
   )),
   nationalMappings,
   clubMappings
@@ -2566,6 +3041,7 @@ const sourceRows = [
   ...espnData.rows,
   ...fotMobData.rows,
   ...soccerwayKoreaCupData.rows,
+  ...footMercatoData.rows,
   ...futbol24Data.rows,
   ...sofaScoreData.rows,
   ...VERIFIED_SUPPLEMENTAL_ROWS.filter(row => sourceSelected(options, row.source))
@@ -2609,8 +3085,8 @@ for (const sourceRow of sourceRows) {
     continue
   }
   if (!sourceRow.matchDate
-      || sourceRow.matchDate < options.minDate
-      || sourceRow.matchDate > options.maxDate) {
+      || sourceRow.matchDate < options.sourceMinDate
+      || sourceRow.matchDate > options.sourceMaxDate) {
     summary.outsideDateRows += 1
     continue
   }
@@ -2633,6 +3109,7 @@ for (const sourceRow of sourceRows) {
     )
     || sourceRow.provider === 'SOCCERWAY'
     || sourceRow.provider === 'PFL'
+    || sourceRow.provider === 'VIETNAMPLUS'
   if (!importsWholeCompetition && !homeIsTarget && !awayIsTarget) {
     summary.outsideTargetRows += 1
     continue
@@ -2832,7 +3309,10 @@ const competitions = Object.fromEntries([...new Set(rebuiltRows.map(row => row.c
 console.log(JSON.stringify({
   minDate: options.minDate,
   maxDate: options.maxDate,
+  sourceMinDate: options.sourceMinDate,
+  sourceMaxDate: options.sourceMaxDate,
   originalRows: originalRows.length,
+  replacedRows: replacedRows.length,
   removedBeforeOrAfterRange: originalRows.length - originalRows.filter(row => (
     row.match_date >= options.minDate && row.match_date <= options.maxDate
   )).length,
@@ -2859,6 +3339,7 @@ console.log(JSON.stringify({
   espnRequestErrors: espnData.errors,
   fotMobRequestErrors: fotMobData.errors,
   soccerwayRequestErrors: soccerwayKoreaCupData.errors,
+  footMercatoRequestErrors: footMercatoData.errors,
   futbol24RequestErrors: futbol24Data.errors,
   sofaScoreRequestErrors: sofaScoreData.errors,
   wroteFile: options.write

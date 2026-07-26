@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 @Service
@@ -114,21 +115,35 @@ public class DataRepository {
     }
 
     private void reloadData(boolean includeSupplementalSources) {
+        reloadData(includeSupplementalSources, null);
+    }
+
+    private void reloadData(
+            boolean includeSupplementalSources,
+            BiConsumer<Integer, String> progressConsumer) {
         List<HistoricalMatch> reloadedHistoricalMatches = Collections.unmodifiableList(loadHistoricalMatches());
         List<HistoricalMatch> reloadedClubHistoricalMatches = Collections.unmodifiableList(loadClubHistoricalMatches());
-        List<MatchSchedule> reloadedSchedules = Collections.unmodifiableList(loadSchedules(includeSupplementalSources));
+        List<MatchSchedule> reloadedSchedules = Collections.unmodifiableList(loadSchedules(
+                includeSupplementalSources,
+                progressConsumer));
         this.historicalMatches = reloadedHistoricalMatches;
         this.clubHistoricalMatches = reloadedClubHistoricalMatches;
         this.schedules = reloadedSchedules;
     }
 
-    public synchronized void refreshSchedules() {
+    public void refreshSchedules() {
+        refreshSchedules(null);
+    }
+
+    public synchronized void refreshSchedules(BiConsumer<Integer, String> progressConsumer) {
         if (historicalMatches.isEmpty() || clubHistoricalMatches.isEmpty()) {
-            reloadData(true);
+            notifyRefreshProgress(progressConsumer, 26, "正在重新加载历史比赛数据");
+            reloadData(true, progressConsumer);
             return;
         }
 
-        List<MatchSchedule> refreshedSchedules = loadSchedules(true);
+        List<MatchSchedule> refreshedSchedules = loadSchedules(true, progressConsumer);
+        notifyRefreshProgress(progressConsumer, 64, "赛程源已刷新，正在整理刷新窗口数据");
         preserveSchedulesOutsideRefreshWindow(refreshedSchedules, schedules);
         removeExcludedCompetitionSchedules(refreshedSchedules);
         refreshedSchedules.sort(Comparator
@@ -310,23 +325,41 @@ public class DataRepository {
     }
 
     private List<MatchSchedule> loadSchedules(boolean includeSupplementalSources) {
+        return loadSchedules(includeSupplementalSources, null);
+    }
+
+    private List<MatchSchedule> loadSchedules(
+            boolean includeSupplementalSources,
+            BiConsumer<Integer, String> progressConsumer) {
         List<MatchSchedule> result = new ArrayList<>();
+        notifyRefreshProgress(progressConsumer, 26, "正在刷新世界杯 OpenFootball 赛程");
         scheduleUpdater.updateSchedules(result);
+        notifyRefreshProgress(progressConsumer, 29, "OpenFootball 已处理，正在刷新世界杯 ESPN 赛程");
         int espnUpdatedCount = espnScheduleUpdater.updateSchedules(result);
         if (espnUpdatedCount > 0) {
             log.info("Backfilled {} World Cup schedule rows from ESPN scoreboard.", espnUpdatedCount);
         }
+        notifyRefreshProgress(progressConsumer, 32, "世界杯 ESPN 已处理，正在刷新欧冠赛程");
         int championsLeagueUpdatedCount = espnScheduleUpdater.updateChampionsLeagueSchedules(result);
         if (championsLeagueUpdatedCount > 0) {
             log.info("Loaded {} Champions League schedule rows from ESPN scoreboard.", championsLeagueUpdatedCount);
         }
+        notifyRefreshProgress(progressConsumer, 36, "欧冠赛程已处理，正在刷新俱乐部赛事数据");
+        BiConsumer<Integer, String> clubProgressConsumer = progressConsumer == null
+                ? null
+                : (progress, message) -> notifyRefreshProgress(
+                        progressConsumer,
+                        mapClubCompetitionProgress(progress),
+                        message);
         int clubCompetitionUpdatedCount = clubCompetitionScheduleUpdater.updateSchedules(
                 result,
-                includeSupplementalSources);
+                includeSupplementalSources,
+                clubProgressConsumer);
         if (clubCompetitionUpdatedCount > 0) {
             log.info("Loaded {} additional club competition schedule rows.", clubCompetitionUpdatedCount);
         }
         if (sportteryMarketSelectionService != null) {
+            notifyRefreshProgress(progressConsumer, 59, "俱乐部赛事已处理，正在合并体彩近期赛程");
             int addedSportteryScheduleCount = sportteryMarketSelectionService
                     .mergeRecentAndUpcomingSchedulesInto(
                             result,
@@ -338,12 +371,29 @@ public class DataRepository {
                         addedSportteryScheduleCount);
             }
         }
+        notifyRefreshProgress(progressConsumer, 61, "体彩赛程已合并，正在加载历史赔率");
         historicalOddsScheduleLoader.mergeInto(result);
+        notifyRefreshProgress(progressConsumer, 62, "历史赔率已加载，正在统一球队名称");
         normalizeScheduleTeamNames(result);
+        notifyRefreshProgress(progressConsumer, 63, "球队名称已统一，正在合并重复赛程");
         result = deduplicateSchedulesByFixture(result);
         removeExcludedCompetitionSchedules(result);
         result.sort(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getKickoffTime));
         return result;
+    }
+
+    static int mapClubCompetitionProgress(int progress) {
+        int normalizedProgress = Math.max(0, Math.min(100, progress));
+        return 36 + (int) Math.round(normalizedProgress * 22.0D / 100.0D);
+    }
+
+    private void notifyRefreshProgress(
+            BiConsumer<Integer, String> progressConsumer,
+            int progress,
+            String message) {
+        if (progressConsumer != null) {
+            progressConsumer.accept(progress, message);
+        }
     }
 
     private void removeExcludedCompetitionSchedules(List<MatchSchedule> schedules) {
@@ -431,6 +481,7 @@ public class DataRepository {
     }
 
     List<MatchSchedule> deduplicateSchedulesByFixture(List<MatchSchedule> schedules) {
+        normalizeScheduleTeamNames(schedules);
         Map<String, MatchSchedule> schedulesByFixture = new LinkedHashMap<>();
         for (MatchSchedule schedule : schedules) {
             schedulesByFixture.merge(
@@ -438,7 +489,106 @@ public class DataRepository {
                     schedule,
                     this::preferSchedule);
         }
-        return deduplicateSchedulesByTeamResult(new ArrayList<>(schedulesByFixture.values()));
+        List<MatchSchedule> schedulesByTeam = deduplicateSchedulesByTeamResult(
+                new ArrayList<>(schedulesByFixture.values()));
+        return deduplicateCrossProviderClubFriendlies(schedulesByTeam);
+    }
+
+    private List<MatchSchedule> deduplicateCrossProviderClubFriendlies(List<MatchSchedule> schedules) {
+        Map<String, List<MatchSchedule>> schedulesByKickoffResult = new HashMap<>();
+        Set<MatchSchedule> duplicateSchedules = new HashSet<>();
+        for (MatchSchedule schedule : schedules) {
+            if (!isCompletedClubFriendly(schedule)) {
+                continue;
+            }
+            String key = buildKickoffResultIdentity(schedule);
+            List<MatchSchedule> candidates = schedulesByKickoffResult.computeIfAbsent(
+                    key,
+                    ignored -> new ArrayList<>());
+            MatchSchedule duplicateCandidate = candidates.stream()
+                    .filter(candidate -> isCrossProviderDuplicate(candidate, schedule))
+                    .findFirst()
+                    .orElse(null);
+            if (duplicateCandidate == null) {
+                candidates.add(schedule);
+                continue;
+            }
+
+            MatchSchedule preferred = preferSchedule(duplicateCandidate, schedule);
+            MatchSchedule duplicate = preferred == duplicateCandidate ? schedule : duplicateCandidate;
+            duplicateSchedules.add(duplicate);
+            candidates.remove(duplicateCandidate);
+            candidates.add(preferred);
+        }
+        return schedules.stream()
+                .filter(schedule -> !duplicateSchedules.contains(schedule))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isCompletedClubFriendly(MatchSchedule schedule) {
+        return schedule.getCompetition() == Competition.CLUB_FRIENDLY
+                && schedule.getMatchDate() != null
+                && schedule.getKickoffTime() != null
+                && schedule.getHomeScore() != null
+                && schedule.getAwayScore() != null;
+    }
+
+    private String buildKickoffResultIdentity(MatchSchedule schedule) {
+        return schedule.getCompetition()
+                + "|" + schedule.getMatchDate()
+                + "|" + schedule.getKickoffTime()
+                + "|" + schedule.getHomeScore()
+                + "|" + schedule.getAwayScore();
+    }
+
+    private boolean isCrossProviderDuplicate(MatchSchedule left, MatchSchedule right) {
+        String leftProvider = resolveScheduleProvider(left);
+        String rightProvider = resolveScheduleProvider(right);
+        if (leftProvider.isBlank()
+                || rightProvider.isBlank()
+                || leftProvider.equals(rightProvider)) {
+            return false;
+        }
+        return areSimilarScheduleTeams(left, true, right, true)
+                || areSimilarScheduleTeams(left, false, right, false);
+    }
+
+    private String resolveScheduleProvider(MatchSchedule schedule) {
+        String matchId = schedule.getMatchId();
+        if (matchId == null || matchId.isBlank()) {
+            return "";
+        }
+        int delimiterIndex = matchId.indexOf('-');
+        return delimiterIndex < 0 ? matchId : matchId.substring(0, delimiterIndex);
+    }
+
+    private boolean areSimilarScheduleTeams(
+            MatchSchedule left,
+            boolean leftHomeTeam,
+            MatchSchedule right,
+            boolean rightHomeTeam) {
+        for (String leftName : resolveScheduleTeamNames(left, leftHomeTeam)) {
+            for (String rightName : resolveScheduleTeamNames(right, rightHomeTeam)) {
+                if (areSimilarTeamNames(leftName, rightName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private List<String> resolveScheduleTeamNames(MatchSchedule schedule, boolean homeTeam) {
+        String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
+        String englishName = homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
+        return List.of(
+                        chineseName == null ? "" : chineseName,
+                        englishName == null ? "" : englishName,
+                        ClubTeamNameTranslator.translate(schedule.getCompetition(), chineseName),
+                        ClubTeamNameTranslator.translate(schedule.getCompetition(), englishName))
+                .stream()
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .toList();
     }
 
     private List<MatchSchedule> deduplicateSchedulesByTeamResult(List<MatchSchedule> schedules) {

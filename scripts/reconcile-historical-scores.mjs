@@ -171,7 +171,7 @@ function canonicalChineseName(value) {
     .replaceAll('俱乐部', '')
     .replace(/[\s·•.．,，'’`´()（）\[\]【】\-_/&]+/gu, '')
     .replace(/^(FC|SC|CF)(?=\p{Script=Han})/u, '')
-    .replace(/(AIF|FC|SC|CF|SK|FK|IF|BK|FF)$/u, '')
+    .replace(/(?<=\p{Script=Han})(AIF|FC|SC|CF|SK|FK|IF|BK|FF)$/u, '')
 }
 
 function canonicalEnglishName(value) {

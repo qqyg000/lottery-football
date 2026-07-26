@@ -43,6 +43,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,6 +59,10 @@ public class ClubCompetitionScheduleUpdater {
     private static final Pattern CLOCK_MINUTE_PATTERN = Pattern.compile("^(\\d+)");
 
     private static final Pattern SCORE_PATTERN = Pattern.compile("^\\s*(\\d+)\\s*-\\s*(\\d+)\\s*$");
+
+    private static final Duration PARALLEL_TASK_TIMEOUT_BUFFER = Duration.ofSeconds(5);
+
+    private static final Pattern PERIOD_SCORE_PATTERN = Pattern.compile("(\\d+)\\s*-\\s*(\\d+)");
 
     private static final List<EspnLeagueSource> BASE_ESPN_SOURCES = List.of(
             new EspnLeagueSource(Competition.EUROPEAN_CHAMPIONSHIP, "uefa.euro"),
@@ -122,9 +128,12 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final List<FotMobLeagueSource> FOTMOB_SOURCES = List.of(
             new FotMobLeagueSource(Competition.CLUB_FRIENDLY, "489", "俱乐部赛", true),
-            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "180", "联赛杯", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "180", "苏联赛杯", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "342", "联赛杯", true),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "171", "瑞典杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "168", "瑞甲", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "172", "Play-offs 1/2", true),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "9422", "Play-offs 1/2", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "525", "亚冠精英", false, 2023),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "9116", "韩挑战联", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "9551", "韩国杯", true),
@@ -208,6 +217,9 @@ public class ClubCompetitionScheduleUpdater {
     @Value("${club-competitions.schedule-update.fotmob-league-url-template:https://www.fotmob.com/api/data/leagues?id={leagueId}&ccode3=CHN&season={season}}")
     private String fotMobLeagueUrlTemplate;
 
+    @Value("${club-competitions.schedule-update.fotmob-match-details-url-template:https://www.fotmob.com/api/data/matchDetails?matchId={matchId}}")
+    private String fotMobMatchDetailsUrlTemplate;
+
     @Value("${club-competitions.schedule-update.sofascore-seasons-url-template:https://www.sofascore.com/api/v1/unique-tournament/{tournamentId}/seasons}")
     private String sofaScoreSeasonsUrlTemplate;
 
@@ -260,8 +272,16 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     public int updateSchedules(List<MatchSchedule> schedules, boolean includeSupplementalSources) {
+        return updateSchedules(schedules, includeSupplementalSources, null);
+    }
+
+    public int updateSchedules(
+            List<MatchSchedule> schedules,
+            boolean includeSupplementalSources,
+            BiConsumer<Integer, String> progressConsumer) {
         if (!enabled) {
             log.info("Club competition schedule update is disabled.");
+            notifyRefreshProgress(progressConsumer, 100, "俱乐部赛事远程刷新已禁用，继续使用缓存数据");
             return 0;
         }
 
@@ -275,10 +295,19 @@ public class ClubCompetitionScheduleUpdater {
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
 
+        notifyRefreshProgress(progressConsumer, 5, "正在读取俱乐部赛事缓存");
         List<MatchSchedule> cachedSchedules = new ArrayList<>(loadCachedSchedules());
+        notifyRefreshProgress(progressConsumer, 10, "俱乐部赛事缓存已读取，正在刷新 FotMob 赛程");
         FotMobScheduleBatch fotMobBatch = includeSupplementalSources
-                ? loadFotMobSchedules(client, zoneId, timeout, startDate, endDate)
+                ? loadFotMobSchedules(
+                        client,
+                        zoneId,
+                        timeout,
+                        startDate,
+                        endDate,
+                        progressConsumer)
                 : new FotMobScheduleBatch(List.of(), Set.of());
+        notifyRefreshProgress(progressConsumer, 35, "FotMob 已处理，正在刷新俱乐部 ESPN 赛程");
         cachedSchedules = removeReplacedCachedSchedules(
                 cachedSchedules,
                 fotMobBatch.loadedSeasons(),
@@ -293,18 +322,23 @@ public class ClubCompetitionScheduleUpdater {
                 startDate,
                 endDate,
                 today,
-                includeSupplementalSources));
+                includeSupplementalSources,
+                progressConsumer));
+        notifyRefreshProgress(progressConsumer, 60, "俱乐部 ESPN 已处理，正在刷新 Futbol24 赛程");
         if (includeSupplementalSources) {
             List<MatchSchedule> futbol24Schedules = loadFutbol24Schedules(
                     client,
                     startDate,
                     endDate,
                     zoneId,
-                    timeout);
+                    timeout,
+                    progressConsumer);
             remoteSchedules.addAll(futbol24Schedules);
+            notifyRefreshProgress(progressConsumer, 80, "Futbol24 已处理，正在检查俱乐部友谊赛补充数据");
             boolean loadedClubFriendly = futbol24Schedules.stream()
                     .anyMatch(schedule -> schedule.getCompetition() == Competition.CLUB_FRIENDLY);
             if (!loadedClubFriendly) {
+                notifyRefreshProgress(progressConsumer, 82, "Futbol24 未返回友谊赛，正在刷新 SofaScore 补充数据");
                 remoteSchedules.addAll(loadSofaScoreSchedules(
                         client,
                         SOFA_SCORE_CLUB_FRIENDLY_SOURCE,
@@ -313,7 +347,9 @@ public class ClubCompetitionScheduleUpdater {
                         zoneId,
                         timeout));
             }
+            notifyRefreshProgress(progressConsumer, 88, "俱乐部友谊赛补充数据已处理");
         }
+        notifyRefreshProgress(progressConsumer, 90, "正在刷新 SportsDB 补充赛程");
         List<MatchSchedule> sportsDbSchedules = removeReplacedCachedSchedules(
                 loadSportsDbSchedules(
                         client,
@@ -325,17 +361,29 @@ public class ClubCompetitionScheduleUpdater {
                 fotMobBatch.loadedSeasons(),
                 startDate,
                 endDate);
+        notifyRefreshProgress(progressConsumer, 94, "SportsDB 已处理，正在合并俱乐部赛程");
         remoteSchedules.addAll(sportsDbSchedules);
         remoteSchedules.addAll(fotMobBatch.schedules());
         remoteSchedules = deduplicateSchedulesByFixture(remoteSchedules);
+        notifyRefreshProgress(progressConsumer, 96, "俱乐部赛程已合并，正在写入本地缓存");
         int updatedCount = mergeSchedules(schedules, remoteSchedules);
         saveCachedSchedules(remoteSchedules);
+        notifyRefreshProgress(progressConsumer, 100, "俱乐部赛事赛程与补充数据已刷新");
         log.info(
                 "Loaded {} cached and refreshed schedule rows for configured competitions; refresh window {} to {}.",
                 updatedCount,
                 startDate,
                 endDate);
         return updatedCount;
+    }
+
+    private void notifyRefreshProgress(
+            BiConsumer<Integer, String> progressConsumer,
+            int progress,
+            String message) {
+        if (progressConsumer != null) {
+            progressConsumer.accept(progress, message);
+        }
     }
 
     private List<MatchSchedule> loadEspnSchedules(
@@ -345,7 +393,8 @@ public class ClubCompetitionScheduleUpdater {
             LocalDate startDate,
             LocalDate endDate,
             LocalDate supplementalEndDate,
-            boolean includeSupplementalSources) {
+            boolean includeSupplementalSources,
+            BiConsumer<Integer, String> progressConsumer) {
         List<Supplier<List<MatchSchedule>>> tasks = new ArrayList<>();
         for (EspnLeagueSource source : BASE_ESPN_SOURCES) {
             tasks.add(() -> loadEspnScheduleRange(client, source, startDate, endDate, zoneId, timeout));
@@ -361,7 +410,13 @@ public class ClubCompetitionScheduleUpdater {
                         timeout));
             }
         }
-        List<MatchSchedule> result = executeTasks(tasks);
+        List<MatchSchedule> result = executeTasks(
+                tasks,
+                parallelism,
+                (completed, total) -> notifyRefreshProgress(
+                        progressConsumer,
+                        scaleTaskProgress(completed, total, 35, 60),
+                        "正在刷新俱乐部 ESPN 赛程（" + completed + "/" + total + "）"));
         if (result.isEmpty()) {
             log.warn("No configured competition schedules were returned by ESPN.");
         }
@@ -373,7 +428,8 @@ public class ClubCompetitionScheduleUpdater {
             ZoneId zoneId,
             Duration timeout,
             LocalDate startDate,
-            LocalDate endDate) {
+            LocalDate endDate,
+            BiConsumer<Integer, String> progressConsumer) {
         if (FOTMOB_SOURCES.isEmpty()) {
             return new FotMobScheduleBatch(List.of(), Set.of());
         }
@@ -395,7 +451,14 @@ public class ClubCompetitionScheduleUpdater {
                         timeout));
             }
         }
-        for (MatchSchedule schedule : executeTasks(tasks, Math.min(8, tasks.size()))) {
+        for (MatchSchedule schedule : executeTasks(
+                tasks,
+                Math.min(8, tasks.size()),
+                calculateParallelTaskTimeout(timeout, 2),
+                (completed, total) -> notifyRefreshProgress(
+                        progressConsumer,
+                        scaleTaskProgress(completed, total, 10, 35),
+                        "正在刷新 FotMob 赛程（" + completed + "/" + total + "）"))) {
             if (schedule.getMatchDate().isBefore(startDate)
                     || schedule.getMatchDate().isAfter(endDate)) {
                 continue;
@@ -425,7 +488,8 @@ public class ClubCompetitionScheduleUpdater {
             JsonNode root = downloadJsonWithRetry(client, url, timeout, 2);
             List<MatchSchedule> result = new ArrayList<>();
             for (JsonNode match : root.path("fixtures").path("allMatches")) {
-                MatchSchedule schedule = parseFotMobLeagueMatch(match, source, zoneId);
+                JsonNode matchDetails = loadFotMobRegulationDetails(client, match, timeout);
+                MatchSchedule schedule = parseFotMobLeagueMatch(match, source, zoneId, matchDetails);
                 if (schedule != null) {
                     result.add(schedule);
                 }
@@ -441,7 +505,35 @@ public class ClubCompetitionScheduleUpdater {
         }
     }
 
+    private JsonNode loadFotMobRegulationDetails(
+            HttpClient client,
+            JsonNode match,
+            Duration timeout) throws InterruptedException {
+        if (!fotMobStatusNeedsRegulationDetails(match.path("status"))) {
+            return null;
+        }
+        String matchId = match.path("id").asText("");
+        if (matchId.isBlank()) {
+            return null;
+        }
+        String url = fotMobMatchDetailsUrlTemplate.replace("{matchId}", matchId);
+        try {
+            return downloadJsonWithRetry(client, url, timeout, 2);
+        } catch (IOException ex) {
+            log.debug("Unable to load FotMob regulation score for match {}: {}", matchId, ex.getMessage());
+            return null;
+        }
+    }
+
     MatchSchedule parseFotMobLeagueMatch(JsonNode match, FotMobLeagueSource source, ZoneId zoneId) {
+        return parseFotMobLeagueMatch(match, source, zoneId, null);
+    }
+
+    MatchSchedule parseFotMobLeagueMatch(
+            JsonNode match,
+            FotMobLeagueSource source,
+            ZoneId zoneId,
+            JsonNode matchDetails) {
         Competition competition = source.competition();
         String eventId = match.path("id").asText("");
         String homeTeam = readFotMobTeamName(match.path("home"));
@@ -472,8 +564,8 @@ public class ClubCompetitionScheduleUpdater {
                 matchDateTime.toLocalDate(),
                 awayTeam);
 
-        ScorePair score = parseScore(status.path("scoreStr").asText(""));
-        boolean completed = status.path("finished").asBoolean(false) && score != null;
+        ScorePair score = parseFotMobRegulationScore(status, matchDetails);
+        boolean completed = status.path("finished").asBoolean(false);
         boolean live = !completed && status.path("started").asBoolean(false);
         String round = match.path("round").asText("");
         if (round.isBlank()) {
@@ -504,6 +596,68 @@ public class ClubCompetitionScheduleUpdater {
             schedule.setAwayScore(score.awayScore);
         }
         return schedule;
+    }
+
+    private ScorePair parseFotMobRegulationScore(JsonNode status, JsonNode matchDetails) {
+        ScorePair fullScore = parseScore(status.path("scoreStr").asText(""));
+        if (fullScore == null || !fotMobStatusNeedsRegulationDetails(status)) {
+            return fullScore;
+        }
+
+        JsonNode events = matchDetails == null
+                ? null
+                : matchDetails.path("content").path("matchFacts").path("events").path("events");
+        if (events == null || !events.isArray()) {
+            return null;
+        }
+        for (JsonNode event : events) {
+            if ("Half".equals(event.path("type").asText(""))
+                    && event.path("time").asInt(-1) == 90
+                    && "FT".equalsIgnoreCase(event.path("halfStrShort").asText(""))) {
+                Integer homeScore = parseInteger(event.path("homeScore").asText(""));
+                Integer awayScore = parseInteger(event.path("awayScore").asText(""));
+                if (homeScore != null && awayScore != null) {
+                    return new ScorePair(homeScore, awayScore);
+                }
+            }
+        }
+
+        int homeScore = 0;
+        int awayScore = 0;
+        boolean sawGoal = false;
+        for (JsonNode event : events) {
+            if (!"Goal".equals(event.path("type").asText(""))
+                    || event.path("isPenaltyShootoutEvent").asBoolean(false)) {
+                continue;
+            }
+            sawGoal = true;
+            if (event.path("time").asInt(Integer.MAX_VALUE) > 90) {
+                continue;
+            }
+            if (event.path("isHome").asBoolean(false)) {
+                homeScore++;
+            } else {
+                awayScore++;
+            }
+        }
+        if (!sawGoal && scoreTotal(fullScore.homeScore, fullScore.awayScore) > 0) {
+            return null;
+        }
+        return new ScorePair(homeScore, awayScore);
+    }
+
+    private boolean fotMobStatusNeedsRegulationDetails(JsonNode status) {
+        JsonNode reason = status.path("reason");
+        String reasonText = (reason.path("short").asText("") + " "
+                + reason.path("shortKey").asText("") + " "
+                + reason.path("long").asText("") + " "
+                + reason.path("longKey").asText(""))
+                .toLowerCase(Locale.ROOT);
+        return reasonText.contains("aet")
+                || reasonText.contains("extra time")
+                || reasonText.contains("afterextra")
+                || reasonText.contains("penalt")
+                || reasonText.contains("afterpen");
     }
 
     private String disambiguateFotMobTeamName(
@@ -931,13 +1085,20 @@ public class ClubCompetitionScheduleUpdater {
             LocalDate startDate,
             LocalDate endDate,
             ZoneId zoneId,
-            Duration timeout) {
+            Duration timeout,
+            BiConsumer<Integer, String> progressConsumer) {
         List<Supplier<List<MatchSchedule>>> tasks = new ArrayList<>();
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
             LocalDate requestDate = date;
             tasks.add(() -> loadFutbol24Date(client, requestDate, zoneId, timeout));
         }
-        List<MatchSchedule> result = executeTasks(tasks, futbol24Parallelism);
+        List<MatchSchedule> result = executeTasks(
+                tasks,
+                futbol24Parallelism,
+                (completed, total) -> notifyRefreshProgress(
+                        progressConsumer,
+                        scaleTaskProgress(completed, total, 60, 80),
+                        "正在刷新 Futbol24 赛程（" + completed + "/" + total + "）"));
         if (result.isEmpty()) {
             log.warn("No configured competition schedules were returned by Futbol24; trying Sofascore for club friendlies.");
         }
@@ -1013,7 +1174,7 @@ public class ClubCompetitionScheduleUpdater {
         String homeTeam = match.path("team1").path("name").asText("");
         String awayTeam = match.path("team2").path("name").asText("");
         String dateText = match.path("date").asText("");
-        ScorePair score = parseScore(match.path("score1").asText(""));
+        ScorePair score = parseFutbol24RegulationScore(match, statusNode);
         if (eventId == null || eventId.isBlank()
                 || homeTeam.isBlank()
                 || awayTeam.isBlank()
@@ -1053,6 +1214,33 @@ public class ClubCompetitionScheduleUpdater {
             schedule.setAwayScore(score.awayScore);
         }
         return schedule;
+    }
+
+    private ScorePair parseFutbol24RegulationScore(JsonNode match, JsonNode status) {
+        String statusText = (status.path("name_short").asText("") + " "
+                + status.path("name").asText(""))
+                .toUpperCase(Locale.ROOT);
+        boolean afterExtraTime = statusText.contains("AET")
+                || statusText.contains("W/ET")
+                || statusText.contains("EXTRA TIME");
+        if (afterExtraTime) {
+            return parseLastRegulationPeriodScore(match.path("score2").asText(""));
+        }
+        return parseScore(match.path("score1").asText(""));
+    }
+
+    private ScorePair parseLastRegulationPeriodScore(String scoreText) {
+        String withoutShootoutScore = scoreText == null
+                ? ""
+                : scoreText.replaceAll("(?i)p\\.?\\s*\\d+\\s*-\\s*\\d+", "");
+        Matcher matcher = PERIOD_SCORE_PATTERN.matcher(withoutShootoutScore);
+        ScorePair score = null;
+        while (matcher.find()) {
+            score = new ScorePair(
+                    Integer.parseInt(matcher.group(1)),
+                    Integer.parseInt(matcher.group(2)));
+        }
+        return score;
     }
 
     private boolean requiresKnownClubTeam(Competition competition) {
@@ -1528,15 +1716,56 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     private List<MatchSchedule> executeTasks(List<Supplier<List<MatchSchedule>>> tasks, int configuredParallelism) {
+        return executeTasks(tasks, configuredParallelism, null);
+    }
+
+    private List<MatchSchedule> executeTasks(
+            List<Supplier<List<MatchSchedule>>> tasks,
+            int configuredParallelism,
+            BiConsumer<Integer, Integer> taskProgressConsumer) {
+        return executeTasks(tasks, configuredParallelism, null, taskProgressConsumer);
+    }
+
+    List<MatchSchedule> executeTasks(
+            List<Supplier<List<MatchSchedule>>> tasks,
+            int configuredParallelism,
+            Duration taskTimeout,
+            BiConsumer<Integer, Integer> taskProgressConsumer) {
         if (tasks.isEmpty()) {
             return List.of();
         }
         int threadCount = Math.max(1, Math.min(Math.min(32, configuredParallelism), tasks.size()));
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         try {
-            List<CompletableFuture<List<MatchSchedule>>> futures = tasks.stream()
-                    .map(task -> CompletableFuture.supplyAsync(task, executor))
-                    .toList();
+            Object progressLock = new Object();
+            int[] completedTaskCount = {0};
+            List<CompletableFuture<List<MatchSchedule>>> futures = new ArrayList<>();
+            for (Supplier<List<MatchSchedule>> task : tasks) {
+                CompletableFuture<List<MatchSchedule>> future = CompletableFuture.supplyAsync(task, executor);
+                if (taskTimeout != null && !taskTimeout.isZero() && !taskTimeout.isNegative()) {
+                    future = future
+                            .orTimeout(taskTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                            .exceptionally(throwable -> {
+                                String errorMessage = throwable.getMessage() == null
+                                        ? throwable.getClass().getSimpleName()
+                                        : throwable.getMessage();
+                                log.warn(
+                                        "Parallel schedule source task exceeded {} or failed: {}",
+                                        taskTimeout,
+                                        errorMessage);
+                                return List.of();
+                            });
+                }
+                futures.add(future.whenComplete((ignored, throwable) -> {
+                    if (taskProgressConsumer == null) {
+                        return;
+                    }
+                    synchronized (progressLock) {
+                        completedTaskCount[0]++;
+                        taskProgressConsumer.accept(completedTaskCount[0], tasks.size());
+                    }
+                }));
+            }
             List<MatchSchedule> result = new ArrayList<>();
             for (CompletableFuture<List<MatchSchedule>> future : futures) {
                 result.addAll(future.join());
@@ -1545,6 +1774,27 @@ public class ClubCompetitionScheduleUpdater {
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    static Duration calculateParallelTaskTimeout(Duration requestTimeout, int maxAttempts) {
+        Duration normalizedTimeout = requestTimeout == null || requestTimeout.isZero() || requestTimeout.isNegative()
+                ? Duration.ofSeconds(1)
+                : requestTimeout;
+        int normalizedAttempts = Math.max(1, maxAttempts);
+        return normalizedTimeout.multipliedBy(normalizedAttempts).plus(PARALLEL_TASK_TIMEOUT_BUFFER);
+    }
+
+    static int scaleTaskProgress(
+            int completedTaskCount,
+            int totalTaskCount,
+            int startProgress,
+            int endProgress) {
+        int normalizedTotal = Math.max(1, totalTaskCount);
+        int normalizedCompleted = Math.max(0, Math.min(normalizedTotal, completedTaskCount));
+        int normalizedStart = Math.min(startProgress, endProgress);
+        int normalizedEnd = Math.max(startProgress, endProgress);
+        return normalizedStart + (int) Math.round(
+                normalizedCompleted * (normalizedEnd - normalizedStart) / (double) normalizedTotal);
     }
 
     private int mergeSchedules(List<MatchSchedule> schedules, List<MatchSchedule> remoteSchedules) {
@@ -1592,7 +1842,106 @@ public class ClubCompetitionScheduleUpdater {
                     schedule,
                     this::preferSchedule);
         }
-        return deduplicateSchedulesByTeamResult(new ArrayList<>(schedulesByFixture.values()));
+        List<MatchSchedule> schedulesByTeam = deduplicateSchedulesByTeamResult(
+                new ArrayList<>(schedulesByFixture.values()));
+        return deduplicateCrossProviderClubFriendlies(schedulesByTeam);
+    }
+
+    private List<MatchSchedule> deduplicateCrossProviderClubFriendlies(List<MatchSchedule> schedules) {
+        Map<String, List<MatchSchedule>> schedulesByKickoffResult = new HashMap<>();
+        Set<MatchSchedule> duplicateSchedules = new HashSet<>();
+        for (MatchSchedule schedule : schedules) {
+            if (!isCompletedClubFriendly(schedule)) {
+                continue;
+            }
+            String key = buildKickoffResultIdentity(schedule);
+            List<MatchSchedule> candidates = schedulesByKickoffResult.computeIfAbsent(
+                    key,
+                    ignored -> new ArrayList<>());
+            MatchSchedule duplicateCandidate = candidates.stream()
+                    .filter(candidate -> isCrossProviderDuplicate(candidate, schedule))
+                    .findFirst()
+                    .orElse(null);
+            if (duplicateCandidate == null) {
+                candidates.add(schedule);
+                continue;
+            }
+
+            MatchSchedule preferred = preferSchedule(duplicateCandidate, schedule);
+            MatchSchedule duplicate = preferred == duplicateCandidate ? schedule : duplicateCandidate;
+            duplicateSchedules.add(duplicate);
+            candidates.remove(duplicateCandidate);
+            candidates.add(preferred);
+        }
+        return schedules.stream()
+                .filter(schedule -> !duplicateSchedules.contains(schedule))
+                .toList();
+    }
+
+    private boolean isCompletedClubFriendly(MatchSchedule schedule) {
+        return schedule.getCompetition() == Competition.CLUB_FRIENDLY
+                && schedule.getMatchDate() != null
+                && schedule.getKickoffTime() != null
+                && schedule.getHomeScore() != null
+                && schedule.getAwayScore() != null;
+    }
+
+    private String buildKickoffResultIdentity(MatchSchedule schedule) {
+        return schedule.getCompetition()
+                + "|" + schedule.getMatchDate()
+                + "|" + schedule.getKickoffTime()
+                + "|" + schedule.getHomeScore()
+                + "|" + schedule.getAwayScore();
+    }
+
+    private boolean isCrossProviderDuplicate(MatchSchedule left, MatchSchedule right) {
+        String leftProvider = resolveScheduleProvider(left);
+        String rightProvider = resolveScheduleProvider(right);
+        if (leftProvider.isBlank()
+                || rightProvider.isBlank()
+                || leftProvider.equals(rightProvider)) {
+            return false;
+        }
+        return areSimilarScheduleTeams(left, true, right, true)
+                || areSimilarScheduleTeams(left, false, right, false);
+    }
+
+    private String resolveScheduleProvider(MatchSchedule schedule) {
+        String matchId = schedule.getMatchId();
+        if (matchId == null || matchId.isBlank()) {
+            return "";
+        }
+        int delimiterIndex = matchId.indexOf('-');
+        return delimiterIndex < 0 ? matchId : matchId.substring(0, delimiterIndex);
+    }
+
+    private boolean areSimilarScheduleTeams(
+            MatchSchedule left,
+            boolean leftHomeTeam,
+            MatchSchedule right,
+            boolean rightHomeTeam) {
+        for (String leftName : resolveScheduleTeamNames(left, leftHomeTeam)) {
+            for (String rightName : resolveScheduleTeamNames(right, rightHomeTeam)) {
+                if (areSimilarTeamNames(leftName, rightName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private List<String> resolveScheduleTeamNames(MatchSchedule schedule, boolean homeTeam) {
+        String chineseName = homeTeam ? schedule.getHomeTeamCn() : schedule.getAwayTeamCn();
+        String englishName = homeTeam ? schedule.getHomeTeamEn() : schedule.getAwayTeamEn();
+        return List.of(
+                        chineseName == null ? "" : chineseName,
+                        englishName == null ? "" : englishName,
+                        ClubTeamNameTranslator.translate(schedule.getCompetition(), chineseName),
+                        ClubTeamNameTranslator.translate(schedule.getCompetition(), englishName))
+                .stream()
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .toList();
     }
 
     private List<MatchSchedule> deduplicateSchedulesByTeamResult(List<MatchSchedule> schedules) {
@@ -1850,6 +2199,9 @@ public class ClubCompetitionScheduleUpdater {
 
         boolean usesCrossYearSeason(int seasonStartYear) {
             return !calendarYearSeason
+                    && !("180".equals(leagueId)
+                            && seasonStartYear >= 2016
+                            && seasonStartYear <= 2021)
                     && (crossYearSeasonFrom == null || seasonStartYear >= crossYearSeasonFrom);
         }
 

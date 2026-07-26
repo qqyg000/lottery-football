@@ -9,16 +9,19 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClubCompetitionScheduleUpdaterTest {
@@ -26,6 +29,44 @@ class ClubCompetitionScheduleUpdaterTest {
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
     private final ClubCompetitionScheduleUpdater updater = new ClubCompetitionScheduleUpdater(objectMapper);
+
+    @Test
+    void shouldScaleTaskProgressWithinConfiguredStage() {
+        assertEquals(10, ClubCompetitionScheduleUpdater.scaleTaskProgress(0, 40, 10, 35));
+        assertEquals(23, ClubCompetitionScheduleUpdater.scaleTaskProgress(20, 40, 10, 35));
+        assertEquals(35, ClubCompetitionScheduleUpdater.scaleTaskProgress(40, 40, 10, 35));
+        assertEquals(10, ClubCompetitionScheduleUpdater.scaleTaskProgress(-1, 40, 10, 35));
+        assertEquals(35, ClubCompetitionScheduleUpdater.scaleTaskProgress(41, 40, 10, 35));
+    }
+
+    @Test
+    void shouldContinueWhenOneParallelScheduleSourceStalls() {
+        MatchSchedule completedSchedule = new MatchSchedule();
+        completedSchedule.setMatchId("FOTMOB-SWEDISH_ALLSVENSKAN-5107535");
+        List<Supplier<List<MatchSchedule>>> tasks = List.of(
+                () -> List.of(completedSchedule),
+                () -> {
+                    try {
+                        Thread.sleep(5_000L);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return List.of();
+                });
+
+        List<MatchSchedule> schedules = assertTimeoutPreemptively(
+                Duration.ofSeconds(1),
+                () -> updater.executeTasks(tasks, 2, Duration.ofMillis(50), null));
+
+        assertEquals(List.of(completedSchedule), schedules);
+    }
+
+    @Test
+    void shouldAllowFotMobRetryWindowBeforeParallelTaskTimeout() {
+        assertEquals(
+                Duration.ofSeconds(35),
+                ClubCompetitionScheduleUpdater.calculateParallelTaskTimeout(Duration.ofSeconds(15), 2));
+    }
 
     @Test
     void shouldParseCompletedSudamericanaMatchInShanghaiTime() throws Exception {
@@ -103,6 +144,21 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
+    void shouldResolveHistoricalScottishLeagueCupSeasonNames() {
+        ClubCompetitionScheduleUpdater.FotMobLeagueSource source =
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "180",
+                        "苏联赛杯",
+                        false);
+
+        assertEquals("2015%2F2016", source.seasonValue(2015));
+        assertEquals("2016", source.seasonValue(2016));
+        assertEquals("2021", source.seasonValue(2021));
+        assertEquals("2022%2F2023", source.seasonValue(2022));
+    }
+
+    @Test
     void shouldFilterReplacedSeasonsFromImmutableSourceList() {
         MatchSchedule schedule = new MatchSchedule();
         schedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
@@ -135,6 +191,45 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals(1, schedules.size());
         assertEquals("库奥皮奥", schedules.get(0).getHomeTeamCn());
         assertEquals("奥胡斯", schedules.get(0).getAwayTeamCn());
+    }
+
+    @Test
+    void shouldDeduplicateLevadiaAndHamKamAliasesAcrossProviders() {
+        MatchSchedule espnLevadia = completedSchedule(
+                "ESPN-CLUB_OFFICIAL_OTHER-401877798",
+                "Caernarfon",
+                "FC Levadia Tallinn");
+        espnLevadia.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        MatchSchedule fotMobLevadia = completedSchedule(
+                "FOTMOB-CLUB_OFFICIAL_OTHER-5786616",
+                "Caernarfon",
+                "FCI Levadia");
+        fotMobLevadia.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+
+        List<MatchSchedule> levadiaSchedules = updater.deduplicateSchedulesByFixture(
+                List.of(espnLevadia, fotMobLevadia));
+
+        assertEquals(1, levadiaSchedules.size());
+        assertEquals("利瓦迪亚", levadiaSchedules.get(0).getAwayTeamCn());
+
+        MatchSchedule futbol24HamKam = completedClubFriendlySchedule(
+                "FUTBOL24-CLUB_FRIENDLY-3337036",
+                "IFK哥德堡",
+                "HamKam",
+                1,
+                2);
+        MatchSchedule fotMobHamKam = completedClubFriendlySchedule(
+                "FOTMOB-CLUB_FRIENDLY-5838510",
+                "IFK哥德堡",
+                "Hamarkameratene",
+                1,
+                2);
+
+        List<MatchSchedule> hamKamSchedules = updater.deduplicateSchedulesByFixture(
+                List.of(futbol24HamKam, fotMobHamKam));
+
+        assertEquals(1, hamKamSchedules.size());
+        assertEquals("汉坎", hamKamSchedules.get(0).getAwayTeamCn());
     }
 
     @Test
@@ -199,6 +294,57 @@ class ClubCompetitionScheduleUpdaterTest {
 
         assertEquals(1, schedules.size());
         assertEquals("北安普敦", schedules.get(0).getAwayTeamCn());
+    }
+
+    @Test
+    void shouldDeduplicateAikClubFriendlyAcrossProviders() {
+        MatchSchedule futbol24 = completedClubFriendlySchedule(
+                "FUTBOL24-CLUB_FRIENDLY-3337082",
+                "AIK Fotboll",
+                "韦斯特罗斯",
+                3,
+                2);
+        futbol24.setMatchDate(LocalDate.of(2026, 6, 28));
+        futbol24.setKickoffTime(LocalTime.of(20, 0));
+        MatchSchedule fotMob = completedClubFriendlySchedule(
+                "FOTMOB-CLUB_FRIENDLY-5838835",
+                "AIK索尔纳",
+                "韦斯特罗斯",
+                3,
+                2);
+        fotMob.setMatchDate(LocalDate.of(2026, 6, 28));
+        fotMob.setKickoffTime(LocalTime.of(20, 0));
+
+        List<MatchSchedule> schedules = updater.deduplicateSchedulesByFixture(
+                List.of(futbol24, fotMob));
+
+        assertEquals(1, schedules.size());
+        assertEquals("AIK索尔纳", schedules.get(0).getHomeTeamCn());
+    }
+
+    @Test
+    void shouldDeduplicateSameKickoffAndResultAcrossClubFriendlyProviders() {
+        MatchSchedule futbol24 = completedClubFriendlySchedule(
+                "FUTBOL24-CLUB_FRIENDLY-3337055",
+                "FC Hertha Wels",
+                "LASK林茨",
+                0,
+                5);
+        futbol24.setMatchDate(LocalDate.of(2026, 6, 28));
+        futbol24.setKickoffTime(LocalTime.of(0, 30));
+        MatchSchedule fotMob = completedClubFriendlySchedule(
+                "FOTMOB-CLUB_FRIENDLY-5766943",
+                "SPG HOGO Wels",
+                "LASK林茨",
+                0,
+                5);
+        fotMob.setMatchDate(LocalDate.of(2026, 6, 28));
+        fotMob.setKickoffTime(LocalTime.of(0, 30));
+
+        List<MatchSchedule> schedules = updater.deduplicateSchedulesByFixture(
+                List.of(futbol24, fotMob));
+
+        assertEquals(1, schedules.size());
     }
 
     @Test
@@ -306,6 +452,98 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
+    void shouldUseFotMobNinetyMinuteScoreForMatchCompletedAfterExtraTime() throws Exception {
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "id": "5231353",
+                  "round": "1/4",
+                  "home": { "name": "Sirius" },
+                  "away": { "name": "IFK Göteborg" },
+                  "status": {
+                    "utcTime": "2026-03-15T16:15:00Z",
+                    "finished": true,
+                    "started": true,
+                    "cancelled": false,
+                    "scoreStr": "1 - 0",
+                    "reason": {
+                      "short": "AET",
+                      "long": "After extra time"
+                    }
+                  }
+                }
+                """);
+        JsonNode matchDetails = objectMapper.readTree("""
+                {
+                  "content": {
+                    "matchFacts": {
+                      "events": {
+                        "events": [
+                          {
+                            "type": "Half",
+                            "time": 90,
+                            "homeScore": 0,
+                            "awayScore": 0,
+                            "halfStrShort": "FT"
+                          },
+                          {
+                            "type": "Goal",
+                            "time": 104,
+                            "isHome": true,
+                            "isPenaltyShootoutEvent": false
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFotMobLeagueMatch(
+                match,
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "171",
+                        "瑞典杯"),
+                ZoneId.of("Asia/Shanghai"),
+                matchDetails);
+
+        assertNotNull(schedule);
+        assertEquals(0, schedule.getHomeScore());
+        assertEquals(0, schedule.getAwayScore());
+        assertEquals("COMPLETED", schedule.getStatus());
+    }
+
+    @Test
+    void shouldNotUseFotMobExtraTimeScoreWithoutRegulationDetails() throws Exception {
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "id": "5231353",
+                  "home": { "name": "Sirius" },
+                  "away": { "name": "IFK Göteborg" },
+                  "status": {
+                    "utcTime": "2026-03-15T16:15:00Z",
+                    "finished": true,
+                    "scoreStr": "1 - 0",
+                    "reason": { "short": "AET" }
+                  }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFotMobLeagueMatch(
+                match,
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "171",
+                        "瑞典杯"),
+                ZoneId.of("Asia/Shanghai"));
+
+        assertNotNull(schedule);
+        assertNull(schedule.getHomeScore());
+        assertNull(schedule.getAwayScore());
+        assertEquals("COMPLETED", schedule.getStatus());
+    }
+
+    @Test
     void shouldParseVerifiedClubFriendlyScore() throws Exception {
         JsonNode event = objectMapper.readTree("""
                 {
@@ -408,6 +646,36 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals("齐拉", schedule.getAwayTeamCn());
         assertEquals(2, schedule.getHomeScore());
         assertEquals(1, schedule.getAwayScore());
+    }
+
+    @Test
+    void shouldUseFutbol24NinetyMinuteScoreAfterExtraTime() throws Exception {
+        JsonNode statuses = objectMapper.readTree("""
+                {
+                  "8": { "name": "AET", "name_short": "AET", "is_ended": true }
+                }
+                """);
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "league_id": 525,
+                  "status_id": 8,
+                  "date": "2025-12-02T15:00:00+00:00",
+                  "score1": "1-0",
+                  "score2": "0-0, 0-0",
+                  "team1": { "name": "Zira FK" },
+                  "team2": { "name": "Neftchi Baku" }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFutbol24Match(
+                "3249056",
+                match,
+                statuses,
+                ZoneId.of("Asia/Shanghai"));
+
+        assertNotNull(schedule);
+        assertEquals(0, schedule.getHomeScore());
+        assertEquals(0, schedule.getAwayScore());
     }
 
     @Test
@@ -521,6 +789,45 @@ class ClubCompetitionScheduleUpdaterTest {
         assertTrue(sources.stream().anyMatch(source ->
                 source.competition() == Competition.FINNISH_VEIKKAUSLIIGA
                         && "51".equals(source.leagueId())));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldConfigureFotMobFinnishLeagueCupAndSwedishCupSources() {
+        List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources =
+                (List<ClubCompetitionScheduleUpdater.FotMobLeagueSource>)
+                        ReflectionTestUtils.getField(
+                                ClubCompetitionScheduleUpdater.class,
+                                "FOTMOB_SOURCES");
+
+        assertNotNull(sources);
+        assertTrue(sources.stream().anyMatch(source ->
+                source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "342".equals(source.leagueId())
+                        && "联赛杯".equals(source.sourceCompetition())
+                        && source.calendarYearSeason()));
+        assertTrue(sources.stream().anyMatch(source ->
+                source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "171".equals(source.leagueId())
+                        && "瑞典杯".equals(source.sourceCompetition())
+                        && !source.calendarYearSeason()));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldConfigureKLeagueQualificationAsPlayOffsSource() {
+        List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources =
+                (List<ClubCompetitionScheduleUpdater.FotMobLeagueSource>)
+                        ReflectionTestUtils.getField(
+                                ClubCompetitionScheduleUpdater.class,
+                                "FOTMOB_SOURCES");
+
+        assertNotNull(sources);
+        assertTrue(sources.stream().anyMatch(source ->
+                source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "9422".equals(source.leagueId())
+                        && "Play-offs 1/2".equals(source.sourceCompetition())
+                        && source.calendarYearSeason()));
     }
 
     @Test
@@ -649,6 +956,10 @@ class ClubCompetitionScheduleUpdaterTest {
                 }
                 """);
         List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources = List.of(
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "342", "联赛杯", true),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "171", "瑞典杯", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.K_LEAGUE_1, "9080", "韩职", true),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(

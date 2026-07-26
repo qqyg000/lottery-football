@@ -25,6 +25,22 @@ export function calculateSamplingRate(recommendedMatchCount, oddsMatchCount) {
   return availableOddsCount > 0 ? recommendedCount / availableOddsCount : null
 }
 
+export function calculateReturnVolatility(matchReturnRates) {
+  const returns = Array.isArray(matchReturnRates)
+    ? matchReturnRates.map(Number).filter(value => Number.isFinite(value))
+    : []
+  if (returns.length < 2) {
+    return null
+  }
+
+  const averageReturn = returns.reduce((sum, value) => sum + value, 0) / returns.length
+  const squaredDeviationTotal = returns.reduce((sum, value) => {
+    const deviation = value - averageReturn
+    return sum + deviation * deviation
+  }, 0)
+  return Math.sqrt(squaredDeviationTotal / (returns.length - 1))
+}
+
 export function calculateMinimumCoveredMatchCount(oddsMatchCount, minimumSamplingRate) {
   const availableOddsCount = Math.floor(normalizeCount(oddsMatchCount))
   const minimumRate = Number(minimumSamplingRate)

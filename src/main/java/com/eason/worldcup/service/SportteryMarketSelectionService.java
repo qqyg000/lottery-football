@@ -48,6 +48,8 @@ public class SportteryMarketSelectionService {
 
     private static final int MAX_QUERY_DAYS = 30;
 
+    private static final int MAX_CALCULATOR_FUTURE_DAYS = 7;
+
     private static final String BROWSER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             + "AppleWebKit/537.36 Chrome/138.0.0.0 Safari/537.36";
 
@@ -152,8 +154,7 @@ public class SportteryMarketSelectionService {
             refreshMarketEntries(
                     buildLookupDates(supportedSchedules),
                     false,
-                    containsUpcomingSchedule(supportedSchedules),
-                    normalizedFutureDays());
+                    containsUpcomingSchedule(supportedSchedules));
         }
         int matchedCount = applyMarketEntries(supportedSchedules, true);
         log.debug("Matched {} of {} displayed schedules with Sporttery market data", matchedCount, supportedSchedules.size());
@@ -294,13 +295,11 @@ public class SportteryMarketSelectionService {
         refreshMarketEntries(
                 buildRecentResultLookupDates(effectiveReferenceDate),
                 true,
-                false,
-                normalizedFutureDays());
+                false);
         refreshMarketEntries(
                 buildForceLookupDates(effectiveReferenceDate),
                 true,
-                true,
-                normalizedForceFutureDays());
+                true);
         refreshOddsForWindow(effectiveReferenceDate);
         return entriesByMatchId.size();
     }
@@ -308,19 +307,30 @@ public class SportteryMarketSelectionService {
     public synchronized SportteryHistoricalOddsRefreshResponse refreshHistoricalRange(
             LocalDate startDate,
             LocalDate endDate) {
+        return refreshHistoricalRange(startDate, endDate, Set.of());
+    }
+
+    public synchronized SportteryHistoricalOddsRefreshResponse refreshHistoricalRange(
+            LocalDate startDate,
+            LocalDate endDate,
+            Set<Competition> competitions) {
         validateHistoricalRange(startDate, endDate);
+        Set<Competition> targetCompetitions = normalizeHistoricalCompetitions(competitions);
         ensureCacheLoaded();
+        Set<String> existingMatchIds = Set.copyOf(entriesByMatchId.keySet());
         TreeSet<LocalDate> lookupDates = new TreeSet<>();
         LocalDate date = startDate;
         while (!date.isAfter(endDate)) {
             lookupDates.add(date);
             date = date.plusDays(1);
         }
-        refreshMarketEntries(lookupDates, true, false, 0);
+        refreshMarketEntries(lookupDates, true, false);
 
         List<SportteryMarketEntry> candidates = entriesByMatchId.values().stream()
                 .filter(entry -> entry.getMatchDate() != null)
                 .filter(entry -> SUPPORTED_COMPETITIONS.contains(entry.getCompetition()))
+                .filter(entry -> targetCompetitions.isEmpty()
+                        || targetCompetitions.contains(entry.getCompetition()))
                 .filter(entry -> !entry.getMatchDate().isBefore(startDate))
                 .filter(entry -> !entry.getMatchDate().isAfter(endDate))
                 .sorted(Comparator
@@ -328,6 +338,7 @@ public class SportteryMarketSelectionService {
                         .thenComparing(SportteryMarketEntry::getSportteryMatchId))
                 .toList();
         int failedOddsQueryCount = refreshHistoricalOdds(candidates);
+        removeNewEntriesOutsideTarget(existingMatchIds, targetCompetitions);
 
         SportteryHistoricalOddsRefreshResponse response = new SportteryHistoricalOddsRefreshResponse();
         response.setStartDate(startDate);
@@ -344,6 +355,34 @@ public class SportteryMarketSelectionService {
                 .count());
         response.setFailedOddsQueryCount(failedOddsQueryCount);
         return response;
+    }
+
+    private Set<Competition> normalizeHistoricalCompetitions(Set<Competition> competitions) {
+        if (competitions == null || competitions.isEmpty()) {
+            return Set.of();
+        }
+        Set<Competition> normalized = new HashSet<>(competitions);
+        Set<Competition> unsupported = new HashSet<>(normalized);
+        unsupported.removeAll(SUPPORTED_COMPETITIONS);
+        if (!unsupported.isEmpty()) {
+            throw new IllegalArgumentException("不支持的历史赔率赛事: " + unsupported);
+        }
+        return Set.copyOf(normalized);
+    }
+
+    private void removeNewEntriesOutsideTarget(
+            Set<String> existingMatchIds,
+            Set<Competition> targetCompetitions) {
+        if (targetCompetitions.isEmpty()) {
+            return;
+        }
+        boolean removed = entriesByMatchId.entrySet().removeIf(entry -> (
+                !existingMatchIds.contains(entry.getKey())
+                && !targetCompetitions.contains(entry.getValue().getCompetition())
+        ));
+        if (removed) {
+            saveCache(LocalDateTime.now(resolveTargetZone()));
+        }
     }
 
     private int refreshHistoricalOdds(List<SportteryMarketEntry> candidates) {
@@ -400,7 +439,7 @@ public class SportteryMarketSelectionService {
 
     private boolean containsUpcomingSchedule(List<MatchSchedule> schedules) {
         LocalDate today = LocalDate.now(resolveTargetZone());
-        LocalDate lastDate = today.plusDays(normalizedFutureDays());
+        LocalDate lastDate = today.plusDays(MAX_CALCULATOR_FUTURE_DAYS);
         return schedules.stream()
                 .map(MatchSchedule::getMatchDate)
                 .anyMatch(date -> !date.isBefore(today) && !date.isAfter(lastDate));
@@ -409,8 +448,7 @@ public class SportteryMarketSelectionService {
     private void refreshMarketEntries(
             TreeSet<LocalDate> lookupDates,
             boolean force,
-            boolean refreshCalculator,
-            int calculatorFutureDays) {
+            boolean refreshCalculator) {
         ZoneId zoneId = resolveTargetZone();
         LocalDateTime now = LocalDateTime.now(zoneId);
         TreeSet<LocalDate> datesToRefresh = new TreeSet<>();
@@ -435,8 +473,7 @@ public class SportteryMarketSelectionService {
                 List<SportteryMarketEntry> calculatorEntries = downloadCalculator(client, timeout);
                 int storedCount = replaceUpcomingEntries(
                         calculatorEntries,
-                        now.toLocalDate(),
-                        calculatorFutureDays);
+                        now.toLocalDate());
                 calculatorQueriedAt = now;
                 cacheChanged = true;
                 log.info("Loaded {} current and upcoming Sporttery market rows", storedCount);
@@ -530,15 +567,17 @@ public class SportteryMarketSelectionService {
     }
 
     private int normalizedRecentDaysBack() {
-        return Math.max(0, Math.min(7, recentDaysBack));
+        return Math.max(0, Math.min(MAX_CALCULATOR_FUTURE_DAYS, recentDaysBack));
     }
 
     private int normalizedFutureDays() {
-        return Math.max(0, Math.min(7, futureDays));
+        return Math.max(0, Math.min(MAX_CALCULATOR_FUTURE_DAYS, futureDays));
     }
 
     private int normalizedForceFutureDays() {
-        return Math.max(normalizedFutureDays(), Math.min(7, forceFutureDays));
+        return Math.max(
+                normalizedFutureDays(),
+                Math.min(MAX_CALCULATOR_FUTURE_DAYS, forceFutureDays));
     }
 
     private boolean shouldRefresh(LocalDate date, LocalDateTime now) {
@@ -1088,10 +1127,9 @@ public class SportteryMarketSelectionService {
 
     private int replaceUpcomingEntries(
             List<SportteryMarketEntry> downloadedEntries,
-            LocalDate today,
-            int calculatorFutureDays) {
+            LocalDate today) {
         entriesByMatchId.entrySet().removeIf(item -> Boolean.TRUE.equals(item.getValue().getCurrentSale()));
-        LocalDate lastDate = today.plusDays(Math.max(0, Math.min(7, calculatorFutureDays)));
+        LocalDate lastDate = today.plusDays(MAX_CALCULATOR_FUTURE_DAYS);
         int storedCount = 0;
         for (SportteryMarketEntry entry : downloadedEntries) {
             if (entry.getMatchDate().isBefore(today) || entry.getMatchDate().isAfter(lastDate)) {
