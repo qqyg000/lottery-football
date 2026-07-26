@@ -652,10 +652,11 @@
 
 <script>
 import {
-  calculateFlatStakeBacktest,
-  calculateReturnVolatility,
-  calculateSamplingRate
-} from './backtest-roi.mjs'
+  evaluateRecommendationBacktest,
+  getAutomaticMarketSelection,
+  getRecommendationKeys as getSharedRecommendationKeys,
+  getRecommendationOddsDetails as getSharedRecommendationOddsDetails
+} from './recommendation-backtest.mjs'
 
 const FIXED_SIMULATIONS = 50000
 const BACKTEST_PROGRESS_POLL_INTERVAL = 300
@@ -1794,54 +1795,17 @@ export default {
       return new Promise(resolve => window.setTimeout(resolve, milliseconds))
     },
     refreshBacktestResults() {
-      const recommendedMatches = []
-      const hitMatches = []
-      const winningMatchOdds = []
-      const matchReturnRates = []
-      let recommendedSelectionCount = 0
-      let winningSelectionCount = 0
-      this.backtestSourceMatches.forEach(match => {
-        const recommendationKeys = this.getRecommendationKeys(match)
-        if (recommendationKeys.size === 0) {
-          return
-        }
-        recommendedMatches.push(match)
-        recommendedSelectionCount += recommendationKeys.size
-        const matchWinningOdds = this.getRecommendationOddsDetails(match)
-          .filter(item => item.winning)
-          .map(item => item.odds)
-        const winningOdds = matchWinningOdds.reduce((sum, odds) => sum + odds, 0)
-        matchReturnRates.push(winningOdds / recommendationKeys.size - 1)
-        if (this.recommendationResult(match) !== 'hit') {
-          return
-        }
-        hitMatches.push(match)
-        winningSelectionCount += matchWinningOdds.length
-        winningMatchOdds.push(winningOdds)
-      })
-      const missMatchCount = recommendedMatches.length - hitMatches.length
-      const financials = calculateFlatStakeBacktest(
-        winningMatchOdds,
-        recommendedSelectionCount,
-        recommendedMatches.length
-      )
       const oddsMatchCount = Number(this.backtestSummary.oddsMatchCount) || this.backtestSourceMatches.length
-      this.backtestMatches = recommendedMatches
+      const evaluation = evaluateRecommendationBacktest(this.backtestSourceMatches, {
+        oddsMatchCount,
+        modelMode: this.modelMode,
+        selectedRows: this.selectedRows,
+        resolveGlobalParameters: match => this.getMatchGlobalParameters(match)
+      })
+      this.backtestMatches = evaluation.recommendedMatches
       this.backtestSummary = {
         ...this.backtestSummary,
-        samplingRate: calculateSamplingRate(recommendedMatches.length, oddsMatchCount),
-        recommendedMatchCount: recommendedMatches.length,
-        recommendedSelectionCount,
-        hitMatchCount: hitMatches.length,
-        missMatchCount,
-        winningSelectionCount,
-        averageWinningOdds: this.calculateAverageOdds(winningMatchOdds),
-        averageOddsIncludingMisses: financials.averageReturnIncludingMisses,
-        totalStake: financials.totalStake,
-        totalReturn: financials.totalReturn,
-        netProfit: financials.netProfit,
-        volatility: calculateReturnVolatility(matchReturnRates),
-        roi: financials.roi
+        ...evaluation.summary
       }
     },
     calculateAverageOdds(values) {
@@ -2328,18 +2292,7 @@ export default {
       return Boolean(match && match.sportteryMatchId)
     },
     getSportterySelection(match) {
-      if (!this.hasSportterySelection(match)) {
-        return null
-      }
-      const selection = {}
-      if (match.sportteryNormalAvailable === true) {
-        selection.normal = true
-      }
-      const handicap = Number(match.sportteryHandicap)
-      if (Number.isInteger(handicap) && handicap !== 0) {
-        selection.handicap = 'handicap-' + handicap
-      }
-      return selection
+      return getAutomaticMarketSelection(match)
     },
     getSelectionForMatch(match) {
       const manualSelection = this.selectedRows[match.matchId]
@@ -2469,13 +2422,11 @@ export default {
       return 'lose'
     },
     getRecommendationKeys(match) {
-      const recommendationKeys = this.applySingleRecommendationThreshold(
-        match,
-        this.getBaseRecommendationKeys(match)
-      )
-      return this.hasQualifiedRecommendationOdds(match, recommendationKeys)
-        ? recommendationKeys
-        : new Set()
+      return getSharedRecommendationKeys(match, {
+        modelMode: this.modelMode,
+        selectedRows: this.selectedRows,
+        globalParameters: this.getMatchGlobalParameters(match)
+      })
     },
     applySingleRecommendationThreshold(match, recommendationKeys) {
       if (!recommendationKeys || recommendationKeys.size !== 2) {
@@ -2542,27 +2493,11 @@ export default {
         recommendationOdds.every(odds => odds !== null && odds >= threshold)
     },
     getRecommendationOddsDetails(match) {
-      const score = this.parseScore(match)
-      const recommendationKeys = this.getRecommendationKeys(match)
-      if (!score || recommendationKeys.size === 0) {
-        return []
-      }
-      return this.probabilityRows(match).reduce((result, item) => {
-        const actualProbabilityKey = this.getActualProbabilityKey(score, item.handicap)
-        PROBABILITY_KEYS.forEach(probabilityKey => {
-          if (!recommendationKeys.has(this.getRecommendationCellKey(item, probabilityKey))) {
-            return
-          }
-          const odds = this.sportteryOddsValue(match, item, probabilityKey)
-          if (odds !== null) {
-            result.push({
-              odds,
-              winning: probabilityKey === actualProbabilityKey
-            })
-          }
-        })
-        return result
-      }, [])
+      return getSharedRecommendationOddsDetails(match, {
+        modelMode: this.modelMode,
+        selectedRows: this.selectedRows,
+        globalParameters: this.getMatchGlobalParameters(match)
+      })
     },
     buildRecommendationKeys(match, rows, applyHandicapThreshold) {
       const maxCell = this.findMaxProbabilityCell(rows)
