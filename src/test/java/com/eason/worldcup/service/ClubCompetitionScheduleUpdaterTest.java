@@ -902,6 +902,7 @@ class ClubCompetitionScheduleUpdaterTest {
                 List.of("297", "波超杯"),
                 List.of("107", "波甲"),
                 List.of("15", "奥甲"),
+                List.of("17", "奥地利杯"),
                 List.of("51", "苏超"),
                 List.of("133", "土超"),
                 List.of("537", "土耳其杯"),
@@ -982,6 +983,8 @@ class ClubCompetitionScheduleUpdaterTest {
                         Competition.CLUB_OFFICIAL_OTHER, "271", "保杯", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "270", "保超", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "278", "奥地利杯", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "126", "爱超", true),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(

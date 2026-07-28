@@ -6,21 +6,30 @@ import { evaluateRecommendationBacktest } from '../frontend/src/recommendation-b
 const ROOT = process.cwd()
 const API_BASE = process.env.LOTTERY_FOOTBALL_API_BASE || 'http://127.0.0.1:8080'
 const CONFIG_PATH = path.join(ROOT, 'config/user-config.json')
-const REPORT_JSON_PATH = path.join(ROOT, 'reports/shared-backtest-parameter-optimization-2026-07-26.json')
-const REPORT_MARKDOWN_PATH = path.join(ROOT, 'reports/shared-backtest-parameter-optimization-2026-07-26.md')
-const CHECKPOINT_PATH = path.join(ROOT, 'target/shared-backtest-optimizer-checkpoint.json')
+const REPORT_JSON_PATH = path.join(ROOT, 'reports/shared-backtest-parameter-optimization-2026-07-27.json')
+const REPORT_MARKDOWN_PATH = path.join(ROOT, 'reports/shared-backtest-parameter-optimization-2026-07-27.md')
+const CHECKPOINT_PATH = path.join(ROOT, 'target/shared-backtest-optimizer-checkpoint-2026-07-27.json')
 
 const FINAL_SIMULATIONS = numberOption('FINAL_SIMULATIONS', 50000)
 const COARSE_SIMULATIONS = numberOption('COARSE_SIMULATIONS', 5000)
 const MODEL_VARIANT_COUNT = numberOption('MODEL_VARIANT_COUNT', 5, true)
+const FINALIST_MODEL_COUNT = numberOption('FINALIST_MODEL_COUNT', 1)
 const COARSE_RULE_CANDIDATES = numberOption('COARSE_RULE_CANDIDATES', 1800)
 const FINAL_RULE_CANDIDATES = numberOption('FINAL_RULE_CANDIDATES', 9000)
 const SAMPLING_TOLERANCE = 0.03
 const MINIMUM_STABLE_ROI = 0.05
-const MINIMUM_RELAXED_SAMPLING_RATE = 0.20
+const MINIMUM_AGGRESSIVE_SAMPLING_RATE = 0.333
+const MINIMUM_AGGRESSIVE_ROI_GAP = decimalOption('MINIMUM_AGGRESSIVE_ROI_GAP', 0)
 const ROI_EPSILON = 1e-9
 const APPLY_RESULTS = process.argv.includes('--apply')
 const RESUME_FROM_CHECKPOINT = process.argv.includes('--resume')
+const AUDIT_ONLY = process.argv.includes('--audit-only')
+const RETRY_RANGES = new Set(
+  String(process.env.RETRY_RANGES || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean)
+)
 
 const COMPETITIONS = [
   ['WORLD_CUP', '世界杯'],
@@ -41,6 +50,12 @@ const COMPETITIONS = [
   ['FINNISH_VEIKKAUSLIIGA', '芬超'],
   ['K_LEAGUE_1', '韩职']
 ]
+
+const FORCE_REOPTIMIZE_RANGES = new Set([
+  'SWEDISH_ALLSVENSKAN:CURRENT',
+  'FINNISH_VEIKKAUSLIIGA:CURRENT',
+  'K_LEAGUE_1:CURRENT'
+])
 
 function numberOption(name, fallback, allowZero = false) {
   const value = Number(process.env[name])
@@ -117,7 +132,8 @@ function modelSignature(model) {
     model.seedTeamGoalFactor,
     model.officialMatchWeight,
     model.internationalFriendlyWeight,
-    model.clubFriendlyWeight
+    model.clubFriendlyWeight,
+    model.handicapSmoothingFactor
   ].join('|')
 }
 
@@ -150,7 +166,9 @@ function buildModelVariants(profile, key) {
       clubFriendlyWeight: local
         ? randomBetween(random, Math.max(0, center.clubFriendlyWeight - 0.25), Math.min(1, center.clubFriendlyWeight + 0.25), 2)
         : randomBetween(random, 0, 1, 2),
-      handicapSmoothingFactor: center.handicapSmoothingFactor
+      handicapSmoothingFactor: local
+        ? randomBetween(random, Math.max(0, center.handicapSmoothingFactor - 0.2), Math.min(0.8, center.handicapSmoothingFactor + 0.2), 3)
+        : randomBetween(random, 0, 0.8, 3)
     })
   }
   return [...new Map(variants.map(model => [modelSignature(model), model])).values()]
@@ -167,6 +185,36 @@ function observedOdds(matches) {
           values.add(round(value + 0.01, 2))
         }
       }
+    }
+  }
+  return [...values].sort((left, right) => left - right)
+}
+
+function decimalOption(name, fallback) {
+  const value = Number(process.env[name])
+  return Number.isFinite(value) && value >= 0 ? value : fallback
+}
+
+function observedProbabilityThresholds(matches) {
+  const values = new Set([0, 100])
+  const collectProbability = probability => {
+    for (const key of ['win', 'draw', 'lose']) {
+      const value = Number(probability?.[key])
+      if (!Number.isFinite(value)) {
+        continue
+      }
+      for (const candidate of [value - 0.01, value, value + 0.01]) {
+        values.add(round(clamp(candidate, 0, 100), 2))
+      }
+    }
+  }
+  for (const match of matches) {
+    collectProbability(match.adjustedNormalProbability || match.normalProbability)
+    const probabilities = Array.isArray(match.adjustedHandicapProbabilities)
+      ? match.adjustedHandicapProbabilities
+      : match.handicapProbabilities
+    for (const item of probabilities || []) {
+      collectProbability(item?.probability)
     }
   }
   return [...values].sort((left, right) => left - right)
@@ -250,6 +298,71 @@ function searchRules(backtest, baseProfile, modelFactors, count, seed) {
   return [...buckets.values()].flat()
 }
 
+function limitCandidateValues(values, maximum = 100) {
+  if (values.length <= maximum) {
+    return values
+  }
+  const limited = []
+  for (let index = 0; index < maximum; index++) {
+    limited.push(values[Math.round(index * (values.length - 1) / (maximum - 1))])
+  }
+  return [...new Set(limited)]
+}
+
+function refineRulePool(backtest, pool, samplingBounds, passes = 1) {
+  if (!samplingBounds) {
+    return pool
+  }
+  const oddsValues = limitCandidateValues(observedOdds(backtest.matches))
+  const probabilityValues = limitCandidateValues(observedProbabilityThresholds(backtest.matches))
+  const valueSets = {
+    recommendationOdds: oddsValues,
+    handicapRecommendationThreshold: probabilityValues,
+    handicapReverseThreshold: probabilityValues,
+    singleRecommendationThreshold: probabilityValues
+  }
+  let refined = deduplicatePool(pool)
+  for (let pass = 0; pass < passes; pass++) {
+    const buckets = new Map()
+    refined.forEach(candidate => collectCandidate(buckets, candidate))
+    const seedsByCount = new Map()
+    refined
+      .filter(candidate => (
+        candidate.metrics.samplingRate + ROI_EPSILON >= samplingBounds.minimum &&
+        candidate.metrics.samplingRate < samplingBounds.maximum - ROI_EPSILON
+      ))
+      .sort(candidateRanking)
+      .forEach(candidate => {
+        const count = candidate.metrics.recommendedMatchCount
+        const seeds = seedsByCount.get(count) || []
+        if (seeds.length < 1) {
+          seeds.push(candidate)
+          seedsByCount.set(count, seeds)
+        }
+      })
+    const seeds = [...seedsByCount.values()].flat()
+    for (const seed of seeds) {
+      for (const [parameter, values] of Object.entries(valueSets)) {
+        for (const value of values) {
+          if (value === seed.profile.globalParameters[parameter]) {
+            continue
+          }
+          const profile = normalizeProfile({
+            modelFactors: seed.profile.modelFactors,
+            globalParameters: {
+              ...seed.profile.globalParameters,
+              [parameter]: value
+            }
+          })
+          collectCandidate(buckets, candidateFrom(profile, evaluateProfile(backtest, profile)))
+        }
+      }
+    }
+    refined = [...buckets.values()].flat()
+  }
+  return deduplicatePool(refined)
+}
+
 function withinSamplingBand(candidate, baselineSamplingRate) {
   return candidate.metrics.samplingRate + ROI_EPSILON >= Math.max(0, baselineSamplingRate - SAMPLING_TOLERANCE) &&
     candidate.metrics.samplingRate <= Math.min(1, baselineSamplingRate + SAMPLING_TOLERANCE) + ROI_EPSILON
@@ -259,8 +372,17 @@ function bestForModelRanking(pool, baselineSamplingRate) {
   const constrained = pool.filter(candidate => withinSamplingBand(candidate, baselineSamplingRate))
   const source = constrained.length > 0
     ? constrained
-    : pool.filter(candidate => candidate.metrics.samplingRate >= MINIMUM_RELAXED_SAMPLING_RATE)
+    : pool.filter(candidate => candidate.metrics.samplingRate >= MINIMUM_AGGRESSIVE_SAMPLING_RATE)
   return source.sort((left, right) => right.metrics.roi - left.metrics.roi)[0] || null
+}
+
+function bestForTargetSampling(pool, samplingBounds) {
+  return pool
+    .filter(candidate => (
+      candidate.metrics.samplingRate + ROI_EPSILON >= samplingBounds.minimum &&
+      candidate.metrics.samplingRate < samplingBounds.maximum - ROI_EPSILON
+    ))
+    .sort(candidateRanking)[0] || null
 }
 
 async function fetchJson(url, options = {}, attempts = 3) {
@@ -303,7 +425,7 @@ async function fetchBacktest(competition, range, modelFactors, simulations, smoo
   }
 }
 
-async function optimizePreset(competition, range, preset, originalProfile) {
+async function optimizePreset(competition, range, preset, originalProfile, options = {}) {
   const key = `${competition}:${range}:${preset}`
   const normalizedOriginal = normalizeProfile(originalProfile)
   process.stdout.write(`  ${preset} baseline ${FINAL_SIMULATIONS}\n`)
@@ -324,12 +446,16 @@ async function optimizePreset(competition, range, preset, originalProfile) {
     }
   }
   const baselineMetrics = evaluateProfile(baselineBacktest, normalizedOriginal)
-  let finalPool = searchRules(
+  let finalPool = refineRulePool(
     baselineBacktest,
-    normalizedOriginal,
-    normalizedOriginal.modelFactors,
-    FINAL_RULE_CANDIDATES,
-    stringSeed(key + ':final:current')
+    searchRules(
+      baselineBacktest,
+      normalizedOriginal,
+      normalizedOriginal.modelFactors,
+      FINAL_RULE_CANDIDATES,
+      stringSeed(key + ':final:current')
+    ),
+    options.samplingBounds
   )
   const rankedModels = []
   const variants = buildModelVariants(normalizedOriginal, key).slice(1)
@@ -353,15 +479,18 @@ async function optimizePreset(competition, range, preset, originalProfile) {
       COARSE_RULE_CANDIDATES,
       stringSeed(key + ':coarse:' + index)
     )
-    const best = bestForModelRanking(pool, baselineMetrics.samplingRate)
+    const best = options.samplingBounds
+      ? bestForTargetSampling(pool, options.samplingBounds)
+      : bestForModelRanking(pool, baselineMetrics.samplingRate)
     if (best) {
       rankedModels.push({ model, best })
     }
   }
   rankedModels.sort((left, right) => right.best.metrics.roi - left.best.metrics.roi)
-  const finalist = rankedModels[0]
-  if (finalist) {
-    process.stdout.write(`  ${preset} finalist ${FINAL_SIMULATIONS}\n`)
+  const finalists = rankedModels.slice(0, FINALIST_MODEL_COUNT)
+  for (let index = 0; index < finalists.length; index++) {
+    const finalist = finalists[index]
+    process.stdout.write(`  ${preset} finalist ${index + 1}/${finalists.length} ${FINAL_SIMULATIONS}\n`)
     const finalistBacktest = await fetchBacktest(
       competition,
       range,
@@ -369,12 +498,16 @@ async function optimizePreset(competition, range, preset, originalProfile) {
       FINAL_SIMULATIONS,
       finalist.model.handicapSmoothingFactor
     )
-    finalPool = finalPool.concat(searchRules(
+    finalPool = finalPool.concat(refineRulePool(
       finalistBacktest,
-      normalizedOriginal,
-      finalist.model,
-      FINAL_RULE_CANDIDATES,
-      stringSeed(key + ':final:alternative')
+      searchRules(
+        finalistBacktest,
+        normalizedOriginal,
+        finalist.model,
+        FINAL_RULE_CANDIDATES,
+        stringSeed(key + ':final:alternative:' + index)
+      ),
+      options.samplingBounds
     ))
   }
   return {
@@ -398,47 +531,124 @@ function deduplicatePool(pool) {
   return [...unique.values()]
 }
 
-function choosePair(stableResult, aggressiveResult) {
-  if (stableResult.status === 'NO_DATA' || aggressiveResult.status === 'NO_DATA') {
-    return { status: 'NO_DATA' }
-  }
-  const constrained = choosePairFromPools(stableResult, aggressiveResult, false)
-  if (constrained) {
-    return { status: 'OPTIMIZED', samplingPolicy: 'CURRENT_PLUS_MINUS_3_PERCENT', ...constrained }
-  }
-  const relaxed = choosePairFromPools(stableResult, aggressiveResult, true)
-  if (relaxed) {
-    return { status: 'OPTIMIZED', samplingPolicy: 'RELAXED_MINIMUM_20_PERCENT', ...relaxed }
-  }
-  return { status: 'CONSTRAINT_FAILED' }
+function allCompetitionRanges() {
+  return COMPETITIONS.flatMap(([competition, competitionName]) => (
+    ['CURRENT', 'PREVIOUS'].map(range => ({ competition, competitionName, range }))
+  ))
 }
 
-function choosePairFromPools(stableResult, aggressiveResult, relaxed) {
-  const stableCandidates = stableResult.pool.filter(candidate => {
-    const samplingEligible = relaxed
-      ? candidate.metrics.samplingRate >= MINIMUM_RELAXED_SAMPLING_RATE
-      : withinSamplingBand(candidate, stableResult.baselineMetrics.samplingRate)
-    return samplingEligible && candidate.metrics.roi + ROI_EPSILON >= MINIMUM_STABLE_ROI
-  })
-  const aggressiveCandidates = aggressiveResult.pool.filter(candidate => {
-    return relaxed
-      ? candidate.metrics.samplingRate >= MINIMUM_RELAXED_SAMPLING_RATE
-      : withinSamplingBand(candidate, aggressiveResult.baselineMetrics.samplingRate)
-  })
-  let best = null
-  for (const stable of stableCandidates) {
-    for (const aggressive of aggressiveCandidates) {
-      if (aggressive.metrics.roi <= stable.metrics.roi + ROI_EPSILON) {
+function metricFor(verification, competition, range, preset) {
+  return verification.find(item => (
+    item.competition === competition &&
+    item.range === range &&
+    item.preset === preset
+  ))?.metrics || null
+}
+
+function determineOptimizationAction(rangeItem, verification) {
+  const { competition, range } = rangeItem
+  const key = `${competition}:${range}`
+  const stable = metricFor(verification, competition, range, 'STABLE')
+  const aggressive = metricFor(verification, competition, range, 'AGGRESSIVE')
+  if (!stable || !aggressive) {
+    return {
+      action: 'NO_DATA',
+      reasons: ['没有可结算赔率样本'],
+      stable,
+      aggressive
+    }
+  }
+
+  const reasons = []
+  const transferRequired = aggressive.samplingRate > stable.samplingRate + ROI_EPSILON &&
+    aggressive.roi > stable.roi + ROI_EPSILON
+  if (transferRequired) {
+    reasons.push('激进方案采样率和ROI均高于稳健方案')
+  }
+  if (aggressive.samplingRate + ROI_EPSILON < MINIMUM_AGGRESSIVE_SAMPLING_RATE) {
+    reasons.push('激进方案采样率低于33.3%')
+  }
+  if (aggressive.roi <= stable.roi + ROI_EPSILON) {
+    reasons.push('激进方案ROI未高于稳健方案')
+  }
+  if (stable.roi + ROI_EPSILON < MINIMUM_STABLE_ROI) {
+    reasons.push('稳健方案ROI低于5%')
+  }
+  if (FORCE_REOPTIMIZE_RANGES.has(key)) {
+    reasons.push('赛事数据已更新，强制重新优化')
+  }
+
+  let action = 'KEEP'
+  if (transferRequired) {
+    action = 'TRANSFER_AND_REOPTIMIZE_AGGRESSIVE'
+  } else if (FORCE_REOPTIMIZE_RANGES.has(key) || stable.roi + ROI_EPSILON < MINIMUM_STABLE_ROI) {
+    action = 'REOPTIMIZE_PAIR'
+  } else if (
+    aggressive.samplingRate + ROI_EPSILON < MINIMUM_AGGRESSIVE_SAMPLING_RATE ||
+    aggressive.roi <= stable.roi + ROI_EPSILON
+  ) {
+    action = 'REOPTIMIZE_AGGRESSIVE'
+  }
+  return { action, reasons, stable, aggressive }
+}
+
+function candidateRanking(left, right) {
+  return right.metrics.roi - left.metrics.roi ||
+    right.metrics.samplingRate - left.metrics.samplingRate
+}
+
+function chooseAggressiveCandidate(pool, stableMetrics) {
+  return pool
+    .filter(candidate => (
+      candidate.metrics.samplingRate + ROI_EPSILON >= MINIMUM_AGGRESSIVE_SAMPLING_RATE &&
+      candidate.metrics.samplingRate < stableMetrics.samplingRate - ROI_EPSILON &&
+      candidate.metrics.roi > stableMetrics.roi + MINIMUM_AGGRESSIVE_ROI_GAP + ROI_EPSILON
+    ))
+    .sort(candidateRanking)[0] || null
+}
+
+function bestAggressiveInSamplingWindow(pool, stableMetrics) {
+  return pool
+    .filter(candidate => (
+      candidate.metrics.samplingRate + ROI_EPSILON >= MINIMUM_AGGRESSIVE_SAMPLING_RATE &&
+      candidate.metrics.samplingRate < stableMetrics.samplingRate - ROI_EPSILON
+    ))
+    .sort(candidateRanking)[0] || null
+}
+
+function chooseReoptimizedPair(stableResult, aggressiveResult) {
+  if (stableResult.status === 'NO_DATA' || aggressiveResult.status === 'NO_DATA') {
+    return null
+  }
+  const constrainedStable = stableResult.pool.filter(candidate => (
+    withinSamplingBand(candidate, stableResult.baselineMetrics.samplingRate) &&
+    candidate.metrics.roi + ROI_EPSILON >= MINIMUM_STABLE_ROI
+  ))
+  const relaxedStable = stableResult.pool.filter(candidate => (
+    candidate.metrics.samplingRate > MINIMUM_AGGRESSIVE_SAMPLING_RATE + ROI_EPSILON &&
+    candidate.metrics.roi + ROI_EPSILON >= MINIMUM_STABLE_ROI
+  ))
+  for (const [samplingPolicy, stableCandidates] of [
+    ['STABLE_CURRENT_PLUS_MINUS_3_PERCENT', constrainedStable],
+    ['STABLE_SAMPLING_RELAXED', relaxedStable]
+  ]) {
+    let best = null
+    for (const stable of stableCandidates) {
+      const aggressive = chooseAggressiveCandidate(aggressiveResult.pool, stable.metrics)
+      if (!aggressive) {
         continue
       }
       const score = stable.metrics.roi + aggressive.metrics.roi
       if (!best || score > best.score + ROI_EPSILON ||
         (Math.abs(score - best.score) <= ROI_EPSILON && aggressive.metrics.roi > best.aggressive.metrics.roi)) {
-        best = { stable, aggressive, score }
+        best = { stable, aggressive, score, samplingPolicy }
       }
     }
+    if (best) {
+      return best
+    }
   }
-  return best
+  return null
 }
 
 async function saveConfig(config) {
@@ -473,10 +683,10 @@ async function startUiBacktest(competitions, range, preset, parameterProfiles) {
   return job.result
 }
 
-async function verifyAllProfiles(config, optimizedRanges) {
+async function verifyAllProfiles(config, ranges = allCompetitionRanges()) {
   const verification = []
-  for (const optimizedRange of optimizedRanges) {
-    const { competition, competitionName, range } = optimizedRange
+  for (const rangeItem of ranges) {
+    const { competition, competitionName, range } = rangeItem
     for (const preset of ['STABLE', 'AGGRESSIVE']) {
       process.stdout.write(`verify UI job ${competition}:${range}:${preset}\n`)
       const response = await startUiBacktest(
@@ -486,31 +696,38 @@ async function verifyAllProfiles(config, optimizedRanges) {
         config.parameterProfiles
       )
       const matches = Array.isArray(response.matches) ? response.matches : []
-        const profile = config.parameterProfiles[`${competition}:${range}:${preset}`]
-        const result = evaluateRecommendationBacktest(matches, {
-          oddsMatchCount: matches.length,
-          modelMode: 'after',
-          globalParameters: profile.globalParameters
-        })
-        verification.push({
-          key: `${competition}:${range}:${preset}`,
-          competition,
-          competitionName,
-          range,
-          preset,
-          metrics: matches.length > 0 ? result.summary : null
-        })
+      const oddsMatchCount = Number(response.oddsMatchCount) || matches.length
+      const profile = config.parameterProfiles[`${competition}:${range}:${preset}`]
+      const result = evaluateRecommendationBacktest(matches, {
+        oddsMatchCount,
+        modelMode: 'after',
+        globalParameters: profile.globalParameters
+      })
+      verification.push({
+        key: `${competition}:${range}:${preset}`,
+        competition,
+        competitionName,
+        range,
+        preset,
+        oddsMatchCount,
+        metrics: oddsMatchCount > 0 ? result.summary : null
+      })
     }
   }
+  return verification
+}
+
+function findVerificationViolations(config, verification) {
   const violations = []
-  for (const optimizedRange of optimizedRanges) {
-    if (optimizedRange.status !== 'OPTIMIZED') {
+  for (const rangeItem of allCompetitionRanges()) {
+    const { competition, range } = rangeItem
+    const stable = verification.find(item => item.key === `${competition}:${range}:STABLE`)
+    const aggressive = verification.find(item => item.key === `${competition}:${range}:AGGRESSIVE`)
+    if (!stable?.metrics && !aggressive?.metrics) {
       continue
     }
-    const stable = verification.find(item => item.key === `${optimizedRange.competition}:${optimizedRange.range}:STABLE`)
-    const aggressive = verification.find(item => item.key === `${optimizedRange.competition}:${optimizedRange.range}:AGGRESSIVE`)
     if (!stable?.metrics || !aggressive?.metrics) {
-      violations.push(`${optimizedRange.competition}:${optimizedRange.range}:missing metrics`)
+      violations.push(`${competition}:${range}:missing metrics`)
       continue
     }
     if (stable.metrics.roi + ROI_EPSILON < MINIMUM_STABLE_ROI) {
@@ -519,6 +736,12 @@ async function verifyAllProfiles(config, optimizedRanges) {
     if (aggressive.metrics.roi <= stable.metrics.roi + ROI_EPSILON) {
       violations.push(`${aggressive.key}: aggressive ROI not above stable ROI`)
     }
+    if (aggressive.metrics.samplingRate + ROI_EPSILON < MINIMUM_AGGRESSIVE_SAMPLING_RATE) {
+      violations.push(`${aggressive.key}: aggressive sampling rate below 33.3%`)
+    }
+    if (aggressive.metrics.samplingRate > stable.metrics.samplingRate + ROI_EPSILON) {
+      violations.push(`${aggressive.key}: aggressive sampling rate above stable sampling rate`)
+    }
     for (const item of [stable, aggressive]) {
       const weight = Number(config.parameterProfiles[item.key].modelFactors.officialMatchWeight)
       if (!Number.isFinite(weight) || weight < 1) {
@@ -526,7 +749,7 @@ async function verifyAllProfiles(config, optimizedRanges) {
       }
     }
   }
-  return { verification, violations }
+  return violations
 }
 
 function percent(value) {
@@ -543,23 +766,25 @@ function buildMarkdown(report) {
         item.preset === 'AGGRESSIVE'
       ))
       const rangeName = stable.range === 'CURRENT' ? '仅本届' : '含上届'
-      const policy = report.optimizedRanges.find(item => (
+      const action = report.optimizationResults.find(item => (
         item.competition === stable.competition && item.range === stable.range
-      ))?.samplingPolicy || '--'
-      return `| ${stable.competitionName}·${rangeName} | ${percent(stable.metrics?.samplingRate)} | ${percent(stable.metrics?.roi)} | ${percent(aggressive?.metrics?.samplingRate)} | ${percent(aggressive?.metrics?.roi)} | ${policy} |`
+      ))?.action || '--'
+      return `| ${stable.competitionName}·${rangeName} | ${percent(stable.metrics?.samplingRate)} | ${percent(stable.metrics?.roi)} | ${percent(aggressive?.metrics?.samplingRate)} | ${percent(aggressive?.metrics?.roi)} | ${action} |`
     })
   return [
-    '# 共享界面口径全赛事参数重优化报告',
+    '# 共享界面口径赛事方案参数检查与重优化报告',
     '',
     `- 生成时间：${report.completedAt}`,
     `- 最终模拟次数：${FINAL_SIMULATIONS.toLocaleString('en-US')}`,
     '- 正式比赛权重下限：1.00',
     '- 稳健方案ROI下限：5.00%',
     '- 激进方案ROI必须严格高于同赛事同时段稳健方案',
-    '- 优先保持优化前采样率上下3个百分点，无法满足ROI关系时放宽至最低20%采样率',
+    '- 激进方案采样率不得低于33.3%，且不得高于同时段稳健方案',
+    '- 激进方案采样率和ROI均高于稳健方案时，将激进参数移植给稳健方案，再优化激进方案',
+    '- 除规则触发项及瑞超、芬超、韩职仅本届外，符合条件的方案保持不变',
     '- 验收逐赛事使用与界面相同的异步回测接口和共享推荐计算模块',
     '',
-    '| 赛事时段 | 稳健采样率 | 稳健ROI | 激进采样率 | 激进ROI | 采样策略 |',
+    '| 赛事时段 | 稳健采样率 | 稳健ROI | 激进采样率 | 激进ROI | 处理方式 |',
     '| --- | ---: | ---: | ---: | ---: | --- |',
     ...rows,
     '',
@@ -575,69 +800,207 @@ async function writeCheckpoint(report) {
 
 async function main() {
   const config = JSON.parse(await fs.readFile(CONFIG_PATH, 'utf8'))
-  let optimizedRanges = []
+  let baselineVerification = null
+  let optimizationResults = []
   if (RESUME_FROM_CHECKPOINT) {
     try {
       const checkpoint = JSON.parse(await fs.readFile(CHECKPOINT_PATH, 'utf8'))
-      optimizedRanges = Array.isArray(checkpoint.optimizedRanges)
-        ? checkpoint.optimizedRanges
+      baselineVerification = Array.isArray(checkpoint.baselineVerification)
+        ? checkpoint.baselineVerification
+        : null
+      optimizationResults = Array.isArray(checkpoint.optimizationResults)
+        ? checkpoint.optimizationResults.filter(item => (
+            item.status !== 'CONSTRAINT_FAILED' &&
+            !RETRY_RANGES.has(`${item.competition}:${item.range}`)
+          ))
         : []
-      optimizedRanges.forEach(item => {
-        if (item.status !== 'OPTIMIZED' || !item.optimized) {
-          return
-        }
-        config.parameterProfiles[`${item.competition}:${item.range}:STABLE`] = item.optimized.stable.profile
-        config.parameterProfiles[`${item.competition}:${item.range}:AGGRESSIVE`] = item.optimized.aggressive.profile
-      })
-      process.stdout.write(`resumed ${optimizedRanges.length}/34 ranges\n`)
+      if (checkpoint.parameterProfiles) {
+        config.parameterProfiles = checkpoint.parameterProfiles
+      }
+      process.stdout.write(`resumed ${optimizationResults.length}/34 ranges\n`)
     } catch (error) {
       if (error?.code !== 'ENOENT') {
         throw error
       }
     }
   }
-  for (let index = 0; index < COMPETITIONS.length; index++) {
-    const [competition, competitionName] = COMPETITIONS[index]
-    for (const range of ['CURRENT', 'PREVIOUS']) {
-      if (optimizedRanges.some(item => item.competition === competition && item.range === range)) {
-        continue
-      }
-      process.stdout.write(`[${optimizedRanges.length + 1}/34] ${competitionName}:${range}\n`)
-      const stableKey = `${competition}:${range}:STABLE`
-      const aggressiveKey = `${competition}:${range}:AGGRESSIVE`
-      const stableResult = await optimizePreset(competition, range, 'STABLE', config.parameterProfiles[stableKey])
-      const aggressiveResult = await optimizePreset(competition, range, 'AGGRESSIVE', config.parameterProfiles[aggressiveKey])
-      const pair = choosePair(stableResult, aggressiveResult)
-      const result = {
-        competition,
-        competitionName,
-        range,
-        status: pair.status,
-        samplingPolicy: pair.samplingPolicy || null,
-        baseline: {
-          stable: stableResult.baselineMetrics,
-          aggressive: aggressiveResult.baselineMetrics
-        },
-        optimized: pair.status === 'OPTIMIZED'
-          ? {
-              stable: pair.stable,
-              aggressive: pair.aggressive
-            }
-          : null
-      }
-      optimizedRanges.push(result)
-      if (pair.status === 'OPTIMIZED') {
-        config.parameterProfiles[stableKey] = pair.stable.profile
-        config.parameterProfiles[aggressiveKey] = pair.aggressive.profile
-        process.stdout.write(`  selected stable=${percent(pair.stable.metrics.roi)} aggressive=${percent(pair.aggressive.metrics.roi)} policy=${pair.samplingPolicy}\n`)
-      } else {
-        process.stdout.write(`  status=${pair.status}\n`)
-      }
-      await writeCheckpoint({ generatedAt: new Date().toISOString(), optimizedRanges })
-    }
+
+  if (!baselineVerification) {
+    process.stdout.write('auditing current profiles with UI backtest jobs\n')
+    baselineVerification = await verifyAllProfiles(config)
+  }
+  const ranges = allCompetitionRanges()
+  const optimizationPlan = ranges.map(rangeItem => ({
+    ...rangeItem,
+    ...determineOptimizationAction(rangeItem, baselineVerification)
+  }))
+  process.stdout.write('\noptimization plan\n')
+  optimizationPlan.forEach(item => {
+    process.stdout.write(
+      `  ${item.competitionName}:${item.range} ${item.action}` +
+      `${item.reasons.length > 0 ? ` (${item.reasons.join('; ')})` : ''}\n`
+    )
+  })
+  if (AUDIT_ONLY) {
+    return
   }
 
-  const constraintFailures = optimizedRanges.filter(item => item.status === 'CONSTRAINT_FAILED')
+  for (const planItem of optimizationPlan) {
+    const { competition, competitionName, range, action, reasons } = planItem
+    if (optimizationResults.some(item => item.competition === competition && item.range === range)) {
+      continue
+    }
+    process.stdout.write(`\n[${optimizationResults.length + 1}/34] ${competitionName}:${range} ${action}\n`)
+    const stableKey = `${competition}:${range}:STABLE`
+    const aggressiveKey = `${competition}:${range}:AGGRESSIVE`
+    let result = {
+      competition,
+      competitionName,
+      range,
+      action,
+      reasons,
+      status: 'UNCHANGED',
+      samplingPolicy: 'UNCHANGED',
+      baseline: {
+        stable: planItem.stable,
+        aggressive: planItem.aggressive
+      },
+      optimized: null
+    }
+
+    if (action === 'NO_DATA') {
+      result.status = 'NO_DATA'
+      result.samplingPolicy = null
+    } else if (action === 'TRANSFER_AND_REOPTIMIZE_AGGRESSIVE') {
+      const migratedStableProfile = normalizeProfile(config.parameterProfiles[aggressiveKey])
+      const aggressiveResult = await optimizePreset(
+        competition,
+        range,
+        'AGGRESSIVE',
+        config.parameterProfiles[aggressiveKey],
+        {
+          samplingBounds: {
+            minimum: MINIMUM_AGGRESSIVE_SAMPLING_RATE,
+            maximum: planItem.aggressive.samplingRate
+          }
+        }
+      )
+      const migratedStable = candidateFrom(
+        migratedStableProfile,
+        aggressiveResult.baselineMetrics || planItem.aggressive
+      )
+      const aggressive = chooseAggressiveCandidate(aggressiveResult.pool, migratedStable.metrics)
+      if (!aggressive) {
+        const bestInWindow = bestAggressiveInSamplingWindow(aggressiveResult.pool, migratedStable.metrics)
+        result.status = 'CONSTRAINT_FAILED'
+        result.samplingPolicy = null
+        result.diagnostics = { bestAggressiveInSamplingWindow: bestInWindow }
+        if (bestInWindow) {
+          process.stdout.write(
+            `  best in sampling window=${percent(bestInWindow.metrics.samplingRate)}` +
+            `/${percent(bestInWindow.metrics.roi)} required>${percent(migratedStable.metrics.roi)}\n`
+          )
+        }
+      } else {
+        config.parameterProfiles[stableKey] = migratedStable.profile
+        config.parameterProfiles[aggressiveKey] = aggressive.profile
+        result.status = 'OPTIMIZED'
+        result.samplingPolicy = 'MIGRATE_AGGRESSIVE_TO_STABLE_AND_LOWER_AGGRESSIVE'
+        result.optimized = { stable: migratedStable, aggressive }
+      }
+    } else if (action === 'REOPTIMIZE_AGGRESSIVE') {
+      const stable = candidateFrom(
+        normalizeProfile(config.parameterProfiles[stableKey]),
+        planItem.stable
+      )
+      const aggressiveResult = await optimizePreset(
+        competition,
+        range,
+        'AGGRESSIVE',
+        config.parameterProfiles[aggressiveKey],
+        {
+          samplingBounds: {
+            minimum: MINIMUM_AGGRESSIVE_SAMPLING_RATE,
+            maximum: planItem.stable.samplingRate
+          }
+        }
+      )
+      const aggressive = chooseAggressiveCandidate(aggressiveResult.pool, stable.metrics)
+      if (!aggressive) {
+        process.stdout.write('  aggressive-only search failed, retrying as a pair\n')
+        const stableResult = await optimizePreset(
+          competition,
+          range,
+          'STABLE',
+          config.parameterProfiles[stableKey]
+        )
+        const pair = chooseReoptimizedPair(stableResult, aggressiveResult)
+        if (!pair) {
+          const bestInWindow = bestAggressiveInSamplingWindow(aggressiveResult.pool, stable.metrics)
+          result.status = 'CONSTRAINT_FAILED'
+          result.samplingPolicy = null
+          result.diagnostics = { bestAggressiveInSamplingWindow: bestInWindow }
+        } else {
+          config.parameterProfiles[stableKey] = pair.stable.profile
+          config.parameterProfiles[aggressiveKey] = pair.aggressive.profile
+          result.action = 'REOPTIMIZE_PAIR'
+          result.reasons = reasons.concat('仅重做激进方案无可行解，改为成对重优化')
+          result.status = 'OPTIMIZED'
+          result.samplingPolicy = pair.samplingPolicy
+          result.optimized = { stable: pair.stable, aggressive: pair.aggressive }
+        }
+      } else {
+        config.parameterProfiles[aggressiveKey] = aggressive.profile
+        result.status = 'OPTIMIZED'
+        result.samplingPolicy = 'AGGRESSIVE_MINIMUM_33_3_AND_BELOW_STABLE'
+        result.optimized = { stable, aggressive }
+      }
+    } else if (action === 'REOPTIMIZE_PAIR') {
+      const stableResult = await optimizePreset(
+        competition,
+        range,
+        'STABLE',
+        config.parameterProfiles[stableKey]
+      )
+      const aggressiveResult = await optimizePreset(
+        competition,
+        range,
+        'AGGRESSIVE',
+        config.parameterProfiles[aggressiveKey]
+      )
+      const pair = chooseReoptimizedPair(stableResult, aggressiveResult)
+      if (!pair) {
+        result.status = 'CONSTRAINT_FAILED'
+        result.samplingPolicy = null
+      } else {
+        config.parameterProfiles[stableKey] = pair.stable.profile
+        config.parameterProfiles[aggressiveKey] = pair.aggressive.profile
+        result.status = 'OPTIMIZED'
+        result.samplingPolicy = pair.samplingPolicy
+        result.optimized = { stable: pair.stable, aggressive: pair.aggressive }
+      }
+    }
+
+    optimizationResults.push(result)
+    if (result.status === 'OPTIMIZED') {
+      process.stdout.write(
+        `  selected stable=${percent(result.optimized.stable.metrics.samplingRate)}` +
+        `/${percent(result.optimized.stable.metrics.roi)}` +
+        ` aggressive=${percent(result.optimized.aggressive.metrics.samplingRate)}` +
+        `/${percent(result.optimized.aggressive.metrics.roi)}\n`
+      )
+    } else {
+      process.stdout.write(`  status=${result.status}\n`)
+    }
+    await writeCheckpoint({
+      generatedAt: new Date().toISOString(),
+      baselineVerification,
+      optimizationResults,
+      parameterProfiles: config.parameterProfiles
+    })
+  }
+
+  const constraintFailures = optimizationResults.filter(item => item.status === 'CONSTRAINT_FAILED')
   if (constraintFailures.length > 0) {
     const keys = constraintFailures.map(item => `${item.competition}:${item.range}`).join(', ')
     throw new Error(`unable to satisfy profile constraints: ${keys}`)
@@ -649,7 +1012,8 @@ async function main() {
     config.parameterProfiles = saved.parameterProfiles
   }
 
-  const { verification, violations } = await verifyAllProfiles(config, optimizedRanges)
+  const verification = await verifyAllProfiles(config)
+  const violations = findVerificationViolations(config, verification)
   const report = {
     generatedAt: new Date().toISOString(),
     completedAt: new Date().toISOString(),
@@ -658,13 +1022,16 @@ async function main() {
       finalSimulations: FINAL_SIMULATIONS,
       coarseSimulations: COARSE_SIMULATIONS,
       modelVariantCount: MODEL_VARIANT_COUNT,
+      finalistModelCount: FINALIST_MODEL_COUNT,
       coarseRuleCandidates: COARSE_RULE_CANDIDATES,
       finalRuleCandidates: FINAL_RULE_CANDIDATES,
       samplingTolerance: SAMPLING_TOLERANCE,
       minimumStableRoi: MINIMUM_STABLE_ROI,
-      minimumRelaxedSamplingRate: MINIMUM_RELAXED_SAMPLING_RATE
+      minimumAggressiveSamplingRate: MINIMUM_AGGRESSIVE_SAMPLING_RATE,
+      minimumAggressiveRoiGap: MINIMUM_AGGRESSIVE_ROI_GAP
     },
-    optimizedRanges,
+    baselineVerification,
+    optimizationResults,
     verification,
     violations
   }

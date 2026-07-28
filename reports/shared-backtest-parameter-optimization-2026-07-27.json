@@ -1,0 +1,4484 @@
+{
+  "generatedAt": "2026-07-28T09:21:17.325Z",
+  "completedAt": "2026-07-28T09:21:17.325Z",
+  "applied": true,
+  "options": {
+    "finalSimulations": 50000,
+    "coarseSimulations": 5000,
+    "modelVariantCount": 50,
+    "finalistModelCount": 8,
+    "coarseRuleCandidates": 5000,
+    "finalRuleCandidates": 30000,
+    "samplingTolerance": 0.03,
+    "minimumStableRoi": 0.05,
+    "minimumAggressiveSamplingRate": 0.333,
+    "minimumAggressiveRoiGap": 0.05
+  },
+  "baselineVerification": [
+    {
+      "key": "WORLD_CUP:CURRENT:STABLE",
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 104,
+      "metrics": {
+        "samplingRate": 0.6346153846153846,
+        "recommendedMatchCount": 66,
+        "recommendedSelectionCount": 92,
+        "hitMatchCount": 38,
+        "missMatchCount": 28,
+        "winningSelectionCount": 38,
+        "averageWinningOdds": 2.611578947368421,
+        "averageOddsIncludingMisses": 1.5036363636363639,
+        "totalStake": 92,
+        "totalReturn": 99.24000000000001,
+        "netProfit": 7.240000000000009,
+        "volatility": 1.1006739114926636,
+        "roi": 0.07869565217391306
+      }
+    },
+    {
+      "key": "WORLD_CUP:CURRENT:AGGRESSIVE",
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 104,
+      "metrics": {
+        "samplingRate": 0.21153846153846154,
+        "recommendedMatchCount": 22,
+        "recommendedSelectionCount": 28,
+        "hitMatchCount": 11,
+        "missMatchCount": 11,
+        "winningSelectionCount": 11,
+        "averageWinningOdds": 3.039090909090909,
+        "averageOddsIncludingMisses": 1.5195454545454545,
+        "totalStake": 28,
+        "totalReturn": 33.43,
+        "netProfit": 5.43,
+        "volatility": 1.2402653195065008,
+        "roi": 0.19392857142857145
+      }
+    },
+    {
+      "key": "WORLD_CUP:PREVIOUS:STABLE",
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 168,
+      "metrics": {
+        "samplingRate": 0.5952380952380952,
+        "recommendedMatchCount": 100,
+        "recommendedSelectionCount": 100,
+        "hitMatchCount": 44,
+        "missMatchCount": 56,
+        "winningSelectionCount": 44,
+        "averageWinningOdds": 2.6134090909090912,
+        "averageOddsIncludingMisses": 1.1499000000000001,
+        "totalStake": 100,
+        "totalReturn": 114.99000000000001,
+        "netProfit": 14.990000000000009,
+        "volatility": 1.3780593110045976,
+        "roi": 0.14990000000000014
+      }
+    },
+    {
+      "key": "WORLD_CUP:PREVIOUS:AGGRESSIVE",
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 168,
+      "metrics": {
+        "samplingRate": 0.20833333333333334,
+        "recommendedMatchCount": 35,
+        "recommendedSelectionCount": 68,
+        "hitMatchCount": 24,
+        "missMatchCount": 11,
+        "winningSelectionCount": 24,
+        "averageWinningOdds": 3.3812499999999996,
+        "averageOddsIncludingMisses": 2.3185714285714285,
+        "totalStake": 68,
+        "totalReturn": 81.14999999999999,
+        "netProfit": 13.149999999999991,
+        "volatility": 0.8222647552528884,
+        "roi": 0.19338235294117645
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:CURRENT:STABLE",
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 51,
+      "metrics": {
+        "samplingRate": 1,
+        "recommendedMatchCount": 51,
+        "recommendedSelectionCount": 88,
+        "hitMatchCount": 38,
+        "missMatchCount": 13,
+        "winningSelectionCount": 38,
+        "averageWinningOdds": 2.789473684210526,
+        "averageOddsIncludingMisses": 2.0784313725490193,
+        "totalStake": 88,
+        "totalReturn": 105.99999999999999,
+        "netProfit": 17.999999999999986,
+        "volatility": 0.8215165793799166,
+        "roi": 0.20454545454545436
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:CURRENT:AGGRESSIVE",
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 51,
+      "metrics": {
+        "samplingRate": 0.47058823529411764,
+        "recommendedMatchCount": 24,
+        "recommendedSelectionCount": 24,
+        "hitMatchCount": 9,
+        "missMatchCount": 15,
+        "winningSelectionCount": 9,
+        "averageWinningOdds": 3.5277777777777777,
+        "averageOddsIncludingMisses": 1.3229166666666667,
+        "totalStake": 24,
+        "totalReturn": 31.75,
+        "netProfit": 7.75,
+        "volatility": 1.7688180262946573,
+        "roi": 0.32291666666666674
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:PREVIOUS:STABLE",
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 102,
+      "metrics": {
+        "samplingRate": 0.6078431372549019,
+        "recommendedMatchCount": 62,
+        "recommendedSelectionCount": 62,
+        "hitMatchCount": 28,
+        "missMatchCount": 34,
+        "winningSelectionCount": 28,
+        "averageWinningOdds": 2.7728571428571427,
+        "averageOddsIncludingMisses": 1.252258064516129,
+        "totalStake": 62,
+        "totalReturn": 77.64,
+        "netProfit": 15.64,
+        "volatility": 1.4900483206543056,
+        "roi": 0.252258064516129
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:PREVIOUS:AGGRESSIVE",
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 102,
+      "metrics": {
+        "samplingRate": 0.5686274509803921,
+        "recommendedMatchCount": 58,
+        "recommendedSelectionCount": 58,
+        "hitMatchCount": 26,
+        "missMatchCount": 32,
+        "winningSelectionCount": 26,
+        "averageWinningOdds": 2.859230769230769,
+        "averageOddsIncludingMisses": 1.2817241379310342,
+        "totalStake": 58,
+        "totalReturn": 74.33999999999999,
+        "netProfit": 16.33999999999999,
+        "volatility": 1.5213684259499125,
+        "roi": 0.28172413793103424
+      }
+    },
+    {
+      "key": "COPA_AMERICA:CURRENT:STABLE",
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 32,
+      "metrics": {
+        "samplingRate": 0.625,
+        "recommendedMatchCount": 20,
+        "recommendedSelectionCount": 20,
+        "hitMatchCount": 15,
+        "missMatchCount": 5,
+        "winningSelectionCount": 15,
+        "averageWinningOdds": 2.1286666666666667,
+        "averageOddsIncludingMisses": 1.5965,
+        "totalStake": 20,
+        "totalReturn": 31.93,
+        "netProfit": 11.93,
+        "volatility": 1.1571893126291644,
+        "roi": 0.5965
+      }
+    },
+    {
+      "key": "COPA_AMERICA:CURRENT:AGGRESSIVE",
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 32,
+      "metrics": {
+        "samplingRate": 0.5,
+        "recommendedMatchCount": 16,
+        "recommendedSelectionCount": 16,
+        "hitMatchCount": 12,
+        "missMatchCount": 4,
+        "winningSelectionCount": 12,
+        "averageWinningOdds": 2.2900000000000005,
+        "averageOddsIncludingMisses": 1.7175000000000002,
+        "totalStake": 16,
+        "totalReturn": 27.480000000000004,
+        "netProfit": 11.480000000000004,
+        "volatility": 1.2280255154786754,
+        "roi": 0.7175000000000002
+      }
+    },
+    {
+      "key": "COPA_AMERICA:PREVIOUS:STABLE",
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 86,
+      "metrics": {
+        "samplingRate": 0.686046511627907,
+        "recommendedMatchCount": 59,
+        "recommendedSelectionCount": 91,
+        "hitMatchCount": 49,
+        "missMatchCount": 10,
+        "winningSelectionCount": 49,
+        "averageWinningOdds": 2.3391836734693876,
+        "averageOddsIncludingMisses": 1.9427118644067796,
+        "totalStake": 91,
+        "totalReturn": 114.61999999999999,
+        "netProfit": 23.61999999999999,
+        "volatility": 0.713305252610353,
+        "roi": 0.2595604395604394
+      }
+    },
+    {
+      "key": "COPA_AMERICA:PREVIOUS:AGGRESSIVE",
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 86,
+      "metrics": {
+        "samplingRate": 0.4883720930232558,
+        "recommendedMatchCount": 42,
+        "recommendedSelectionCount": 58,
+        "hitMatchCount": 32,
+        "missMatchCount": 10,
+        "winningSelectionCount": 32,
+        "averageWinningOdds": 2.4037500000000005,
+        "averageOddsIncludingMisses": 1.8314285714285718,
+        "totalStake": 58,
+        "totalReturn": 76.92000000000002,
+        "netProfit": 18.920000000000016,
+        "volatility": 0.8163257957935965,
+        "roi": 0.3262068965517244
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:CURRENT:STABLE",
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 63,
+      "metrics": {
+        "samplingRate": 0.6031746031746031,
+        "recommendedMatchCount": 38,
+        "recommendedSelectionCount": 38,
+        "hitMatchCount": 22,
+        "missMatchCount": 16,
+        "winningSelectionCount": 22,
+        "averageWinningOdds": 2.6159090909090907,
+        "averageOddsIncludingMisses": 1.5144736842105262,
+        "totalStake": 38,
+        "totalReturn": 57.55,
+        "netProfit": 19.549999999999997,
+        "volatility": 1.3986783285860729,
+        "roi": 0.5144736842105262
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:CURRENT:AGGRESSIVE",
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 63,
+      "metrics": {
+        "samplingRate": 0.47619047619047616,
+        "recommendedMatchCount": 30,
+        "recommendedSelectionCount": 30,
+        "hitMatchCount": 18,
+        "missMatchCount": 12,
+        "winningSelectionCount": 18,
+        "averageWinningOdds": 2.7055555555555557,
+        "averageOddsIncludingMisses": 1.6233333333333335,
+        "totalStake": 30,
+        "totalReturn": 48.7,
+        "netProfit": 18.700000000000003,
+        "volatility": 1.4358713162333208,
+        "roi": 0.6233333333333335
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:PREVIOUS:STABLE",
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 69,
+      "metrics": {
+        "samplingRate": 0.6086956521739131,
+        "recommendedMatchCount": 42,
+        "recommendedSelectionCount": 45,
+        "hitMatchCount": 19,
+        "missMatchCount": 23,
+        "winningSelectionCount": 19,
+        "averageWinningOdds": 3.3621052631578947,
+        "averageOddsIncludingMisses": 1.5209523809523808,
+        "totalStake": 45,
+        "totalReturn": 63.879999999999995,
+        "netProfit": 18.879999999999995,
+        "volatility": 1.6484851913949807,
+        "roi": 0.41955555555555546
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:PREVIOUS:AGGRESSIVE",
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 69,
+      "metrics": {
+        "samplingRate": 0.7101449275362319,
+        "recommendedMatchCount": 49,
+        "recommendedSelectionCount": 49,
+        "hitMatchCount": 23,
+        "missMatchCount": 26,
+        "winningSelectionCount": 23,
+        "averageWinningOdds": 3.0621739130434777,
+        "averageOddsIncludingMisses": 1.43734693877551,
+        "totalStake": 49,
+        "totalReturn": 70.42999999999999,
+        "netProfit": 21.429999999999993,
+        "volatility": 1.6250086865283264,
+        "roi": 0.43734693877551
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:CURRENT:STABLE",
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 11,
+      "metrics": {
+        "samplingRate": 0.6363636363636364,
+        "recommendedMatchCount": 7,
+        "recommendedSelectionCount": 7,
+        "hitMatchCount": 4,
+        "missMatchCount": 3,
+        "winningSelectionCount": 4,
+        "averageWinningOdds": 3.7824999999999998,
+        "averageOddsIncludingMisses": 2.1614285714285715,
+        "totalStake": 7,
+        "totalReturn": 15.129999999999999,
+        "netProfit": 8.129999999999999,
+        "volatility": 2.8568189102066452,
+        "roi": 1.1614285714285715
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:CURRENT:AGGRESSIVE",
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 11,
+      "metrics": {
+        "samplingRate": 0.5454545454545454,
+        "recommendedMatchCount": 6,
+        "recommendedSelectionCount": 6,
+        "hitMatchCount": 4,
+        "missMatchCount": 2,
+        "winningSelectionCount": 4,
+        "averageWinningOdds": 3.7824999999999998,
+        "averageOddsIncludingMisses": 2.5216666666666665,
+        "totalStake": 6,
+        "totalReturn": 15.129999999999999,
+        "netProfit": 9.129999999999999,
+        "volatility": 2.950189259465682,
+        "roi": 1.5216666666666665
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:PREVIOUS:STABLE",
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 180,
+      "metrics": {
+        "samplingRate": 0.5611111111111111,
+        "recommendedMatchCount": 101,
+        "recommendedSelectionCount": 101,
+        "hitMatchCount": 44,
+        "missMatchCount": 57,
+        "winningSelectionCount": 44,
+        "averageWinningOdds": 3.4372727272727275,
+        "averageOddsIncludingMisses": 1.4974257425742574,
+        "totalStake": 101,
+        "totalReturn": 151.24,
+        "netProfit": 50.24000000000001,
+        "volatility": 1.7679907541983055,
+        "roi": 0.4974257425742574
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:PREVIOUS:AGGRESSIVE",
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 180,
+      "metrics": {
+        "samplingRate": 0.5333333333333333,
+        "recommendedMatchCount": 96,
+        "recommendedSelectionCount": 99,
+        "hitMatchCount": 44,
+        "missMatchCount": 52,
+        "winningSelectionCount": 44,
+        "averageWinningOdds": 3.430454545454546,
+        "averageOddsIncludingMisses": 1.5722916666666669,
+        "totalStake": 99,
+        "totalReturn": 150.94000000000003,
+        "netProfit": 51.940000000000026,
+        "volatility": 1.7383740883201697,
+        "roi": 0.5246464646464648
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:CURRENT:STABLE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 12,
+      "metrics": {
+        "samplingRate": 1,
+        "recommendedMatchCount": 12,
+        "recommendedSelectionCount": 12,
+        "hitMatchCount": 7,
+        "missMatchCount": 5,
+        "winningSelectionCount": 7,
+        "averageWinningOdds": 1.9257142857142855,
+        "averageOddsIncludingMisses": 1.1233333333333333,
+        "totalStake": 12,
+        "totalReturn": 13.479999999999999,
+        "netProfit": 1.4799999999999986,
+        "volatility": 1.1579082498849014,
+        "roi": 0.1233333333333333
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:CURRENT:AGGRESSIVE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 12,
+      "metrics": {
+        "samplingRate": 0.5,
+        "recommendedMatchCount": 6,
+        "recommendedSelectionCount": 8,
+        "hitMatchCount": 3,
+        "missMatchCount": 3,
+        "winningSelectionCount": 3,
+        "averageWinningOdds": 3.0666666666666664,
+        "averageOddsIncludingMisses": 1.5333333333333332,
+        "totalStake": 8,
+        "totalReturn": 9.2,
+        "netProfit": 1.1999999999999993,
+        "volatility": 1.2883426045375768,
+        "roi": 0.1499999999999999
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:PREVIOUS:STABLE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 217,
+      "metrics": {
+        "samplingRate": 0.5714285714285714,
+        "recommendedMatchCount": 124,
+        "recommendedSelectionCount": 124,
+        "hitMatchCount": 53,
+        "missMatchCount": 71,
+        "winningSelectionCount": 53,
+        "averageWinningOdds": 3.152641509433963,
+        "averageOddsIncludingMisses": 1.3475000000000004,
+        "totalStake": 124,
+        "totalReturn": 167.09000000000003,
+        "netProfit": 43.09000000000003,
+        "volatility": 1.6545427118590352,
+        "roi": 0.34750000000000036
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:PREVIOUS:AGGRESSIVE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 217,
+      "metrics": {
+        "samplingRate": 0.46543778801843316,
+        "recommendedMatchCount": 101,
+        "recommendedSelectionCount": 101,
+        "hitMatchCount": 46,
+        "missMatchCount": 55,
+        "winningSelectionCount": 46,
+        "averageWinningOdds": 3.257826086956522,
+        "averageOddsIncludingMisses": 1.483762376237624,
+        "totalStake": 101,
+        "totalReturn": 149.86,
+        "netProfit": 48.860000000000014,
+        "volatility": 1.7185522113017964,
+        "roi": 0.48376237623762397
+      }
+    },
+    {
+      "key": "PREMIER_LEAGUE:CURRENT:STABLE",
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "PREMIER_LEAGUE:CURRENT:AGGRESSIVE",
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "PREMIER_LEAGUE:PREVIOUS:STABLE",
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 338,
+      "metrics": {
+        "samplingRate": 0.5828402366863905,
+        "recommendedMatchCount": 197,
+        "recommendedSelectionCount": 220,
+        "hitMatchCount": 104,
+        "missMatchCount": 93,
+        "winningSelectionCount": 104,
+        "averageWinningOdds": 2.2483653846153846,
+        "averageOddsIncludingMisses": 1.1869543147208121,
+        "totalStake": 220,
+        "totalReturn": 233.83,
+        "netProfit": 13.830000000000013,
+        "volatility": 1.0738694133542213,
+        "roi": 0.06286363636363634
+      }
+    },
+    {
+      "key": "PREMIER_LEAGUE:PREVIOUS:AGGRESSIVE",
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 338,
+      "metrics": {
+        "samplingRate": 0.5680473372781065,
+        "recommendedMatchCount": 192,
+        "recommendedSelectionCount": 206,
+        "hitMatchCount": 103,
+        "missMatchCount": 89,
+        "winningSelectionCount": 103,
+        "averageWinningOdds": 2.168932038834951,
+        "averageOddsIncludingMisses": 1.1635416666666665,
+        "totalStake": 206,
+        "totalReturn": 223.39999999999995,
+        "netProfit": 17.39999999999995,
+        "volatility": 1.0619349629381603,
+        "roi": 0.08446601941747556
+      }
+    },
+    {
+      "key": "LA_LIGA:CURRENT:STABLE",
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "LA_LIGA:CURRENT:AGGRESSIVE",
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "LA_LIGA:PREVIOUS:STABLE",
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 353,
+      "metrics": {
+        "samplingRate": 0.546742209631728,
+        "recommendedMatchCount": 193,
+        "recommendedSelectionCount": 196,
+        "hitMatchCount": 66,
+        "missMatchCount": 127,
+        "winningSelectionCount": 66,
+        "averageWinningOdds": 3.5957575757575757,
+        "averageOddsIncludingMisses": 1.2296373056994818,
+        "totalStake": 196,
+        "totalReturn": 237.32,
+        "netProfit": 41.31999999999999,
+        "volatility": 1.7314842421481738,
+        "roi": 0.21081632653061222
+      }
+    },
+    {
+      "key": "LA_LIGA:PREVIOUS:AGGRESSIVE",
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 353,
+      "metrics": {
+        "samplingRate": 0.5382436260623229,
+        "recommendedMatchCount": 190,
+        "recommendedSelectionCount": 195,
+        "hitMatchCount": 67,
+        "missMatchCount": 123,
+        "winningSelectionCount": 67,
+        "averageWinningOdds": 3.618955223880597,
+        "averageOddsIncludingMisses": 1.2761578947368422,
+        "totalStake": 195,
+        "totalReturn": 242.47,
+        "netProfit": 47.47,
+        "volatility": 1.7193311600688936,
+        "roi": 0.24343589743589744
+      }
+    },
+    {
+      "key": "BUNDESLIGA:CURRENT:STABLE",
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "BUNDESLIGA:CURRENT:AGGRESSIVE",
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "BUNDESLIGA:PREVIOUS:STABLE",
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 282,
+      "metrics": {
+        "samplingRate": 0.5780141843971631,
+        "recommendedMatchCount": 163,
+        "recommendedSelectionCount": 206,
+        "hitMatchCount": 102,
+        "missMatchCount": 61,
+        "winningSelectionCount": 102,
+        "averageWinningOdds": 2.343333333333333,
+        "averageOddsIncludingMisses": 1.4663803680981593,
+        "totalStake": 206,
+        "totalReturn": 239.01999999999995,
+        "netProfit": 33.01999999999995,
+        "volatility": 0.9137053725153348,
+        "roi": 0.16029126213592204
+      }
+    },
+    {
+      "key": "BUNDESLIGA:PREVIOUS:AGGRESSIVE",
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 282,
+      "metrics": {
+        "samplingRate": 0.6879432624113475,
+        "recommendedMatchCount": 194,
+        "recommendedSelectionCount": 195,
+        "hitMatchCount": 99,
+        "missMatchCount": 95,
+        "winningSelectionCount": 99,
+        "averageWinningOdds": 2.2899999999999996,
+        "averageOddsIncludingMisses": 1.1686082474226802,
+        "totalStake": 195,
+        "totalReturn": 226.70999999999995,
+        "netProfit": 31.70999999999995,
+        "volatility": 1.2576837404974235,
+        "roi": 0.16261538461538438
+      }
+    },
+    {
+      "key": "SERIE_A:CURRENT:STABLE",
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "SERIE_A:CURRENT:AGGRESSIVE",
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "SERIE_A:PREVIOUS:STABLE",
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 350,
+      "metrics": {
+        "samplingRate": 0.6457142857142857,
+        "recommendedMatchCount": 226,
+        "recommendedSelectionCount": 226,
+        "hitMatchCount": 92,
+        "missMatchCount": 134,
+        "winningSelectionCount": 92,
+        "averageWinningOdds": 2.71945652173913,
+        "averageOddsIncludingMisses": 1.1070353982300885,
+        "totalStake": 226,
+        "totalReturn": 250.18999999999997,
+        "netProfit": 24.18999999999997,
+        "volatility": 1.4672994297413082,
+        "roi": 0.10703539823008845
+      }
+    },
+    {
+      "key": "SERIE_A:PREVIOUS:AGGRESSIVE",
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 350,
+      "metrics": {
+        "samplingRate": 0.44,
+        "recommendedMatchCount": 154,
+        "recommendedSelectionCount": 155,
+        "hitMatchCount": 55,
+        "missMatchCount": 99,
+        "winningSelectionCount": 55,
+        "averageWinningOdds": 3.452363636363637,
+        "averageOddsIncludingMisses": 1.232987012987013,
+        "totalStake": 155,
+        "totalReturn": 189.88000000000002,
+        "netProfit": 34.880000000000024,
+        "volatility": 1.7727766456236551,
+        "roi": 0.22503225806451632
+      }
+    },
+    {
+      "key": "LIGUE_1:CURRENT:STABLE",
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "LIGUE_1:CURRENT:AGGRESSIVE",
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "LIGUE_1:PREVIOUS:STABLE",
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 224,
+      "metrics": {
+        "samplingRate": 0.5580357142857143,
+        "recommendedMatchCount": 125,
+        "recommendedSelectionCount": 127,
+        "hitMatchCount": 44,
+        "missMatchCount": 81,
+        "winningSelectionCount": 44,
+        "averageWinningOdds": 3.625227272727274,
+        "averageOddsIncludingMisses": 1.2760800000000003,
+        "totalStake": 127,
+        "totalReturn": 159.51000000000005,
+        "netProfit": 32.51000000000005,
+        "volatility": 1.7152147829391227,
+        "roi": 0.2559842519685043
+      }
+    },
+    {
+      "key": "LIGUE_1:PREVIOUS:AGGRESSIVE",
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 224,
+      "metrics": {
+        "samplingRate": 0.5848214285714286,
+        "recommendedMatchCount": 131,
+        "recommendedSelectionCount": 140,
+        "hitMatchCount": 48,
+        "missMatchCount": 83,
+        "winningSelectionCount": 48,
+        "averageWinningOdds": 3.666875000000001,
+        "averageOddsIncludingMisses": 1.3435877862595424,
+        "totalStake": 140,
+        "totalReturn": 176.01000000000005,
+        "netProfit": 36.01000000000005,
+        "volatility": 1.6741905591017874,
+        "roi": 0.25721428571428606
+      }
+    },
+    {
+      "key": "PRIMEIRA_LIGA:CURRENT:STABLE",
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "PRIMEIRA_LIGA:CURRENT:AGGRESSIVE",
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "PRIMEIRA_LIGA:PREVIOUS:STABLE",
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 176,
+      "metrics": {
+        "samplingRate": 0.7329545454545454,
+        "recommendedMatchCount": 129,
+        "recommendedSelectionCount": 147,
+        "hitMatchCount": 54,
+        "missMatchCount": 75,
+        "winningSelectionCount": 54,
+        "averageWinningOdds": 3.0320370370370378,
+        "averageOddsIncludingMisses": 1.2692248062015508,
+        "totalStake": 147,
+        "totalReturn": 163.73000000000005,
+        "netProfit": 16.730000000000047,
+        "volatility": 1.4873898911269854,
+        "roi": 0.11380952380952403
+      }
+    },
+    {
+      "key": "PRIMEIRA_LIGA:PREVIOUS:AGGRESSIVE",
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 176,
+      "metrics": {
+        "samplingRate": 0.5170454545454546,
+        "recommendedMatchCount": 91,
+        "recommendedSelectionCount": 93,
+        "hitMatchCount": 32,
+        "missMatchCount": 59,
+        "winningSelectionCount": 32,
+        "averageWinningOdds": 3.429687499999999,
+        "averageOddsIncludingMisses": 1.2060439560439558,
+        "totalStake": 93,
+        "totalReturn": 109.74999999999997,
+        "netProfit": 16.74999999999997,
+        "volatility": 1.7247659925154277,
+        "roi": 0.18010752688172005
+      }
+    },
+    {
+      "key": "EREDIVISIE:CURRENT:STABLE",
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "EREDIVISIE:CURRENT:AGGRESSIVE",
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "EREDIVISIE:PREVIOUS:STABLE",
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 189,
+      "metrics": {
+        "samplingRate": 0.582010582010582,
+        "recommendedMatchCount": 110,
+        "recommendedSelectionCount": 110,
+        "hitMatchCount": 54,
+        "missMatchCount": 56,
+        "winningSelectionCount": 54,
+        "averageWinningOdds": 2.5655555555555547,
+        "averageOddsIncludingMisses": 1.2594545454545452,
+        "totalStake": 110,
+        "totalReturn": 138.53999999999996,
+        "netProfit": 28.539999999999964,
+        "volatility": 1.4097256134632656,
+        "roi": 0.25945454545454516
+      }
+    },
+    {
+      "key": "EREDIVISIE:PREVIOUS:AGGRESSIVE",
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 189,
+      "metrics": {
+        "samplingRate": 0.5026455026455027,
+        "recommendedMatchCount": 95,
+        "recommendedSelectionCount": 95,
+        "hitMatchCount": 49,
+        "missMatchCount": 46,
+        "winningSelectionCount": 49,
+        "averageWinningOdds": 2.4822448979591836,
+        "averageOddsIncludingMisses": 1.280315789473684,
+        "totalStake": 95,
+        "totalReturn": 121.63,
+        "netProfit": 26.629999999999995,
+        "volatility": 1.388715503722758,
+        "roi": 0.2803157894736841
+      }
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:CURRENT:STABLE",
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:CURRENT:AGGRESSIVE",
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:PREVIOUS:STABLE",
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:PREVIOUS:AGGRESSIVE",
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:CURRENT:STABLE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 31,
+      "metrics": {
+        "samplingRate": 1,
+        "recommendedMatchCount": 31,
+        "recommendedSelectionCount": 31,
+        "hitMatchCount": 18,
+        "missMatchCount": 13,
+        "winningSelectionCount": 18,
+        "averageWinningOdds": 1.6394444444444445,
+        "averageOddsIncludingMisses": 0.9519354838709678,
+        "totalStake": 31,
+        "totalReturn": 29.51,
+        "netProfit": -1.4899999999999984,
+        "volatility": 0.8751472994296017,
+        "roi": -0.048064516129032175
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:CURRENT:AGGRESSIVE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 31,
+      "metrics": {
+        "samplingRate": 1,
+        "recommendedMatchCount": 31,
+        "recommendedSelectionCount": 31,
+        "hitMatchCount": 19,
+        "missMatchCount": 12,
+        "winningSelectionCount": 19,
+        "averageWinningOdds": 1.7294736842105263,
+        "averageOddsIncludingMisses": 1.06,
+        "totalStake": 31,
+        "totalReturn": 32.86,
+        "netProfit": 1.8599999999999994,
+        "volatility": 0.9567131231461184,
+        "roi": 0.06000000000000005
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:PREVIOUS:STABLE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 197,
+      "metrics": {
+        "samplingRate": 0.7969543147208121,
+        "recommendedMatchCount": 157,
+        "recommendedSelectionCount": 157,
+        "hitMatchCount": 85,
+        "missMatchCount": 72,
+        "winningSelectionCount": 85,
+        "averageWinningOdds": 1.9689411764705886,
+        "averageOddsIncludingMisses": 1.0659872611464971,
+        "totalStake": 157,
+        "totalReturn": 167.36000000000004,
+        "netProfit": 10.360000000000042,
+        "volatility": 1.1541923915707284,
+        "roi": 0.06598726114649711
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:PREVIOUS:AGGRESSIVE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 197,
+      "metrics": {
+        "samplingRate": 0.9289340101522843,
+        "recommendedMatchCount": 183,
+        "recommendedSelectionCount": 183,
+        "hitMatchCount": 104,
+        "missMatchCount": 79,
+        "winningSelectionCount": 104,
+        "averageWinningOdds": 1.9159615384615387,
+        "averageOddsIncludingMisses": 1.0888524590163935,
+        "totalStake": 183,
+        "totalReturn": 199.26000000000002,
+        "netProfit": 16.26000000000002,
+        "volatility": 1.0840680887145395,
+        "roi": 0.08885245901639349
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:CURRENT:STABLE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 32,
+      "metrics": {
+        "samplingRate": 0.84375,
+        "recommendedMatchCount": 27,
+        "recommendedSelectionCount": 37,
+        "hitMatchCount": 13,
+        "missMatchCount": 14,
+        "winningSelectionCount": 13,
+        "averageWinningOdds": 2.4953846153846153,
+        "averageOddsIncludingMisses": 1.2014814814814814,
+        "totalStake": 37,
+        "totalReturn": 32.44,
+        "netProfit": -4.560000000000002,
+        "volatility": 1.0875295784692867,
+        "roi": -0.12324324324324332
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:CURRENT:AGGRESSIVE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 32,
+      "metrics": {
+        "samplingRate": 0.5625,
+        "recommendedMatchCount": 18,
+        "recommendedSelectionCount": 20,
+        "hitMatchCount": 6,
+        "missMatchCount": 12,
+        "winningSelectionCount": 6,
+        "averageWinningOdds": 2.955,
+        "averageOddsIncludingMisses": 0.985,
+        "totalStake": 20,
+        "totalReturn": 17.73,
+        "netProfit": -2.2699999999999996,
+        "volatility": 1.519544242818337,
+        "roi": -0.11349999999999993
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:PREVIOUS:STABLE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 104,
+      "metrics": {
+        "samplingRate": 0.5961538461538461,
+        "recommendedMatchCount": 62,
+        "recommendedSelectionCount": 62,
+        "hitMatchCount": 27,
+        "missMatchCount": 35,
+        "winningSelectionCount": 27,
+        "averageWinningOdds": 2.428888888888889,
+        "averageOddsIncludingMisses": 1.0577419354838709,
+        "totalStake": 62,
+        "totalReturn": 65.58,
+        "netProfit": 3.5799999999999983,
+        "volatility": 1.2564644898596062,
+        "roi": 0.057741935483870854
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:PREVIOUS:AGGRESSIVE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 104,
+      "metrics": {
+        "samplingRate": 0.5192307692307693,
+        "recommendedMatchCount": 54,
+        "recommendedSelectionCount": 55,
+        "hitMatchCount": 22,
+        "missMatchCount": 32,
+        "winningSelectionCount": 22,
+        "averageWinningOdds": 3.1859090909090906,
+        "averageOddsIncludingMisses": 1.2979629629629628,
+        "totalStake": 55,
+        "totalReturn": 70.08999999999999,
+        "netProfit": 15.08999999999999,
+        "volatility": 1.6035790600674455,
+        "roi": 0.27436363636363614
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:CURRENT:STABLE",
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 30,
+      "metrics": {
+        "samplingRate": 0.43333333333333335,
+        "recommendedMatchCount": 13,
+        "recommendedSelectionCount": 22,
+        "hitMatchCount": 11,
+        "missMatchCount": 2,
+        "winningSelectionCount": 11,
+        "averageWinningOdds": 3.183636363636364,
+        "averageOddsIncludingMisses": 2.6938461538461542,
+        "totalStake": 22,
+        "totalReturn": 35.02,
+        "netProfit": 13.020000000000003,
+        "volatility": 0.9049612188885818,
+        "roi": 0.591818181818182
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:CURRENT:AGGRESSIVE",
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 30,
+      "metrics": {
+        "samplingRate": 0.5,
+        "recommendedMatchCount": 15,
+        "recommendedSelectionCount": 24,
+        "hitMatchCount": 13,
+        "missMatchCount": 2,
+        "winningSelectionCount": 13,
+        "averageWinningOdds": 3.056923076923077,
+        "averageOddsIncludingMisses": 2.6493333333333333,
+        "totalStake": 24,
+        "totalReturn": 39.74,
+        "netProfit": 15.740000000000002,
+        "volatility": 0.8821621166202955,
+        "roi": 0.6558333333333335
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:PREVIOUS:STABLE",
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 168,
+      "metrics": {
+        "samplingRate": 0.6190476190476191,
+        "recommendedMatchCount": 104,
+        "recommendedSelectionCount": 112,
+        "hitMatchCount": 38,
+        "missMatchCount": 66,
+        "winningSelectionCount": 38,
+        "averageWinningOdds": 3.5052631578947366,
+        "averageOddsIncludingMisses": 1.2807692307692307,
+        "totalStake": 112,
+        "totalReturn": 133.2,
+        "netProfit": 21.19999999999999,
+        "volatility": 1.6163742023388503,
+        "roi": 0.18928571428571428
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:PREVIOUS:AGGRESSIVE",
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 168,
+      "metrics": {
+        "samplingRate": 0.5714285714285714,
+        "recommendedMatchCount": 96,
+        "recommendedSelectionCount": 99,
+        "hitMatchCount": 37,
+        "missMatchCount": 59,
+        "winningSelectionCount": 37,
+        "averageWinningOdds": 3.4205405405405407,
+        "averageOddsIncludingMisses": 1.3183333333333334,
+        "totalStake": 99,
+        "totalReturn": 126.56,
+        "netProfit": 27.560000000000002,
+        "volatility": 1.6795227202936118,
+        "roi": 0.2783838383838384
+      }
+    }
+  ],
+  "optimizationResults": [
+    {
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "CURRENT",
+      "action": "REOPTIMIZE_AGGRESSIVE",
+      "reasons": [
+        "激进方案采样率低于33.3%"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "AGGRESSIVE_MINIMUM_33_3_AND_BELOW_STABLE",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.6346153846153846,
+          "recommendedMatchCount": 66,
+          "recommendedSelectionCount": 92,
+          "hitMatchCount": 38,
+          "missMatchCount": 28,
+          "winningSelectionCount": 38,
+          "averageWinningOdds": 2.611578947368421,
+          "averageOddsIncludingMisses": 1.5036363636363639,
+          "totalStake": 92,
+          "totalReturn": 99.24000000000001,
+          "netProfit": 7.240000000000009,
+          "volatility": 1.1006739114926636,
+          "roi": 0.07869565217391306
+        },
+        "aggressive": {
+          "samplingRate": 0.21153846153846154,
+          "recommendedMatchCount": 22,
+          "recommendedSelectionCount": 28,
+          "hitMatchCount": 11,
+          "missMatchCount": 11,
+          "winningSelectionCount": 11,
+          "averageWinningOdds": 3.039090909090909,
+          "averageOddsIncludingMisses": 1.5195454545454545,
+          "totalStake": 28,
+          "totalReturn": 33.43,
+          "netProfit": 5.43,
+          "volatility": 1.2402653195065008,
+          "roi": 0.19392857142857145
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 0.58,
+              "homeTeamGoalFactor": 0.93,
+              "seedTeamGoalFactor": 0.77,
+              "officialMatchWeight": 1.35,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.22,
+              "handicapSmoothingFactor": 0.538
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.75,
+              "handicapRecommendationThreshold": 43.97,
+              "handicapReverseThreshold": 52.85,
+              "singleRecommendationThreshold": 40.44
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.6346153846153846,
+            "recommendedMatchCount": 66,
+            "recommendedSelectionCount": 92,
+            "hitMatchCount": 38,
+            "missMatchCount": 28,
+            "winningSelectionCount": 38,
+            "averageWinningOdds": 2.611578947368421,
+            "averageOddsIncludingMisses": 1.5036363636363639,
+            "totalStake": 92,
+            "totalReturn": 99.24000000000001,
+            "netProfit": 7.240000000000009,
+            "volatility": 1.1006739114926636,
+            "roi": 0.07869565217391306
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 1.18,
+              "homeTeamGoalFactor": 0.9,
+              "seedTeamGoalFactor": 1.68,
+              "officialMatchWeight": 1.43,
+              "internationalFriendlyWeight": 0.83,
+              "clubFriendlyWeight": 0.89,
+              "handicapSmoothingFactor": 0.713
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.27,
+              "handicapRecommendationThreshold": 44.75,
+              "handicapReverseThreshold": 68.1,
+              "singleRecommendationThreshold": 37.65
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.38461538461538464,
+            "recommendedMatchCount": 40,
+            "recommendedSelectionCount": 51,
+            "hitMatchCount": 20,
+            "missMatchCount": 20,
+            "winningSelectionCount": 20,
+            "averageWinningOdds": 2.9795,
+            "averageOddsIncludingMisses": 1.48975,
+            "totalStake": 51,
+            "totalReturn": 59.589999999999996,
+            "netProfit": 8.589999999999996,
+            "volatility": 1.3779397245944338,
+            "roi": 0.16843137254901963
+          }
+        }
+      }
+    },
+    {
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "CURRENT",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 1,
+          "recommendedMatchCount": 51,
+          "recommendedSelectionCount": 88,
+          "hitMatchCount": 38,
+          "missMatchCount": 13,
+          "winningSelectionCount": 38,
+          "averageWinningOdds": 2.789473684210526,
+          "averageOddsIncludingMisses": 2.0784313725490193,
+          "totalStake": 88,
+          "totalReturn": 105.99999999999999,
+          "netProfit": 17.999999999999986,
+          "volatility": 0.8215165793799166,
+          "roi": 0.20454545454545436
+        },
+        "aggressive": {
+          "samplingRate": 0.47058823529411764,
+          "recommendedMatchCount": 24,
+          "recommendedSelectionCount": 24,
+          "hitMatchCount": 9,
+          "missMatchCount": 15,
+          "winningSelectionCount": 9,
+          "averageWinningOdds": 3.5277777777777777,
+          "averageOddsIncludingMisses": 1.3229166666666667,
+          "totalStake": 24,
+          "totalReturn": 31.75,
+          "netProfit": 7.75,
+          "volatility": 1.7688180262946573,
+          "roi": 0.32291666666666674
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.6078431372549019,
+          "recommendedMatchCount": 62,
+          "recommendedSelectionCount": 62,
+          "hitMatchCount": 28,
+          "missMatchCount": 34,
+          "winningSelectionCount": 28,
+          "averageWinningOdds": 2.7728571428571427,
+          "averageOddsIncludingMisses": 1.252258064516129,
+          "totalStake": 62,
+          "totalReturn": 77.64,
+          "netProfit": 15.64,
+          "volatility": 1.4900483206543056,
+          "roi": 0.252258064516129
+        },
+        "aggressive": {
+          "samplingRate": 0.5686274509803921,
+          "recommendedMatchCount": 58,
+          "recommendedSelectionCount": 58,
+          "hitMatchCount": 26,
+          "missMatchCount": 32,
+          "winningSelectionCount": 26,
+          "averageWinningOdds": 2.859230769230769,
+          "averageOddsIncludingMisses": 1.2817241379310342,
+          "totalStake": 58,
+          "totalReturn": 74.33999999999999,
+          "netProfit": 16.33999999999999,
+          "volatility": 1.5213684259499125,
+          "roi": 0.28172413793103424
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "CURRENT",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.625,
+          "recommendedMatchCount": 20,
+          "recommendedSelectionCount": 20,
+          "hitMatchCount": 15,
+          "missMatchCount": 5,
+          "winningSelectionCount": 15,
+          "averageWinningOdds": 2.1286666666666667,
+          "averageOddsIncludingMisses": 1.5965,
+          "totalStake": 20,
+          "totalReturn": 31.93,
+          "netProfit": 11.93,
+          "volatility": 1.1571893126291644,
+          "roi": 0.5965
+        },
+        "aggressive": {
+          "samplingRate": 0.5,
+          "recommendedMatchCount": 16,
+          "recommendedSelectionCount": 16,
+          "hitMatchCount": 12,
+          "missMatchCount": 4,
+          "winningSelectionCount": 12,
+          "averageWinningOdds": 2.2900000000000005,
+          "averageOddsIncludingMisses": 1.7175000000000002,
+          "totalStake": 16,
+          "totalReturn": 27.480000000000004,
+          "netProfit": 11.480000000000004,
+          "volatility": 1.2280255154786754,
+          "roi": 0.7175000000000002
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.686046511627907,
+          "recommendedMatchCount": 59,
+          "recommendedSelectionCount": 91,
+          "hitMatchCount": 49,
+          "missMatchCount": 10,
+          "winningSelectionCount": 49,
+          "averageWinningOdds": 2.3391836734693876,
+          "averageOddsIncludingMisses": 1.9427118644067796,
+          "totalStake": 91,
+          "totalReturn": 114.61999999999999,
+          "netProfit": 23.61999999999999,
+          "volatility": 0.713305252610353,
+          "roi": 0.2595604395604394
+        },
+        "aggressive": {
+          "samplingRate": 0.4883720930232558,
+          "recommendedMatchCount": 42,
+          "recommendedSelectionCount": 58,
+          "hitMatchCount": 32,
+          "missMatchCount": 10,
+          "winningSelectionCount": 32,
+          "averageWinningOdds": 2.4037500000000005,
+          "averageOddsIncludingMisses": 1.8314285714285718,
+          "totalStake": 58,
+          "totalReturn": 76.92000000000002,
+          "netProfit": 18.920000000000016,
+          "volatility": 0.8163257957935965,
+          "roi": 0.3262068965517244
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "CURRENT",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.6031746031746031,
+          "recommendedMatchCount": 38,
+          "recommendedSelectionCount": 38,
+          "hitMatchCount": 22,
+          "missMatchCount": 16,
+          "winningSelectionCount": 22,
+          "averageWinningOdds": 2.6159090909090907,
+          "averageOddsIncludingMisses": 1.5144736842105262,
+          "totalStake": 38,
+          "totalReturn": 57.55,
+          "netProfit": 19.549999999999997,
+          "volatility": 1.3986783285860729,
+          "roi": 0.5144736842105262
+        },
+        "aggressive": {
+          "samplingRate": 0.47619047619047616,
+          "recommendedMatchCount": 30,
+          "recommendedSelectionCount": 30,
+          "hitMatchCount": 18,
+          "missMatchCount": 12,
+          "winningSelectionCount": 18,
+          "averageWinningOdds": 2.7055555555555557,
+          "averageOddsIncludingMisses": 1.6233333333333335,
+          "totalStake": 30,
+          "totalReturn": 48.7,
+          "netProfit": 18.700000000000003,
+          "volatility": 1.4358713162333208,
+          "roi": 0.6233333333333335
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "PREVIOUS",
+      "action": "TRANSFER_AND_REOPTIMIZE_AGGRESSIVE",
+      "reasons": [
+        "激进方案采样率和ROI均高于稳健方案"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "MIGRATE_AGGRESSIVE_TO_STABLE_AND_LOWER_AGGRESSIVE",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.6086956521739131,
+          "recommendedMatchCount": 42,
+          "recommendedSelectionCount": 45,
+          "hitMatchCount": 19,
+          "missMatchCount": 23,
+          "winningSelectionCount": 19,
+          "averageWinningOdds": 3.3621052631578947,
+          "averageOddsIncludingMisses": 1.5209523809523808,
+          "totalStake": 45,
+          "totalReturn": 63.879999999999995,
+          "netProfit": 18.879999999999995,
+          "volatility": 1.6484851913949807,
+          "roi": 0.41955555555555546
+        },
+        "aggressive": {
+          "samplingRate": 0.7101449275362319,
+          "recommendedMatchCount": 49,
+          "recommendedSelectionCount": 49,
+          "hitMatchCount": 23,
+          "missMatchCount": 26,
+          "winningSelectionCount": 23,
+          "averageWinningOdds": 3.0621739130434777,
+          "averageOddsIncludingMisses": 1.43734693877551,
+          "totalStake": 49,
+          "totalReturn": 70.42999999999999,
+          "netProfit": 21.429999999999993,
+          "volatility": 1.6250086865283264,
+          "roi": 0.43734693877551
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.19,
+              "homeTeamGoalFactor": 0.34,
+              "seedTeamGoalFactor": 1.22,
+              "officialMatchWeight": 1.44,
+              "internationalFriendlyWeight": 0.56,
+              "clubFriendlyWeight": 0.82,
+              "handicapSmoothingFactor": 0.167
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.92,
+              "handicapRecommendationThreshold": 39,
+              "handicapReverseThreshold": 72.53,
+              "singleRecommendationThreshold": 8.68
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.7101449275362319,
+            "recommendedMatchCount": 49,
+            "recommendedSelectionCount": 49,
+            "hitMatchCount": 23,
+            "missMatchCount": 26,
+            "winningSelectionCount": 23,
+            "averageWinningOdds": 3.0621739130434777,
+            "averageOddsIncludingMisses": 1.43734693877551,
+            "totalStake": 49,
+            "totalReturn": 70.42999999999999,
+            "netProfit": 21.429999999999993,
+            "volatility": 1.6250086865283264,
+            "roi": 0.43734693877551
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.19,
+              "homeTeamGoalFactor": 0.34,
+              "seedTeamGoalFactor": 1.22,
+              "officialMatchWeight": 1.44,
+              "internationalFriendlyWeight": 0.56,
+              "clubFriendlyWeight": 0.82,
+              "handicapSmoothingFactor": 0.167
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.79,
+              "handicapRecommendationThreshold": 62.79,
+              "handicapReverseThreshold": 72.36,
+              "singleRecommendationThreshold": 7.83
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.43478260869565216,
+            "recommendedMatchCount": 30,
+            "recommendedSelectionCount": 30,
+            "hitMatchCount": 14,
+            "missMatchCount": 16,
+            "winningSelectionCount": 14,
+            "averageWinningOdds": 3.5535714285714293,
+            "averageOddsIncludingMisses": 1.6583333333333337,
+            "totalStake": 30,
+            "totalReturn": 49.75000000000001,
+            "netProfit": 19.750000000000007,
+            "volatility": 1.8340215531643203,
+            "roi": 0.6583333333333337
+          }
+        }
+      }
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "CURRENT",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.6363636363636364,
+          "recommendedMatchCount": 7,
+          "recommendedSelectionCount": 7,
+          "hitMatchCount": 4,
+          "missMatchCount": 3,
+          "winningSelectionCount": 4,
+          "averageWinningOdds": 3.7824999999999998,
+          "averageOddsIncludingMisses": 2.1614285714285715,
+          "totalStake": 7,
+          "totalReturn": 15.129999999999999,
+          "netProfit": 8.129999999999999,
+          "volatility": 2.8568189102066452,
+          "roi": 1.1614285714285715
+        },
+        "aggressive": {
+          "samplingRate": 0.5454545454545454,
+          "recommendedMatchCount": 6,
+          "recommendedSelectionCount": 6,
+          "hitMatchCount": 4,
+          "missMatchCount": 2,
+          "winningSelectionCount": 4,
+          "averageWinningOdds": 3.7824999999999998,
+          "averageOddsIncludingMisses": 2.5216666666666665,
+          "totalStake": 6,
+          "totalReturn": 15.129999999999999,
+          "netProfit": 9.129999999999999,
+          "volatility": 2.950189259465682,
+          "roi": 1.5216666666666665
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.5611111111111111,
+          "recommendedMatchCount": 101,
+          "recommendedSelectionCount": 101,
+          "hitMatchCount": 44,
+          "missMatchCount": 57,
+          "winningSelectionCount": 44,
+          "averageWinningOdds": 3.4372727272727275,
+          "averageOddsIncludingMisses": 1.4974257425742574,
+          "totalStake": 101,
+          "totalReturn": 151.24,
+          "netProfit": 50.24000000000001,
+          "volatility": 1.7679907541983055,
+          "roi": 0.4974257425742574
+        },
+        "aggressive": {
+          "samplingRate": 0.5333333333333333,
+          "recommendedMatchCount": 96,
+          "recommendedSelectionCount": 99,
+          "hitMatchCount": 44,
+          "missMatchCount": 52,
+          "winningSelectionCount": 44,
+          "averageWinningOdds": 3.430454545454546,
+          "averageOddsIncludingMisses": 1.5722916666666669,
+          "totalStake": 99,
+          "totalReturn": 150.94000000000003,
+          "netProfit": 51.940000000000026,
+          "volatility": 1.7383740883201697,
+          "roi": 0.5246464646464648
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 1,
+          "recommendedMatchCount": 12,
+          "recommendedSelectionCount": 12,
+          "hitMatchCount": 7,
+          "missMatchCount": 5,
+          "winningSelectionCount": 7,
+          "averageWinningOdds": 1.9257142857142855,
+          "averageOddsIncludingMisses": 1.1233333333333333,
+          "totalStake": 12,
+          "totalReturn": 13.479999999999999,
+          "netProfit": 1.4799999999999986,
+          "volatility": 1.1579082498849014,
+          "roi": 0.1233333333333333
+        },
+        "aggressive": {
+          "samplingRate": 0.5,
+          "recommendedMatchCount": 6,
+          "recommendedSelectionCount": 8,
+          "hitMatchCount": 3,
+          "missMatchCount": 3,
+          "winningSelectionCount": 3,
+          "averageWinningOdds": 3.0666666666666664,
+          "averageOddsIncludingMisses": 1.5333333333333332,
+          "totalStake": 8,
+          "totalReturn": 9.2,
+          "netProfit": 1.1999999999999993,
+          "volatility": 1.2883426045375768,
+          "roi": 0.1499999999999999
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.5714285714285714,
+          "recommendedMatchCount": 124,
+          "recommendedSelectionCount": 124,
+          "hitMatchCount": 53,
+          "missMatchCount": 71,
+          "winningSelectionCount": 53,
+          "averageWinningOdds": 3.152641509433963,
+          "averageOddsIncludingMisses": 1.3475000000000004,
+          "totalStake": 124,
+          "totalReturn": 167.09000000000003,
+          "netProfit": 43.09000000000003,
+          "volatility": 1.6545427118590352,
+          "roi": 0.34750000000000036
+        },
+        "aggressive": {
+          "samplingRate": 0.46543778801843316,
+          "recommendedMatchCount": 101,
+          "recommendedSelectionCount": 101,
+          "hitMatchCount": 46,
+          "missMatchCount": 55,
+          "winningSelectionCount": 46,
+          "averageWinningOdds": 3.257826086956522,
+          "averageOddsIncludingMisses": 1.483762376237624,
+          "totalStake": 101,
+          "totalReturn": 149.86,
+          "netProfit": 48.860000000000014,
+          "volatility": 1.7185522113017964,
+          "roi": 0.48376237623762397
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "CURRENT",
+      "action": "NO_DATA",
+      "reasons": [
+        "没有可结算赔率样本"
+      ],
+      "status": "NO_DATA",
+      "samplingPolicy": null,
+      "baseline": {
+        "stable": null,
+        "aggressive": null
+      },
+      "optimized": null
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.5828402366863905,
+          "recommendedMatchCount": 197,
+          "recommendedSelectionCount": 220,
+          "hitMatchCount": 104,
+          "missMatchCount": 93,
+          "winningSelectionCount": 104,
+          "averageWinningOdds": 2.2483653846153846,
+          "averageOddsIncludingMisses": 1.1869543147208121,
+          "totalStake": 220,
+          "totalReturn": 233.83,
+          "netProfit": 13.830000000000013,
+          "volatility": 1.0738694133542213,
+          "roi": 0.06286363636363634
+        },
+        "aggressive": {
+          "samplingRate": 0.5680473372781065,
+          "recommendedMatchCount": 192,
+          "recommendedSelectionCount": 206,
+          "hitMatchCount": 103,
+          "missMatchCount": 89,
+          "winningSelectionCount": 103,
+          "averageWinningOdds": 2.168932038834951,
+          "averageOddsIncludingMisses": 1.1635416666666665,
+          "totalStake": 206,
+          "totalReturn": 223.39999999999995,
+          "netProfit": 17.39999999999995,
+          "volatility": 1.0619349629381603,
+          "roi": 0.08446601941747556
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "CURRENT",
+      "action": "NO_DATA",
+      "reasons": [
+        "没有可结算赔率样本"
+      ],
+      "status": "NO_DATA",
+      "samplingPolicy": null,
+      "baseline": {
+        "stable": null,
+        "aggressive": null
+      },
+      "optimized": null
+    },
+    {
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.546742209631728,
+          "recommendedMatchCount": 193,
+          "recommendedSelectionCount": 196,
+          "hitMatchCount": 66,
+          "missMatchCount": 127,
+          "winningSelectionCount": 66,
+          "averageWinningOdds": 3.5957575757575757,
+          "averageOddsIncludingMisses": 1.2296373056994818,
+          "totalStake": 196,
+          "totalReturn": 237.32,
+          "netProfit": 41.31999999999999,
+          "volatility": 1.7314842421481738,
+          "roi": 0.21081632653061222
+        },
+        "aggressive": {
+          "samplingRate": 0.5382436260623229,
+          "recommendedMatchCount": 190,
+          "recommendedSelectionCount": 195,
+          "hitMatchCount": 67,
+          "missMatchCount": 123,
+          "winningSelectionCount": 67,
+          "averageWinningOdds": 3.618955223880597,
+          "averageOddsIncludingMisses": 1.2761578947368422,
+          "totalStake": 195,
+          "totalReturn": 242.47,
+          "netProfit": 47.47,
+          "volatility": 1.7193311600688936,
+          "roi": 0.24343589743589744
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "CURRENT",
+      "action": "NO_DATA",
+      "reasons": [
+        "没有可结算赔率样本"
+      ],
+      "status": "NO_DATA",
+      "samplingPolicy": null,
+      "baseline": {
+        "stable": null,
+        "aggressive": null
+      },
+      "optimized": null
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "PREVIOUS",
+      "action": "TRANSFER_AND_REOPTIMIZE_AGGRESSIVE",
+      "reasons": [
+        "激进方案采样率和ROI均高于稳健方案"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "MIGRATE_AGGRESSIVE_TO_STABLE_AND_LOWER_AGGRESSIVE",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.5780141843971631,
+          "recommendedMatchCount": 163,
+          "recommendedSelectionCount": 206,
+          "hitMatchCount": 102,
+          "missMatchCount": 61,
+          "winningSelectionCount": 102,
+          "averageWinningOdds": 2.343333333333333,
+          "averageOddsIncludingMisses": 1.4663803680981593,
+          "totalStake": 206,
+          "totalReturn": 239.01999999999995,
+          "netProfit": 33.01999999999995,
+          "volatility": 0.9137053725153348,
+          "roi": 0.16029126213592204
+        },
+        "aggressive": {
+          "samplingRate": 0.6879432624113475,
+          "recommendedMatchCount": 194,
+          "recommendedSelectionCount": 195,
+          "hitMatchCount": 99,
+          "missMatchCount": 95,
+          "winningSelectionCount": 99,
+          "averageWinningOdds": 2.2899999999999996,
+          "averageOddsIncludingMisses": 1.1686082474226802,
+          "totalStake": 195,
+          "totalReturn": 226.70999999999995,
+          "netProfit": 31.70999999999995,
+          "volatility": 1.2576837404974235,
+          "roi": 0.16261538461538438
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 0.9,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 1.15,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.85,
+              "handicapSmoothingFactor": 0.43
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.59,
+              "handicapRecommendationThreshold": 43,
+              "handicapReverseThreshold": 50.29,
+              "singleRecommendationThreshold": 27
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.6879432624113475,
+            "recommendedMatchCount": 194,
+            "recommendedSelectionCount": 195,
+            "hitMatchCount": 99,
+            "missMatchCount": 95,
+            "winningSelectionCount": 99,
+            "averageWinningOdds": 2.2899999999999996,
+            "averageOddsIncludingMisses": 1.1686082474226802,
+            "totalStake": 195,
+            "totalReturn": 226.70999999999995,
+            "netProfit": 31.70999999999995,
+            "volatility": 1.2576837404974235,
+            "roi": 0.16261538461538438
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 0.9,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 1.15,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.85,
+              "handicapSmoothingFactor": 0.43
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.85,
+              "handicapRecommendationThreshold": 71.91,
+              "handicapReverseThreshold": 50.18,
+              "singleRecommendationThreshold": 26.25
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.3829787234042553,
+            "recommendedMatchCount": 108,
+            "recommendedSelectionCount": 109,
+            "hitMatchCount": 54,
+            "missMatchCount": 54,
+            "winningSelectionCount": 54,
+            "averageWinningOdds": 2.467037037037037,
+            "averageOddsIncludingMisses": 1.2335185185185185,
+            "totalStake": 109,
+            "totalReturn": 133.22,
+            "netProfit": 24.22,
+            "volatility": 1.3269930509562808,
+            "roi": 0.22220183486238532
+          }
+        }
+      }
+    },
+    {
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "CURRENT",
+      "action": "NO_DATA",
+      "reasons": [
+        "没有可结算赔率样本"
+      ],
+      "status": "NO_DATA",
+      "samplingPolicy": null,
+      "baseline": {
+        "stable": null,
+        "aggressive": null
+      },
+      "optimized": null
+    },
+    {
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.6457142857142857,
+          "recommendedMatchCount": 226,
+          "recommendedSelectionCount": 226,
+          "hitMatchCount": 92,
+          "missMatchCount": 134,
+          "winningSelectionCount": 92,
+          "averageWinningOdds": 2.71945652173913,
+          "averageOddsIncludingMisses": 1.1070353982300885,
+          "totalStake": 226,
+          "totalReturn": 250.18999999999997,
+          "netProfit": 24.18999999999997,
+          "volatility": 1.4672994297413082,
+          "roi": 0.10703539823008845
+        },
+        "aggressive": {
+          "samplingRate": 0.44,
+          "recommendedMatchCount": 154,
+          "recommendedSelectionCount": 155,
+          "hitMatchCount": 55,
+          "missMatchCount": 99,
+          "winningSelectionCount": 55,
+          "averageWinningOdds": 3.452363636363637,
+          "averageOddsIncludingMisses": 1.232987012987013,
+          "totalStake": 155,
+          "totalReturn": 189.88000000000002,
+          "netProfit": 34.880000000000024,
+          "volatility": 1.7727766456236551,
+          "roi": 0.22503225806451632
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "CURRENT",
+      "action": "NO_DATA",
+      "reasons": [
+        "没有可结算赔率样本"
+      ],
+      "status": "NO_DATA",
+      "samplingPolicy": null,
+      "baseline": {
+        "stable": null,
+        "aggressive": null
+      },
+      "optimized": null
+    },
+    {
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "PREVIOUS",
+      "action": "TRANSFER_AND_REOPTIMIZE_AGGRESSIVE",
+      "reasons": [
+        "激进方案采样率和ROI均高于稳健方案"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "MIGRATE_AGGRESSIVE_TO_STABLE_AND_LOWER_AGGRESSIVE",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.5580357142857143,
+          "recommendedMatchCount": 125,
+          "recommendedSelectionCount": 127,
+          "hitMatchCount": 44,
+          "missMatchCount": 81,
+          "winningSelectionCount": 44,
+          "averageWinningOdds": 3.625227272727274,
+          "averageOddsIncludingMisses": 1.2760800000000003,
+          "totalStake": 127,
+          "totalReturn": 159.51000000000005,
+          "netProfit": 32.51000000000005,
+          "volatility": 1.7152147829391227,
+          "roi": 0.2559842519685043
+        },
+        "aggressive": {
+          "samplingRate": 0.5848214285714286,
+          "recommendedMatchCount": 131,
+          "recommendedSelectionCount": 140,
+          "hitMatchCount": 48,
+          "missMatchCount": 83,
+          "winningSelectionCount": 48,
+          "averageWinningOdds": 3.666875000000001,
+          "averageOddsIncludingMisses": 1.3435877862595424,
+          "totalStake": 140,
+          "totalReturn": 176.01000000000005,
+          "netProfit": 36.01000000000005,
+          "volatility": 1.6741905591017874,
+          "roi": 0.25721428571428606
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 0.5,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 1.03,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.5,
+              "handicapSmoothingFactor": 0.534
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.78,
+              "handicapRecommendationThreshold": 90.4,
+              "handicapReverseThreshold": 98.98,
+              "singleRecommendationThreshold": 18.23
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.5848214285714286,
+            "recommendedMatchCount": 131,
+            "recommendedSelectionCount": 140,
+            "hitMatchCount": 48,
+            "missMatchCount": 83,
+            "winningSelectionCount": 48,
+            "averageWinningOdds": 3.666875000000001,
+            "averageOddsIncludingMisses": 1.3435877862595424,
+            "totalStake": 140,
+            "totalReturn": 176.01000000000005,
+            "netProfit": 36.01000000000005,
+            "volatility": 1.6741905591017874,
+            "roi": 0.25721428571428606
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 0.5,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 1.03,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.5,
+              "handicapSmoothingFactor": 0.534
+            },
+            "globalParameters": {
+              "recommendationOdds": 3.53,
+              "handicapRecommendationThreshold": 76.46,
+              "handicapReverseThreshold": 97.62,
+              "singleRecommendationThreshold": 18.24
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.35267857142857145,
+            "recommendedMatchCount": 79,
+            "recommendedSelectionCount": 84,
+            "hitMatchCount": 30,
+            "missMatchCount": 49,
+            "winningSelectionCount": 30,
+            "averageWinningOdds": 3.873333333333333,
+            "averageOddsIncludingMisses": 1.470886075949367,
+            "totalStake": 84,
+            "totalReturn": 116.19999999999999,
+            "netProfit": 32.19999999999999,
+            "volatility": 1.7728018489528836,
+            "roi": 0.3833333333333333
+          }
+        }
+      }
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "CURRENT",
+      "action": "NO_DATA",
+      "reasons": [
+        "没有可结算赔率样本"
+      ],
+      "status": "NO_DATA",
+      "samplingPolicy": null,
+      "baseline": {
+        "stable": null,
+        "aggressive": null
+      },
+      "optimized": null
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.7329545454545454,
+          "recommendedMatchCount": 129,
+          "recommendedSelectionCount": 147,
+          "hitMatchCount": 54,
+          "missMatchCount": 75,
+          "winningSelectionCount": 54,
+          "averageWinningOdds": 3.0320370370370378,
+          "averageOddsIncludingMisses": 1.2692248062015508,
+          "totalStake": 147,
+          "totalReturn": 163.73000000000005,
+          "netProfit": 16.730000000000047,
+          "volatility": 1.4873898911269854,
+          "roi": 0.11380952380952403
+        },
+        "aggressive": {
+          "samplingRate": 0.5170454545454546,
+          "recommendedMatchCount": 91,
+          "recommendedSelectionCount": 93,
+          "hitMatchCount": 32,
+          "missMatchCount": 59,
+          "winningSelectionCount": 32,
+          "averageWinningOdds": 3.429687499999999,
+          "averageOddsIncludingMisses": 1.2060439560439558,
+          "totalStake": 93,
+          "totalReturn": 109.74999999999997,
+          "netProfit": 16.74999999999997,
+          "volatility": 1.7247659925154277,
+          "roi": 0.18010752688172005
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "CURRENT",
+      "action": "NO_DATA",
+      "reasons": [
+        "没有可结算赔率样本"
+      ],
+      "status": "NO_DATA",
+      "samplingPolicy": null,
+      "baseline": {
+        "stable": null,
+        "aggressive": null
+      },
+      "optimized": null
+    },
+    {
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.582010582010582,
+          "recommendedMatchCount": 110,
+          "recommendedSelectionCount": 110,
+          "hitMatchCount": 54,
+          "missMatchCount": 56,
+          "winningSelectionCount": 54,
+          "averageWinningOdds": 2.5655555555555547,
+          "averageOddsIncludingMisses": 1.2594545454545452,
+          "totalStake": 110,
+          "totalReturn": 138.53999999999996,
+          "netProfit": 28.539999999999964,
+          "volatility": 1.4097256134632656,
+          "roi": 0.25945454545454516
+        },
+        "aggressive": {
+          "samplingRate": 0.5026455026455027,
+          "recommendedMatchCount": 95,
+          "recommendedSelectionCount": 95,
+          "hitMatchCount": 49,
+          "missMatchCount": 46,
+          "winningSelectionCount": 49,
+          "averageWinningOdds": 2.4822448979591836,
+          "averageOddsIncludingMisses": 1.280315789473684,
+          "totalStake": 95,
+          "totalReturn": 121.63,
+          "netProfit": 26.629999999999995,
+          "volatility": 1.388715503722758,
+          "roi": 0.2803157894736841
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "CURRENT",
+      "action": "NO_DATA",
+      "reasons": [
+        "没有可结算赔率样本"
+      ],
+      "status": "NO_DATA",
+      "samplingPolicy": null,
+      "baseline": {
+        "stable": null,
+        "aggressive": null
+      },
+      "optimized": null
+    },
+    {
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "PREVIOUS",
+      "action": "NO_DATA",
+      "reasons": [
+        "没有可结算赔率样本"
+      ],
+      "status": "NO_DATA",
+      "samplingPolicy": null,
+      "baseline": {
+        "stable": null,
+        "aggressive": null
+      },
+      "optimized": null
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "action": "REOPTIMIZE_PAIR",
+      "reasons": [
+        "稳健方案ROI低于5%",
+        "赛事数据已更新，强制重新优化"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "STABLE_CURRENT_PLUS_MINUS_3_PERCENT",
+      "baseline": {
+        "stable": {
+          "samplingRate": 1,
+          "recommendedMatchCount": 31,
+          "recommendedSelectionCount": 31,
+          "hitMatchCount": 18,
+          "missMatchCount": 13,
+          "winningSelectionCount": 18,
+          "averageWinningOdds": 1.6394444444444445,
+          "averageOddsIncludingMisses": 0.9519354838709678,
+          "totalStake": 31,
+          "totalReturn": 29.51,
+          "netProfit": -1.4899999999999984,
+          "volatility": 0.8751472994296017,
+          "roi": -0.048064516129032175
+        },
+        "aggressive": {
+          "samplingRate": 1,
+          "recommendedMatchCount": 31,
+          "recommendedSelectionCount": 31,
+          "hitMatchCount": 19,
+          "missMatchCount": 12,
+          "winningSelectionCount": 19,
+          "averageWinningOdds": 1.7294736842105263,
+          "averageOddsIncludingMisses": 1.06,
+          "totalStake": 31,
+          "totalReturn": 32.86,
+          "netProfit": 1.8599999999999994,
+          "volatility": 0.9567131231461184,
+          "roi": 0.06000000000000005
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 1.3,
+              "homeTeamGoalFactor": 0.9,
+              "seedTeamGoalFactor": 1.95,
+              "officialMatchWeight": 1.38,
+              "internationalFriendlyWeight": 0.45,
+              "clubFriendlyWeight": 0.48,
+              "handicapSmoothingFactor": 0.594
+            },
+            "globalParameters": {
+              "recommendationOdds": 1,
+              "handicapRecommendationThreshold": 73.55,
+              "handicapReverseThreshold": 75.1,
+              "singleRecommendationThreshold": 4.99
+            }
+          },
+          "metrics": {
+            "samplingRate": 1,
+            "recommendedMatchCount": 31,
+            "recommendedSelectionCount": 31,
+            "hitMatchCount": 20,
+            "missMatchCount": 11,
+            "winningSelectionCount": 20,
+            "averageWinningOdds": 1.9000000000000004,
+            "averageOddsIncludingMisses": 1.2258064516129035,
+            "totalStake": 31,
+            "totalReturn": 38.00000000000001,
+            "netProfit": 7.000000000000007,
+            "volatility": 1.1261491144413291,
+            "roi": 0.22580645161290347
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 1,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 1,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.3,
+              "handicapSmoothingFactor": 0.76
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.86,
+              "handicapRecommendationThreshold": 62.37,
+              "handicapReverseThreshold": 64.06,
+              "singleRecommendationThreshold": 20.56
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.3870967741935484,
+            "recommendedMatchCount": 12,
+            "recommendedSelectionCount": 12,
+            "hitMatchCount": 7,
+            "missMatchCount": 5,
+            "winningSelectionCount": 7,
+            "averageWinningOdds": 2.662857142857143,
+            "averageOddsIncludingMisses": 1.5533333333333335,
+            "totalStake": 12,
+            "totalReturn": 18.64,
+            "netProfit": 6.640000000000001,
+            "volatility": 1.5410641738353363,
+            "roi": 0.5533333333333335
+          }
+        }
+      }
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "PREVIOUS",
+      "action": "TRANSFER_AND_REOPTIMIZE_AGGRESSIVE",
+      "reasons": [
+        "激进方案采样率和ROI均高于稳健方案"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "MIGRATE_AGGRESSIVE_TO_STABLE_AND_LOWER_AGGRESSIVE",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.7969543147208121,
+          "recommendedMatchCount": 157,
+          "recommendedSelectionCount": 157,
+          "hitMatchCount": 85,
+          "missMatchCount": 72,
+          "winningSelectionCount": 85,
+          "averageWinningOdds": 1.9689411764705886,
+          "averageOddsIncludingMisses": 1.0659872611464971,
+          "totalStake": 157,
+          "totalReturn": 167.36000000000004,
+          "netProfit": 10.360000000000042,
+          "volatility": 1.1541923915707284,
+          "roi": 0.06598726114649711
+        },
+        "aggressive": {
+          "samplingRate": 0.9289340101522843,
+          "recommendedMatchCount": 183,
+          "recommendedSelectionCount": 183,
+          "hitMatchCount": 104,
+          "missMatchCount": 79,
+          "winningSelectionCount": 104,
+          "averageWinningOdds": 1.9159615384615387,
+          "averageOddsIncludingMisses": 1.0888524590163935,
+          "totalStake": 183,
+          "totalReturn": 199.26000000000002,
+          "netProfit": 16.26000000000002,
+          "volatility": 1.0840680887145395,
+          "roi": 0.08885245901639349
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 0.9,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 2.6,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.4,
+              "handicapSmoothingFactor": 0.259
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.34,
+              "handicapRecommendationThreshold": 59.3,
+              "handicapReverseThreshold": 52.22,
+              "singleRecommendationThreshold": 16.19
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.9289340101522843,
+            "recommendedMatchCount": 183,
+            "recommendedSelectionCount": 183,
+            "hitMatchCount": 104,
+            "missMatchCount": 79,
+            "winningSelectionCount": 104,
+            "averageWinningOdds": 1.9159615384615387,
+            "averageOddsIncludingMisses": 1.0888524590163935,
+            "totalStake": 183,
+            "totalReturn": 199.26000000000002,
+            "netProfit": 16.26000000000002,
+            "volatility": 1.0840680887145395,
+            "roi": 0.08885245901639349
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 0.9,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 2.6,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.4,
+              "handicapSmoothingFactor": 0.259
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.92,
+              "handicapRecommendationThreshold": 88.12,
+              "handicapReverseThreshold": 52.71,
+              "singleRecommendationThreshold": 15.89
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.3604060913705584,
+            "recommendedMatchCount": 71,
+            "recommendedSelectionCount": 71,
+            "hitMatchCount": 31,
+            "missMatchCount": 40,
+            "winningSelectionCount": 31,
+            "averageWinningOdds": 2.7041935483870967,
+            "averageOddsIncludingMisses": 1.1807042253521127,
+            "totalStake": 71,
+            "totalReturn": 83.83,
+            "netProfit": 12.829999999999998,
+            "volatility": 1.4533943756832166,
+            "roi": 0.18070422535211272
+          }
+        }
+      }
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "action": "REOPTIMIZE_PAIR",
+      "reasons": [
+        "稳健方案ROI低于5%",
+        "赛事数据已更新，强制重新优化"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "STABLE_CURRENT_PLUS_MINUS_3_PERCENT",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.84375,
+          "recommendedMatchCount": 27,
+          "recommendedSelectionCount": 37,
+          "hitMatchCount": 13,
+          "missMatchCount": 14,
+          "winningSelectionCount": 13,
+          "averageWinningOdds": 2.4953846153846153,
+          "averageOddsIncludingMisses": 1.2014814814814814,
+          "totalStake": 37,
+          "totalReturn": 32.44,
+          "netProfit": -4.560000000000002,
+          "volatility": 1.0875295784692867,
+          "roi": -0.12324324324324332
+        },
+        "aggressive": {
+          "samplingRate": 0.5625,
+          "recommendedMatchCount": 18,
+          "recommendedSelectionCount": 20,
+          "hitMatchCount": 6,
+          "missMatchCount": 12,
+          "winningSelectionCount": 6,
+          "averageWinningOdds": 2.955,
+          "averageOddsIncludingMisses": 0.985,
+          "totalStake": 20,
+          "totalReturn": 17.73,
+          "netProfit": -2.2699999999999996,
+          "volatility": 1.519544242818337,
+          "roi": -0.11349999999999993
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 1.06,
+              "homeTeamGoalFactor": 2.24,
+              "seedTeamGoalFactor": 2.22,
+              "officialMatchWeight": 1.15,
+              "internationalFriendlyWeight": 0.36,
+              "clubFriendlyWeight": 0.08,
+              "handicapSmoothingFactor": 0.461
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.42,
+              "handicapRecommendationThreshold": 70.49,
+              "handicapReverseThreshold": 49.3,
+              "singleRecommendationThreshold": 48.06
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.84375,
+            "recommendedMatchCount": 27,
+            "recommendedSelectionCount": 29,
+            "hitMatchCount": 15,
+            "missMatchCount": 12,
+            "winningSelectionCount": 15,
+            "averageWinningOdds": 2.278,
+            "averageOddsIncludingMisses": 1.2655555555555555,
+            "totalStake": 29,
+            "totalReturn": 34.17,
+            "netProfit": 5.170000000000002,
+            "volatility": 1.0635122628974867,
+            "roi": 0.1782758620689655
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 2.28,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 1,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.3,
+              "handicapSmoothingFactor": 0.303
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.37,
+              "handicapRecommendationThreshold": 10.15,
+              "handicapReverseThreshold": 60.76,
+              "singleRecommendationThreshold": 23.31
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.34375,
+            "recommendedMatchCount": 11,
+            "recommendedSelectionCount": 11,
+            "hitMatchCount": 5,
+            "missMatchCount": 6,
+            "winningSelectionCount": 5,
+            "averageWinningOdds": 3.2,
+            "averageOddsIncludingMisses": 1.4545454545454546,
+            "totalStake": 11,
+            "totalReturn": 16,
+            "netProfit": 5,
+            "volatility": 1.753398777439768,
+            "roi": 0.4545454545454546
+          }
+        }
+      }
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.5961538461538461,
+          "recommendedMatchCount": 62,
+          "recommendedSelectionCount": 62,
+          "hitMatchCount": 27,
+          "missMatchCount": 35,
+          "winningSelectionCount": 27,
+          "averageWinningOdds": 2.428888888888889,
+          "averageOddsIncludingMisses": 1.0577419354838709,
+          "totalStake": 62,
+          "totalReturn": 65.58,
+          "netProfit": 3.5799999999999983,
+          "volatility": 1.2564644898596062,
+          "roi": 0.057741935483870854
+        },
+        "aggressive": {
+          "samplingRate": 0.5192307692307693,
+          "recommendedMatchCount": 54,
+          "recommendedSelectionCount": 55,
+          "hitMatchCount": 22,
+          "missMatchCount": 32,
+          "winningSelectionCount": 22,
+          "averageWinningOdds": 3.1859090909090906,
+          "averageOddsIncludingMisses": 1.2979629629629628,
+          "totalStake": 55,
+          "totalReturn": 70.08999999999999,
+          "netProfit": 15.08999999999999,
+          "volatility": 1.6035790600674455,
+          "roi": 0.27436363636363614
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "PREVIOUS",
+      "action": "KEEP",
+      "reasons": [],
+      "status": "UNCHANGED",
+      "samplingPolicy": "UNCHANGED",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.6190476190476191,
+          "recommendedMatchCount": 104,
+          "recommendedSelectionCount": 112,
+          "hitMatchCount": 38,
+          "missMatchCount": 66,
+          "winningSelectionCount": 38,
+          "averageWinningOdds": 3.5052631578947366,
+          "averageOddsIncludingMisses": 1.2807692307692307,
+          "totalStake": 112,
+          "totalReturn": 133.2,
+          "netProfit": 21.19999999999999,
+          "volatility": 1.6163742023388503,
+          "roi": 0.18928571428571428
+        },
+        "aggressive": {
+          "samplingRate": 0.5714285714285714,
+          "recommendedMatchCount": 96,
+          "recommendedSelectionCount": 99,
+          "hitMatchCount": 37,
+          "missMatchCount": 59,
+          "winningSelectionCount": 37,
+          "averageWinningOdds": 3.4205405405405407,
+          "averageOddsIncludingMisses": 1.3183333333333334,
+          "totalStake": 99,
+          "totalReturn": 126.56,
+          "netProfit": 27.560000000000002,
+          "volatility": 1.6795227202936118,
+          "roi": 0.2783838383838384
+        }
+      },
+      "optimized": null
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "CURRENT",
+      "action": "TRANSFER_AND_REOPTIMIZE_AGGRESSIVE",
+      "reasons": [
+        "激进方案采样率和ROI均高于稳健方案",
+        "赛事数据已更新，强制重新优化"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "MIGRATE_AGGRESSIVE_TO_STABLE_AND_LOWER_AGGRESSIVE",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.43333333333333335,
+          "recommendedMatchCount": 13,
+          "recommendedSelectionCount": 22,
+          "hitMatchCount": 11,
+          "missMatchCount": 2,
+          "winningSelectionCount": 11,
+          "averageWinningOdds": 3.183636363636364,
+          "averageOddsIncludingMisses": 2.6938461538461542,
+          "totalStake": 22,
+          "totalReturn": 35.02,
+          "netProfit": 13.020000000000003,
+          "volatility": 0.9049612188885818,
+          "roi": 0.591818181818182
+        },
+        "aggressive": {
+          "samplingRate": 0.5,
+          "recommendedMatchCount": 15,
+          "recommendedSelectionCount": 24,
+          "hitMatchCount": 13,
+          "missMatchCount": 2,
+          "winningSelectionCount": 13,
+          "averageWinningOdds": 3.056923076923077,
+          "averageOddsIncludingMisses": 2.6493333333333333,
+          "totalStake": 24,
+          "totalReturn": 39.74,
+          "netProfit": 15.740000000000002,
+          "volatility": 0.8821621166202955,
+          "roi": 0.6558333333333335
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 0.4,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 1,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.3,
+              "handicapSmoothingFactor": 0.062
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.29,
+              "handicapRecommendationThreshold": 49.28,
+              "handicapReverseThreshold": 38.77,
+              "singleRecommendationThreshold": 53.86
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.5,
+            "recommendedMatchCount": 15,
+            "recommendedSelectionCount": 24,
+            "hitMatchCount": 13,
+            "missMatchCount": 2,
+            "winningSelectionCount": 13,
+            "averageWinningOdds": 3.056923076923077,
+            "averageOddsIncludingMisses": 2.6493333333333333,
+            "totalStake": 24,
+            "totalReturn": 39.74,
+            "netProfit": 15.740000000000002,
+            "volatility": 0.8821621166202955,
+            "roi": 0.6558333333333335
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 1.42,
+              "homeTeamGoalFactor": 1.28,
+              "seedTeamGoalFactor": 1.48,
+              "officialMatchWeight": 1.42,
+              "internationalFriendlyWeight": 0.47,
+              "clubFriendlyWeight": 0.89,
+              "handicapSmoothingFactor": 0.727
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.49,
+              "handicapRecommendationThreshold": 38.22,
+              "handicapReverseThreshold": 48.01,
+              "singleRecommendationThreshold": 31.61
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.3333333333333333,
+            "recommendedMatchCount": 10,
+            "recommendedSelectionCount": 11,
+            "hitMatchCount": 6,
+            "missMatchCount": 4,
+            "winningSelectionCount": 6,
+            "averageWinningOdds": 3.6566666666666667,
+            "averageOddsIncludingMisses": 2.194,
+            "totalStake": 11,
+            "totalReturn": 21.94,
+            "netProfit": 10.940000000000001,
+            "volatility": 2.0188195120471324,
+            "roi": 0.9945454545454546
+          }
+        }
+      }
+    },
+    {
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "PREVIOUS",
+      "action": "REOPTIMIZE_AGGRESSIVE",
+      "reasons": [
+        "激进方案采样率低于33.3%"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "AGGRESSIVE_MINIMUM_33_3_AND_BELOW_STABLE",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.5952380952380952,
+          "recommendedMatchCount": 100,
+          "recommendedSelectionCount": 100,
+          "hitMatchCount": 44,
+          "missMatchCount": 56,
+          "winningSelectionCount": 44,
+          "averageWinningOdds": 2.6134090909090912,
+          "averageOddsIncludingMisses": 1.1499000000000001,
+          "totalStake": 100,
+          "totalReturn": 114.99000000000001,
+          "netProfit": 14.990000000000009,
+          "volatility": 1.3780593110045976,
+          "roi": 0.14990000000000014
+        },
+        "aggressive": {
+          "samplingRate": 0.20833333333333334,
+          "recommendedMatchCount": 35,
+          "recommendedSelectionCount": 68,
+          "hitMatchCount": 24,
+          "missMatchCount": 11,
+          "winningSelectionCount": 24,
+          "averageWinningOdds": 3.3812499999999996,
+          "averageOddsIncludingMisses": 2.3185714285714285,
+          "totalStake": 68,
+          "totalReturn": 81.14999999999999,
+          "netProfit": 13.149999999999991,
+          "volatility": 0.8222647552528884,
+          "roi": 0.19338235294117645
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 0.9,
+              "homeTeamGoalFactor": 1.06,
+              "seedTeamGoalFactor": 1.4,
+              "officialMatchWeight": 1,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.3,
+              "handicapSmoothingFactor": 0.652
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.85,
+              "handicapRecommendationThreshold": 51.41,
+              "handicapReverseThreshold": 49.99,
+              "singleRecommendationThreshold": 6.22
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.5952380952380952,
+            "recommendedMatchCount": 100,
+            "recommendedSelectionCount": 100,
+            "hitMatchCount": 44,
+            "missMatchCount": 56,
+            "winningSelectionCount": 44,
+            "averageWinningOdds": 2.6134090909090912,
+            "averageOddsIncludingMisses": 1.1499000000000001,
+            "totalStake": 100,
+            "totalReturn": 114.99000000000001,
+            "netProfit": 14.990000000000009,
+            "volatility": 1.3780593110045976,
+            "roi": 0.14990000000000014
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 0.1,
+              "homeTeamGoalFactor": 1.1,
+              "seedTeamGoalFactor": 1.18,
+              "officialMatchWeight": 1.23,
+              "internationalFriendlyWeight": 0.12,
+              "clubFriendlyWeight": 0.09,
+              "handicapSmoothingFactor": 0.6
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.37,
+              "handicapRecommendationThreshold": 45.75,
+              "handicapReverseThreshold": 49.68,
+              "singleRecommendationThreshold": 27.34
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.35119047619047616,
+            "recommendedMatchCount": 59,
+            "recommendedSelectionCount": 66,
+            "hitMatchCount": 28,
+            "missMatchCount": 31,
+            "winningSelectionCount": 28,
+            "averageWinningOdds": 3.0264285714285717,
+            "averageOddsIncludingMisses": 1.436271186440678,
+            "totalStake": 66,
+            "totalReturn": 84.74000000000001,
+            "netProfit": 18.74000000000001,
+            "volatility": 1.3941392732675943,
+            "roi": 0.28393939393939416
+          }
+        }
+      }
+    }
+  ],
+  "verification": [
+    {
+      "key": "WORLD_CUP:CURRENT:STABLE",
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 104,
+      "metrics": {
+        "samplingRate": 0.6346153846153846,
+        "recommendedMatchCount": 66,
+        "recommendedSelectionCount": 93,
+        "hitMatchCount": 39,
+        "missMatchCount": 27,
+        "winningSelectionCount": 39,
+        "averageWinningOdds": 2.605384615384615,
+        "averageOddsIncludingMisses": 1.5395454545454546,
+        "totalStake": 93,
+        "totalReturn": 101.61,
+        "netProfit": 8.61,
+        "volatility": 1.0923703616416032,
+        "roi": 0.09258064516129028
+      }
+    },
+    {
+      "key": "WORLD_CUP:CURRENT:AGGRESSIVE",
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 104,
+      "metrics": {
+        "samplingRate": 0.38461538461538464,
+        "recommendedMatchCount": 40,
+        "recommendedSelectionCount": 51,
+        "hitMatchCount": 20,
+        "missMatchCount": 20,
+        "winningSelectionCount": 20,
+        "averageWinningOdds": 2.9795,
+        "averageOddsIncludingMisses": 1.48975,
+        "totalStake": 51,
+        "totalReturn": 59.589999999999996,
+        "netProfit": 8.589999999999996,
+        "volatility": 1.3779397245944338,
+        "roi": 0.16843137254901963
+      }
+    },
+    {
+      "key": "WORLD_CUP:PREVIOUS:STABLE",
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 168,
+      "metrics": {
+        "samplingRate": 0.5714285714285714,
+        "recommendedMatchCount": 96,
+        "recommendedSelectionCount": 96,
+        "hitMatchCount": 41,
+        "missMatchCount": 55,
+        "winningSelectionCount": 41,
+        "averageWinningOdds": 2.6458536585365855,
+        "averageOddsIncludingMisses": 1.1300000000000001,
+        "totalStake": 96,
+        "totalReturn": 108.48,
+        "netProfit": 12.480000000000004,
+        "volatility": 1.3871948218199965,
+        "roi": 0.13000000000000012
+      }
+    },
+    {
+      "key": "WORLD_CUP:PREVIOUS:AGGRESSIVE",
+      "competition": "WORLD_CUP",
+      "competitionName": "世界杯",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 168,
+      "metrics": {
+        "samplingRate": 0.35119047619047616,
+        "recommendedMatchCount": 59,
+        "recommendedSelectionCount": 66,
+        "hitMatchCount": 28,
+        "missMatchCount": 31,
+        "winningSelectionCount": 28,
+        "averageWinningOdds": 3.0264285714285717,
+        "averageOddsIncludingMisses": 1.436271186440678,
+        "totalStake": 66,
+        "totalReturn": 84.74000000000001,
+        "netProfit": 18.74000000000001,
+        "volatility": 1.3941392732675943,
+        "roi": 0.28393939393939416
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:CURRENT:STABLE",
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 51,
+      "metrics": {
+        "samplingRate": 1,
+        "recommendedMatchCount": 51,
+        "recommendedSelectionCount": 88,
+        "hitMatchCount": 38,
+        "missMatchCount": 13,
+        "winningSelectionCount": 38,
+        "averageWinningOdds": 2.789473684210526,
+        "averageOddsIncludingMisses": 2.0784313725490193,
+        "totalStake": 88,
+        "totalReturn": 105.99999999999999,
+        "netProfit": 17.999999999999986,
+        "volatility": 0.8215165793799166,
+        "roi": 0.20454545454545436
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:CURRENT:AGGRESSIVE",
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 51,
+      "metrics": {
+        "samplingRate": 0.47058823529411764,
+        "recommendedMatchCount": 24,
+        "recommendedSelectionCount": 24,
+        "hitMatchCount": 9,
+        "missMatchCount": 15,
+        "winningSelectionCount": 9,
+        "averageWinningOdds": 3.5277777777777777,
+        "averageOddsIncludingMisses": 1.3229166666666667,
+        "totalStake": 24,
+        "totalReturn": 31.75,
+        "netProfit": 7.75,
+        "volatility": 1.7688180262946573,
+        "roi": 0.32291666666666674
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:PREVIOUS:STABLE",
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 102,
+      "metrics": {
+        "samplingRate": 0.6078431372549019,
+        "recommendedMatchCount": 62,
+        "recommendedSelectionCount": 62,
+        "hitMatchCount": 28,
+        "missMatchCount": 34,
+        "winningSelectionCount": 28,
+        "averageWinningOdds": 2.7728571428571427,
+        "averageOddsIncludingMisses": 1.252258064516129,
+        "totalStake": 62,
+        "totalReturn": 77.64,
+        "netProfit": 15.64,
+        "volatility": 1.4900483206543056,
+        "roi": 0.252258064516129
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:PREVIOUS:AGGRESSIVE",
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "competitionName": "欧洲杯",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 102,
+      "metrics": {
+        "samplingRate": 0.5686274509803921,
+        "recommendedMatchCount": 58,
+        "recommendedSelectionCount": 58,
+        "hitMatchCount": 26,
+        "missMatchCount": 32,
+        "winningSelectionCount": 26,
+        "averageWinningOdds": 2.859230769230769,
+        "averageOddsIncludingMisses": 1.2817241379310342,
+        "totalStake": 58,
+        "totalReturn": 74.33999999999999,
+        "netProfit": 16.33999999999999,
+        "volatility": 1.5213684259499125,
+        "roi": 0.28172413793103424
+      }
+    },
+    {
+      "key": "COPA_AMERICA:CURRENT:STABLE",
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 32,
+      "metrics": {
+        "samplingRate": 0.625,
+        "recommendedMatchCount": 20,
+        "recommendedSelectionCount": 20,
+        "hitMatchCount": 15,
+        "missMatchCount": 5,
+        "winningSelectionCount": 15,
+        "averageWinningOdds": 2.1286666666666667,
+        "averageOddsIncludingMisses": 1.5965,
+        "totalStake": 20,
+        "totalReturn": 31.93,
+        "netProfit": 11.93,
+        "volatility": 1.1571893126291644,
+        "roi": 0.5965
+      }
+    },
+    {
+      "key": "COPA_AMERICA:CURRENT:AGGRESSIVE",
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 32,
+      "metrics": {
+        "samplingRate": 0.5,
+        "recommendedMatchCount": 16,
+        "recommendedSelectionCount": 16,
+        "hitMatchCount": 12,
+        "missMatchCount": 4,
+        "winningSelectionCount": 12,
+        "averageWinningOdds": 2.2900000000000005,
+        "averageOddsIncludingMisses": 1.7175000000000002,
+        "totalStake": 16,
+        "totalReturn": 27.480000000000004,
+        "netProfit": 11.480000000000004,
+        "volatility": 1.2280255154786754,
+        "roi": 0.7175000000000002
+      }
+    },
+    {
+      "key": "COPA_AMERICA:PREVIOUS:STABLE",
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 86,
+      "metrics": {
+        "samplingRate": 0.686046511627907,
+        "recommendedMatchCount": 59,
+        "recommendedSelectionCount": 91,
+        "hitMatchCount": 49,
+        "missMatchCount": 10,
+        "winningSelectionCount": 49,
+        "averageWinningOdds": 2.3391836734693876,
+        "averageOddsIncludingMisses": 1.9427118644067796,
+        "totalStake": 91,
+        "totalReturn": 114.61999999999999,
+        "netProfit": 23.61999999999999,
+        "volatility": 0.713305252610353,
+        "roi": 0.2595604395604394
+      }
+    },
+    {
+      "key": "COPA_AMERICA:PREVIOUS:AGGRESSIVE",
+      "competition": "COPA_AMERICA",
+      "competitionName": "美洲杯",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 86,
+      "metrics": {
+        "samplingRate": 0.4883720930232558,
+        "recommendedMatchCount": 42,
+        "recommendedSelectionCount": 58,
+        "hitMatchCount": 32,
+        "missMatchCount": 10,
+        "winningSelectionCount": 32,
+        "averageWinningOdds": 2.4037500000000005,
+        "averageOddsIncludingMisses": 1.8314285714285718,
+        "totalStake": 58,
+        "totalReturn": 76.92000000000002,
+        "netProfit": 18.920000000000016,
+        "volatility": 0.8163257957935965,
+        "roi": 0.3262068965517244
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:CURRENT:STABLE",
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 63,
+      "metrics": {
+        "samplingRate": 0.6031746031746031,
+        "recommendedMatchCount": 38,
+        "recommendedSelectionCount": 38,
+        "hitMatchCount": 22,
+        "missMatchCount": 16,
+        "winningSelectionCount": 22,
+        "averageWinningOdds": 2.6159090909090907,
+        "averageOddsIncludingMisses": 1.5144736842105262,
+        "totalStake": 38,
+        "totalReturn": 57.55,
+        "netProfit": 19.549999999999997,
+        "volatility": 1.3986783285860729,
+        "roi": 0.5144736842105262
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:CURRENT:AGGRESSIVE",
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 63,
+      "metrics": {
+        "samplingRate": 0.47619047619047616,
+        "recommendedMatchCount": 30,
+        "recommendedSelectionCount": 30,
+        "hitMatchCount": 18,
+        "missMatchCount": 12,
+        "winningSelectionCount": 18,
+        "averageWinningOdds": 2.7055555555555557,
+        "averageOddsIncludingMisses": 1.6233333333333335,
+        "totalStake": 30,
+        "totalReturn": 48.7,
+        "netProfit": 18.700000000000003,
+        "volatility": 1.4358713162333208,
+        "roi": 0.6233333333333335
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:PREVIOUS:STABLE",
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 69,
+      "metrics": {
+        "samplingRate": 0.7101449275362319,
+        "recommendedMatchCount": 49,
+        "recommendedSelectionCount": 49,
+        "hitMatchCount": 23,
+        "missMatchCount": 26,
+        "winningSelectionCount": 23,
+        "averageWinningOdds": 3.0621739130434777,
+        "averageOddsIncludingMisses": 1.43734693877551,
+        "totalStake": 49,
+        "totalReturn": 70.42999999999999,
+        "netProfit": 21.429999999999993,
+        "volatility": 1.6250086865283264,
+        "roi": 0.43734693877551
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:PREVIOUS:AGGRESSIVE",
+      "competition": "CLUB_WORLD_CUP",
+      "competitionName": "世俱杯",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 69,
+      "metrics": {
+        "samplingRate": 0.43478260869565216,
+        "recommendedMatchCount": 30,
+        "recommendedSelectionCount": 30,
+        "hitMatchCount": 14,
+        "missMatchCount": 16,
+        "winningSelectionCount": 14,
+        "averageWinningOdds": 3.5535714285714293,
+        "averageOddsIncludingMisses": 1.6583333333333337,
+        "totalStake": 30,
+        "totalReturn": 49.75000000000001,
+        "netProfit": 19.750000000000007,
+        "volatility": 1.8340215531643203,
+        "roi": 0.6583333333333337
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:CURRENT:STABLE",
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 11,
+      "metrics": {
+        "samplingRate": 0.6363636363636364,
+        "recommendedMatchCount": 7,
+        "recommendedSelectionCount": 7,
+        "hitMatchCount": 4,
+        "missMatchCount": 3,
+        "winningSelectionCount": 4,
+        "averageWinningOdds": 3.7824999999999998,
+        "averageOddsIncludingMisses": 2.1614285714285715,
+        "totalStake": 7,
+        "totalReturn": 15.129999999999999,
+        "netProfit": 8.129999999999999,
+        "volatility": 2.8568189102066452,
+        "roi": 1.1614285714285715
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:CURRENT:AGGRESSIVE",
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 11,
+      "metrics": {
+        "samplingRate": 0.5454545454545454,
+        "recommendedMatchCount": 6,
+        "recommendedSelectionCount": 6,
+        "hitMatchCount": 4,
+        "missMatchCount": 2,
+        "winningSelectionCount": 4,
+        "averageWinningOdds": 3.7824999999999998,
+        "averageOddsIncludingMisses": 2.5216666666666665,
+        "totalStake": 6,
+        "totalReturn": 15.129999999999999,
+        "netProfit": 9.129999999999999,
+        "volatility": 2.950189259465682,
+        "roi": 1.5216666666666665
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:PREVIOUS:STABLE",
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 180,
+      "metrics": {
+        "samplingRate": 0.5611111111111111,
+        "recommendedMatchCount": 101,
+        "recommendedSelectionCount": 101,
+        "hitMatchCount": 44,
+        "missMatchCount": 57,
+        "winningSelectionCount": 44,
+        "averageWinningOdds": 3.4372727272727275,
+        "averageOddsIncludingMisses": 1.4974257425742574,
+        "totalStake": 101,
+        "totalReturn": 151.24,
+        "netProfit": 50.24000000000001,
+        "volatility": 1.7679907541983055,
+        "roi": 0.4974257425742574
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:PREVIOUS:AGGRESSIVE",
+      "competition": "EUROPA_LEAGUE",
+      "competitionName": "欧罗巴",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 180,
+      "metrics": {
+        "samplingRate": 0.5333333333333333,
+        "recommendedMatchCount": 96,
+        "recommendedSelectionCount": 99,
+        "hitMatchCount": 44,
+        "missMatchCount": 52,
+        "winningSelectionCount": 44,
+        "averageWinningOdds": 3.430454545454546,
+        "averageOddsIncludingMisses": 1.5722916666666669,
+        "totalStake": 99,
+        "totalReturn": 150.94000000000003,
+        "netProfit": 51.940000000000026,
+        "volatility": 1.7383740883201697,
+        "roi": 0.5246464646464648
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:CURRENT:STABLE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 12,
+      "metrics": {
+        "samplingRate": 1,
+        "recommendedMatchCount": 12,
+        "recommendedSelectionCount": 12,
+        "hitMatchCount": 7,
+        "missMatchCount": 5,
+        "winningSelectionCount": 7,
+        "averageWinningOdds": 1.9257142857142855,
+        "averageOddsIncludingMisses": 1.1233333333333333,
+        "totalStake": 12,
+        "totalReturn": 13.479999999999999,
+        "netProfit": 1.4799999999999986,
+        "volatility": 1.1579082498849014,
+        "roi": 0.1233333333333333
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:CURRENT:AGGRESSIVE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 12,
+      "metrics": {
+        "samplingRate": 0.5,
+        "recommendedMatchCount": 6,
+        "recommendedSelectionCount": 8,
+        "hitMatchCount": 3,
+        "missMatchCount": 3,
+        "winningSelectionCount": 3,
+        "averageWinningOdds": 3.0666666666666664,
+        "averageOddsIncludingMisses": 1.5333333333333332,
+        "totalStake": 8,
+        "totalReturn": 9.2,
+        "netProfit": 1.1999999999999993,
+        "volatility": 1.2883426045375768,
+        "roi": 0.1499999999999999
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:PREVIOUS:STABLE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 217,
+      "metrics": {
+        "samplingRate": 0.5714285714285714,
+        "recommendedMatchCount": 124,
+        "recommendedSelectionCount": 124,
+        "hitMatchCount": 53,
+        "missMatchCount": 71,
+        "winningSelectionCount": 53,
+        "averageWinningOdds": 3.152641509433963,
+        "averageOddsIncludingMisses": 1.3475000000000004,
+        "totalStake": 124,
+        "totalReturn": 167.09000000000003,
+        "netProfit": 43.09000000000003,
+        "volatility": 1.6545427118590352,
+        "roi": 0.34750000000000036
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:PREVIOUS:AGGRESSIVE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 217,
+      "metrics": {
+        "samplingRate": 0.46543778801843316,
+        "recommendedMatchCount": 101,
+        "recommendedSelectionCount": 101,
+        "hitMatchCount": 46,
+        "missMatchCount": 55,
+        "winningSelectionCount": 46,
+        "averageWinningOdds": 3.257826086956522,
+        "averageOddsIncludingMisses": 1.483762376237624,
+        "totalStake": 101,
+        "totalReturn": 149.86,
+        "netProfit": 48.860000000000014,
+        "volatility": 1.7185522113017964,
+        "roi": 0.48376237623762397
+      }
+    },
+    {
+      "key": "PREMIER_LEAGUE:CURRENT:STABLE",
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "PREMIER_LEAGUE:CURRENT:AGGRESSIVE",
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "PREMIER_LEAGUE:PREVIOUS:STABLE",
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 338,
+      "metrics": {
+        "samplingRate": 0.5828402366863905,
+        "recommendedMatchCount": 197,
+        "recommendedSelectionCount": 220,
+        "hitMatchCount": 104,
+        "missMatchCount": 93,
+        "winningSelectionCount": 104,
+        "averageWinningOdds": 2.2483653846153846,
+        "averageOddsIncludingMisses": 1.1869543147208121,
+        "totalStake": 220,
+        "totalReturn": 233.83,
+        "netProfit": 13.830000000000013,
+        "volatility": 1.0738694133542213,
+        "roi": 0.06286363636363634
+      }
+    },
+    {
+      "key": "PREMIER_LEAGUE:PREVIOUS:AGGRESSIVE",
+      "competition": "PREMIER_LEAGUE",
+      "competitionName": "英超",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 338,
+      "metrics": {
+        "samplingRate": 0.5680473372781065,
+        "recommendedMatchCount": 192,
+        "recommendedSelectionCount": 206,
+        "hitMatchCount": 103,
+        "missMatchCount": 89,
+        "winningSelectionCount": 103,
+        "averageWinningOdds": 2.168932038834951,
+        "averageOddsIncludingMisses": 1.1635416666666665,
+        "totalStake": 206,
+        "totalReturn": 223.39999999999995,
+        "netProfit": 17.39999999999995,
+        "volatility": 1.0619349629381603,
+        "roi": 0.08446601941747556
+      }
+    },
+    {
+      "key": "LA_LIGA:CURRENT:STABLE",
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "LA_LIGA:CURRENT:AGGRESSIVE",
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "LA_LIGA:PREVIOUS:STABLE",
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 353,
+      "metrics": {
+        "samplingRate": 0.546742209631728,
+        "recommendedMatchCount": 193,
+        "recommendedSelectionCount": 196,
+        "hitMatchCount": 66,
+        "missMatchCount": 127,
+        "winningSelectionCount": 66,
+        "averageWinningOdds": 3.5957575757575757,
+        "averageOddsIncludingMisses": 1.2296373056994818,
+        "totalStake": 196,
+        "totalReturn": 237.32,
+        "netProfit": 41.31999999999999,
+        "volatility": 1.7314842421481738,
+        "roi": 0.21081632653061222
+      }
+    },
+    {
+      "key": "LA_LIGA:PREVIOUS:AGGRESSIVE",
+      "competition": "LA_LIGA",
+      "competitionName": "西甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 353,
+      "metrics": {
+        "samplingRate": 0.5382436260623229,
+        "recommendedMatchCount": 190,
+        "recommendedSelectionCount": 195,
+        "hitMatchCount": 67,
+        "missMatchCount": 123,
+        "winningSelectionCount": 67,
+        "averageWinningOdds": 3.618955223880597,
+        "averageOddsIncludingMisses": 1.2761578947368422,
+        "totalStake": 195,
+        "totalReturn": 242.47,
+        "netProfit": 47.47,
+        "volatility": 1.7193311600688936,
+        "roi": 0.24343589743589744
+      }
+    },
+    {
+      "key": "BUNDESLIGA:CURRENT:STABLE",
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "BUNDESLIGA:CURRENT:AGGRESSIVE",
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "BUNDESLIGA:PREVIOUS:STABLE",
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 282,
+      "metrics": {
+        "samplingRate": 0.6879432624113475,
+        "recommendedMatchCount": 194,
+        "recommendedSelectionCount": 195,
+        "hitMatchCount": 99,
+        "missMatchCount": 95,
+        "winningSelectionCount": 99,
+        "averageWinningOdds": 2.2899999999999996,
+        "averageOddsIncludingMisses": 1.1686082474226802,
+        "totalStake": 195,
+        "totalReturn": 226.70999999999995,
+        "netProfit": 31.70999999999995,
+        "volatility": 1.2576837404974235,
+        "roi": 0.16261538461538438
+      }
+    },
+    {
+      "key": "BUNDESLIGA:PREVIOUS:AGGRESSIVE",
+      "competition": "BUNDESLIGA",
+      "competitionName": "德甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 282,
+      "metrics": {
+        "samplingRate": 0.3829787234042553,
+        "recommendedMatchCount": 108,
+        "recommendedSelectionCount": 109,
+        "hitMatchCount": 54,
+        "missMatchCount": 54,
+        "winningSelectionCount": 54,
+        "averageWinningOdds": 2.467037037037037,
+        "averageOddsIncludingMisses": 1.2335185185185185,
+        "totalStake": 109,
+        "totalReturn": 133.22,
+        "netProfit": 24.22,
+        "volatility": 1.3269930509562808,
+        "roi": 0.22220183486238532
+      }
+    },
+    {
+      "key": "SERIE_A:CURRENT:STABLE",
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "SERIE_A:CURRENT:AGGRESSIVE",
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "SERIE_A:PREVIOUS:STABLE",
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 350,
+      "metrics": {
+        "samplingRate": 0.6457142857142857,
+        "recommendedMatchCount": 226,
+        "recommendedSelectionCount": 226,
+        "hitMatchCount": 92,
+        "missMatchCount": 134,
+        "winningSelectionCount": 92,
+        "averageWinningOdds": 2.71945652173913,
+        "averageOddsIncludingMisses": 1.1070353982300885,
+        "totalStake": 226,
+        "totalReturn": 250.18999999999997,
+        "netProfit": 24.18999999999997,
+        "volatility": 1.4672994297413082,
+        "roi": 0.10703539823008845
+      }
+    },
+    {
+      "key": "SERIE_A:PREVIOUS:AGGRESSIVE",
+      "competition": "SERIE_A",
+      "competitionName": "意甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 350,
+      "metrics": {
+        "samplingRate": 0.44,
+        "recommendedMatchCount": 154,
+        "recommendedSelectionCount": 155,
+        "hitMatchCount": 55,
+        "missMatchCount": 99,
+        "winningSelectionCount": 55,
+        "averageWinningOdds": 3.452363636363637,
+        "averageOddsIncludingMisses": 1.232987012987013,
+        "totalStake": 155,
+        "totalReturn": 189.88000000000002,
+        "netProfit": 34.880000000000024,
+        "volatility": 1.7727766456236551,
+        "roi": 0.22503225806451632
+      }
+    },
+    {
+      "key": "LIGUE_1:CURRENT:STABLE",
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "LIGUE_1:CURRENT:AGGRESSIVE",
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "LIGUE_1:PREVIOUS:STABLE",
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 224,
+      "metrics": {
+        "samplingRate": 0.5848214285714286,
+        "recommendedMatchCount": 131,
+        "recommendedSelectionCount": 140,
+        "hitMatchCount": 48,
+        "missMatchCount": 83,
+        "winningSelectionCount": 48,
+        "averageWinningOdds": 3.666875000000001,
+        "averageOddsIncludingMisses": 1.3435877862595424,
+        "totalStake": 140,
+        "totalReturn": 176.01000000000005,
+        "netProfit": 36.01000000000005,
+        "volatility": 1.6741905591017874,
+        "roi": 0.25721428571428606
+      }
+    },
+    {
+      "key": "LIGUE_1:PREVIOUS:AGGRESSIVE",
+      "competition": "LIGUE_1",
+      "competitionName": "法甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 224,
+      "metrics": {
+        "samplingRate": 0.35267857142857145,
+        "recommendedMatchCount": 79,
+        "recommendedSelectionCount": 84,
+        "hitMatchCount": 30,
+        "missMatchCount": 49,
+        "winningSelectionCount": 30,
+        "averageWinningOdds": 3.873333333333333,
+        "averageOddsIncludingMisses": 1.470886075949367,
+        "totalStake": 84,
+        "totalReturn": 116.19999999999999,
+        "netProfit": 32.19999999999999,
+        "volatility": 1.7728018489528836,
+        "roi": 0.3833333333333333
+      }
+    },
+    {
+      "key": "PRIMEIRA_LIGA:CURRENT:STABLE",
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "PRIMEIRA_LIGA:CURRENT:AGGRESSIVE",
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "PRIMEIRA_LIGA:PREVIOUS:STABLE",
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 176,
+      "metrics": {
+        "samplingRate": 0.7329545454545454,
+        "recommendedMatchCount": 129,
+        "recommendedSelectionCount": 147,
+        "hitMatchCount": 54,
+        "missMatchCount": 75,
+        "winningSelectionCount": 54,
+        "averageWinningOdds": 3.0320370370370378,
+        "averageOddsIncludingMisses": 1.2692248062015508,
+        "totalStake": 147,
+        "totalReturn": 163.73000000000005,
+        "netProfit": 16.730000000000047,
+        "volatility": 1.4873898911269854,
+        "roi": 0.11380952380952403
+      }
+    },
+    {
+      "key": "PRIMEIRA_LIGA:PREVIOUS:AGGRESSIVE",
+      "competition": "PRIMEIRA_LIGA",
+      "competitionName": "葡超",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 176,
+      "metrics": {
+        "samplingRate": 0.5170454545454546,
+        "recommendedMatchCount": 91,
+        "recommendedSelectionCount": 93,
+        "hitMatchCount": 32,
+        "missMatchCount": 59,
+        "winningSelectionCount": 32,
+        "averageWinningOdds": 3.429687499999999,
+        "averageOddsIncludingMisses": 1.2060439560439558,
+        "totalStake": 93,
+        "totalReturn": 109.74999999999997,
+        "netProfit": 16.74999999999997,
+        "volatility": 1.7247659925154277,
+        "roi": 0.18010752688172005
+      }
+    },
+    {
+      "key": "EREDIVISIE:CURRENT:STABLE",
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "EREDIVISIE:CURRENT:AGGRESSIVE",
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "EREDIVISIE:PREVIOUS:STABLE",
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 189,
+      "metrics": {
+        "samplingRate": 0.582010582010582,
+        "recommendedMatchCount": 110,
+        "recommendedSelectionCount": 110,
+        "hitMatchCount": 54,
+        "missMatchCount": 56,
+        "winningSelectionCount": 54,
+        "averageWinningOdds": 2.5655555555555547,
+        "averageOddsIncludingMisses": 1.2594545454545452,
+        "totalStake": 110,
+        "totalReturn": 138.53999999999996,
+        "netProfit": 28.539999999999964,
+        "volatility": 1.4097256134632656,
+        "roi": 0.25945454545454516
+      }
+    },
+    {
+      "key": "EREDIVISIE:PREVIOUS:AGGRESSIVE",
+      "competition": "EREDIVISIE",
+      "competitionName": "荷甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 189,
+      "metrics": {
+        "samplingRate": 0.5026455026455027,
+        "recommendedMatchCount": 95,
+        "recommendedSelectionCount": 95,
+        "hitMatchCount": 49,
+        "missMatchCount": 46,
+        "winningSelectionCount": 49,
+        "averageWinningOdds": 2.4822448979591836,
+        "averageOddsIncludingMisses": 1.280315789473684,
+        "totalStake": 95,
+        "totalReturn": 121.63,
+        "netProfit": 26.629999999999995,
+        "volatility": 1.388715503722758,
+        "roi": 0.2803157894736841
+      }
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:CURRENT:STABLE",
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:CURRENT:AGGRESSIVE",
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:PREVIOUS:STABLE",
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:PREVIOUS:AGGRESSIVE",
+      "competition": "ARGENTINE_PRIMERA_DIVISION",
+      "competitionName": "阿甲",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 0,
+      "metrics": null
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:CURRENT:STABLE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 31,
+      "metrics": {
+        "samplingRate": 1,
+        "recommendedMatchCount": 31,
+        "recommendedSelectionCount": 31,
+        "hitMatchCount": 20,
+        "missMatchCount": 11,
+        "winningSelectionCount": 20,
+        "averageWinningOdds": 1.9000000000000004,
+        "averageOddsIncludingMisses": 1.2258064516129035,
+        "totalStake": 31,
+        "totalReturn": 38.00000000000001,
+        "netProfit": 7.000000000000007,
+        "volatility": 1.1261491144413291,
+        "roi": 0.22580645161290347
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:CURRENT:AGGRESSIVE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 31,
+      "metrics": {
+        "samplingRate": 0.3870967741935484,
+        "recommendedMatchCount": 12,
+        "recommendedSelectionCount": 12,
+        "hitMatchCount": 7,
+        "missMatchCount": 5,
+        "winningSelectionCount": 7,
+        "averageWinningOdds": 2.662857142857143,
+        "averageOddsIncludingMisses": 1.5533333333333335,
+        "totalStake": 12,
+        "totalReturn": 18.64,
+        "netProfit": 6.640000000000001,
+        "volatility": 1.5410641738353363,
+        "roi": 0.5533333333333335
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:PREVIOUS:STABLE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 197,
+      "metrics": {
+        "samplingRate": 0.9289340101522843,
+        "recommendedMatchCount": 183,
+        "recommendedSelectionCount": 183,
+        "hitMatchCount": 104,
+        "missMatchCount": 79,
+        "winningSelectionCount": 104,
+        "averageWinningOdds": 1.9159615384615387,
+        "averageOddsIncludingMisses": 1.0888524590163935,
+        "totalStake": 183,
+        "totalReturn": 199.26000000000002,
+        "netProfit": 16.26000000000002,
+        "volatility": 1.0840680887145395,
+        "roi": 0.08885245901639349
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:PREVIOUS:AGGRESSIVE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 197,
+      "metrics": {
+        "samplingRate": 0.3604060913705584,
+        "recommendedMatchCount": 71,
+        "recommendedSelectionCount": 71,
+        "hitMatchCount": 31,
+        "missMatchCount": 40,
+        "winningSelectionCount": 31,
+        "averageWinningOdds": 2.7041935483870967,
+        "averageOddsIncludingMisses": 1.1807042253521127,
+        "totalStake": 71,
+        "totalReturn": 83.83,
+        "netProfit": 12.829999999999998,
+        "volatility": 1.4533943756832166,
+        "roi": 0.18070422535211272
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:CURRENT:STABLE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 32,
+      "metrics": {
+        "samplingRate": 0.84375,
+        "recommendedMatchCount": 27,
+        "recommendedSelectionCount": 29,
+        "hitMatchCount": 15,
+        "missMatchCount": 12,
+        "winningSelectionCount": 15,
+        "averageWinningOdds": 2.278,
+        "averageOddsIncludingMisses": 1.2655555555555555,
+        "totalStake": 29,
+        "totalReturn": 34.17,
+        "netProfit": 5.170000000000002,
+        "volatility": 1.0635122628974867,
+        "roi": 0.1782758620689655
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:CURRENT:AGGRESSIVE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 32,
+      "metrics": {
+        "samplingRate": 0.34375,
+        "recommendedMatchCount": 11,
+        "recommendedSelectionCount": 11,
+        "hitMatchCount": 5,
+        "missMatchCount": 6,
+        "winningSelectionCount": 5,
+        "averageWinningOdds": 3.2,
+        "averageOddsIncludingMisses": 1.4545454545454546,
+        "totalStake": 11,
+        "totalReturn": 16,
+        "netProfit": 5,
+        "volatility": 1.753398777439768,
+        "roi": 0.4545454545454546
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:PREVIOUS:STABLE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 104,
+      "metrics": {
+        "samplingRate": 0.5961538461538461,
+        "recommendedMatchCount": 62,
+        "recommendedSelectionCount": 62,
+        "hitMatchCount": 27,
+        "missMatchCount": 35,
+        "winningSelectionCount": 27,
+        "averageWinningOdds": 2.428888888888889,
+        "averageOddsIncludingMisses": 1.0577419354838709,
+        "totalStake": 62,
+        "totalReturn": 65.58,
+        "netProfit": 3.5799999999999983,
+        "volatility": 1.2564644898596062,
+        "roi": 0.057741935483870854
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:PREVIOUS:AGGRESSIVE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 104,
+      "metrics": {
+        "samplingRate": 0.5192307692307693,
+        "recommendedMatchCount": 54,
+        "recommendedSelectionCount": 55,
+        "hitMatchCount": 22,
+        "missMatchCount": 32,
+        "winningSelectionCount": 22,
+        "averageWinningOdds": 3.1859090909090906,
+        "averageOddsIncludingMisses": 1.2979629629629628,
+        "totalStake": 55,
+        "totalReturn": 70.08999999999999,
+        "netProfit": 15.08999999999999,
+        "volatility": 1.6035790600674455,
+        "roi": 0.27436363636363614
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:CURRENT:STABLE",
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 30,
+      "metrics": {
+        "samplingRate": 0.5,
+        "recommendedMatchCount": 15,
+        "recommendedSelectionCount": 24,
+        "hitMatchCount": 13,
+        "missMatchCount": 2,
+        "winningSelectionCount": 13,
+        "averageWinningOdds": 3.056923076923077,
+        "averageOddsIncludingMisses": 2.6493333333333333,
+        "totalStake": 24,
+        "totalReturn": 39.74,
+        "netProfit": 15.740000000000002,
+        "volatility": 0.8821621166202955,
+        "roi": 0.6558333333333335
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:CURRENT:AGGRESSIVE",
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 30,
+      "metrics": {
+        "samplingRate": 0.3333333333333333,
+        "recommendedMatchCount": 10,
+        "recommendedSelectionCount": 11,
+        "hitMatchCount": 6,
+        "missMatchCount": 4,
+        "winningSelectionCount": 6,
+        "averageWinningOdds": 3.6566666666666667,
+        "averageOddsIncludingMisses": 2.194,
+        "totalStake": 11,
+        "totalReturn": 21.94,
+        "netProfit": 10.940000000000001,
+        "volatility": 2.0188195120471324,
+        "roi": 0.9945454545454546
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:PREVIOUS:STABLE",
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "oddsMatchCount": 168,
+      "metrics": {
+        "samplingRate": 0.6190476190476191,
+        "recommendedMatchCount": 104,
+        "recommendedSelectionCount": 112,
+        "hitMatchCount": 38,
+        "missMatchCount": 66,
+        "winningSelectionCount": 38,
+        "averageWinningOdds": 3.5052631578947366,
+        "averageOddsIncludingMisses": 1.2807692307692307,
+        "totalStake": 112,
+        "totalReturn": 133.2,
+        "netProfit": 21.19999999999999,
+        "volatility": 1.6163742023388503,
+        "roi": 0.18928571428571428
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:PREVIOUS:AGGRESSIVE",
+      "competition": "K_LEAGUE_1",
+      "competitionName": "韩职",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 168,
+      "metrics": {
+        "samplingRate": 0.5714285714285714,
+        "recommendedMatchCount": 96,
+        "recommendedSelectionCount": 99,
+        "hitMatchCount": 37,
+        "missMatchCount": 59,
+        "winningSelectionCount": 37,
+        "averageWinningOdds": 3.4205405405405407,
+        "averageOddsIncludingMisses": 1.3183333333333334,
+        "totalStake": 99,
+        "totalReturn": 126.56,
+        "netProfit": 27.560000000000002,
+        "volatility": 1.6795227202936118,
+        "roi": 0.2783838383838384
+      }
+    }
+  ],
+  "violations": []
+}

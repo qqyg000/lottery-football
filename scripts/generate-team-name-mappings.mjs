@@ -60,6 +60,69 @@ const VERIFIED_SPORTTERY_ENGLISH_ALIASES = [
   },
   {
     competition: '*',
+    standardName: '纳夫兹',
+    aliasName: 'FK Neftchi',
+    lastSeenDate: '2026-07-28',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '纳夫兹',
+    aliasName: 'Neftchi Baku',
+    lastSeenDate: '2026-07-28',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '纳夫兹',
+    aliasName: 'Neftçi',
+    lastSeenDate: '2026-07-28',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '卡尔斯多夫',
+    aliasName: 'Kalsdorf',
+    lastSeenDate: '2026-07-28',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '卡尔斯多夫',
+    aliasName: 'SC Kalsdorf',
+    lastSeenDate: '2026-07-28',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '西基臣',
+    aliasName: 'Seekirchen',
+    lastSeenDate: '2026-07-28',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '阿尔塔奇',
+    aliasName: 'Altach',
+    lastSeenDate: '2026-07-27',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: '奥地利克拉根福',
+    aliasName: 'SK Austria Klagenfurt',
+    lastSeenDate: '2026-07-25',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
+    standardName: 'BW林茨',
+    aliasName: 'BW Linz',
+    lastSeenDate: '2026-07-25',
+    source: 'MANUAL'
+  },
+  {
+    competition: '*',
     standardName: '特罗姆瑟',
     aliasName: 'Tromsø',
     lastSeenDate: '2026-07-26',

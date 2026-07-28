@@ -297,6 +297,14 @@ const FOTMOB_LEAGUE_SOURCES = [
     calendarYearSeason: false
   },
   {
+    leagueId: '278',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '奥地利杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
     leagueId: '51',
     competition: 'FINNISH_VEIKKAUSLIIGA',
     matchType: 'OFFICIAL',
@@ -562,6 +570,16 @@ const FUTBOL24_SOURCES = [
     sourceCompetition: '奥甲',
     seasonPath: 'national/Austria/Bundesliga',
     crossYearSeason: true
+  },
+  {
+    leagueId: '17',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '奥地利杯',
+    seasonPath: 'national/Austria/OFB-Pokal',
+    crossYearSeason: true,
+    seasonStartMonth: 7,
+    firstSeasonStartYear: 2014
   },
   {
     leagueId: '51',
@@ -2060,7 +2078,10 @@ function futbol24SeasonRequests(options) {
       Number(source.firstSeasonStartYear ?? Number.MIN_SAFE_INTEGER),
       source.crossYearSeason ? firstYear - 1 : firstYear
     )
-    const sourceLastYear = source.crossYearSeason && lastMonth < 8 ? lastYear - 1 : lastYear
+    const seasonStartMonth = source.seasonStartMonth ?? 8
+    const sourceLastYear = source.crossYearSeason && lastMonth < seasonStartMonth
+      ? lastYear - 1
+      : lastYear
     for (let seasonStartYear = sourceFirstYear; seasonStartYear <= sourceLastYear; seasonStartYear += 1) {
       const season = source.crossYearSeason
         ? `${seasonStartYear}-${seasonStartYear + 1}`
@@ -3102,6 +3123,7 @@ for (const sourceRow of sourceRows) {
   const awayIsTarget = mappedAwayTeam && targets.has(canonicalChineseName(mappedAwayTeam))
   const importsWholeCompetition = sourceRow.provider === 'FUTBOL24'
       && ['15', '26', '28', '33', '51', '75', '92', '107', '133', '269', '297',
+        '17',
         '291', '322', '324', '525', '531', '534', '537', '70', '868']
         .includes(String(sourceRow.source).replace('FUTBOL24-', ''))
     || sourceRow.provider === 'FOTMOB' && FOTMOB_LEAGUE_SOURCES.some(

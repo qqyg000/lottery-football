@@ -221,6 +221,36 @@ class ClubTeamNameTranslatorTest {
         assertEquals("AIK索尔纳", ClubTeamNameTranslator.translate(
                 Competition.CLUB_FRIENDLY,
                 "AIK Fotboll"));
+        assertEquals("纳夫兹", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "FK Neftchi"));
+        assertEquals("纳夫兹", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "Neftchi Baku"));
+        assertEquals("纳夫兹", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Neftçi"));
+        assertEquals("Neftchi Fergana", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "Neftchi Fergana"));
+        assertEquals("卡尔斯多夫", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "Kalsdorf"));
+        assertEquals("卡尔斯多夫", ClubTeamNameTranslator.translate(
+                Competition.CLUB_FRIENDLY,
+                "SC Kalsdorf"));
+        assertEquals("西基臣", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Seekirchen"));
+        assertEquals("阿尔塔奇", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Altach"));
+        assertEquals("奥地利克拉根福", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "SK Austria Klagenfurt"));
+        assertEquals("BW林茨", ClubTeamNameTranslator.translate(
+                Competition.CLUB_OFFICIAL_OTHER,
+                "BW Linz"));
     }
 
     @Test
