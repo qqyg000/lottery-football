@@ -16,6 +16,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -313,6 +314,149 @@ class SportteryMarketSelectionServiceTest {
         assertEquals(1, storedCount);
         assertTrue(entries.containsKey("2040641"));
         assertFalse(entries.containsKey("2040999"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldPreserveRecentlyClosedMarketWhileAwaitingSettlement() {
+        LocalDate today = LocalDate.of(2026, 7, 29);
+        SportteryMarketSelectionService.SportteryMarketEntry settlingEntry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        settlingEntry.setSportteryMatchId("2040643");
+        settlingEntry.setMatchDate(today.minusDays(1));
+        settlingEntry.setCurrentSale(true);
+        settlingEntry.setNormalOdds(new SportteryOdds(2.80, 3.38, 2.10, "2026-07-28 21:48:38"));
+        SportteryMarketSelectionService.SportteryMarketEntry staleEntry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        staleEntry.setSportteryMatchId("2040600");
+        staleEntry.setMatchDate(today.minusDays(2));
+        staleEntry.setCurrentSale(true);
+        staleEntry.setNormalOdds(new SportteryOdds(2.10, 3.20, 3.10, "2026-07-27 21:00:00"));
+        SportteryMarketSelectionService.SportteryMarketEntry currentEntry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        currentEntry.setSportteryMatchId("2040645");
+        currentEntry.setMatchDate(today);
+        currentEntry.setCurrentSale(true);
+
+        Map<String, SportteryMarketSelectionService.SportteryMarketEntry> entries =
+                (Map<String, SportteryMarketSelectionService.SportteryMarketEntry>)
+                        ReflectionTestUtils.getField(service, "entriesByMatchId");
+        entries.put(settlingEntry.getSportteryMatchId(), settlingEntry);
+        entries.put(staleEntry.getSportteryMatchId(), staleEntry);
+
+        int storedCount = ReflectionTestUtils.invokeMethod(
+                service,
+                "replaceUpcomingEntries",
+                List.of(currentEntry),
+                today);
+
+        assertEquals(1, storedCount);
+        assertTrue(entries.containsKey("2040643"));
+        assertFalse(Boolean.TRUE.equals(entries.get("2040643").getCurrentSale()));
+        assertFalse(entries.containsKey("2040600"));
+        assertTrue(entries.containsKey("2040645"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldDiscoverMissingMatchIdsBetweenRecentOfficialRows() {
+        ReflectionTestUtils.setField(service, "targetZone", "Asia/Shanghai");
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Shanghai"));
+        SportteryMarketSelectionService.SportteryMarketEntry previousEntry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        previousEntry.setSportteryMatchId("2040641");
+        previousEntry.setMatchDate(today.minusDays(1));
+        SportteryMarketSelectionService.SportteryMarketEntry currentEntry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        currentEntry.setSportteryMatchId("2040645");
+        currentEntry.setMatchDate(today);
+        Map<String, SportteryMarketSelectionService.SportteryMarketEntry> entries =
+                (Map<String, SportteryMarketSelectionService.SportteryMarketEntry>)
+                        ReflectionTestUtils.getField(service, "entriesByMatchId");
+        entries.put(previousEntry.getSportteryMatchId(), previousEntry);
+        entries.put(currentEntry.getSportteryMatchId(), currentEntry);
+
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setMatchDate(today.minusDays(1));
+
+        List<String> candidates = ReflectionTestUtils.invokeMethod(
+                service,
+                "buildSettlingMatchIdCandidates",
+                List.of(schedule));
+
+        assertEquals(List.of("2040642", "2040643", "2040644"), candidates);
+    }
+
+    @Test
+    void shouldRecoverSettlingEntryFromOddsHistoryMetadata() throws Exception {
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setMatchId("ESPN-UCL-401891534");
+        schedule.setCompetition(Competition.CHAMPIONS_LEAGUE);
+        schedule.setMatchDate(LocalDate.of(2026, 7, 28));
+        schedule.setKickoffTime(LocalTime.of(23, 0));
+        schedule.setHomeTeamCn("库奥皮奥");
+        schedule.setHomeTeamEn("KuPS Kuopio");
+        schedule.setAwayTeamCn("萨巴赫");
+        schedule.setAwayTeamEn("Sabah FK");
+        schedule.setHomeScore(1);
+        schedule.setAwayScore(2);
+        var value = new ObjectMapper().readTree("""
+                {
+                  "matchId": 2040643,
+                  "leagueId": "69",
+                  "leagueAbbName": "欧冠",
+                  "homeTeamAllName": "库奥皮奥",
+                  "awayTeamAllName": "萨巴赫",
+                  "hadList": [
+                    {
+                      "h": "2.90",
+                      "d": "3.30",
+                      "a": "2.15",
+                      "updateDate": "2026-07-28",
+                      "updateTime": "18:00:00"
+                    },
+                    {
+                      "h": "2.80",
+                      "d": "3.38",
+                      "a": "2.10",
+                      "updateDate": "2026-07-28",
+                      "updateTime": "21:48:38"
+                    }
+                  ],
+                  "hhadList": [
+                    {
+                      "h": "1.57",
+                      "d": "3.70",
+                      "a": "4.50",
+                      "goalLine": "+1",
+                      "updateDate": "2026-07-28",
+                      "updateTime": "21:48:48"
+                    }
+                  ]
+                }
+                """);
+
+        SportteryMarketSelectionService.SportteryMarketEntry entry =
+                ReflectionTestUtils.invokeMethod(
+                        service,
+                        "parseSettlingEntry",
+                        "2040643",
+                        value,
+                        List.of(schedule));
+
+        assertNotNull(entry);
+        assertEquals("2040643", entry.getSportteryMatchId());
+        assertEquals(LocalDate.of(2026, 7, 28), entry.getMatchDate());
+        assertEquals(LocalTime.of(23, 0), entry.getKickoffTime());
+        assertEquals(Competition.CHAMPIONS_LEAGUE, entry.getCompetition());
+        assertEquals("库奥皮奥", entry.getHomeTeam());
+        assertEquals("萨巴赫", entry.getAwayTeam());
+        assertEquals(2.80, entry.getNormalOdds().getWin());
+        assertEquals(1, entry.getHandicap());
+        assertEquals(1.57, entry.getHandicapOdds().getWin());
+        assertEquals(1, entry.getHomeScore());
+        assertEquals(2, entry.getAwayScore());
+        assertFalse(Boolean.TRUE.equals(entry.getCurrentSale()));
     }
 
     @Test

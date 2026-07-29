@@ -50,6 +50,8 @@ public class SportteryMarketSelectionService {
 
     private static final int MAX_CALCULATOR_FUTURE_DAYS = 7;
 
+    private static final int MAX_SETTLING_MATCH_ID_GAP = 20;
+
     private static final String BROWSER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             + "AppleWebKit/537.36 Chrome/138.0.0.0 Safari/537.36";
 
@@ -76,6 +78,8 @@ public class SportteryMarketSelectionService {
     private final Map<String, SportteryMarketEntry> entriesByMatchId = new LinkedHashMap<>();
 
     private final Map<LocalDate, LocalDateTime> queriedAtByDate = new HashMap<>();
+
+    private final Set<String> settlingLookupAttemptedMatchIds = new HashSet<>();
 
     private LocalDateTime calculatorQueriedAt;
 
@@ -155,6 +159,7 @@ public class SportteryMarketSelectionService {
                     buildLookupDates(supportedSchedules),
                     false,
                     containsUpcomingSchedule(supportedSchedules));
+            recoverSettlingEntries(supportedSchedules);
         }
         int matchedCount = applyMarketEntries(supportedSchedules, true);
         log.debug("Matched {} of {} displayed schedules with Sporttery market data", matchedCount, supportedSchedules.size());
@@ -1128,7 +1133,28 @@ public class SportteryMarketSelectionService {
     private int replaceUpcomingEntries(
             List<SportteryMarketEntry> downloadedEntries,
             LocalDate today) {
-        entriesByMatchId.entrySet().removeIf(item -> Boolean.TRUE.equals(item.getValue().getCurrentSale()));
+        Set<String> downloadedMatchIds = downloadedEntries.stream()
+                .map(SportteryMarketEntry::getSportteryMatchId)
+                .filter(this::hasText)
+                .collect(java.util.stream.Collectors.toSet());
+        LocalDate settlementStartDate = today.minusDays(Math.max(1, normalizedRecentDaysBack()));
+        entriesByMatchId.entrySet().removeIf(item -> {
+            SportteryMarketEntry entry = item.getValue();
+            if (!Boolean.TRUE.equals(entry.getCurrentSale())) {
+                return false;
+            }
+            if (downloadedMatchIds.contains(item.getKey())) {
+                return true;
+            }
+            boolean withinSettlementWindow = entry.getMatchDate() != null
+                    && !entry.getMatchDate().isBefore(settlementStartDate)
+                    && !entry.getMatchDate().isAfter(today);
+            if (withinSettlementWindow && hasMarketOdds(entry)) {
+                entry.setCurrentSale(false);
+                return false;
+            }
+            return true;
+        });
         LocalDate lastDate = today.plusDays(MAX_CALCULATOR_FUTURE_DAYS);
         int storedCount = 0;
         for (SportteryMarketEntry entry : downloadedEntries) {
@@ -1139,6 +1165,208 @@ public class SportteryMarketSelectionService {
             storedCount++;
         }
         return storedCount;
+    }
+
+    private int recoverSettlingEntries(List<MatchSchedule> schedules) {
+        List<String> candidateMatchIds = buildSettlingMatchIdCandidates(schedules);
+        if (candidateMatchIds.isEmpty()) {
+            return 0;
+        }
+
+        Duration timeout = Duration.ofSeconds(Math.max(1, timeoutSeconds));
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(timeout)
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+        int recoveredCount = 0;
+        for (String matchId : candidateMatchIds) {
+            try {
+                SportteryMarketEntry entry = downloadSettlingEntry(
+                        client,
+                        matchId,
+                        schedules,
+                        timeout);
+                if (entry == null) {
+                    continue;
+                }
+                entriesByMatchId.put(entry.getSportteryMatchId(), entry);
+                settlingLookupAttemptedMatchIds.add(entry.getSportteryMatchId());
+                recoveredCount++;
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                log.warn("Sporttery settling match lookup interrupted at match {}", matchId);
+                break;
+            } catch (Exception ex) {
+                log.debug("Unable to recover Sporttery settling match {}: {}", matchId, ex.getMessage());
+            }
+        }
+        if (recoveredCount > 0) {
+            saveCache(LocalDateTime.now(resolveTargetZone()));
+            log.info("Recovered {} settling Sporttery market rows from odds history", recoveredCount);
+        }
+        return recoveredCount;
+    }
+
+    private List<String> buildSettlingMatchIdCandidates(List<MatchSchedule> schedules) {
+        if (schedules == null || schedules.isEmpty()) {
+            return List.of();
+        }
+        LocalDate today = LocalDate.now(resolveTargetZone());
+        LocalDate settlementStartDate = today.minusDays(Math.max(1, normalizedRecentDaysBack()));
+        List<MatchSchedule> settlingSchedules = schedules.stream()
+                .filter(schedule -> schedule != null && schedule.getMatchDate() != null)
+                .filter(schedule -> !schedule.getMatchDate().isBefore(settlementStartDate))
+                .filter(schedule -> !schedule.getMatchDate().isAfter(today))
+                .toList();
+        if (settlingSchedules.isEmpty()) {
+            return List.of();
+        }
+
+        LocalDate windowStartDate = settlingSchedules.stream()
+                .map(MatchSchedule::getMatchDate)
+                .min(LocalDate::compareTo)
+                .orElse(settlementStartDate)
+                .minusDays(1);
+        LocalDate windowEndDate = settlingSchedules.stream()
+                .map(MatchSchedule::getMatchDate)
+                .max(LocalDate::compareTo)
+                .orElse(today)
+                .plusDays(1);
+        List<Long> knownMatchIds = entriesByMatchId.values().stream()
+                .filter(entry -> entry.getMatchDate() != null)
+                .filter(entry -> !entry.getMatchDate().isBefore(windowStartDate))
+                .filter(entry -> !entry.getMatchDate().isAfter(windowEndDate))
+                .map(SportteryMarketEntry::getSportteryMatchId)
+                .map(this::parseNumericMatchId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+        if (knownMatchIds.size() < 2) {
+            return List.of();
+        }
+
+        List<String> candidates = new ArrayList<>();
+        for (int index = 1; index < knownMatchIds.size(); index++) {
+            long previousId = knownMatchIds.get(index - 1);
+            long currentId = knownMatchIds.get(index);
+            long gap = currentId - previousId;
+            if (gap <= 1L || gap > MAX_SETTLING_MATCH_ID_GAP) {
+                continue;
+            }
+            for (long candidateId = previousId + 1L; candidateId < currentId; candidateId++) {
+                String matchId = Long.toString(candidateId);
+                if (!entriesByMatchId.containsKey(matchId)
+                        && !settlingLookupAttemptedMatchIds.contains(matchId)) {
+                    candidates.add(matchId);
+                }
+            }
+        }
+        return candidates;
+    }
+
+    private Long parseNumericMatchId(String matchId) {
+        if (!hasText(matchId) || !matchId.matches("\\d+")) {
+            return null;
+        }
+        try {
+            return Long.valueOf(matchId);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private SportteryMarketEntry downloadSettlingEntry(
+            HttpClient client,
+            String matchId,
+            List<MatchSchedule> schedules,
+            Duration timeout) throws IOException, InterruptedException {
+        String separator = oddsHistoryApiUrl.contains("?") ? "&" : "?";
+        JsonNode root = downloadJson(
+                client,
+                oddsHistoryApiUrl + separator + "matchId=" + matchId,
+                "https://www.sporttery.cn",
+                calculatorSourcePageUrl,
+                timeout,
+                "体彩结算中赔率接口");
+        return parseSettlingEntry(matchId, root.path("value"), schedules);
+    }
+
+    private SportteryMarketEntry parseSettlingEntry(
+            String requestedMatchId,
+            JsonNode value,
+            List<MatchSchedule> schedules) {
+        if (value == null || value.isMissingNode() || value.isNull()) {
+            return null;
+        }
+        String matchId = value.path("matchId").asText(requestedMatchId);
+        Competition competition = parseCompetition(value);
+        String homeTeam = firstNonBlank(
+                value.path("homeTeamAllName").asText(""),
+                value.path("homeTeamAbbName").asText(""));
+        String awayTeam = firstNonBlank(
+                value.path("awayTeamAllName").asText(""),
+                value.path("awayTeamAbbName").asText(""));
+        if (!hasText(matchId)
+                || competition == null
+                || !hasText(homeTeam)
+                || !hasText(awayTeam)) {
+            return null;
+        }
+
+        MatchSchedule schedule = findSettlingSchedule(
+                schedules,
+                competition,
+                homeTeam,
+                awayTeam);
+        if (schedule == null) {
+            return null;
+        }
+
+        LatestMarketOdds normalOdds = parseLatestMarketOdds(value.path("hadList"));
+        LatestMarketOdds handicapOdds = parseLatestMarketOdds(value.path("hhadList"));
+        if (normalOdds == null && handicapOdds == null) {
+            return null;
+        }
+
+        SportteryMarketEntry entry = new SportteryMarketEntry();
+        entry.setSportteryMatchId(matchId);
+        entry.setMatchDate(schedule.getMatchDate());
+        entry.setKickoffTime(schedule.getKickoffTime());
+        entry.setCompetition(competition);
+        entry.setLeagueName(parseLeagueName(value));
+        entry.setHomeTeam(homeTeam);
+        entry.setAwayTeam(awayTeam);
+        entry.setNormalOdds(normalOdds == null ? null : normalOdds.odds());
+        entry.setNormalAvailable(normalOdds != null);
+        entry.setHandicapOdds(handicapOdds == null ? null : handicapOdds.odds());
+        entry.setHandicap(handicapOdds == null ? null : handicapOdds.handicap());
+        entry.setOddsLookupCompleted(true);
+        entry.setHomeScore(schedule.getHomeScore());
+        entry.setAwayScore(schedule.getAwayScore());
+        entry.setCurrentSale(false);
+        return entry;
+    }
+
+    private MatchSchedule findSettlingSchedule(
+            List<MatchSchedule> schedules,
+            Competition competition,
+            String homeTeam,
+            String awayTeam) {
+        List<MatchSchedule> matches = schedules.stream()
+                .filter(schedule -> schedule != null && schedule.getCompetition() == competition)
+                .filter(schedule -> teamNamesMatch(
+                        competition,
+                        schedule.getHomeTeamCn(),
+                        schedule.getHomeTeamEn(),
+                        homeTeam))
+                .filter(schedule -> teamNamesMatch(
+                        competition,
+                        schedule.getAwayTeamCn(),
+                        schedule.getAwayTeamEn(),
+                        awayTeam))
+                .toList();
+        return matches.size() == 1 ? matches.get(0) : null;
     }
 
     private int applyMarketEntries(List<MatchSchedule> schedules, boolean lookupMissingOdds) {
