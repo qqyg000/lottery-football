@@ -634,7 +634,7 @@ class SportteryMarketSelectionServiceTest {
         assertEquals(entry.getMatchDate(), schedule.getMatchDate());
         assertEquals(LocalTime.MIDNIGHT, schedule.getKickoffTime());
         assertEquals("雅罗", schedule.getHomeTeamCn());
-        assertEquals("塞伊奈约基", schedule.getAwayTeamCn());
+        assertEquals("塞伊奈", schedule.getAwayTeamCn());
         assertEquals("SCHEDULED", schedule.getStatus());
         assertEquals(3.15, schedule.getSportteryNormalOdds().getWin());
         assertEquals(1, schedule.getSportteryHandicap());

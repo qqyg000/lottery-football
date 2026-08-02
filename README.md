@@ -53,9 +53,9 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 174,578 | 2014-10-22 至 2026-07-26 |
+| `historical_matches.csv` | 175,307 | 2014-10-22 至 2026-07-27 |
 | `historical_odds_data.csv` | 28,694 | 2014-10-22 至 2026-07-22 |
-| `team_name_mappings.csv` | 20,874 | 2014-06-24 至 2026-08-23 |
+| `team_name_mappings.csv` | 21,154 | 2014-06-24 至 2026-08-23 |
 
 主要数据来自 FotMob、Futbol24、Foot Mercato、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 
@@ -293,7 +293,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_team_en,away_team
 competition,standard_team_name,alias_team_name,alias_type,source,last_seen_date
 ```
 
-系统按来源优先级读取具体赛事和 `competition=*` 全局映射，体彩核验名称可以覆盖历史数据中的来源自名称。人工别名使用 `source=MANUAL`，修改后需要重启服务。
+系统按来源优先级读取具体赛事和 `competition=*` 全局映射，体彩核验名称可以覆盖历史数据中的来源自名称，人工确认的 `source=MANUAL` 映射优先级最高。修改后需要重启服务。
 
 重新生成自动映射：
 

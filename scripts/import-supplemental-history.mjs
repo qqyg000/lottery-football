@@ -57,8 +57,8 @@ const MAPPING_SOURCE_PRIORITY = new Map([
   ['HISTORICAL_ODDS', 2],
   ['INFERRED_DUPLICATE', 3],
   ['VERIFIED_ALIAS', 4],
-  ['MANUAL', 5],
-  ['VERIFIED_SPORTTERY', 6]
+  ['VERIFIED_SPORTTERY', 6],
+  ['MANUAL', 7]
 ])
 
 const SOURCE_COMPETITION_ALIASES = new Map([
@@ -688,6 +688,48 @@ const FUTBOL24_SOURCES = [
 ]
 
 const VERIFIED_SUPPLEMENTAL_ROWS = [
+  {
+    provider: 'DIF',
+    providerId: '20220122-VSK',
+    source: 'VERIFIED-DIF',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2022-01-22',
+    homeTeam: '佐加顿斯',
+    awayTeam: '韦斯特罗斯',
+    homeScore: 3,
+    awayScore: 0,
+    neutral: false
+  },
+  {
+    provider: 'FOTMOB',
+    providerId: '4382631',
+    source: 'VERIFIED-DIF',
+    competition: 'SWEDISH_ALLSVENSKAN',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '瑞超',
+    matchDate: '2024-10-28',
+    homeTeam: '佐加顿斯',
+    awayTeam: '韦斯特罗斯',
+    homeScore: 2,
+    awayScore: 1,
+    neutral: false
+  },
+  {
+    provider: 'DIF',
+    providerId: '20250125-VSK',
+    source: 'VERIFIED-DIF',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2025-01-25',
+    homeTeam: '韦斯特罗斯',
+    awayTeam: '佐加顿斯',
+    homeScore: 3,
+    awayScore: 3,
+    neutral: false
+  },
   {
     provider: 'VIETNAMPLUS',
     providerId: '1122468',
@@ -2946,6 +2988,9 @@ function sourceMatchId(row) {
   }
   if (row.provider === 'VIETNAMPLUS' && row.providerId) {
     return `VIETNAMPLUS-${row.providerId}`
+  }
+  if (row.provider === 'DIF' && row.providerId) {
+    return `DIF-${row.providerId}`
   }
   const digest = crypto.createHash('sha1')
     .update([

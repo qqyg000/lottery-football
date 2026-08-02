@@ -62,10 +62,10 @@ class ClubTeamNameTranslatorTest {
         assertEquals("齐拉", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "Zira FK"));
-        assertEquals("塞伊奈约基", ClubTeamNameTranslator.translate(
+        assertEquals("塞伊奈", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "SJK"));
-        assertEquals("坦佩雷山猫", ClubTeamNameTranslator.translate(
+        assertEquals("坦山猫", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "Ilves Tampere"));
         assertEquals("赫尔辛基火花", ClubTeamNameTranslator.translate(
@@ -218,7 +218,7 @@ class ClubTeamNameTranslatorTest {
         assertEquals("萨拉热窝", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "FK Sarajevo"));
-        assertEquals("AIK索尔纳", ClubTeamNameTranslator.translate(
+        assertEquals("索尔纳", ClubTeamNameTranslator.translate(
                 Competition.CLUB_FRIENDLY,
                 "AIK Fotboll"));
         assertEquals("纳夫兹", ClubTeamNameTranslator.translate(
@@ -251,6 +251,25 @@ class ClubTeamNameTranslatorTest {
         assertEquals("BW林茨", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "BW Linz"));
+    }
+
+    @Test
+    void shouldApplyManualCanonicalNameOverrides() throws IOException {
+        assumeMappingsImported();
+
+        assertEquals("加扎拜尔", ClubTeamNameTranslator.translate("Stjarnan"));
+        assertEquals("迪弗当日", ClubTeamNameTranslator.translate("Differdange"));
+        assertEquals("哥德堡", ClubTeamNameTranslator.translate("IFK哥德堡"));
+        assertEquals("布鲁马波", ClubTeamNameTranslator.translate("布鲁马波卡纳"));
+        assertEquals("国际图尔", ClubTeamNameTranslator.translate("国际图尔库"));
+        assertEquals("坦山猫", ClubTeamNameTranslator.translate("坦佩雷山猫"));
+        assertEquals("索尔纳", ClubTeamNameTranslator.translate("AIK索尔纳"));
+        assertEquals("厄格里特", ClubTeamNameTranslator.translate("厄尔格里特"));
+        assertEquals("塞伊奈", ClubTeamNameTranslator.translate("塞伊奈约基"));
+        assertEquals("韦斯特罗", ClubTeamNameTranslator.translate("韦斯特罗斯"));
+        assertEquals("哈尔姆斯", ClubTeamNameTranslator.translate("哈尔姆斯塔德"));
+        assertEquals("佐加顿斯", ClubTeamNameTranslator.translate("Djurgårdens IF"));
+        assertEquals("韦斯特罗", ClubTeamNameTranslator.translate("Västerås"));
     }
 
     @Test

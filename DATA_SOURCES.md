@@ -31,7 +31,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 公共历史源通过 `scripts/import-public-history.mjs` 导入。脚本默认只检查增量，传入 `--write` 才会写文件；下载缓存位于 `target/public-history-cache`。公共源比赛使用 `OPEN-{source}-{hash}` ID，比分重建脚本会保留这些记录。
 
-参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。Futbol24 俱乐部友谊赛从 2014 年起读取完整年度赛果，旧数据不再受最近 30 天按日接口的限制；Foot Mercato 分页日历用于补齐当前赛季的来源内缺口。ESPN、FotMob、Soccerway、Futbol24、Foot Mercato、Sofascore、PFL 和 VietnamPlus 核验比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`FOOTMERCATO-{id}`、`SOFASCORE-{id}`、`PFL-{id}`、`VIETNAMPLUS-{postId}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。国家队对俱乐部训练赛按 `CLUB_FRIENDLY` 归类；无传统主客场且在集训地进行的比赛标记为中立场。
+参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。Futbol24 俱乐部友谊赛从 2014 年起读取完整年度赛果，旧数据不再受最近 30 天按日接口的限制；Foot Mercato 分页日历用于补齐当前赛季的来源内缺口。ESPN、FotMob、Soccerway、Futbol24、Foot Mercato、Sofascore、PFL、VietnamPlus 和佐加顿斯官网核验比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`FOOTMERCATO-{id}`、`SOFASCORE-{id}`、`PFL-{id}`、`VIETNAMPLUS-{postId}`、`DIF-{date}-{opponent}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。国家队对俱乐部训练赛按 `CLUB_FRIENDLY` 归类；无传统主客场且在集训地进行的比赛标记为中立场。
 
 历史比赛使用以下内部类型和回测权重：
 
@@ -169,6 +169,6 @@ powershell -ExecutionPolicy Bypass -File scripts/merge-sporttery-cache-odds.ps1 
 
 ## 球队中文名
 
-球队中文名映射入口位于 `src/main/java/com/eason/worldcup/util/ClubTeamNameTranslator.java`。程序启动时读取 `team_name_mappings.csv`，按来源优先级建立英文名、历史简称和体彩中文名之间的映射；近 10 场和历史交锋展示优先使用体彩接口标准名。
+球队中文名映射入口位于 `src/main/java/com/eason/worldcup/util/ClubTeamNameTranslator.java`。程序启动时读取 `team_name_mappings.csv`，按来源优先级建立英文名、历史简称和体彩中文名之间的映射；自动生成的数据优先使用体彩接口标准名，人工确认的 `MANUAL` 映射可以覆盖该标准名。
 
 点击“更新数据”后，FotMob、ESPN 和 OpenFootball 返回的英文球队名都会经过该映射。赔率表从未出现过的球队只使用代码中已核验的兜底名称，未知球队保留数据源原名，避免自动音译造成误匹配。

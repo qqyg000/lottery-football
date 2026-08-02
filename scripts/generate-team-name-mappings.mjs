@@ -40,8 +40,8 @@ const SOURCE_PRIORITY = new Map([
   ['ESPN_SCHEDULE', 3],
   ['INFERRED_DUPLICATE', 3],
   ['VERIFIED_ALIAS', 4],
-  ['MANUAL', 5],
-  ['VERIFIED_SPORTTERY', 6]
+  ['VERIFIED_SPORTTERY', 6],
+  ['MANUAL', 7]
 ])
 
 const REJECTED_MAPPING_KEYS = new Set([

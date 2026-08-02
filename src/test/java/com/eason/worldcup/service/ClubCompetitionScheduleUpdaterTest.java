@@ -319,7 +319,7 @@ class ClubCompetitionScheduleUpdaterTest {
                 List.of(futbol24, fotMob));
 
         assertEquals(1, schedules.size());
-        assertEquals("AIK索尔纳", schedules.get(0).getHomeTeamCn());
+        assertEquals("索尔纳", schedules.get(0).getHomeTeamCn());
     }
 
     @Test
@@ -736,7 +736,7 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals(Competition.FINNISH_VEIKKAUSLIIGA, schedule.getCompetition());
         assertEquals(LocalDate.of(2026, 7, 18), schedule.getMatchDate());
         assertEquals("芬超", schedule.getGroupName());
-        assertEquals("塞伊奈约基", schedule.getHomeTeamCn());
+        assertEquals("塞伊奈", schedule.getHomeTeamCn());
         assertEquals("库奥皮奥", schedule.getAwayTeamCn());
         assertEquals(0, schedule.getHomeScore());
         assertEquals(2, schedule.getAwayScore());
@@ -770,7 +770,7 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals(LocalDate.of(2026, 7, 25), schedule.getMatchDate());
         assertEquals(LocalTime.MIDNIGHT, schedule.getKickoffTime());
         assertEquals("FF Jaro", schedule.getHomeTeamCn());
-        assertEquals("塞伊奈约基", schedule.getAwayTeamCn());
+        assertEquals("塞伊奈", schedule.getAwayTeamCn());
         assertEquals("SCHEDULED", schedule.getStatus());
         assertNull(schedule.getHomeScore());
         assertNull(schedule.getAwayScore());

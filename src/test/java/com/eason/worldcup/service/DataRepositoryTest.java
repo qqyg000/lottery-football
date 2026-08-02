@@ -110,7 +110,7 @@ class DataRepositoryTest {
                 fotMob));
 
         assertEquals(1, schedules.size());
-        assertEquals("AIK索尔纳", schedules.get(0).getHomeTeamCn());
+        assertEquals("索尔纳", schedules.get(0).getHomeTeamCn());
     }
 
     @Test
