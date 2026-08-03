@@ -1,0 +1,441 @@
+{
+  "generatedAt": "2026-08-03T06:02:10.821Z",
+  "completedAt": "2026-08-03T06:02:10.821Z",
+  "applied": true,
+  "options": {
+    "finalSimulations": 50000,
+    "coarseSimulations": 5000,
+    "modelVariantCount": 60,
+    "finalistModelCount": 10,
+    "coarseRuleCandidates": 6000,
+    "finalRuleCandidates": 40000,
+    "samplingTolerance": 0.1,
+    "samplingMaxIncrease": 0,
+    "strictSamplingBand": true,
+    "minimumStableRoi": 0.05,
+    "minimumAggressiveSamplingRate": 0,
+    "minimumAggressiveRoiGap": 0,
+    "targetRanges": [
+      "SWEDISH_ALLSVENSKAN:CURRENT",
+      "FINNISH_VEIKKAUSLIIGA:CURRENT"
+    ]
+  },
+  "baselineVerification": [
+    {
+      "key": "SWEDISH_ALLSVENSKAN:CURRENT:STABLE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 36,
+      "metrics": {
+        "samplingRate": 1,
+        "recommendedMatchCount": 36,
+        "recommendedSelectionCount": 36,
+        "hitMatchCount": 21,
+        "missMatchCount": 15,
+        "winningSelectionCount": 21,
+        "averageWinningOdds": 1.7333333333333336,
+        "averageOddsIncludingMisses": 1.0111111111111113,
+        "totalStake": 36,
+        "totalReturn": 36.400000000000006,
+        "netProfit": 0.4000000000000057,
+        "volatility": 0.9533363303316196,
+        "roi": 0.011111111111111294
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:CURRENT:AGGRESSIVE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 36,
+      "metrics": {
+        "samplingRate": 0.4166666666666667,
+        "recommendedMatchCount": 15,
+        "recommendedSelectionCount": 15,
+        "hitMatchCount": 7,
+        "missMatchCount": 8,
+        "winningSelectionCount": 7,
+        "averageWinningOdds": 2.2971428571428567,
+        "averageOddsIncludingMisses": 1.0719999999999998,
+        "totalStake": 15,
+        "totalReturn": 16.08,
+        "netProfit": 1.0799999999999983,
+        "volatility": 1.2350141699591952,
+        "roi": 0.07199999999999984
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:CURRENT:STABLE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 37,
+      "metrics": {
+        "samplingRate": 0.8108108108108109,
+        "recommendedMatchCount": 30,
+        "recommendedSelectionCount": 32,
+        "hitMatchCount": 16,
+        "missMatchCount": 14,
+        "winningSelectionCount": 16,
+        "averageWinningOdds": 2.36875,
+        "averageOddsIncludingMisses": 1.2633333333333332,
+        "totalStake": 32,
+        "totalReturn": 37.9,
+        "netProfit": 5.899999999999999,
+        "volatility": 1.1235394222426436,
+        "roi": 0.18437499999999996
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:CURRENT:AGGRESSIVE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 37,
+      "metrics": {
+        "samplingRate": 0.35135135135135137,
+        "recommendedMatchCount": 13,
+        "recommendedSelectionCount": 13,
+        "hitMatchCount": 6,
+        "missMatchCount": 7,
+        "winningSelectionCount": 6,
+        "averageWinningOdds": 2.8649999999999998,
+        "averageOddsIncludingMisses": 1.3223076923076922,
+        "totalStake": 13,
+        "totalReturn": 17.189999999999998,
+        "netProfit": 4.189999999999998,
+        "volatility": 1.5358393679361666,
+        "roi": 0.3223076923076922
+      }
+    }
+  ],
+  "optimizationResults": [
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "action": "REOPTIMIZE_PAIR",
+      "reasons": [
+        "稳健方案ROI低于5%",
+        "赛事数据已更新，强制重新优化"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "STABLE_BASELINE_BAND",
+      "baseline": {
+        "stable": {
+          "samplingRate": 1,
+          "recommendedMatchCount": 36,
+          "recommendedSelectionCount": 36,
+          "hitMatchCount": 21,
+          "missMatchCount": 15,
+          "winningSelectionCount": 21,
+          "averageWinningOdds": 1.7333333333333336,
+          "averageOddsIncludingMisses": 1.0111111111111113,
+          "totalStake": 36,
+          "totalReturn": 36.400000000000006,
+          "netProfit": 0.4000000000000057,
+          "volatility": 0.9533363303316196,
+          "roi": 0.011111111111111294
+        },
+        "aggressive": {
+          "samplingRate": 0.4166666666666667,
+          "recommendedMatchCount": 15,
+          "recommendedSelectionCount": 15,
+          "hitMatchCount": 7,
+          "missMatchCount": 8,
+          "winningSelectionCount": 7,
+          "averageWinningOdds": 2.2971428571428567,
+          "averageOddsIncludingMisses": 1.0719999999999998,
+          "totalStake": 15,
+          "totalReturn": 16.08,
+          "netProfit": 1.0799999999999983,
+          "volatility": 1.2350141699591952,
+          "roi": 0.07199999999999984
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 1.44,
+              "homeTeamGoalFactor": 1.02,
+              "seedTeamGoalFactor": 1.58,
+              "officialMatchWeight": 1.53,
+              "internationalFriendlyWeight": 0.52,
+              "clubFriendlyWeight": 0.71,
+              "handicapSmoothingFactor": 0.615
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.24,
+              "handicapRecommendationThreshold": 49.67,
+              "handicapReverseThreshold": 45.47,
+              "singleRecommendationThreshold": 43.6
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.9166666666666666,
+            "recommendedMatchCount": 33,
+            "recommendedSelectionCount": 36,
+            "hitMatchCount": 22,
+            "missMatchCount": 11,
+            "winningSelectionCount": 22,
+            "averageWinningOdds": 1.9431818181818186,
+            "averageOddsIncludingMisses": 1.2954545454545456,
+            "totalStake": 36,
+            "totalReturn": 42.75000000000001,
+            "netProfit": 6.750000000000007,
+            "volatility": 0.8644170340247359,
+            "roi": 0.18750000000000022
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 1.82,
+              "homeTeamGoalFactor": 1.14,
+              "seedTeamGoalFactor": 1.59,
+              "officialMatchWeight": 1.04,
+              "internationalFriendlyWeight": 0.73,
+              "clubFriendlyWeight": 0.16,
+              "handicapSmoothingFactor": 0.649
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.02,
+              "handicapRecommendationThreshold": 38.71,
+              "handicapReverseThreshold": 54.66,
+              "singleRecommendationThreshold": 45.05
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.3333333333333333,
+            "recommendedMatchCount": 12,
+            "recommendedSelectionCount": 18,
+            "hitMatchCount": 9,
+            "missMatchCount": 3,
+            "winningSelectionCount": 9,
+            "averageWinningOdds": 3.0155555555555558,
+            "averageOddsIncludingMisses": 2.2616666666666667,
+            "totalStake": 18,
+            "totalReturn": 27.14,
+            "netProfit": 9.14,
+            "volatility": 1.015565225513717,
+            "roi": 0.5077777777777779
+          }
+        }
+      }
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "action": "REOPTIMIZE_PAIR",
+      "reasons": [
+        "赛事数据已更新，强制重新优化"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "STABLE_BASELINE_BAND",
+      "baseline": {
+        "stable": {
+          "samplingRate": 0.8108108108108109,
+          "recommendedMatchCount": 30,
+          "recommendedSelectionCount": 32,
+          "hitMatchCount": 16,
+          "missMatchCount": 14,
+          "winningSelectionCount": 16,
+          "averageWinningOdds": 2.36875,
+          "averageOddsIncludingMisses": 1.2633333333333332,
+          "totalStake": 32,
+          "totalReturn": 37.9,
+          "netProfit": 5.899999999999999,
+          "volatility": 1.1235394222426436,
+          "roi": 0.18437499999999996
+        },
+        "aggressive": {
+          "samplingRate": 0.35135135135135137,
+          "recommendedMatchCount": 13,
+          "recommendedSelectionCount": 13,
+          "hitMatchCount": 6,
+          "missMatchCount": 7,
+          "winningSelectionCount": 6,
+          "averageWinningOdds": 2.8649999999999998,
+          "averageOddsIncludingMisses": 1.3223076923076922,
+          "totalStake": 13,
+          "totalReturn": 17.189999999999998,
+          "netProfit": 4.189999999999998,
+          "volatility": 1.5358393679361666,
+          "roi": 0.3223076923076922
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 1.29,
+              "homeTeamGoalFactor": 2.23,
+              "seedTeamGoalFactor": 2.43,
+              "officialMatchWeight": 1.23,
+              "internationalFriendlyWeight": 0.53,
+              "clubFriendlyWeight": 0.28,
+              "handicapSmoothingFactor": 0.289
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.57,
+              "handicapRecommendationThreshold": 47.33,
+              "handicapReverseThreshold": 73.77,
+              "singleRecommendationThreshold": 54.97
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.7297297297297297,
+            "recommendedMatchCount": 27,
+            "recommendedSelectionCount": 31,
+            "hitMatchCount": 16,
+            "missMatchCount": 11,
+            "winningSelectionCount": 16,
+            "averageWinningOdds": 2.6999999999999997,
+            "averageOddsIncludingMisses": 1.5999999999999999,
+            "totalStake": 31,
+            "totalReturn": 43.199999999999996,
+            "netProfit": 12.199999999999996,
+            "volatility": 1.1339948107329376,
+            "roi": 0.393548387096774
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.59,
+              "homeTeamGoalFactor": 2.21,
+              "seedTeamGoalFactor": 1.76,
+              "officialMatchWeight": 1.09,
+              "internationalFriendlyWeight": 0.59,
+              "clubFriendlyWeight": 0.3,
+              "handicapSmoothingFactor": 0.387
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.51,
+              "handicapRecommendationThreshold": 48.83,
+              "handicapReverseThreshold": 71.99,
+              "singleRecommendationThreshold": 54.47
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.2972972972972973,
+            "recommendedMatchCount": 11,
+            "recommendedSelectionCount": 15,
+            "hitMatchCount": 7,
+            "missMatchCount": 4,
+            "winningSelectionCount": 7,
+            "averageWinningOdds": 3.5385714285714287,
+            "averageOddsIncludingMisses": 2.251818181818182,
+            "totalStake": 15,
+            "totalReturn": 24.77,
+            "netProfit": 9.77,
+            "volatility": 1.243083592596177,
+            "roi": 0.6513333333333333
+          }
+        }
+      }
+    }
+  ],
+  "verification": [
+    {
+      "key": "SWEDISH_ALLSVENSKAN:CURRENT:STABLE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 36,
+      "metrics": {
+        "samplingRate": 0.9166666666666666,
+        "recommendedMatchCount": 33,
+        "recommendedSelectionCount": 36,
+        "hitMatchCount": 22,
+        "missMatchCount": 11,
+        "winningSelectionCount": 22,
+        "averageWinningOdds": 1.9431818181818186,
+        "averageOddsIncludingMisses": 1.2954545454545456,
+        "totalStake": 36,
+        "totalReturn": 42.75000000000001,
+        "netProfit": 6.750000000000007,
+        "volatility": 0.8644170340247359,
+        "roi": 0.18750000000000022
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:CURRENT:AGGRESSIVE",
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "competitionName": "瑞超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 36,
+      "metrics": {
+        "samplingRate": 0.3333333333333333,
+        "recommendedMatchCount": 12,
+        "recommendedSelectionCount": 18,
+        "hitMatchCount": 9,
+        "missMatchCount": 3,
+        "winningSelectionCount": 9,
+        "averageWinningOdds": 3.0155555555555558,
+        "averageOddsIncludingMisses": 2.2616666666666667,
+        "totalStake": 18,
+        "totalReturn": 27.14,
+        "netProfit": 9.14,
+        "volatility": 1.015565225513717,
+        "roi": 0.5077777777777779
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:CURRENT:STABLE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 37,
+      "metrics": {
+        "samplingRate": 0.7297297297297297,
+        "recommendedMatchCount": 27,
+        "recommendedSelectionCount": 31,
+        "hitMatchCount": 16,
+        "missMatchCount": 11,
+        "winningSelectionCount": 16,
+        "averageWinningOdds": 2.6999999999999997,
+        "averageOddsIncludingMisses": 1.5999999999999999,
+        "totalStake": 31,
+        "totalReturn": 43.199999999999996,
+        "netProfit": 12.199999999999996,
+        "volatility": 1.1339948107329376,
+        "roi": 0.393548387096774
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:CURRENT:AGGRESSIVE",
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "competitionName": "芬超",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 37,
+      "metrics": {
+        "samplingRate": 0.2972972972972973,
+        "recommendedMatchCount": 11,
+        "recommendedSelectionCount": 15,
+        "hitMatchCount": 7,
+        "missMatchCount": 4,
+        "winningSelectionCount": 7,
+        "averageWinningOdds": 3.5385714285714287,
+        "averageOddsIncludingMisses": 2.251818181818182,
+        "totalStake": 15,
+        "totalReturn": 24.77,
+        "netProfit": 9.77,
+        "volatility": 1.243083592596177,
+        "roi": 0.6513333333333333
+      }
+    }
+  ],
+  "violations": []
+}

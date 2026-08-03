@@ -6,9 +6,18 @@ import { evaluateRecommendationBacktest } from '../frontend/src/recommendation-b
 const ROOT = process.cwd()
 const API_BASE = process.env.LOTTERY_FOOTBALL_API_BASE || 'http://127.0.0.1:8080'
 const CONFIG_PATH = path.join(ROOT, 'config/user-config.json')
-const REPORT_JSON_PATH = path.join(ROOT, 'reports/shared-backtest-parameter-optimization-2026-07-27.json')
-const REPORT_MARKDOWN_PATH = path.join(ROOT, 'reports/shared-backtest-parameter-optimization-2026-07-27.md')
-const CHECKPOINT_PATH = path.join(ROOT, 'target/shared-backtest-optimizer-checkpoint-2026-07-27.json')
+const REPORT_JSON_PATH = path.resolve(
+  ROOT,
+  process.env.REPORT_JSON_PATH || 'reports/shared-backtest-parameter-optimization-2026-07-27.json'
+)
+const REPORT_MARKDOWN_PATH = path.resolve(
+  ROOT,
+  process.env.REPORT_MARKDOWN_PATH || 'reports/shared-backtest-parameter-optimization-2026-07-27.md'
+)
+const CHECKPOINT_PATH = path.resolve(
+  ROOT,
+  process.env.CHECKPOINT_PATH || 'target/shared-backtest-optimizer-checkpoint-2026-07-27.json'
+)
 
 const FINAL_SIMULATIONS = numberOption('FINAL_SIMULATIONS', 50000)
 const COARSE_SIMULATIONS = numberOption('COARSE_SIMULATIONS', 5000)
@@ -16,9 +25,11 @@ const MODEL_VARIANT_COUNT = numberOption('MODEL_VARIANT_COUNT', 5, true)
 const FINALIST_MODEL_COUNT = numberOption('FINALIST_MODEL_COUNT', 1)
 const COARSE_RULE_CANDIDATES = numberOption('COARSE_RULE_CANDIDATES', 1800)
 const FINAL_RULE_CANDIDATES = numberOption('FINAL_RULE_CANDIDATES', 9000)
-const SAMPLING_TOLERANCE = 0.03
+const SAMPLING_TOLERANCE = decimalOption('SAMPLING_TOLERANCE', 0.03)
+const SAMPLING_MAX_INCREASE = decimalOption('SAMPLING_MAX_INCREASE', SAMPLING_TOLERANCE)
+const STRICT_SAMPLING_BAND = booleanOption('STRICT_SAMPLING_BAND', false)
 const MINIMUM_STABLE_ROI = 0.05
-const MINIMUM_AGGRESSIVE_SAMPLING_RATE = 0.333
+const MINIMUM_AGGRESSIVE_SAMPLING_RATE = decimalOption('MINIMUM_AGGRESSIVE_SAMPLING_RATE', 0.333)
 const MINIMUM_AGGRESSIVE_ROI_GAP = decimalOption('MINIMUM_AGGRESSIVE_ROI_GAP', 0)
 const ROI_EPSILON = 1e-9
 const APPLY_RESULTS = process.argv.includes('--apply')
@@ -30,6 +41,7 @@ const RETRY_RANGES = new Set(
     .map(value => value.trim())
     .filter(Boolean)
 )
+const TARGET_RANGES = stringSetOption('TARGET_RANGES')
 
 const COMPETITIONS = [
   ['WORLD_CUP', '世界杯'],
@@ -51,11 +63,13 @@ const COMPETITIONS = [
   ['K_LEAGUE_1', '韩职']
 ]
 
-const FORCE_REOPTIMIZE_RANGES = new Set([
-  'SWEDISH_ALLSVENSKAN:CURRENT',
-  'FINNISH_VEIKKAUSLIIGA:CURRENT',
-  'K_LEAGUE_1:CURRENT'
-])
+const FORCE_REOPTIMIZE_RANGES = process.env.FORCE_REOPTIMIZE_RANGES == null
+  ? new Set([
+      'SWEDISH_ALLSVENSKAN:CURRENT',
+      'FINNISH_VEIKKAUSLIIGA:CURRENT',
+      'K_LEAGUE_1:CURRENT'
+    ])
+  : stringSetOption('FORCE_REOPTIMIZE_RANGES')
 
 function numberOption(name, fallback, allowZero = false) {
   const value = Number(process.env[name])
@@ -188,6 +202,23 @@ function observedOdds(matches) {
     }
   }
   return [...values].sort((left, right) => left - right)
+}
+
+function booleanOption(name, fallback) {
+  const value = String(process.env[name] || '').trim().toLowerCase()
+  if (!value) {
+    return fallback
+  }
+  return ['1', 'true', 'yes', 'on'].includes(value)
+}
+
+function stringSetOption(name) {
+  return new Set(
+    String(process.env[name] || '')
+      .split(',')
+      .map(value => value.trim())
+      .filter(Boolean)
+  )
 }
 
 function decimalOption(name, fallback) {
@@ -329,7 +360,7 @@ function refineRulePool(backtest, pool, samplingBounds, passes = 1) {
     refined
       .filter(candidate => (
         candidate.metrics.samplingRate + ROI_EPSILON >= samplingBounds.minimum &&
-        candidate.metrics.samplingRate < samplingBounds.maximum - ROI_EPSILON
+        candidate.metrics.samplingRate <= samplingBounds.maximum + ROI_EPSILON
       ))
       .sort(candidateRanking)
       .forEach(candidate => {
@@ -365,7 +396,19 @@ function refineRulePool(backtest, pool, samplingBounds, passes = 1) {
 
 function withinSamplingBand(candidate, baselineSamplingRate) {
   return candidate.metrics.samplingRate + ROI_EPSILON >= Math.max(0, baselineSamplingRate - SAMPLING_TOLERANCE) &&
-    candidate.metrics.samplingRate <= Math.min(1, baselineSamplingRate + SAMPLING_TOLERANCE) + ROI_EPSILON
+    candidate.metrics.samplingRate <= Math.min(1, baselineSamplingRate + SAMPLING_MAX_INCREASE) + ROI_EPSILON
+}
+
+function samplingBoundsForBaseline(baselineSamplingRate) {
+  return {
+    minimum: Math.max(0, baselineSamplingRate - SAMPLING_TOLERANCE),
+    maximum: Math.min(1, baselineSamplingRate + SAMPLING_MAX_INCREASE)
+  }
+}
+
+function withinSamplingBounds(candidate, samplingBounds) {
+  return candidate.metrics.samplingRate + ROI_EPSILON >= samplingBounds.minimum &&
+    candidate.metrics.samplingRate <= samplingBounds.maximum + ROI_EPSILON
 }
 
 function bestForModelRanking(pool, baselineSamplingRate) {
@@ -378,10 +421,7 @@ function bestForModelRanking(pool, baselineSamplingRate) {
 
 function bestForTargetSampling(pool, samplingBounds) {
   return pool
-    .filter(candidate => (
-      candidate.metrics.samplingRate + ROI_EPSILON >= samplingBounds.minimum &&
-      candidate.metrics.samplingRate < samplingBounds.maximum - ROI_EPSILON
-    ))
+    .filter(candidate => withinSamplingBounds(candidate, samplingBounds))
     .sort(candidateRanking)[0] || null
 }
 
@@ -532,9 +572,12 @@ function deduplicatePool(pool) {
 }
 
 function allCompetitionRanges() {
-  return COMPETITIONS.flatMap(([competition, competitionName]) => (
+  const ranges = COMPETITIONS.flatMap(([competition, competitionName]) => (
     ['CURRENT', 'PREVIOUS'].map(range => ({ competition, competitionName, range }))
   ))
+  return TARGET_RANGES.size === 0
+    ? ranges
+    : ranges.filter(item => TARGET_RANGES.has(`${item.competition}:${item.range}`))
 }
 
 function metricFor(verification, competition, range, preset) {
@@ -597,20 +640,26 @@ function candidateRanking(left, right) {
     right.metrics.samplingRate - left.metrics.samplingRate
 }
 
-function chooseAggressiveCandidate(pool, stableMetrics) {
+function chooseAggressiveCandidate(pool, stableMetrics, samplingBounds = {
+  minimum: MINIMUM_AGGRESSIVE_SAMPLING_RATE,
+  maximum: stableMetrics.samplingRate
+}) {
   return pool
     .filter(candidate => (
-      candidate.metrics.samplingRate + ROI_EPSILON >= MINIMUM_AGGRESSIVE_SAMPLING_RATE &&
+      withinSamplingBounds(candidate, samplingBounds) &&
       candidate.metrics.samplingRate < stableMetrics.samplingRate - ROI_EPSILON &&
       candidate.metrics.roi > stableMetrics.roi + MINIMUM_AGGRESSIVE_ROI_GAP + ROI_EPSILON
     ))
     .sort(candidateRanking)[0] || null
 }
 
-function bestAggressiveInSamplingWindow(pool, stableMetrics) {
+function bestAggressiveInSamplingWindow(pool, stableMetrics, samplingBounds = {
+  minimum: MINIMUM_AGGRESSIVE_SAMPLING_RATE,
+  maximum: stableMetrics.samplingRate
+}) {
   return pool
     .filter(candidate => (
-      candidate.metrics.samplingRate + ROI_EPSILON >= MINIMUM_AGGRESSIVE_SAMPLING_RATE &&
+      withinSamplingBounds(candidate, samplingBounds) &&
       candidate.metrics.samplingRate < stableMetrics.samplingRate - ROI_EPSILON
     ))
     .sort(candidateRanking)[0] || null
@@ -620,21 +669,30 @@ function chooseReoptimizedPair(stableResult, aggressiveResult) {
   if (stableResult.status === 'NO_DATA' || aggressiveResult.status === 'NO_DATA') {
     return null
   }
+  const stableSamplingBounds = samplingBoundsForBaseline(stableResult.baselineMetrics.samplingRate)
+  const aggressiveSamplingBounds = samplingBoundsForBaseline(aggressiveResult.baselineMetrics.samplingRate)
   const constrainedStable = stableResult.pool.filter(candidate => (
-    withinSamplingBand(candidate, stableResult.baselineMetrics.samplingRate) &&
+    withinSamplingBounds(candidate, stableSamplingBounds) &&
     candidate.metrics.roi + ROI_EPSILON >= MINIMUM_STABLE_ROI
   ))
   const relaxedStable = stableResult.pool.filter(candidate => (
     candidate.metrics.samplingRate > MINIMUM_AGGRESSIVE_SAMPLING_RATE + ROI_EPSILON &&
     candidate.metrics.roi + ROI_EPSILON >= MINIMUM_STABLE_ROI
   ))
-  for (const [samplingPolicy, stableCandidates] of [
-    ['STABLE_CURRENT_PLUS_MINUS_3_PERCENT', constrainedStable],
-    ['STABLE_SAMPLING_RELAXED', relaxedStable]
-  ]) {
+  const stableCandidateGroups = [
+    ['STABLE_BASELINE_BAND', constrainedStable]
+  ]
+  if (!STRICT_SAMPLING_BAND) {
+    stableCandidateGroups.push(['STABLE_SAMPLING_RELAXED', relaxedStable])
+  }
+  for (const [samplingPolicy, stableCandidates] of stableCandidateGroups) {
     let best = null
     for (const stable of stableCandidates) {
-      const aggressive = chooseAggressiveCandidate(aggressiveResult.pool, stable.metrics)
+      const aggressive = chooseAggressiveCandidate(
+        aggressiveResult.pool,
+        stable.metrics,
+        aggressiveSamplingBounds
+      )
       if (!aggressive) {
         continue
       }
@@ -717,7 +775,7 @@ async function verifyAllProfiles(config, ranges = allCompetitionRanges()) {
   return verification
 }
 
-function findVerificationViolations(config, verification) {
+function findVerificationViolations(config, verification, baselineVerification) {
   const violations = []
   for (const rangeItem of allCompetitionRanges()) {
     const { competition, range } = rangeItem
@@ -736,8 +794,16 @@ function findVerificationViolations(config, verification) {
     if (aggressive.metrics.roi <= stable.metrics.roi + ROI_EPSILON) {
       violations.push(`${aggressive.key}: aggressive ROI not above stable ROI`)
     }
-    if (aggressive.metrics.samplingRate + ROI_EPSILON < MINIMUM_AGGRESSIVE_SAMPLING_RATE) {
+    if (!STRICT_SAMPLING_BAND && aggressive.metrics.samplingRate + ROI_EPSILON < MINIMUM_AGGRESSIVE_SAMPLING_RATE) {
       violations.push(`${aggressive.key}: aggressive sampling rate below 33.3%`)
+    }
+    if (STRICT_SAMPLING_BAND) {
+      for (const item of [stable, aggressive]) {
+        const baseline = metricFor(baselineVerification, competition, range, item.preset)
+        if (baseline && !withinSamplingBounds(item, samplingBoundsForBaseline(baseline.samplingRate))) {
+          violations.push(`${item.key}: sampling rate outside allowed baseline band`)
+        }
+      }
     }
     if (aggressive.metrics.samplingRate > stable.metrics.samplingRate + ROI_EPSILON) {
       violations.push(`${aggressive.key}: aggressive sampling rate above stable sampling rate`)
@@ -756,21 +822,35 @@ function percent(value) {
   return Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : '--'
 }
 
+function percentagePointDelta(before, after) {
+  return Number.isFinite(before) && Number.isFinite(after)
+    ? `${((after - before) * 100).toFixed(2)}`
+    : '--'
+}
+
+function decimal(value) {
+  return Number.isFinite(value) ? value.toFixed(2) : '--'
+}
+
 function buildMarkdown(report) {
-  const rows = report.verification
-    .filter(item => item.preset === 'STABLE')
-    .map(stable => {
-      const aggressive = report.verification.find(item => (
-        item.competition === stable.competition &&
-        item.range === stable.range &&
-        item.preset === 'AGGRESSIVE'
-      ))
-      const rangeName = stable.range === 'CURRENT' ? '仅本届' : '含上届'
-      const action = report.optimizationResults.find(item => (
-        item.competition === stable.competition && item.range === stable.range
-      ))?.action || '--'
-      return `| ${stable.competitionName}·${rangeName} | ${percent(stable.metrics?.samplingRate)} | ${percent(stable.metrics?.roi)} | ${percent(aggressive?.metrics?.samplingRate)} | ${percent(aggressive?.metrics?.roi)} | ${action} |`
+  const rows = report.verification.map(item => {
+    const baseline = report.baselineVerification.find(candidate => candidate.key === item.key)
+    const action = report.optimizationResults.find(candidate => (
+      candidate.competition === item.competition && candidate.range === item.range
+    ))?.action || '--'
+    const rangeName = item.range === 'CURRENT' ? '仅本届' : '含上届'
+    const presetName = item.preset === 'STABLE' ? '稳健' : '激进'
+    const hitRate = item.metrics?.recommendedMatchCount > 0
+      ? item.metrics.hitMatchCount / item.metrics.recommendedMatchCount
+      : null
+    return `| ${item.competitionName}·${rangeName} | ${presetName} | ${item.oddsMatchCount} | ${percent(baseline?.metrics?.samplingRate)} | ${percent(item.metrics?.samplingRate)} | ${percentagePointDelta(baseline?.metrics?.samplingRate, item.metrics?.samplingRate)} | ${percent(baseline?.metrics?.roi)} | ${percent(item.metrics?.roi)} | ${percent(hitRate)} | ${item.metrics?.recommendedMatchCount ?? '--'} | ${item.metrics?.recommendedSelectionCount ?? '--'} | ${decimal(item.metrics?.netProfit)} | ${decimal(item.metrics?.volatility)} | ${action} |`
     })
+  const samplingConstraint = report.options.strictSamplingBand
+    ? `- 每套方案采样率最多比原方案降低 ${(report.options.samplingTolerance * 100).toFixed(2)} 个百分点，且不得高于原方案`
+    : `- 激进方案采样率不得低于 ${(report.options.minimumAggressiveSamplingRate * 100).toFixed(2)}%，且不得高于同时段稳健方案`
+  const targetScope = report.options.targetRanges?.length > 0
+    ? `- 本次优化范围：${report.options.targetRanges.join('、')}`
+    : '- 本次检查全部赛事的仅本届与含上届方案'
   return [
     '# 共享界面口径赛事方案参数检查与重优化报告',
     '',
@@ -779,13 +859,13 @@ function buildMarkdown(report) {
     '- 正式比赛权重下限：1.00',
     '- 稳健方案ROI下限：5.00%',
     '- 激进方案ROI必须严格高于同赛事同时段稳健方案',
-    '- 激进方案采样率不得低于33.3%，且不得高于同时段稳健方案',
+    samplingConstraint,
     '- 激进方案采样率和ROI均高于稳健方案时，将激进参数移植给稳健方案，再优化激进方案',
-    '- 除规则触发项及瑞超、芬超、韩职仅本届外，符合条件的方案保持不变',
+    targetScope,
     '- 验收逐赛事使用与界面相同的异步回测接口和共享推荐计算模块',
     '',
-    '| 赛事时段 | 稳健采样率 | 稳健ROI | 激进采样率 | 激进ROI | 处理方式 |',
-    '| --- | ---: | ---: | ---: | ---: | --- |',
+    '| 赛事时段 | 方案 | 赔率样本 | 原采样率 | 新采样率 | 变化百分点 | 原ROI | 新ROI | 命中率 | 推荐场次 | 投注数 | 净收益 | 波动率 | 处理方式 |',
+    '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
     ...rows,
     '',
     `约束违规：${report.violations.length === 0 ? '0' : report.violations.join('；')}`,
@@ -817,7 +897,7 @@ async function main() {
       if (checkpoint.parameterProfiles) {
         config.parameterProfiles = checkpoint.parameterProfiles
       }
-      process.stdout.write(`resumed ${optimizationResults.length}/34 ranges\n`)
+      process.stdout.write(`resumed ${optimizationResults.length}/${allCompetitionRanges().length} ranges\n`)
     } catch (error) {
       if (error?.code !== 'ENOENT') {
         throw error
@@ -838,7 +918,9 @@ async function main() {
   optimizationPlan.forEach(item => {
     process.stdout.write(
       `  ${item.competitionName}:${item.range} ${item.action}` +
-      `${item.reasons.length > 0 ? ` (${item.reasons.join('; ')})` : ''}\n`
+      `${item.reasons.length > 0 ? ` (${item.reasons.join('; ')})` : ''}` +
+      ` stable=${percent(item.stable?.samplingRate)}/${percent(item.stable?.roi)}` +
+      ` aggressive=${percent(item.aggressive?.samplingRate)}/${percent(item.aggressive?.roi)}\n`
     )
   })
   if (AUDIT_ONLY) {
@@ -850,7 +932,7 @@ async function main() {
     if (optimizationResults.some(item => item.competition === competition && item.range === range)) {
       continue
     }
-    process.stdout.write(`\n[${optimizationResults.length + 1}/34] ${competitionName}:${range} ${action}\n`)
+    process.stdout.write(`\n[${optimizationResults.length + 1}/${ranges.length}] ${competitionName}:${range} ${action}\n`)
     const stableKey = `${competition}:${range}:STABLE`
     const aggressiveKey = `${competition}:${range}:AGGRESSIVE`
     let result = {
@@ -960,13 +1042,15 @@ async function main() {
         competition,
         range,
         'STABLE',
-        config.parameterProfiles[stableKey]
+        config.parameterProfiles[stableKey],
+        { samplingBounds: samplingBoundsForBaseline(planItem.stable.samplingRate) }
       )
       const aggressiveResult = await optimizePreset(
         competition,
         range,
         'AGGRESSIVE',
-        config.parameterProfiles[aggressiveKey]
+        config.parameterProfiles[aggressiveKey],
+        { samplingBounds: samplingBoundsForBaseline(planItem.aggressive.samplingRate) }
       )
       const pair = chooseReoptimizedPair(stableResult, aggressiveResult)
       if (!pair) {
@@ -1013,7 +1097,7 @@ async function main() {
   }
 
   const verification = await verifyAllProfiles(config)
-  const violations = findVerificationViolations(config, verification)
+  const violations = findVerificationViolations(config, verification, baselineVerification)
   const report = {
     generatedAt: new Date().toISOString(),
     completedAt: new Date().toISOString(),
@@ -1026,9 +1110,12 @@ async function main() {
       coarseRuleCandidates: COARSE_RULE_CANDIDATES,
       finalRuleCandidates: FINAL_RULE_CANDIDATES,
       samplingTolerance: SAMPLING_TOLERANCE,
+      samplingMaxIncrease: SAMPLING_MAX_INCREASE,
+      strictSamplingBand: STRICT_SAMPLING_BAND,
       minimumStableRoi: MINIMUM_STABLE_ROI,
       minimumAggressiveSamplingRate: MINIMUM_AGGRESSIVE_SAMPLING_RATE,
-      minimumAggressiveRoiGap: MINIMUM_AGGRESSIVE_ROI_GAP
+      minimumAggressiveRoiGap: MINIMUM_AGGRESSIVE_ROI_GAP,
+      targetRanges: [...TARGET_RANGES]
     },
     baselineVerification,
     optimizationResults,
