@@ -1,0 +1,234 @@
+{
+  "generatedAt": "2026-08-04T07:58:29.038Z",
+  "completedAt": "2026-08-04T07:58:29.038Z",
+  "applied": true,
+  "options": {
+    "finalSimulations": 50000,
+    "coarseSimulations": 5000,
+    "modelVariantCount": 60,
+    "finalistModelCount": 10,
+    "coarseRuleCandidates": 6000,
+    "finalRuleCandidates": 40000,
+    "samplingTolerance": 0.1,
+    "samplingMaxIncrease": 0,
+    "strictSamplingBand": true,
+    "minimumStableRoi": 0.05,
+    "minimumAggressiveSamplingRate": 0,
+    "minimumAggressiveRoiGap": 0,
+    "targetRanges": [
+      "CHAMPIONS_LEAGUE:CURRENT"
+    ]
+  },
+  "baselineVerification": [
+    {
+      "key": "CHAMPIONS_LEAGUE:CURRENT:STABLE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 16,
+      "metrics": {
+        "samplingRate": 1,
+        "recommendedMatchCount": 16,
+        "recommendedSelectionCount": 16,
+        "hitMatchCount": 9,
+        "missMatchCount": 7,
+        "winningSelectionCount": 9,
+        "averageWinningOdds": 2.0733333333333337,
+        "averageOddsIncludingMisses": 1.1662500000000002,
+        "totalStake": 16,
+        "totalReturn": 18.660000000000004,
+        "netProfit": 2.6600000000000037,
+        "volatility": 1.211747360907655,
+        "roi": 0.16625000000000023
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:CURRENT:AGGRESSIVE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 16,
+      "metrics": {
+        "samplingRate": 0.5,
+        "recommendedMatchCount": 8,
+        "recommendedSelectionCount": 12,
+        "hitMatchCount": 5,
+        "missMatchCount": 3,
+        "winningSelectionCount": 5,
+        "averageWinningOdds": 3.116,
+        "averageOddsIncludingMisses": 1.9475,
+        "totalStake": 12,
+        "totalReturn": 15.58,
+        "netProfit": 3.58,
+        "volatility": 1.1071448156664705,
+        "roi": 0.29833333333333334
+      }
+    }
+  ],
+  "optimizationResults": [
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "action": "REOPTIMIZE_PAIR",
+      "reasons": [
+        "赛事数据已更新，强制重新优化"
+      ],
+      "status": "OPTIMIZED",
+      "samplingPolicy": "STABLE_BASELINE_BAND",
+      "baseline": {
+        "stable": {
+          "samplingRate": 1,
+          "recommendedMatchCount": 16,
+          "recommendedSelectionCount": 16,
+          "hitMatchCount": 9,
+          "missMatchCount": 7,
+          "winningSelectionCount": 9,
+          "averageWinningOdds": 2.0733333333333337,
+          "averageOddsIncludingMisses": 1.1662500000000002,
+          "totalStake": 16,
+          "totalReturn": 18.660000000000004,
+          "netProfit": 2.6600000000000037,
+          "volatility": 1.211747360907655,
+          "roi": 0.16625000000000023
+        },
+        "aggressive": {
+          "samplingRate": 0.5,
+          "recommendedMatchCount": 8,
+          "recommendedSelectionCount": 12,
+          "hitMatchCount": 5,
+          "missMatchCount": 3,
+          "winningSelectionCount": 5,
+          "averageWinningOdds": 3.116,
+          "averageOddsIncludingMisses": 1.9475,
+          "totalStake": 12,
+          "totalReturn": 15.58,
+          "netProfit": 3.58,
+          "volatility": 1.1071448156664705,
+          "roi": 0.29833333333333334
+        }
+      },
+      "optimized": {
+        "stable": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 1.08,
+              "homeTeamGoalFactor": 1.04,
+              "seedTeamGoalFactor": 2.12,
+              "officialMatchWeight": 1.17,
+              "internationalFriendlyWeight": 0.63,
+              "clubFriendlyWeight": 0.06,
+              "handicapSmoothingFactor": 0.155
+            },
+            "globalParameters": {
+              "recommendationOdds": 1.13,
+              "handicapRecommendationThreshold": 82.46,
+              "handicapReverseThreshold": 2.22,
+              "singleRecommendationThreshold": 21.16
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.9375,
+            "recommendedMatchCount": 15,
+            "recommendedSelectionCount": 15,
+            "hitMatchCount": 10,
+            "missMatchCount": 5,
+            "winningSelectionCount": 10,
+            "averageWinningOdds": 2.0549999999999997,
+            "averageOddsIncludingMisses": 1.3699999999999999,
+            "totalStake": 15,
+            "totalReturn": 20.549999999999997,
+            "netProfit": 5.549999999999997,
+            "volatility": 1.1611816641434092,
+            "roi": 0.3699999999999999
+          }
+        },
+        "aggressive": {
+          "profile": {
+            "modelFactors": {
+              "hostTeamGoalFactor": 2.3,
+              "homeTeamGoalFactor": 1.1,
+              "seedTeamGoalFactor": 1.55,
+              "officialMatchWeight": 1,
+              "internationalFriendlyWeight": 0.5,
+              "clubFriendlyWeight": 0.3,
+              "handicapSmoothingFactor": 0.781
+            },
+            "globalParameters": {
+              "recommendationOdds": 2.11,
+              "handicapRecommendationThreshold": 90.53,
+              "handicapReverseThreshold": 35.89,
+              "singleRecommendationThreshold": 36.68
+            }
+          },
+          "metrics": {
+            "samplingRate": 0.5,
+            "recommendedMatchCount": 8,
+            "recommendedSelectionCount": 8,
+            "hitMatchCount": 4,
+            "missMatchCount": 4,
+            "winningSelectionCount": 4,
+            "averageWinningOdds": 2.795,
+            "averageOddsIncludingMisses": 1.3975,
+            "totalStake": 8,
+            "totalReturn": 11.18,
+            "netProfit": 3.1799999999999997,
+            "volatility": 1.5296194671504786,
+            "roi": 0.39749999999999996
+          }
+        }
+      }
+    }
+  ],
+  "verification": [
+    {
+      "key": "CHAMPIONS_LEAGUE:CURRENT:STABLE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "oddsMatchCount": 16,
+      "metrics": {
+        "samplingRate": 0.9375,
+        "recommendedMatchCount": 15,
+        "recommendedSelectionCount": 15,
+        "hitMatchCount": 10,
+        "missMatchCount": 5,
+        "winningSelectionCount": 10,
+        "averageWinningOdds": 2.0549999999999997,
+        "averageOddsIncludingMisses": 1.3699999999999999,
+        "totalStake": 15,
+        "totalReturn": 20.549999999999997,
+        "netProfit": 5.549999999999997,
+        "volatility": 1.1611816641434092,
+        "roi": 0.3699999999999999
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:CURRENT:AGGRESSIVE",
+      "competition": "CHAMPIONS_LEAGUE",
+      "competitionName": "欧冠",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "oddsMatchCount": 16,
+      "metrics": {
+        "samplingRate": 0.5,
+        "recommendedMatchCount": 8,
+        "recommendedSelectionCount": 8,
+        "hitMatchCount": 4,
+        "missMatchCount": 4,
+        "winningSelectionCount": 4,
+        "averageWinningOdds": 2.795,
+        "averageOddsIncludingMisses": 1.3975,
+        "totalStake": 8,
+        "totalReturn": 11.18,
+        "netProfit": 3.1799999999999997,
+        "volatility": 1.5296194671504786,
+        "roi": 0.39749999999999996
+      }
+    }
+  ],
+  "violations": []
+}

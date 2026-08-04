@@ -344,19 +344,19 @@
     },
     "CHAMPIONS_LEAGUE:CURRENT:STABLE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 1.1,
-        "homeTeamGoalFactor" : 0.86,
-        "seedTeamGoalFactor" : 1.85,
-        "officialMatchWeight" : 1.0,
-        "internationalFriendlyWeight" : 0.5,
-        "clubFriendlyWeight" : 0.3,
-        "handicapSmoothingFactor" : 0.0
+        "hostTeamGoalFactor" : 1.08,
+        "homeTeamGoalFactor" : 1.04,
+        "seedTeamGoalFactor" : 2.12,
+        "officialMatchWeight" : 1.17,
+        "internationalFriendlyWeight" : 0.63,
+        "clubFriendlyWeight" : 0.06,
+        "handicapSmoothingFactor" : 0.155
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.0,
-        "handicapRecommendationThreshold" : 100.0,
-        "handicapReverseThreshold" : 0.0,
-        "singleRecommendationThreshold" : 0.0
+        "recommendationOdds" : 1.13,
+        "handicapRecommendationThreshold" : 82.46,
+        "handicapReverseThreshold" : 2.22,
+        "singleRecommendationThreshold" : 21.16
       }
     },
     "CHAMPIONS_LEAGUE:CURRENT:AGGRESSIVE" : {
@@ -370,10 +370,10 @@
         "handicapSmoothingFactor" : 0.781
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.13,
-        "handicapRecommendationThreshold" : 86.8,
-        "handicapReverseThreshold" : 55.46,
-        "singleRecommendationThreshold" : 46.53
+        "recommendationOdds" : 2.11,
+        "handicapRecommendationThreshold" : 90.53,
+        "handicapReverseThreshold" : 35.89,
+        "singleRecommendationThreshold" : 36.68
       }
     },
     "CHAMPIONS_LEAGUE:PREVIOUS:STABLE" : {
