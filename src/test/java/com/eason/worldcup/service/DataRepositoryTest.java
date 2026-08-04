@@ -114,7 +114,7 @@ class DataRepositoryTest {
     }
 
     @Test
-    void shouldRemoveNorwegianEliteserienSchedules() {
+    void shouldKeepNorwegianEliteserienSchedules() {
         MatchSchedule norwegianSchedule = completedSchedule("NORWAY-001", "挪威主队", "挪威客队");
         norwegianSchedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
         norwegianSchedule.setGroupName("挪超");
@@ -125,7 +125,7 @@ class DataRepositoryTest {
 
         ReflectionTestUtils.invokeMethod(repository, "removeExcludedCompetitionSchedules", schedules);
 
-        assertEquals(List.of(swedishSchedule), schedules);
+        assertEquals(List.of(norwegianSchedule, swedishSchedule), schedules);
     }
 
     private MatchSchedule completedSchedule(String matchId, String homeTeam, String awayTeam) {

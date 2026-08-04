@@ -25,9 +25,9 @@ CLUB_OFFICIAL_OTHER,水原三星,Suwon Samsung Bluewings,EN,VERIFIED_ALIAS,2026-
 *,竞技俱乐部MG,Athletic Club (MG),EN,VERIFIED_ALIAS,2026-07-23
 *,庞普雷塔,Ponte Preta,EN,HISTORICAL_ODDS,2017-12-04
 *,利特克斯,Litex Lovech,EN,VERIFIED_ALIAS,2015-12-12
-*,Admira Wacker,Admira Wacker,STANDARD,VERIFIED_ALIAS,2026-07-09
-*,Admira Wacker,Admira,EN,VERIFIED_ALIAS,2026-07-09
-*,Admira Wacker,FC Admira Wacker Modling,EN,VERIFIED_ALIAS,2026-07-09
+*,阿德米拉,Admira Wacker,EN,VERIFIED_ALIAS,2026-07-09
+*,阿德米拉,Admira,EN,VERIFIED_ALIAS,2026-07-09
+*,阿德米拉,FC Admira Wacker Modling,EN,VERIFIED_ALIAS,2026-07-09
 *,北安普敦,Northampton,EN,VERIFIED_ALIAS,2026-07-11
 *,北安普敦,Northampton Town,EN,VERIFIED_ALIAS,2026-07-11
 *,贝西克塔,Besiktas JK,EN,VERIFIED_ALIAS,2026-07-14
@@ -46,7 +46,8 @@ CLUB_OFFICIAL_OTHER,水原三星,Suwon Samsung Bluewings,EN,VERIFIED_ALIAS,2026-
 *,巴伊亚,Bahia/BA,EN,MANUAL,2026-07-22
 *,Cienciano,Cienciano del Cusco,EN,MANUAL,2026-07-22
 *,Polissya Zhitomir,Polissya Zhytomyr,EN,MANUAL,2026-07-22
-*,Turan Tovuz,Turan,EN,MANUAL,2026-07-22
+*,Turan,Turan,STANDARD,MANUAL,2026-08-04
+*,Turan,Turan Tovuz,EN,MANUAL,2026-08-04
 *,萨巴赫,Sabah FK,EN,MANUAL,2026-07-22
 *,齐拉,Zira FK,EN,MANUAL,2026-07-22
 *,塞伊奈约基,Seinajoen JK,EN,VERIFIED_SPORTTERY,2026-07-18
@@ -56,10 +57,12 @@ CLUB_OFFICIAL_OTHER,水原三星,Suwon Samsung Bluewings,EN,VERIFIED_ALIAS,2026-
 *,库奥皮奥,KuPS Kuopio,EN,MANUAL,2026-07-22
 *,库奥皮奥,KuPS,EN,MANUAL,2026-07-22
 *,奥胡斯,AGF,EN,MANUAL,2026-07-22
-*,波兹南莱赫,Lech Poznan,EN,MANUAL,2026-07-22
-*,波兹南莱赫,波兹南,ZH,MANUAL,2026-07-22
-*,格拉茨风暴,SK Sturm Graz,EN,MANUAL,2026-07-22
-*,格拉茨风暴,格风暴,ZH,MANUAL,2026-07-22
+*,波兹南,Lech Poznan,EN,MANUAL,2026-08-04
+*,波兹南,波兹南,STANDARD,MANUAL,2026-08-04
+*,波兹南,波兹南莱赫,ZH,MANUAL,2026-08-04
+*,格风暴,SK Sturm Graz,EN,MANUAL,2026-08-04
+*,格风暴,格风暴,STANDARD,MANUAL,2026-08-04
+*,格风暴,格拉茨风暴,ZH,MANUAL,2026-08-04
 *,哈茨,Heart of Midlothian,EN,MANUAL,2026-07-22
 *,瓦尔达尔,Vardar,EN,MANUAL,2026-07-23
 *,高利宁,Coleraine,EN,MANUAL,2021-07-16
@@ -159,3 +162,44 @@ CLUB_OFFICIAL_OTHER,水原三星,Suwon Samsung Bluewings,EN,VERIFIED_ALIAS,2026-
 *,哈尔姆斯,哈尔姆斯塔德,ZH,MANUAL,2026-08-02
 *,佐加顿斯,Djurgårdens IF,EN,MANUAL,2026-08-02
 *,韦斯特罗,Västerås,EN,MANUAL,2026-08-02
+*,红色小鬼,林肯红色小鬼,ZH,MANUAL,2026-08-04
+*,哥本哈根,Copenhague,EN,MANUAL,2026-08-04
+*,哈尔姆斯,Halmstad,EN,MANUAL,2026-08-04
+*,Saburtalo,Iberia 1999,EN,MANUAL,2026-08-04
+*,斯拉维亚,布拉格斯拉维亚,ZH,MANUAL,2026-08-04
+*,贝红星,贝尔格莱德红星,ZH,MANUAL,2026-08-04
+*,GAK,格拉茨AK,ZH,MANUAL,2026-08-04
+*,泽姆匹林米哈洛夫采,Zemplin Michalovce,EN,MANUAL,2026-08-04
+*,奥林匹亚,奥林匹亚科斯,ZH,MANUAL,2026-08-04
+*,阿贾克斯,Ajax Amsterdam,EN,MANUAL,2026-08-04
+*,福图纳,福图纳锡塔德,ZH,MANUAL,2026-08-04
+*,长崎航海,V-Varen Nagasaki,EN,MANUAL,2026-08-04
+*,杜伊斯堡,MSV Duisburg,EN,MANUAL,2026-08-04
+*,赫鲁斯,De Treffers,EN,MANUAL,2026-08-04
+*,奥帕瓦,Opava,EN,MANUAL,2026-08-04
+*,贝蒂斯,皇家贝蒂斯,ZH,MANUAL,2026-08-04
+*,沃尔夫斯堡,VfL Wolfsburg,EN,MANUAL,2026-08-04
+*,圣加仑,Saint-Gall,EN,MANUAL,2026-08-04
+*,Mâcon,Macon 71,EN,MANUAL,2026-08-04
+*,圣吉联合,圣吉尔联合,ZH,MANUAL,2026-08-04
+*,圣吉联合,Union Saint-Gilloise,EN,MANUAL,2026-08-04
+*,圣吉联合,R. Union SG,EN,MANUAL,2026-08-04
+*,布星,布加勒斯特星,ZH,MANUAL,2026-08-04
+*,迪耶根体育,Diegem,EN,MANUAL,2026-08-04
+*,安德莱,安德莱赫特,ZH,MANUAL,2026-08-04
+*,斯达,Start,EN,MANUAL,2026-08-04
+*,灵比,林比,ZH,MANUAL,2026-08-04
+*,Polissya,Polissya Zhitomir,EN,MANUAL,2026-08-04
+*,克拉约瓦,克拉约瓦大学,ZH,MANUAL,2026-08-04
+*,默德林,阿德米拉,ZH,MANUAL,2026-08-04
+*,广岛三箭,Sanfrecce,EN,MANUAL,2026-08-04
+*,布斯巴达,布拉格斯巴达,ZH,MANUAL,2026-08-04
+*,Podbrezova,Zeleziarne Podbrezova,EN,MANUAL,2026-08-04
+*,Banska Bystrica,Dukla Banska Bystrica,EN,MANUAL,2026-08-04
+*,布尔诺,FC Zbrojovka Brno,EN,MANUAL,2026-08-04
+*,利勒斯特罗姆,Lillestrøm,EN,MANUAL,2026-08-04
+*,腓特烈,腓特烈斯塔,ZH,MANUAL,2026-08-04
+*,霍尔森斯,霍森斯,ZH,MANUAL,2026-08-04
+*,布拉迪斯,布拉迪斯拉发,ZH,MANUAL,2026-08-04
+*,Kralove,Hradec Kralove,EN,MANUAL,2026-08-04
+*,穆拉,Mura,EN,MANUAL,2026-08-04

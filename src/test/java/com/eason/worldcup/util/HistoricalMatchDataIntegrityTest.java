@@ -10,14 +10,81 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HistoricalMatchDataIntegrityTest {
+
+    @Test
+    void shouldContainRequestedVerifiedAndDomesticCompetitionFixtures() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2024, 10, 4),
+                Competition.EUROPA_LEAGUE,
+                "圣吉联合",
+                "博德闪耀",
+                0,
+                0);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 7, 24),
+                Competition.CLUB_FRIENDLY,
+                "圣吉联合",
+                "Patro Eisden",
+                4,
+                0);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 5, 16),
+                Competition.CLUB_OFFICIAL_OTHER,
+                "布拉迪斯",
+                "泽姆匹林米哈洛夫采",
+                0,
+                2);
+        long czech2026Count = fixtures.stream()
+                .filter(fixture -> fixture.sourceCompetition().equals("捷甲"))
+                .filter(fixture -> fixture.matchDate().getYear() == 2026)
+                .count();
+        assertEquals(140L, czech2026Count, "2026 捷甲已完赛数据不完整");
+        for (String sourceCompetition : List.of("希超", "捷甲", "比超杯", "挪超")) {
+            long count = fixtures.stream()
+                    .filter(fixture -> fixture.sourceCompetition().equals(sourceCompetition))
+                    .count();
+            assertTrue(count > 0, sourceCompetition);
+        }
+    }
+
+    @Test
+    void shouldNotContainDuplicateNormalizedFixtures() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+        Map<String, Integer> fixtureCounts = new HashMap<>();
+        for (HistoricalFixture fixture : fixtures) {
+            String firstTeam = fixture.homeTeam().compareTo(fixture.awayTeam()) <= 0
+                    ? fixture.homeTeam()
+                    : fixture.awayTeam();
+            String secondTeam = fixture.homeTeam().compareTo(fixture.awayTeam()) <= 0
+                    ? fixture.awayTeam()
+                    : fixture.homeTeam();
+            String scope = fixture.competition().name();
+            String key = scope + "|" + fixture.matchDate() + "|" + firstTeam + "|" + secondTeam;
+            fixtureCounts.merge(key, 1, Integer::sum);
+        }
+        List<String> duplicates = fixtureCounts.entrySet().stream()
+                .filter(entry -> entry.getValue() > 1)
+                .map(entry -> entry.getKey() + " x" + entry.getValue())
+                .limit(20)
+                .toList();
+
+        assertEquals(List.of(), duplicates, "存在统一队名后的重复比赛");
+    }
 
     @Test
     void shouldContainVerifiedDjurgardenAndVasterasFixtures() throws IOException {
@@ -108,7 +175,8 @@ class HistoricalMatchDataIntegrityTest {
                                 competition,
                                 CsvUtils.get(row, indexes.get("away_team_cn"))),
                         Integer.parseInt(CsvUtils.get(row, indexes.get("home_score"))),
-                        Integer.parseInt(CsvUtils.get(row, indexes.get("away_score")))));
+                        Integer.parseInt(CsvUtils.get(row, indexes.get("away_score"))),
+                        CsvUtils.get(row, indexes.get("source_competition"))));
             }
         }
         return fixtures;
@@ -163,7 +231,8 @@ class HistoricalMatchDataIntegrityTest {
             String homeTeam,
             String awayTeam,
             int homeScore,
-            int awayScore) {
+            int awayScore,
+            String sourceCompetition) {
 
     }
 

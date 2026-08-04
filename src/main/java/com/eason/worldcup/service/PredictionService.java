@@ -701,9 +701,7 @@ public class PredictionService {
             matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
                     schedule.getMatchDate(),
                     response.getHomeTeamCn(),
-                    response.getAwayTeamCn(),
-                    schedule.getHomeScore(),
-                    schedule.getAwayScore()), response);
+                    response.getAwayTeamCn()), response);
         }
 
         List<HistoricalMatch> historicalMatches = competition.isClubCompetition()
@@ -719,12 +717,10 @@ public class PredictionService {
                 continue;
             }
             HeadToHeadMatchResponse response = toHeadToHeadResponse(historicalMatch, target);
-            matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
+            matchesByFixture.put(buildHeadToHeadFixtureKey(
                     historicalMatch.getMatchDate(),
                     response.getHomeTeamCn(),
-                    response.getAwayTeamCn(),
-                    historicalMatch.getHomeScore(),
-                    historicalMatch.getAwayScore()), response);
+                    response.getAwayTeamCn()), response);
         }
 
         return matchesByFixture.values().stream()
@@ -883,17 +879,13 @@ public class PredictionService {
     private String buildHeadToHeadFixtureKey(
             LocalDate matchDate,
             String homeTeamName,
-            String awayTeamName,
-            int homeScore,
-            int awayScore) {
+            String awayTeamName) {
         String homeTeam = canonicalTeamName(homeTeamName);
         String awayTeam = canonicalTeamName(awayTeamName);
         if (homeTeam.compareTo(awayTeam) <= 0) {
-            return matchDate + "|" + homeTeam + "|" + homeScore
-                    + "|" + awayTeam + "|" + awayScore;
+            return matchDate + "|" + homeTeam + "|" + awayTeam;
         }
-        return matchDate + "|" + awayTeam + "|" + awayScore
-                + "|" + homeTeam + "|" + homeScore;
+        return matchDate + "|" + awayTeam + "|" + homeTeam;
     }
 
     private String canonicalTeamName(String teamName) {

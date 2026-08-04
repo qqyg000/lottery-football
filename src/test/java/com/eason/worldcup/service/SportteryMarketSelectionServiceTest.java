@@ -193,7 +193,7 @@ class SportteryMarketSelectionServiceTest {
     }
 
     @Test
-    void shouldExcludeNorwegianEliteserienFromSportteryUpdates() throws Exception {
+    void shouldParseNorwegianEliteserienForSportteryUpdates() throws Exception {
         var match = new ObjectMapper().readTree("""
                 {
                   "leagueNameAbbr": "挪超"
@@ -203,11 +203,11 @@ class SportteryMarketSelectionServiceTest {
         Competition competition =
                 ReflectionTestUtils.invokeMethod(service, "parseCompetition", match);
 
-        assertNull(competition);
+        assertEquals(Competition.CLUB_OFFICIAL_OTHER, competition);
     }
 
     @Test
-    void shouldExcludeNorwegianEliteserienScheduleFromSportteryUpdateScope() {
+    void shouldKeepNorwegianEliteserienScheduleInSportteryUpdateScope() {
         MatchSchedule schedule = new MatchSchedule();
         schedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
         schedule.setGroupName("挪超");
@@ -216,7 +216,7 @@ class SportteryMarketSelectionServiceTest {
         List<MatchSchedule> supportedSchedules =
                 ReflectionTestUtils.invokeMethod(service, "filterSupportedSchedules", List.of(schedule));
 
-        assertTrue(supportedSchedules.isEmpty());
+        assertEquals(List.of(schedule), supportedSchedules);
     }
 
     @Test

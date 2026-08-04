@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 145 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 174,578 场，日期范围为 2014-10-22 至 2026-07-26；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 149 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 184,063 场，日期范围为 2014-10-22 至 2026-08-03；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
@@ -20,7 +20,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - ESPN Scoreboard：国内杯赛、超级杯、洲际俱乐部赛事和俱乐部友谊赛
 - Futbol24 按日及赛季比赛接口：按年度回补 2014 年以来 ESPN、FotMob 未收录的俱乐部友谊赛，并补充阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
 - [Foot Mercato 俱乐部友谊赛日历](https://www.footmercato.net/international/amicaux-club/calendrier/)：补齐 Futbol24 和 FotMob 在 2026 当前赛季遗漏的已完场友谊赛
-- FotMob 按赛季接口：补充俱乐部赛、苏格兰联赛杯、芬兰联赛杯、瑞典杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、欧协联、比甲、比利时杯、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
+- FotMob 按赛季接口：补充俱乐部赛、苏格兰联赛杯、芬兰联赛杯、瑞典杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、欧协联、比甲、比利时杯、比超杯、希超、捷甲、挪超、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
 - Soccerway 韩国杯赛季结果页：补齐 FotMob 旧赛季接口仅返回后期轮次的问题
 - Futbol24 按赛季接口：补齐 FotMob 历史覆盖不足的塞杯、卢森杯、法罗杯和威联杯
 - 阿塞拜疆职业足球联盟（PFL）官方接口：补齐 Futbol24 未收录的阿塞杯第一资格轮和阿塞超升降级附加赛
@@ -31,7 +31,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 公共历史源通过 `scripts/import-public-history.mjs` 导入。脚本默认只检查增量，传入 `--write` 才会写文件；下载缓存位于 `target/public-history-cache`。公共源比赛使用 `OPEN-{source}-{hash}` ID，比分重建脚本会保留这些记录。
 
-参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。Futbol24 俱乐部友谊赛从 2014 年起读取完整年度赛果，旧数据不再受最近 30 天按日接口的限制；Foot Mercato 分页日历用于补齐当前赛季的来源内缺口。ESPN、FotMob、Soccerway、Futbol24、Foot Mercato、Sofascore、PFL、VietnamPlus 和佐加顿斯官网核验比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`FOOTMERCATO-{id}`、`SOFASCORE-{id}`、`PFL-{id}`、`VIETNAMPLUS-{postId}`、`DIF-{date}-{opponent}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。国家队对俱乐部训练赛按 `CLUB_FRIENDLY` 归类；无传统主客场且在集训地进行的比赛标记为中立场。
+参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。Futbol24 俱乐部友谊赛从 2014 年起读取完整年度赛果，旧数据不再受最近 30 天按日接口的限制；Foot Mercato 分页日历用于补齐当前赛季的来源内缺口。ESPN、FotMob、Soccerway、Futbol24、Foot Mercato、Sofascore、PFL、VietnamPlus、UEFA、圣吉联合官网和佐加顿斯官网核验比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`FOOTMERCATO-{id}`、`SOFASCORE-{id}`、`PFL-{id}`、`VIETNAMPLUS-{postId}`、`UEFA-{id}`、`RUSG-{id}`、`DIF-{date}-{opponent}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。国家队对俱乐部训练赛按 `CLUB_FRIENDLY` 归类；无传统主客场且在集训地进行的比赛标记为中立场。
 
 历史比赛使用以下内部类型和回测权重：
 
@@ -86,7 +86,8 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - FotMob `leagueId=9080`：韩职完整赛季历史
 - FotMob `leagueId=67/57`：瑞超、荷甲完整赛季历史
 - FotMob `leagueId=10216/10615`：欧协联正赛和资格赛完整赛季历史
-- FotMob `leagueId=40/149/164/69`：比甲、比利时杯、瑞士杯和瑞士超完整赛季历史
+- FotMob `leagueId=40/149/266/164/69`：比甲、比利时杯、比超杯、瑞士杯和瑞士超完整赛季历史
+- FotMob `leagueId=135/122/59`：希超、捷甲和挪超完整赛季历史
 - FotMob `leagueId=271/270/126/182/183/176/177`：保杯、保超、爱超、塞超、塞杯、斯洛伐超和斯洛伐杯完整赛季历史
 - FotMob `leagueId=229/9527/250/9523/232/215/217/116`：卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超完整赛季历史
 - Futbol24 `league_id=472`：ESPN 未覆盖的俱乐部友谊赛

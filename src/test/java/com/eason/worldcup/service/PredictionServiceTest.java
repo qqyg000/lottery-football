@@ -167,7 +167,109 @@ class PredictionServiceTest {
         schedule.setAwayTeamCn("波兹南");
 
         assertEquals("奥胡斯", predictionService.resolveDisplayTeamName(schedule, true));
-        assertEquals("波兹南莱赫", predictionService.resolveDisplayTeamName(schedule, false));
+        assertEquals("波兹南", predictionService.resolveDisplayTeamName(schedule, false));
+    }
+
+    @Test
+    void shouldApplyRequestedMappingsToCardTeamNames() {
+        Map<String, String> expectedMappings = Map.of(
+                "布拉格斯巴达", "布斯巴达",
+                "Zeleziarne Podbrezova", "Podbrezova",
+                "Dukla Banska Bystrica", "Banska Bystrica",
+                "FC Zbrojovka Brno", "布尔诺",
+                "Lillestrøm", "利勒斯特罗姆",
+                "腓特烈斯塔", "腓特烈",
+                "霍森斯", "霍尔森斯",
+                "布拉迪斯拉发", "布拉迪斯",
+                "Hradec Kralove", "Kralove",
+                "Mura", "穆拉");
+
+        for (Map.Entry<String, String> mapping : expectedMappings.entrySet()) {
+            MatchSchedule schedule = new MatchSchedule();
+            schedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+            schedule.setHomeTeamCn(mapping.getKey());
+            assertEquals(
+                    mapping.getValue(),
+                    predictionService.resolveDisplayTeamName(schedule, true));
+        }
+    }
+
+    @Test
+    void shouldIncludeSlovanLossWhenCardUsesSportteryAlias() {
+        MatchSchedule target = schedule(
+                "TARGET",
+                LocalDate.of(2026, 8, 5),
+                LocalTime.of(1, 0),
+                "米亚尔比",
+                "布拉迪斯",
+                "SCHEDULED");
+        target.setCompetition(Competition.CHAMPIONS_LEAGUE);
+        target.setSportteryAwayTeamName("布拉迪斯拉发");
+        HistoricalMatch slovanLoss = historicalMatch(
+                LocalDate.of(2026, 5, 16),
+                "布拉迪斯",
+                "泽姆匹林米哈洛夫采",
+                0,
+                2);
+        DataRepository dataRepository = new StubDataRepository(
+                List.of(target),
+                List.of(target),
+                List.of(slovanLoss));
+        PredictionService service = new PredictionService(dataRepository, null, null);
+
+        HeadToHeadOverviewResponse overview = service.queryHeadToHeadOverview(
+                Competition.CHAMPIONS_LEAGUE,
+                target.getMatchId(),
+                10);
+
+        assertEquals("布拉迪斯", service.resolveDisplayTeamName(target, false));
+        assertEquals(1, overview.getAwayRecentMatches().size());
+        assertEquals(LocalDate.of(2026, 5, 16), overview.getAwayRecentMatches().get(0).getMatchDate());
+        assertEquals("布拉迪斯", overview.getAwayRecentMatches().get(0).getHomeTeamCn());
+        assertEquals("泽姆匹林米哈洛夫采", overview.getAwayRecentMatches().get(0).getAwayTeamCn());
+        assertEquals(0, overview.getAwayRecentMatches().get(0).getHomeScore());
+        assertEquals(2, overview.getAwayRecentMatches().get(0).getAwayScore());
+    }
+
+    @Test
+    void shouldUseHistoricalRegulationScoreWhenScheduleScoreDiffers() {
+        MatchSchedule target = schedule(
+                "TARGET",
+                LocalDate.of(2026, 8, 1),
+                LocalTime.of(20, 0),
+                "圣吉联合",
+                "Patro Eisden",
+                "SCHEDULED");
+        target.setCompetition(Competition.CLUB_FRIENDLY);
+        MatchSchedule runtimeSchedule = completedSchedule(
+                "FUTBOL24-CLUB_FRIENDLY-3383418",
+                LocalDate.of(2026, 7, 24),
+                LocalTime.of(19, 30),
+                "圣吉联合",
+                "Patro Eisden",
+                4,
+                1);
+        runtimeSchedule.setCompetition(Competition.CLUB_FRIENDLY);
+        HistoricalMatch verifiedMatch = historicalMatch(
+                LocalDate.of(2026, 7, 24),
+                "圣吉联合",
+                "Patro Eisden",
+                4,
+                0);
+        DataRepository dataRepository = new StubDataRepository(
+                List.of(target),
+                List.of(target, runtimeSchedule),
+                List.of(verifiedMatch));
+        PredictionService service = new PredictionService(dataRepository, null, null);
+
+        HeadToHeadOverviewResponse overview = service.queryHeadToHeadOverview(
+                Competition.CLUB_FRIENDLY,
+                target.getMatchId(),
+                10);
+
+        assertEquals(1, overview.getHeadToHeadMatches().size());
+        assertEquals(4, overview.getHeadToHeadMatches().get(0).getHomeScore());
+        assertEquals(0, overview.getHeadToHeadMatches().get(0).getAwayScore());
     }
 
     @Test
@@ -360,6 +462,11 @@ class PredictionServiceTest {
 
         @Override
         public List<HistoricalMatch> getHistoricalMatches() {
+            return historicalMatches;
+        }
+
+        @Override
+        public List<HistoricalMatch> getClubHistoricalMatches() {
             return historicalMatches;
         }
 

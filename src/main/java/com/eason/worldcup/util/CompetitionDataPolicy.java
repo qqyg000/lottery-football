@@ -23,11 +23,7 @@ public final class CompetitionDataPolicy {
             "CAMPEONATO PAULISTA",
             "PAULISTA A1",
             "COPA DO BRASIL",
-            "COPA DO NORDESTE",
-            "挪超",
-            "挪威超",
-            "ELITESERIEN",
-            "NORWEGIAN ELITESERIEN");
+            "COPA DO NORDESTE");
 
     private CompetitionDataPolicy() {
     }

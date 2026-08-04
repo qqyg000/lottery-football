@@ -8,12 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CompetitionDataPolicyTest {
 
     @Test
-    void shouldExcludeNorwegianEliteserienAliases() {
-        assertTrue(CompetitionDataPolicy.isExcludedSourceCompetition("挪超"));
-        assertTrue(CompetitionDataPolicy.isExcludedSourceCompetition("挪威超"));
-        assertTrue(CompetitionDataPolicy.isExcludedSourceCompetition("Eliteserien"));
-        assertTrue(CompetitionDataPolicy.isExcludedSourceCompetition("Norwegian Eliteserien"));
-        assertTrue(CompetitionDataPolicy.isExcludedSourceCompetition("挪超 第12轮"));
+    void shouldKeepNorwegianEliteserienAliases() {
+        assertFalse(CompetitionDataPolicy.isExcludedSourceCompetition("挪超"));
+        assertFalse(CompetitionDataPolicy.isExcludedSourceCompetition("挪威超"));
+        assertFalse(CompetitionDataPolicy.isExcludedSourceCompetition("Eliteserien"));
+        assertFalse(CompetitionDataPolicy.isExcludedSourceCompetition("Norwegian Eliteserien"));
+        assertFalse(CompetitionDataPolicy.isExcludedSourceCompetition("挪超 第12轮"));
     }
 
     @Test

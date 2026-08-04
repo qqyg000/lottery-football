@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -59,6 +60,30 @@ class ClubCompetitionScheduleUpdaterTest {
                 () -> updater.executeTasks(tasks, 2, Duration.ofMillis(50), null));
 
         assertEquals(List.of(completedSchedule), schedules);
+    }
+
+    @Test
+    void shouldStartTaskTimeoutAfterQueuedTaskEntersAnExecutionBatch() {
+        List<Supplier<List<MatchSchedule>>> tasks = new ArrayList<>();
+        for (int index = 0; index < 4; index++) {
+            int matchIndex = index;
+            tasks.add(() -> {
+                try {
+                    Thread.sleep(100L);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+                MatchSchedule schedule = new MatchSchedule();
+                schedule.setMatchId("QUEUED-" + matchIndex);
+                return List.of(schedule);
+            });
+        }
+
+        List<MatchSchedule> schedules = assertTimeoutPreemptively(
+                Duration.ofSeconds(2),
+                () -> updater.executeTasks(tasks, 1, Duration.ofMillis(250), null));
+
+        assertEquals(4, schedules.size());
     }
 
     @Test
@@ -173,6 +198,29 @@ class ClubCompetitionScheduleUpdaterTest {
                 LocalDate.of(2026, 8, 22));
 
         assertTrue(filtered.isEmpty());
+    }
+
+    @Test
+    void shouldOnlyReplaceCacheRowsFromTheLoadedFotMobSource() {
+        MatchSchedule slovakSchedule = new MatchSchedule();
+        slovakSchedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        slovakSchedule.setMatchDate(LocalDate.of(2026, 7, 26));
+        slovakSchedule.setGroupName("斯洛伐超 第1轮");
+        MatchSchedule greekSchedule = new MatchSchedule();
+        greekSchedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        greekSchedule.setMatchDate(LocalDate.of(2026, 8, 22));
+        greekSchedule.setGroupName("希超 第1轮");
+
+        List<MatchSchedule> filtered = updater.removeReplacedCachedSchedules(
+                List.of(slovakSchedule, greekSchedule),
+                Set.of(new ClubCompetitionScheduleUpdater.CompetitionSeason(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        2026,
+                        "斯洛伐超")),
+                LocalDate.of(2026, 7, 1),
+                LocalDate.of(2026, 8, 31));
+
+        assertEquals(List.of(greekSchedule), filtered);
     }
 
     @Test
@@ -361,7 +409,7 @@ class ClubCompetitionScheduleUpdaterTest {
         List<MatchSchedule> schedules = updater.deduplicateSchedulesByFixture(List.of(cached));
 
         assertEquals(1, schedules.size());
-        assertEquals("Admira Wacker", schedules.get(0).getHomeTeamCn());
+        assertEquals("默德林", schedules.get(0).getHomeTeamCn());
     }
 
     @Test
@@ -414,7 +462,7 @@ class ClubCompetitionScheduleUpdaterTest {
         assertNotNull(schedule);
         assertEquals("FOTMOB-CLUB_OFFICIAL_OTHER-4946822", schedule.getMatchId());
         assertEquals(LocalDate.of(2026, 5, 22), schedule.getMatchDate());
-        assertEquals("Turan Tovuz", schedule.getHomeTeamCn());
+        assertEquals("Turan", schedule.getHomeTeamCn());
         assertEquals("萨巴赫", schedule.getAwayTeamCn());
         assertEquals(1, schedule.getHomeScore());
         assertEquals(2, schedule.getAwayScore());
@@ -571,7 +619,7 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals("SOFASCORE-CLUB_FRIENDLY-14573151", schedule.getMatchId());
         assertEquals(LocalDate.of(2026, 7, 2), schedule.getMatchDate());
         assertEquals(LocalTime.of(23, 0), schedule.getKickoffTime());
-        assertEquals("Polissya Zhitomir", schedule.getHomeTeamCn());
+        assertEquals("Polissya", schedule.getHomeTeamCn());
         assertEquals("萨巴赫", schedule.getAwayTeamCn());
         assertEquals(4, schedule.getHomeScore());
         assertEquals(1, schedule.getAwayScore());
@@ -606,11 +654,42 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals("FUTBOL24-CLUB_FRIENDLY-3345454", schedule.getMatchId());
         assertEquals(LocalDate.of(2026, 7, 2), schedule.getMatchDate());
         assertEquals(LocalTime.of(23, 0), schedule.getKickoffTime());
-        assertEquals("Polissya Zhitomir", schedule.getHomeTeamCn());
+        assertEquals("Polissya", schedule.getHomeTeamCn());
         assertEquals("萨巴赫", schedule.getAwayTeamCn());
         assertEquals(4, schedule.getHomeScore());
         assertEquals(1, schedule.getAwayScore());
         assertEquals("COMPLETED", schedule.getStatus());
+    }
+
+    @Test
+    void shouldUseVerifiedRegulationTimeScoreForUnionAndPatroEisden() throws Exception {
+        JsonNode statuses = objectMapper.readTree("""
+                {
+                  "5": { "name": "FT", "name_short": "FT", "is_ended": true }
+                }
+                """);
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "league_id": 472,
+                  "status_id": 5,
+                  "date": "2026-07-24T11:30:00+00:00",
+                  "score1": "4-1",
+                  "score2": "2-0",
+                  "team1": { "name": "Union Saint-Gilloise" },
+                  "team2": { "name": "Patro Eisden" }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFutbol24Match(
+                "3383418",
+                match,
+                statuses,
+                ZoneId.of("Asia/Shanghai"));
+
+        assertNotNull(schedule);
+        assertEquals("圣吉联合", schedule.getHomeTeamCn());
+        assertEquals(4, schedule.getHomeScore());
+        assertEquals(0, schedule.getAwayScore());
     }
 
     @Test
@@ -889,6 +968,35 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void shouldCorrectVerifiedRegulationScoreWhenLoadingScheduleCache(@TempDir Path tempDir)
+            throws Exception {
+        Path cachePath = tempDir.resolve("club-competition-schedules.json");
+        MatchSchedule cachedSchedule = completedClubFriendlySchedule(
+                "FUTBOL24-CLUB_FRIENDLY-3383418",
+                "圣吉联合",
+                "Patro Eisden",
+                4,
+                1);
+        cachedSchedule.setMatchDate(LocalDate.of(2026, 7, 24));
+        cachedSchedule.setGroupName("俱乐部友谊赛");
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(
+                cachePath.toFile(),
+                List.of(cachedSchedule));
+        ReflectionTestUtils.setField(updater, "cachePath", cachePath.toString());
+
+        List<MatchSchedule> loadedSchedules =
+                (List<MatchSchedule>) ReflectionTestUtils.invokeMethod(
+                        updater,
+                        "loadCachedSchedules");
+
+        assertNotNull(loadedSchedules);
+        assertEquals(1, loadedSchedules.size());
+        assertEquals(4, loadedSchedules.get(0).getHomeScore());
+        assertEquals(0, loadedSchedules.get(0).getAwayScore());
+    }
+
+    @Test
     void shouldParseRequestedEuropeanDomesticCompetitions() throws Exception {
         JsonNode statuses = objectMapper.readTree("""
                 {
@@ -972,9 +1080,15 @@ class ClubCompetitionScheduleUpdaterTest {
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "10615", "欧协联资格赛", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "135", "希超", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "122", "捷甲", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "40", "比甲", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "149", "比利时杯", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "266", "比超杯", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "164", "瑞士杯", false),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
@@ -1005,6 +1119,8 @@ class ClubCompetitionScheduleUpdaterTest {
                         Competition.CLUB_OFFICIAL_OTHER, "9523", "法罗杯", true),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "232", "黑山甲", false),
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER, "59", "挪超", true),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
                         Competition.CLUB_OFFICIAL_OTHER, "215", "冰超", true),
                 new ClubCompetitionScheduleUpdater.FotMobLeagueSource(

@@ -349,6 +349,22 @@ const FOTMOB_LEAGUE_SOURCES = [
     firstSeasonStartYear: 2021
   },
   {
+    leagueId: '135',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '希超',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '122',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '捷甲',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
     leagueId: '40',
     competition: 'CLUB_OFFICIAL_OTHER',
     matchType: 'OFFICIAL',
@@ -361,6 +377,14 @@ const FOTMOB_LEAGUE_SOURCES = [
     matchType: 'OFFICIAL',
     sourceCompetition: '比利时杯',
     calendarYearSeason: false
+  },
+  {
+    leagueId: '266',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '比超杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
   },
   {
     leagueId: '164',
@@ -459,6 +483,14 @@ const FOTMOB_LEAGUE_SOURCES = [
     matchType: 'OFFICIAL',
     sourceCompetition: '黑山甲',
     calendarYearSeason: false
+  },
+  {
+    leagueId: '59',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '挪超',
+    calendarYearSeason: true,
+    firstSeasonStartYear: 2014
   },
   {
     leagueId: '215',
@@ -688,6 +720,34 @@ const FUTBOL24_SOURCES = [
 ]
 
 const VERIFIED_SUPPLEMENTAL_ROWS = [
+  {
+    provider: 'UEFA',
+    providerId: '2042108',
+    source: 'VERIFIED-UEFA',
+    competition: 'EUROPA_LEAGUE',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '欧罗巴',
+    matchDate: '2024-10-04',
+    homeTeam: 'Union Saint-Gilloise',
+    awayTeam: 'Bodø/Glimt',
+    homeScore: 0,
+    awayScore: 0,
+    neutral: false
+  },
+  {
+    provider: 'RUSG',
+    providerId: '20260724-PATRO-EISDEN',
+    source: 'VERIFIED-RUSG',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-24',
+    homeTeam: 'Union Saint-Gilloise',
+    awayTeam: 'Patro Eisden',
+    homeScore: 4,
+    awayScore: 0,
+    neutral: false
+  },
   {
     provider: 'DIF',
     providerId: '20220122-VSK',
@@ -2991,6 +3051,12 @@ function sourceMatchId(row) {
   }
   if (row.provider === 'DIF' && row.providerId) {
     return `DIF-${row.providerId}`
+  }
+  if (row.provider === 'UEFA' && row.providerId) {
+    return `UEFA-${row.providerId}`
+  }
+  if (row.provider === 'RUSG' && row.providerId) {
+    return `RUSG-${row.providerId}`
   }
   const digest = crypto.createHash('sha1')
     .update([

@@ -757,6 +757,62 @@ const VERIFIED_SPORTTERY_ENGLISH_ALIASES = [
   }
 ]
 
+const USER_REQUESTED_TEAM_ALIASES = [
+  ['红色小鬼', '林肯红色小鬼'],
+  ['哥本哈根', 'Copenhague'],
+  ['哈尔姆斯', 'Halmstad'],
+  ['Saburtalo', 'Iberia 1999'],
+  ['斯拉维亚', '布拉格斯拉维亚'],
+  ['贝红星', '贝尔格莱德红星'],
+  ['GAK', '格拉茨AK'],
+  ['泽姆匹林米哈洛夫采', 'Zemplin Michalovce'],
+  ['奥林匹亚', '奥林匹亚科斯'],
+  ['阿贾克斯', 'Ajax Amsterdam'],
+  ['福图纳', '福图纳锡塔德'],
+  ['长崎航海', 'V-Varen Nagasaki'],
+  ['杜伊斯堡', 'MSV Duisburg'],
+  ['赫鲁斯', 'De Treffers'],
+  ['奥帕瓦', 'Opava'],
+  ['贝蒂斯', '皇家贝蒂斯'],
+  ['沃尔夫斯堡', 'VfL Wolfsburg'],
+  ['圣加仑', 'Saint-Gall'],
+  ['Mâcon', 'Macon 71'],
+  ['圣吉联合', '圣吉尔联合'],
+  ['布星', '布加勒斯特星'],
+  ['迪耶根体育', 'Diegem'],
+  ['迪耶根体育', 'Diegem Sport'],
+  ['安德莱', '安德莱赫特'],
+  ['斯达', 'Start'],
+  ['灵比', '林比'],
+  ['波兹南', '波兹南莱赫'],
+  ['圣吉联合', 'Union Saint-Gilloise'],
+  ['圣吉联合', 'Royale Union Saint-Gilloise'],
+  ['圣吉联合', 'R. Union SG'],
+  ['圣吉联合', 'Union SG'],
+  ['Polissya', 'Polissya Zhitomir'],
+  ['克拉约瓦', '克拉约瓦大学'],
+  ['Turan', 'Turan Tovuz'],
+  ['格风暴', '格拉茨风暴'],
+  ['默德林', '阿德米拉'],
+  ['广岛三箭', 'Sanfrecce'],
+  ['布斯巴达', '布拉格斯巴达'],
+  ['Podbrezova', 'Zeleziarne Podbrezova'],
+  ['Banska Bystrica', 'Dukla Banska Bystrica'],
+  ['布尔诺', 'FC Zbrojovka Brno'],
+  ['利勒斯特罗姆', 'Lillestrøm'],
+  ['腓特烈', '腓特烈斯塔'],
+  ['霍尔森斯', '霍森斯'],
+  ['布拉迪斯', '布拉迪斯拉发'],
+  ['Kralove', 'Hradec Kralove'],
+  ['穆拉', 'Mura']
+].map(([standardName, aliasName]) => ({
+  competition: '*',
+  standardName,
+  aliasName,
+  lastSeenDate: '2026-08-04',
+  source: 'MANUAL'
+}))
+
 const REQUESTED_DOMESTIC_COMPETITION_ALIASES = [
   ['安养FC', 'FC Anyang', 'VERIFIED_SPORTTERY'],
   ['城南FC', 'Seongnam FC'],
@@ -1316,6 +1372,7 @@ function addSportteryCacheMappings(rowsByKey, schedules, sportteryEntries) {
 function addVerifiedSportteryEnglishAliases(rowsByKey) {
   for (const alias of [
     ...VERIFIED_SPORTTERY_ENGLISH_ALIASES,
+    ...USER_REQUESTED_TEAM_ALIASES,
     ...REQUESTED_DOMESTIC_COMPETITION_ALIASES
   ]) {
     registerAlias(

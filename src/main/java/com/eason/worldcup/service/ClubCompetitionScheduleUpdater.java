@@ -64,6 +64,9 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final Pattern PERIOD_SCORE_PATTERN = Pattern.compile("(\\d+)\\s*-\\s*(\\d+)");
 
+    private static final Map<String, ScorePair> VERIFIED_REGULATION_TIME_SCORES = Map.of(
+            "FUTBOL24-CLUB_FRIENDLY-3383418", new ScorePair(4, 0));
+
     private static final List<EspnLeagueSource> BASE_ESPN_SOURCES = List.of(
             new EspnLeagueSource(Competition.EUROPEAN_CHAMPIONSHIP, "uefa.euro"),
             new EspnLeagueSource(Competition.COPA_AMERICA, "conmebol.america"),
@@ -144,8 +147,11 @@ public class ClubCompetitionScheduleUpdater {
             new FotMobLeagueSource(Competition.EREDIVISIE, "57", "荷甲", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "10216", "欧协联", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "10615", "欧协联资格赛", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "135", "希超", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "122", "捷甲", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "40", "比甲", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "149", "比利时杯", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "266", "比超杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "164", "瑞士杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "69", "瑞士超", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "271", "保杯", false),
@@ -161,6 +167,7 @@ public class ClubCompetitionScheduleUpdater {
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "250", "法罗超", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "9523", "法罗杯", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "232", "黑山甲", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "59", "挪超", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "215", "冰超", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "217", "冰岛杯", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "116", "威尔士超", false)
@@ -468,7 +475,8 @@ public class ClubCompetitionScheduleUpdater {
             result.add(schedule);
             loadedSeasons.add(new CompetitionSeason(
                     schedule.getCompetition(),
-                    schedule.getMatchDate().getYear()));
+                    schedule.getMatchDate().getYear(),
+                    sourceCompetitionIdentity(schedule.getGroupName())));
         }
         if (result.isEmpty()) {
             log.warn("No configured competition schedules were returned by FotMob; using cached data.");
@@ -710,10 +718,14 @@ public class ClubCompetitionScheduleUpdater {
                 && schedule.getMatchDate() != null
                 && !schedule.getMatchDate().isBefore(startDate)
                 && !schedule.getMatchDate().isAfter(endDate)
-                && replacedSeasons.contains(new CompetitionSeason(
-                        schedule.getCompetition(),
-                        schedule.getMatchDate().getYear())));
+                && replacedSeasons.stream().anyMatch(replacedSeason ->
+                        replacedSeason.matches(schedule)));
         return retainedSchedules;
+    }
+
+    private String sourceCompetitionIdentity(String groupName) {
+        String normalized = groupName == null ? "" : groupName.trim();
+        return normalized.replaceFirst("\\s+第.+轮$", "");
     }
 
     private List<MatchSchedule> filterSchedulesByDate(
@@ -1215,7 +1227,20 @@ public class ClubCompetitionScheduleUpdater {
             schedule.setHomeScore(score.homeScore);
             schedule.setAwayScore(score.awayScore);
         }
+        applyVerifiedRegulationTimeScore(schedule);
         return schedule;
+    }
+
+    private void applyVerifiedRegulationTimeScore(MatchSchedule schedule) {
+        if (schedule == null || !"COMPLETED".equalsIgnoreCase(schedule.getStatus())) {
+            return;
+        }
+        ScorePair verifiedScore = VERIFIED_REGULATION_TIME_SCORES.get(schedule.getMatchId());
+        if (verifiedScore == null) {
+            return;
+        }
+        schedule.setHomeScore(verifiedScore.homeScore);
+        schedule.setAwayScore(verifiedScore.awayScore);
     }
 
     private ScorePair parseFutbol24RegulationScore(JsonNode match, JsonNode status) {
@@ -1361,12 +1386,12 @@ public class ClubCompetitionScheduleUpdater {
         List<MatchSchedule> result = new ArrayList<>();
         for (SportsDbLeagueSource source : SPORTS_DB_SOURCES) {
             for (int season = startDate.getYear(); season <= endDate.getYear(); season++) {
-                if (!replacedSeasons.contains(new CompetitionSeason(source.competition(), season))) {
+                if (!containsCompetitionSeason(replacedSeasons, source.competition(), season)) {
                     result.addAll(loadSportsDbSeason(client, source, season, zoneId, timeout));
                 }
             }
 
-            if (replacedSeasons.contains(new CompetitionSeason(source.competition(), currentYear))) {
+            if (containsCompetitionSeason(replacedSeasons, source.competition(), currentYear)) {
                 continue;
             }
 
@@ -1399,6 +1424,14 @@ public class ClubCompetitionScheduleUpdater {
             log.warn("No Finnish or Korean league schedules were returned by TheSportsDB.");
         }
         return filterSchedulesByDate(result, startDate, endDate);
+    }
+
+    private boolean containsCompetitionSeason(
+            Set<CompetitionSeason> competitionSeasons,
+            Competition competition,
+            int season) {
+        return competitionSeasons.stream()
+                .anyMatch(item -> item.competition() == competition && item.season() == season);
     }
 
     private List<MatchSchedule> loadSportsDbRound(
@@ -1681,6 +1714,7 @@ public class ClubCompetitionScheduleUpdater {
                 schedule.setCompetition(Competition.fromSourceCompetition(
                         schedule.getGroupName(),
                         schedule.getCompetition()));
+                applyVerifiedRegulationTimeScore(schedule);
             }
             return normalizedSchedules;
         } catch (Exception ex) {
@@ -1741,36 +1775,43 @@ public class ClubCompetitionScheduleUpdater {
         try {
             Object progressLock = new Object();
             int[] completedTaskCount = {0};
-            List<CompletableFuture<List<MatchSchedule>>> futures = new ArrayList<>();
-            for (Supplier<List<MatchSchedule>> task : tasks) {
-                CompletableFuture<List<MatchSchedule>> future = CompletableFuture.supplyAsync(task, executor);
-                if (taskTimeout != null && !taskTimeout.isZero() && !taskTimeout.isNegative()) {
-                    future = future
-                            .orTimeout(taskTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                            .exceptionally(throwable -> {
-                                String errorMessage = throwable.getMessage() == null
-                                        ? throwable.getClass().getSimpleName()
-                                        : throwable.getMessage();
-                                log.warn(
-                                        "Parallel schedule source task exceeded {} or failed: {}",
-                                        taskTimeout,
-                                        errorMessage);
-                                return List.of();
-                            });
-                }
-                futures.add(future.whenComplete((ignored, throwable) -> {
-                    if (taskProgressConsumer == null) {
-                        return;
-                    }
-                    synchronized (progressLock) {
-                        completedTaskCount[0]++;
-                        taskProgressConsumer.accept(completedTaskCount[0], tasks.size());
-                    }
-                }));
-            }
             List<MatchSchedule> result = new ArrayList<>();
-            for (CompletableFuture<List<MatchSchedule>> future : futures) {
-                result.addAll(future.join());
+            for (int batchStart = 0; batchStart < tasks.size(); batchStart += threadCount) {
+                int batchEnd = Math.min(tasks.size(), batchStart + threadCount);
+                List<CompletableFuture<List<MatchSchedule>>> futures = new ArrayList<>();
+                for (int taskIndex = batchStart; taskIndex < batchEnd; taskIndex++) {
+                    Supplier<List<MatchSchedule>> task = tasks.get(taskIndex);
+                    CompletableFuture<List<MatchSchedule>> future = CompletableFuture.supplyAsync(task, executor);
+                    if (taskTimeout != null && !taskTimeout.isZero() && !taskTimeout.isNegative()) {
+                        future = future
+                                .orTimeout(taskTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                                .exceptionally(throwable -> {
+                                    String errorMessage = throwable.getMessage() == null
+                                            ? throwable.getClass().getSimpleName()
+                                            : throwable.getMessage();
+                                    log.warn(
+                                            "Parallel schedule source task exceeded {} or failed: {}",
+                                            taskTimeout,
+                                            errorMessage);
+                                    return List.of();
+                                });
+                    }
+                    futures.add(future.whenComplete((ignored, throwable) -> {
+                        if (taskProgressConsumer == null) {
+                            return;
+                        }
+                        synchronized (progressLock) {
+                            completedTaskCount[0]++;
+                            taskProgressConsumer.accept(completedTaskCount[0], tasks.size());
+                        }
+                    }));
+                }
+                for (CompletableFuture<List<MatchSchedule>> future : futures) {
+                    result.addAll(future.join());
+                }
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
             }
             return result;
         } finally {
@@ -2230,7 +2271,30 @@ public class ClubCompetitionScheduleUpdater {
 
     }
 
-    record CompetitionSeason(Competition competition, int season) {
+    record CompetitionSeason(Competition competition, int season, String sourceCompetition) {
+
+        CompetitionSeason(Competition competition, int season) {
+            this(competition, season, "");
+        }
+
+        CompetitionSeason {
+            sourceCompetition = sourceCompetition == null ? "" : sourceCompetition.trim();
+        }
+
+        boolean matches(MatchSchedule schedule) {
+            if (schedule == null
+                    || schedule.getCompetition() != competition
+                    || schedule.getMatchDate() == null
+                    || schedule.getMatchDate().getYear() != season) {
+                return false;
+            }
+            if (sourceCompetition.isBlank()) {
+                return true;
+            }
+            String groupName = schedule.getGroupName() == null ? "" : schedule.getGroupName().trim();
+            return groupName.equals(sourceCompetition)
+                    || groupName.startsWith(sourceCompetition + " 第");
+        }
 
     }
 
