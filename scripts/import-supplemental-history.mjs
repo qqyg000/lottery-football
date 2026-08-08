@@ -66,6 +66,15 @@ const SOURCE_COMPETITION_ALIASES = new Map([
   ['韩国足总杯', '韩国杯']
 ])
 
+const EXCLUDED_HISTORICAL_MATCH_IDS = new Set([
+  'FOTMOB-5838416',
+  'FOTMOB-5838413',
+  'FOTMOB-5900532',
+  'FOTMOB-5900828',
+  'FOTMOB-5961030',
+  'FUTBOL24-5E023A613754E8B4'
+])
+
 const NATIONAL_COMPETITIONS = new Set([
   'WORLD_CUP',
   'EUROPEAN_CHAMPIONSHIP',
@@ -333,6 +342,54 @@ const FOTMOB_LEAGUE_SOURCES = [
     calendarYearSeason: false
   },
   {
+    leagueId: '111',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '荷乙',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '61',
+    competition: 'PRIMEIRA_LIGA',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '葡超',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '185',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '葡甲',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '187',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '葡联赛杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '58',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '荷乙附加赛',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '188',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '葡超杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
     leagueId: '10216',
     competition: 'CLUB_OFFICIAL_OTHER',
     matchType: 'OFFICIAL',
@@ -539,6 +596,51 @@ const FOOTMERCATO_CLUB_FRIENDLY_SOURCE = {
 
 const FUTBOL24_SOURCES = [
   {
+    leagueId: '8',
+    competition: 'CHAMPIONS_LEAGUE',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '欧冠',
+    seasonPath: 'international/UEFA/Champions-League',
+    crossYearSeason: true,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '9',
+    competition: 'EUROPA_LEAGUE',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '欧罗巴',
+    seasonPath: 'international/UEFA/Europa-League',
+    crossYearSeason: true,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '48',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '罗甲',
+    seasonPath: 'national/Romania/Liga-I',
+    crossYearSeason: true,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '286',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '罗超杯',
+    seasonPath: 'national/Romania/Super-Cup',
+    crossYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '338',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '葡超杯',
+    seasonPath: 'national/Portugal/Super-Cup',
+    crossYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
     leagueId: '472',
     competition: 'CLUB_FRIENDLY',
     matchType: 'CLUB_FRIENDLY',
@@ -720,6 +822,62 @@ const FUTBOL24_SOURCES = [
 ]
 
 const VERIFIED_SUPPLEMENTAL_ROWS = [
+  {
+    provider: 'USER',
+    providerId: '20260711-UTRECHT-BEERSCHOT',
+    source: 'VERIFIED-CLUB-FRIENDLY',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-11',
+    homeTeam: 'FC Utrecht',
+    awayTeam: 'K Beerschot VA',
+    homeScore: 2,
+    awayScore: 0,
+    neutral: false
+  },
+  {
+    provider: 'USER',
+    providerId: '20260801-GRONINGEN-ALMERE',
+    source: 'VERIFIED-CLUB-FRIENDLY',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-08-01',
+    homeTeam: 'FC Groningen',
+    awayTeam: 'Almere City FC',
+    homeScore: 1,
+    awayScore: 3,
+    neutral: false
+  },
+  {
+    provider: 'USER',
+    providerId: '20260726-MARITIMO-MACHICO',
+    source: 'VERIFIED-CLUB-FRIENDLY',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-26',
+    homeTeam: 'Maritimo',
+    awayTeam: 'AD Machico',
+    homeScore: 0,
+    awayScore: 0,
+    neutral: false
+  },
+  {
+    provider: 'USER',
+    providerId: '20260731-MEERSSEN-FORTUNA',
+    source: 'VERIFIED-CLUB-FRIENDLY',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-31',
+    homeTeam: 'SV Meerssen',
+    awayTeam: 'Fortuna Sittard',
+    homeScore: 0,
+    awayScore: 2,
+    neutral: false
+  },
   {
     provider: 'UEFA',
     providerId: '2042108',
@@ -1234,7 +1392,30 @@ function mappedNameEntry(sourceName, mappings, competition) {
 }
 
 function mappedChineseName(sourceName, mappings, competition) {
-  return mappedNameEntry(sourceName, mappings, competition)?.standardName ?? null
+  let currentName = String(sourceName ?? '').trim()
+  if (!currentName) {
+    return null
+  }
+  const visitedNames = new Set()
+  let mapped = false
+  while (currentName) {
+    const currentKey = canonicalName(currentName)
+    if (!currentKey || visitedNames.has(currentKey)) {
+      return mapped ? currentName : null
+    }
+    visitedNames.add(currentKey)
+    const mapping = mappedNameEntry(currentName, mappings, competition)
+    if (!mapping) {
+      return mapped ? currentName : null
+    }
+    mapped = true
+    const mappedName = String(mapping.standardName ?? '').trim()
+    if (!mappedName || canonicalName(mappedName) === currentKey) {
+      return mappedName || currentName
+    }
+    currentName = mappedName
+  }
+  return mapped ? currentName : null
 }
 
 function mappedNameSource(sourceName, mappings, competition) {
@@ -2017,7 +2198,9 @@ function parseFutbol24Rows(json, sources) {
     const score = futbol24RegulationScore(match, status)
     const homeTeam = String(match?.team1?.name ?? '').trim()
     const awayTeam = String(match?.team2?.name ?? '').trim()
-    const matchDate = shanghaiDate(match?.date)
+    const matchDate = usesShanghaiMatchDate(source)
+      ? shanghaiDate(match?.date)
+      : futbol24CalendarDate(match)
     if (!score || !homeTeam || !awayTeam || !matchDate) {
       continue
     }
@@ -2041,6 +2224,18 @@ function parseFutbol24Rows(json, sources) {
   return rows
 }
 
+function futbol24CalendarDate(match) {
+  const slugDate = String(match?.slug ?? '').match(/^(\d{4})\/(\d{2})\/(\d{2})(?:\/|$)/)
+  if (slugDate) {
+    return `${slugDate[1]}-${slugDate[2]}-${slugDate[3]}`
+  }
+  return shanghaiDate(match?.date)
+}
+
+function usesShanghaiMatchDate(source) {
+  return source?.competition === 'EUROPA_LEAGUE' || source?.leagueId === '338'
+}
+
 function decodeHtml(value) {
   return String(value ?? '')
     .replaceAll(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
@@ -2053,15 +2248,6 @@ function decodeHtml(value) {
     .trim()
 }
 
-function futbol24ShanghaiDate(year, month, day, timeText) {
-  const [hour, minute] = String(timeText ?? '00:00').split(':').map(Number)
-  if (![year, month, day, hour, minute].every(Number.isInteger)) {
-    return null
-  }
-  const utcTime = Date.UTC(year, month - 1, day, hour - 2, minute)
-  return shanghaiDate(new Date(utcTime).toISOString())
-}
-
 function parseFutbol24SeasonPage(html, source) {
   const rows = []
   const matchPattern = /<a href="(\/match\/(\d{4})\/(\d{2})\/(\d{2})\/[^"]*\/([^\/"]+)\/vs\/([^"]+))"[^>]*>([\s\S]*?)<\/a>/g
@@ -2070,19 +2256,9 @@ function parseFutbol24SeasonPage(html, source) {
     if (!score) {
       continue
     }
-    const prefix = html.slice(Math.max(0, match.index - 2_000), match.index)
-    const timeMatches = [...prefix.matchAll(
-      /f-single-match__cell--time"[^>]*>[\s\S]*?(\d{1,2}:\d{2})/g
-    )]
-    const timeText = timeMatches.at(-1)?.[1] ?? '00:00'
     const homeTeam = decodeHtml(decodeURIComponent(match[5]).replaceAll('-', ' '))
     const awayTeam = decodeHtml(decodeURIComponent(match[6]).replaceAll('-', ' '))
-    const matchDate = futbol24ShanghaiDate(
-      Number(match[2]),
-      Number(match[3]),
-      Number(match[4]),
-      timeText
-    )
+    const matchDate = `${match[2]}-${match[3]}-${match[4]}`
     if (!homeTeam || !awayTeam || !matchDate) {
       continue
     }
@@ -2114,8 +2290,10 @@ function futbol24RegulationScore(match, status) {
   const afterExtraTime = statusText.includes('AET')
     || statusText.includes('W/ET')
     || statusText.includes('EXTRA TIME')
-  const scoreText = afterExtraTime
-    ? String(match?.score2 ?? '').replace(/p\.?\s*\d+\s*-\s*\d+/giu, '')
+  const periodScoreText = String(match?.score2 ?? '')
+    .replace(/p\.?\s*\d+\s*-\s*\d+/giu, '')
+  const scoreText = afterExtraTime && /\d+\s*-\s*\d+/.test(periodScoreText)
+    ? periodScoreText
     : String(match?.score1 ?? '')
   const scores = [...scoreText.matchAll(/(\d+)\s*-\s*(\d+)/g)]
   const score = scores.at(-1)
@@ -2134,8 +2312,10 @@ function parseFutbol24SeasonResults(json, source) {
     const score = String(match?.score1 ?? '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/)
     const homeTeam = String(match?.team1?.name ?? '').trim()
     const awayTeam = String(match?.team2?.name ?? '').trim()
-    const matchDate = shanghaiDate(match?.date)
     const slug = String(match?.slug ?? '').trim()
+    const matchDate = usesShanghaiMatchDate(source)
+      ? shanghaiDate(match?.date)
+      : futbol24CalendarDate(match)
     if (!score || !homeTeam || !awayTeam || !matchDate || !slug) {
       continue
     }
@@ -2887,19 +3067,17 @@ function normalizeAndDeduplicateHistoryRows(rows, nationalMappings, clubMappings
       }
       continue
     }
-    const shiftedDuplicate = normalizedRow.match_type !== 'CLUB_FRIENDLY'
-      ? [-1, 1]
-        .map(offset => rowsByFixtureResult.get(fixtureResultKey(
-          normalizedRow.competition,
-          normalizedRow.source_competition,
-          dateWithOffset(normalizedRow.match_date, offset),
-          normalizedRow.home_team_cn,
-          normalizedRow.away_team_cn,
-          normalizedRow.home_score,
-          normalizedRow.away_score
-        )))
-        .find(Boolean)
-      : null
+    const shiftedDuplicate = [-1, 1]
+      .map(offset => rowsByFixtureResult.get(fixtureResultKey(
+        normalizedRow.competition,
+        normalizedRow.source_competition,
+        dateWithOffset(normalizedRow.match_date, offset),
+        normalizedRow.home_team_cn,
+        normalizedRow.away_team_cn,
+        normalizedRow.home_score,
+        normalizedRow.away_score
+      )))
+      .find(Boolean)
     if (shiftedDuplicate) {
       duplicateRows += 1
       shiftedDateDuplicateRows += 1
@@ -3105,6 +3283,7 @@ function outputSourceSummaries(summaries, compact) {
 }
 
 const options = parseArguments(process.argv.slice(2))
+const loadNationalSources = !options.skipNational && !options.onlySources
 const [
   historyText,
   mappingText,
@@ -3117,8 +3296,8 @@ const [
 ] = await Promise.all([
   fs.readFile(options.historySourcePath, 'utf8'),
   fs.readFile(teamNameMappingsPath, 'utf8'),
-  options.skipNational ? Promise.resolve('') : readInternationalSource(options, 'results.csv'),
-  options.skipNational ? Promise.resolve('') : readInternationalSource(options, 'goalscorers.csv'),
+  loadNationalSources ? readInternationalSource(options, 'results.csv') : Promise.resolve(''),
+  loadNationalSources ? readInternationalSource(options, 'goalscorers.csv') : Promise.resolve(''),
   loadEspnRows(options),
   loadFotMobRows(options),
   loadSoccerwayKoreaCupRows(options),
@@ -3147,6 +3326,7 @@ const retainedHistory = normalizeAndDeduplicateHistoryRows(
   originalRows.filter(row => (
     row.match_date >= options.minDate
     && row.match_date <= options.maxDate
+    && !EXCLUDED_HISTORICAL_MATCH_IDS.has(row.match_id)
     && !replacedRowSet.has(row)
   )),
   nationalMappings,
@@ -3156,20 +3336,26 @@ const retainedRows = retainedHistory.rows
 const targetNationalTeams = new Set(originalRows
   .filter(row => NATIONAL_COMPETITIONS.has(row.competition))
   .flatMap(row => [
-    mappedChineseName(row.home_team_cn, nationalMappings, row.competition) ?? row.home_team_cn,
-    mappedChineseName(row.away_team_cn, nationalMappings, row.competition) ?? row.away_team_cn
+    row.home_team_cn,
+    row.away_team_cn,
+    mappedChineseName(row.home_team_cn, nationalMappings, row.competition),
+    mappedChineseName(row.away_team_cn, nationalMappings, row.competition)
   ])
+  .filter(Boolean)
   .map(canonicalChineseName))
 const targetClubTeams = new Set(originalRows
   .filter(row => CLUB_COMPETITIONS.has(row.competition))
   .flatMap(row => [
-    mappedChineseName(row.home_team_cn, clubMappings, row.competition) ?? row.home_team_cn,
-    mappedChineseName(row.away_team_cn, clubMappings, row.competition) ?? row.away_team_cn
+    row.home_team_cn,
+    row.away_team_cn,
+    mappedChineseName(row.home_team_cn, clubMappings, row.competition),
+    mappedChineseName(row.away_team_cn, clubMappings, row.competition)
   ])
+  .filter(Boolean)
   .map(canonicalChineseName))
 
 const sourceRows = [
-  ...(options.skipNational ? [] : parseNationalRows(parseCsv(resultsText), parseCsv(goalsText))),
+  ...(loadNationalSources ? parseNationalRows(parseCsv(resultsText), parseCsv(goalsText)) : []),
   ...espnData.rows,
   ...fotMobData.rows,
   ...soccerwayKoreaCupData.rows,
@@ -3212,6 +3398,10 @@ for (const sourceRow of sourceRows) {
   sourceSummaries.set(sourceRow.source, summary)
   summary.parsedRows += 1
   summary.correctedExtraTimeGoals += sourceRow.correctedExtraTimeGoals ?? 0
+  if (EXCLUDED_HISTORICAL_MATCH_IDS.has(sourceMatchId(sourceRow))) {
+    summary.outsideTargetRows += 1
+    continue
+  }
   if (isExcludedCompetition(sourceRow.competition, sourceRow.sourceCompetition)) {
     summary.outsideTargetRows += 1
     continue
@@ -3233,9 +3423,9 @@ for (const sourceRow of sourceRows) {
   const homeIsTarget = mappedHomeTeam && targets.has(canonicalChineseName(mappedHomeTeam))
   const awayIsTarget = mappedAwayTeam && targets.has(canonicalChineseName(mappedAwayTeam))
   const importsWholeCompetition = sourceRow.provider === 'FUTBOL24'
-      && ['15', '26', '28', '33', '51', '75', '92', '107', '133', '269', '297',
+      && ['8', '9', '15', '26', '28', '33', '48', '51', '75', '92', '107', '133', '269', '286', '297',
         '17',
-        '291', '322', '324', '525', '531', '534', '537', '70', '868']
+        '291', '322', '324', '338', '525', '531', '534', '537', '70', '868']
         .includes(String(sourceRow.source).replace('FUTBOL24-', ''))
     || sourceRow.provider === 'FOTMOB' && FOTMOB_LEAGUE_SOURCES.some(
       source => `FOTMOB-${source.leagueId}` === sourceRow.source

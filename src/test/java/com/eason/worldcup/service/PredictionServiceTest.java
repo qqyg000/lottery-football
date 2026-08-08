@@ -3,6 +3,7 @@ package com.eason.worldcup.service;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HeadToHeadOverviewResponse;
 import com.eason.worldcup.model.HistoricalMatch;
+import com.eason.worldcup.model.HistoricalMatchType;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.UserConfig;
 import org.junit.jupiter.api.Test;
@@ -270,6 +271,49 @@ class PredictionServiceTest {
         assertEquals(1, overview.getHeadToHeadMatches().size());
         assertEquals(4, overview.getHeadToHeadMatches().get(0).getHomeScore());
         assertEquals(0, overview.getHeadToHeadMatches().get(0).getAwayScore());
+    }
+
+    @Test
+    void shouldDeduplicateAdjacentDateHistoryAcrossRuntimeAndBundledSources() {
+        MatchSchedule target = schedule(
+                "TARGET",
+                LocalDate.of(2026, 8, 1),
+                LocalTime.of(20, 0),
+                "阿尔克马尔",
+                "安德莱",
+                "SCHEDULED");
+        target.setCompetition(Competition.CHAMPIONS_LEAGUE);
+        MatchSchedule runtimeSchedule = completedSchedule(
+                "FUTBOL24-CLUB-FRIENDLY-3371034",
+                LocalDate.of(2026, 7, 16),
+                LocalTime.of(0, 30),
+                "AZ Alkmaar",
+                "Anderlecht",
+                0,
+                1);
+        runtimeSchedule.setCompetition(Competition.CLUB_FRIENDLY);
+        HistoricalMatch historicalMatch = historicalMatch(
+                LocalDate.of(2026, 7, 15),
+                "阿尔克马尔",
+                "安德莱",
+                0,
+                1);
+        historicalMatch.setMatchType(HistoricalMatchType.CLUB_FRIENDLY);
+        DataRepository dataRepository = new StubDataRepository(
+                List.of(target),
+                List.of(target, runtimeSchedule),
+                List.of(historicalMatch));
+        PredictionService service = new PredictionService(dataRepository, null, null);
+
+        HeadToHeadOverviewResponse overview = service.queryHeadToHeadOverview(
+                Competition.CHAMPIONS_LEAGUE,
+                target.getMatchId(),
+                10);
+
+        assertEquals(1, overview.getHeadToHeadMatches().size());
+        assertEquals(LocalDate.of(2026, 7, 15), overview.getHeadToHeadMatches().get(0).getMatchDate());
+        assertEquals("阿尔克马", overview.getHeadToHeadMatches().get(0).getHomeTeamCn());
+        assertEquals("安德莱", overview.getHeadToHeadMatches().get(0).getAwayTeamCn());
     }
 
     @Test

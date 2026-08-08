@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 149 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 184,063 场，日期范围为 2014-10-22 至 2026-08-03；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 153 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 202,439 场，日期范围为 2014-10-22 至 2026-08-08；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
@@ -18,9 +18,9 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - [OpenFootball club-world-cup](https://github.com/openfootball/club-world-cup)：2000 年起世俱杯，点球和加时场次读取括号中的 90 分钟比分
 - FotMob 各赛事赛季接口、阿塞拜疆超级联赛、韩国职业联赛、芬兰超级联赛，以及上述来源未覆盖且不重复的竞彩场次
 - ESPN Scoreboard：国内杯赛、超级杯、洲际俱乐部赛事和俱乐部友谊赛
-- Futbol24 按日及赛季比赛接口：按年度回补 2014 年以来 ESPN、FotMob 未收录的俱乐部友谊赛，并补充阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
+- Futbol24 按日及赛季比赛接口：按年度回补 2014 年以来 ESPN、FotMob 未收录的欧冠、俱乐部友谊赛，并补充罗甲、罗超杯、阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
 - [Foot Mercato 俱乐部友谊赛日历](https://www.footmercato.net/international/amicaux-club/calendrier/)：补齐 Futbol24 和 FotMob 在 2026 当前赛季遗漏的已完场友谊赛
-- FotMob 按赛季接口：补充俱乐部赛、苏格兰联赛杯、芬兰联赛杯、瑞典杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、欧协联、比甲、比利时杯、比超杯、希超、捷甲、挪超、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
+- FotMob 按赛季接口：补充俱乐部赛、苏格兰联赛杯、芬兰联赛杯、瑞典杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、荷乙、葡超、欧协联、比甲、比利时杯、比超杯、希超、捷甲、挪超、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
 - Soccerway 韩国杯赛季结果页：补齐 FotMob 旧赛季接口仅返回后期轮次的问题
 - Futbol24 按赛季接口：补齐 FotMob 历史覆盖不足的塞杯、卢森杯、法罗杯和威联杯
 - 阿塞拜疆职业足球联盟（PFL）官方接口：补齐 Futbol24 未收录的阿塞杯第一资格轮和阿塞超升降级附加赛
@@ -45,12 +45,12 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 ## 欧洲冠军联赛
 
-欧冠赛程和历史结果由 ESPN Scoreboard 接口动态加载，分为两个赛事代码：
+欧冠赛程和历史结果优先由 ESPN Scoreboard 接口动态加载，并使用 Futbol24 `league_id=8` 补齐 ESPN 不可用或漏场的资格赛。ESPN 分为两个赛事代码：
 
 - `uefa.champions_qual`：资格赛与附加赛
 - `uefa.champions`：联赛阶段与淘汰赛
 
-应用只动态加载当前日期前 30 天至后 7 天，历史样本直接使用本地 `historical_matches.csv` 中 `competition=CHAMPIONS_LEAGUE` 的记录，其中可映射球队的样本已扩展到 1955-56 赛季。目标时区为 `Asia/Shanghai`，相关地址和超时时间配置位于 `src/main/resources/application.yml` 的 `champions-league.espn-update` 节点，日期窗口和计算时区配置位于 `data-refresh` 节点。
+应用只动态加载当前日期前 30 天至后 7 天，历史样本直接使用本地 `historical_matches.csv` 中 `competition=CHAMPIONS_LEAGUE` 的记录，其中可映射球队的样本已扩展到 1955-56 赛季。Futbol24 比赛日期取赛事 URL 中的当地日历日，开球时刻再换算为 `Asia/Shanghai`，避免欧洲晚场被错误归到次日。相关地址和超时时间配置位于 `src/main/resources/application.yml` 的 `champions-league.espn-update` 与 `club-competitions.schedule-update` 节点，日期窗口和计算时区配置位于 `data-refresh` 节点。
 
 ## 其他赛事
 
@@ -84,13 +84,19 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - FotMob `leagueId=262`：阿塞超正式比赛
 - FotMob `leagueId=51`：芬超完整赛季历史
 - FotMob `leagueId=9080`：韩职完整赛季历史
-- FotMob `leagueId=67/57`：瑞超、荷甲完整赛季历史
+- FotMob `leagueId=67/57/111/61`：瑞超、荷甲、荷乙和葡超完整赛季历史
+- FotMob `leagueId=185/187/58`：葡甲、葡联赛杯和荷乙升降级附加赛完整赛季历史，并接入点击“更新数据”的近期赛程刷新链路
+- FotMob `leagueId=188`：葡超杯完整赛季历史和近期比赛
 - FotMob `leagueId=10216/10615`：欧协联正赛和资格赛完整赛季历史
 - FotMob `leagueId=40/149/266/164/69`：比甲、比利时杯、比超杯、瑞士杯和瑞士超完整赛季历史
 - FotMob `leagueId=135/122/59`：希超、捷甲和挪超完整赛季历史
 - FotMob `leagueId=271/270/126/182/183/176/177`：保杯、保超、爱超、塞超、塞杯、斯洛伐超和斯洛伐杯完整赛季历史
 - FotMob `leagueId=229/9527/250/9523/232/215/217/116`：卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超完整赛季历史
 - Futbol24 `league_id=472`：ESPN 未覆盖的俱乐部友谊赛
+- Futbol24 `league_id=8`：欧冠完整赛季历史及近期比赛，作为 ESPN 的缺场补充源
+- Futbol24 `league_id=9`：欧罗巴完整赛季历史及近期比赛，负责补齐 ESPN 未切换到新赛季时缺失的资格赛完场比分
+- Futbol24 `league_id=48/286`：罗甲和罗超杯完整赛季历史及近期比赛
+- Futbol24 `league_id=338`：葡超杯近期比赛，作为 FotMob 的交叉校验和更新补充源
 - Foot Mercato `FOOTMERCATO-CLUB-FRIENDLY`：分页补齐 2026 当前赛季 Futbol24、FotMob 未收录的俱乐部友谊赛
 - Futbol24 `league_id=525`：阿塞杯历史和近期比赛
 - Futbol24 `league_id=322`：芬超完整赛季历史和近期比赛

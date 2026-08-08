@@ -1,4 +1,37 @@
 ﻿competition,standard_team_name,alias_team_name,alias_type,source,last_seen_date
+*,赫尔火花,赫尔火花,STANDARD,MANUAL,2026-08-06
+*,赫尔火花,赫尔辛基火花,ZH,MANUAL,2026-08-06
+*,TPS图尔,TPS图尔,STANDARD,MANUAL,2026-08-06
+*,TPS图尔,TPS图尔库,ZH,MANUAL,2026-08-06
+*,流浪者,流浪者,STANDARD,MANUAL,2026-08-06
+*,流浪者,格拉斯哥流浪者,ZH,MANUAL,2026-08-06
+*,西汉姆联,西汉姆联,STANDARD,MANUAL,2026-08-06
+*,西汉姆联,West Ham,EN,MANUAL,2026-08-06
+*,塞萨洛,塞萨洛,STANDARD,MANUAL,2026-08-06
+*,塞萨洛,塞萨洛尼基,ZH,MANUAL,2026-08-06
+*,拉纳卡,拉纳卡,STANDARD,MANUAL,2026-08-06
+*,拉纳卡,AEK拉纳卡,ZH,MANUAL,2026-08-06
+*,阿尔克马,阿尔克马,STANDARD,MANUAL,2026-08-06
+*,阿尔克马,阿尔克马尔,ZH,MANUAL,2026-08-06
+*,阿尔克马,AZ Alkmaar,EN,MANUAL,2026-08-06
+*,安德莱,Anderlecht,EN,MANUAL,2026-08-06
+*,奈梅亨,奈梅亨,STANDARD,MANUAL,2026-08-06
+*,奈梅亨,SC N.E.C.,EN,MANUAL,2026-08-06
+*,布洛涅,布洛涅,STANDARD,MANUAL,2026-08-06
+*,布洛涅,Boulogne,EN,MANUAL,2026-08-06
+*,布洛涅,US Boulogne,EN,MANUAL,2026-08-06
+*,比利亚雷,比利亚雷,STANDARD,MANUAL,2026-08-06
+*,比利亚雷,比利亚雷亚尔,ZH,MANUAL,2026-08-06
+*,埃斯托里,埃斯托里,STANDARD,MANUAL,2026-08-06
+*,埃斯托里,埃斯托里尔,ZH,MANUAL,2026-08-06
+*,拉茨,拉茨,STANDARD,MANUAL,2026-08-06
+*,拉茨,拉茨流浪,ZH,MANUAL,2026-08-06
+*,拉茨,Raith Rovers,EN,MANUAL,2026-08-06
+*,哈茨,Hearts FC,EN,MANUAL,2026-08-06
+*,巴列卡诺,巴列卡诺,STANDARD,MANUAL,2026-08-06
+*,巴列卡诺,Vallecano,EN,MANUAL,2026-08-06
+*,瓦尔达尔,Vardar Skopje,EN,MANUAL,2026-08-06
+*,克拉约瓦,Universitatea Craiova,EN,MANUAL,2026-08-06
 *,AIK索尔纳,AIK Fotboll,EN,MANUAL,2026-06-28
 *,纳夫兹,FK Neftchi,EN,MANUAL,2026-07-28
 *,纳夫兹,Neftchi Baku,EN,MANUAL,2026-07-28
@@ -79,9 +112,9 @@ CLUB_OFFICIAL_OTHER,水原三星,Suwon Samsung Bluewings,EN,VERIFIED_ALIAS,2026-
 *,里莫,里莫,STANDARD,VERIFIED_SPORTTERY,2026-07-24
 *,里莫,瑞模贝雷,ZH,VERIFIED_SPORTTERY,2026-07-24
 *,里莫,Remo,EN,VERIFIED_SPORTTERY,2026-07-24
-*,伏伊伏丁那,伏伊伏丁,ZH,VERIFIED_SPORTTERY,2026-07-17
-*,伏伊伏丁那,伏伊伏丁那,STANDARD,VERIFIED_SPORTTERY,2026-07-17
-*,伏伊伏丁那,Vojvodina,EN,VERIFIED_SPORTTERY,2026-07-17
+*,伏伊伏丁,伏伊伏丁,STANDARD,MANUAL,2026-08-08
+*,伏伊伏丁,伏伊伏丁那,ZH,MANUAL,2026-08-08
+*,伏伊伏丁,Vojvodina,EN,MANUAL,2026-08-08
 *,斯普利特海杜克,斯海杜克,ZH,VERIFIED_SPORTTERY,2026-07-17
 *,斯普利特海杜克,斯普利特海杜克,STANDARD,VERIFIED_SPORTTERY,2026-07-17
 *,斯普利特海杜克,Hajduk Split,EN,VERIFIED_SPORTTERY,2026-07-17
@@ -203,3 +236,110 @@ CLUB_OFFICIAL_OTHER,水原三星,Suwon Samsung Bluewings,EN,VERIFIED_ALIAS,2026-
 *,布拉迪斯,布拉迪斯拉发,ZH,MANUAL,2026-08-04
 *,Kralove,Hradec Kralove,EN,MANUAL,2026-08-04
 *,穆拉,Mura,EN,MANUAL,2026-08-04
+*,Petrolul 52,Petrolul 52,STANDARD,MANUAL,2026-08-06
+*,Petrolul 52,Petrolul Ploiesti,EN,MANUAL,2026-08-06
+*,索列夫,索列夫,STANDARD,MANUAL,2026-08-06
+*,索列夫,Levski Sofia,EN,MANUAL,2026-08-06
+*,UTA,UTA,STANDARD,MANUAL,2026-08-06
+*,UTA,UTA Arad,EN,MANUAL,2026-08-06
+*,ML Vitebsk,ML Vitebsk,STANDARD,MANUAL,2026-08-06
+*,ML Vitebsk,FK Maxline Vitebsk,EN,MANUAL,2026-08-06
+*,U Cluj,U Cluj,STANDARD,MANUAL,2026-08-06
+*,U Cluj,Universitatea Cluj,EN,MANUAL,2026-08-06
+*,比亚韦,比亚韦,STANDARD,MANUAL,2026-08-06
+*,比亚韦,比亚韦斯托克,ZH,MANUAL,2026-08-06
+*,圣埃蒂安,圣埃蒂安,STANDARD,MANUAL,2026-08-06
+*,圣埃蒂安,ASSE,EN,MANUAL,2026-08-06
+*,帕纳辛纳,帕纳辛纳,STANDARD,MANUAL,2026-08-06
+*,帕纳辛纳,帕纳辛纳科斯,ZH,MANUAL,2026-08-06
+*,Volos NFC,Volos NFC,STANDARD,MANUAL,2026-08-08
+*,Volos NFC,NFC Volos,EN,MANUAL,2026-08-08
+*,SBV精英,SBV精英,STANDARD,MANUAL,2026-08-08
+*,SBV精英,SBV Excelsior,EN,MANUAL,2026-08-08
+*,布雷达,布雷达,STANDARD,MANUAL,2026-08-08
+*,布雷达,NAC,ABBREVIATION,MANUAL,2026-08-08
+*,鹿斯巴达,鹿斯巴达,STANDARD,MANUAL,2026-08-08
+*,鹿斯巴达,鹿特丹斯巴达,ZH,MANUAL,2026-08-08
+*,葡竞技,葡竞技,STANDARD,MANUAL,2026-08-08
+*,葡竞技,Atlético CP,EN,MANUAL,2026-08-08
+*,科莫,科莫,STANDARD,MANUAL,2026-08-08
+*,科莫,Como 1907,EN,MANUAL,2026-08-08
+*,鲁斯塔尼亚,鲁斯塔尼亚,STANDARD,MANUAL,2026-08-08
+*,鲁斯塔尼亚,Lusitânia Lourosa,EN,MANUAL,2026-08-08
+*,埃斯托里,GD Estoril,EN,MANUAL,2026-08-08
+*,CF Os Belenenses,CF Os Belenenses,STANDARD,MANUAL,2026-08-08
+*,CF Os Belenenses,CF Belenenses,EN,MANUAL,2026-08-08
+*,登博思,FC Den Bosch,EN,MANUAL,2026-08-08
+*,登博思,登博斯,ZH,MANUAL,2026-08-08
+*,赫拉克勒斯,Heracles Almelo,EN,MANUAL,2026-08-08
+*,托林斯,União Torreense,EN,MANUAL,2026-08-08
+*,鲁斯塔尼亚,Lourosa,EN,MANUAL,2026-08-08
+*,鲁斯塔尼亚,Lusitânia,EN,MANUAL,2026-08-08
+*,卡尔马,Kalmar,EN,MANUAL,2026-08-08
+*,迈季宽广,Al Fayha Club,EN,MANUAL,2026-08-08
+*,阿尔梅勒,Almere,EN,MANUAL,2026-08-08
+*,葡国民,Nacional Madeira,EN,MANUAL,2026-08-08
+*,Camacha,AD Camacha,EN,MANUAL,2026-08-08
+*,雷克斯欧,Leixoes,EN,MANUAL,2026-08-08
+*,阿维斯SAD,AVS,ABBREVIATION,MANUAL,2026-08-08
+*,科英布拉,Académica Coimbra,EN,MANUAL,2026-08-08
+*,Benfica II,Benfica B,EN,MANUAL,2026-08-08
+*,阿马多拉,Estrela,EN,MANUAL,2026-08-08
+*,埃夫斯堡,埃尔夫斯堡,ZH,MANUAL,2026-08-08
+*,OFI,OFI Creta,EN,MANUAL,2026-08-08
+*,OFI,OFI Crete,EN,MANUAL,2026-08-08
+*,奥斯,TOP Oss,EN,MANUAL,2026-08-08
+*,埃因霍温,PSV埃因霍温,ZH,MANUAL,2026-08-08
+*,梅赫伦,Malines,EN,MANUAL,2026-08-08
+*,埃因FC,FC Eindhoven,EN,MANUAL,2026-08-08
+*,迅速男孩,Quick Boys,EN,MANUAL,2026-08-08
+*,沙维什,GD Chaves,EN,MANUAL,2026-08-08
+*,吉达国民,Al Ahli Jeddah,EN,MANUAL,2026-08-08
+*,吉达国民,吉阿赫利,ZH,MANUAL,2026-08-08
+*,葡国民,葡萄牙国民,ZH,MANUAL,2026-08-08
+*,Lierse K,K. Lierse SK,EN,MANUAL,2026-08-08
+*,奥林匹亚,Olympiakos,EN,MANUAL,2026-08-08
+CLUB_FRIENDLY,瓦雷赫姆,ZW,ABBREVIATION,MANUAL,2026-08-08
+*,根特,La Gantoise,EN,MANUAL,2026-08-08
+*,特里波利,Asteras Tripoli,EN,MANUAL,2026-08-08
+*,里斯本,里斯本竞技,ZH,MANUAL,2026-08-08
+*,利亚胜利,Al Nassr Riyadh,EN,MANUAL,2026-08-08
+*,Naval 1893,Naval,EN,MANUAL,2026-08-08
+*,诺丁汉,诺丁汉森林,ZH,MANUAL,2026-08-08
+*,马奇科,AD Machico,EN,MANUAL,2026-08-08
+*,SV梅尔森,SV Meerssen,EN,MANUAL,2026-08-08
+*,VOC,VOC Rotterdam,EN,MANUAL,2026-08-08
+*,贾兹拉,Jazira Abu Dhabi,EN,MANUAL,2026-08-08
+*,赫拉克勒,赫拉克勒斯,ZH,MANUAL,2026-08-08
+*,伏伊伏丁,伏伊伏丁那,ZH,MANUAL,2026-08-08
+*,雅典AEK,AEK,ABBREVIATION,MANUAL,2026-08-08
+*,瓦杜兹,FC Vaduz,EN,MANUAL,2026-08-08
+*,盖斯,哥德堡盖斯,ZH,MANUAL,2026-08-08
+*,勒芬,Louvain,EN,MANUAL,2026-08-08
+*,DAC 1904,DAC 1904 Dunajska Streda,EN,MANUAL,2026-08-08
+*,费伦茨,费伦茨瓦罗斯,ZH,MANUAL,2026-08-08
+*,洛特,Sportfreunde Lotte,EN,MANUAL,2026-08-08
+*,洛特,SF Lotte,EN,MANUAL,2026-08-08
+*,维拉,São João de Ver,EN,MANUAL,2026-08-08
+*,维拉,阿斯顿维拉,ZH,MANUAL,2026-08-08
+*,伯明翰,Birmingham City,EN,MANUAL,2026-08-08
+*,伯明翰,Birmingham,EN,MANUAL,2026-08-08
+*,阿维SAD,阿维斯SAD,ZH,MANUAL,2026-08-08
+*,Sporting CP II,Sporting Lisboa B,EN,MANUAL,2026-08-08
+*,Mafra,CD Mafra,EN,MANUAL,2026-08-08
+*,莱里雅,Uniao Leiria,EN,MANUAL,2026-08-08
+*,莱里雅,Uniao de Leiria,EN,MANUAL,2026-08-08
+*,瓦兹姆,Varzim SC,EN,MANUAL,2026-08-08
+*,Paredes,USC Paredes,EN,MANUAL,2026-08-08
+*,吉达国民,Ahli,EN,MANUAL,2026-08-08
+*,Felgueiras 1932,FC Felgueiras,EN,MANUAL,2026-08-08
+*,维尔塔,维戈塞尔塔,ZH,MANUAL,2026-08-08
+*,斯托克城,Stoke,EN,MANUAL,2026-08-08
+*,勒卡,Leca,EN,MANUAL,2026-08-08
+*,马奇科,Machico,EN,MANUAL,2026-08-08
+*,比肖特VA,K Beerschot VA,EN,MANUAL,2026-08-08
+*,克拉约瓦,Universitatea Craiova,EN,MANUAL,2026-08-08
+*,乌德勒支,FC Utrecht,EN,VERIFIED_SPORTTERY,2026-08-08
+*,格罗宁根,FC Groningen,EN,VERIFIED_SPORTTERY,2026-08-08
+*,阿尔梅勒,Almere City FC,EN,VERIFIED_SPORTTERY,2026-08-08
+CLUB_FRIENDLY,鹿斯巴达,Sparta,EN,MANUAL,2026-08-08

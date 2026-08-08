@@ -2,7 +2,7 @@
 
 竞彩足球胜平负概率预测与推荐回测程序。后端使用 Spring Boot，前端使用 Vue 2，支持按赛事和日期查询赛程、赛果、体彩赔率及模型预测结果。
 
-> 当前内置比赛数据快照更新至 2026-08-03，球队名映射更新至 2026-08-23。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
+> 当前内置比赛数据快照更新至 2026-08-06，球队名映射更新至 2026-08-23。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
 
 ## 主要功能
 
@@ -306,7 +306,7 @@ node scripts/generate-team-name-mappings.mjs
 页面“更新数据”会异步执行以下阶段：
 
 1. 读取以当天为基准的体彩最近 30 天赛果
-2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源
+2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；欧冠、罗甲、罗超杯、波甲和俱乐部友谊赛均在此阶段更新
 3. 重建球队模型
 4. 更新赛事概览
 
@@ -336,6 +336,11 @@ node scripts/import-supplemental-history.mjs --write --compact
 
 # 仅补充俱乐部历史，跳过国家队公共源
 node scripts/import-supplemental-history.mjs --write --compact --skip-national
+
+# 回补 2014-10-22 至今的欧冠、罗甲、罗超杯、波甲和指定参赛球队俱乐部赛
+node scripts/import-supplemental-history.mjs --write --compact --skip-national `
+  --only-sources FUTBOL24-8,FUTBOL24-48,FUTBOL24-286,FUTBOL24-107,FUTBOL24-CLUB-FRIENDLY `
+  --source-min-date 2014-10-22
 
 # 回补 2025 年以来的俱乐部友谊赛年度赛果
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `

@@ -114,6 +114,80 @@ class DataRepositoryTest {
     }
 
     @Test
+    void shouldDeduplicateAdjacentDateClubFriendlyAcrossProviders() {
+        MatchSchedule footMercato = completedSchedule(
+                "FOOTMERCATO-1784255144786875322",
+                "拉茨流浪",
+                "哈茨");
+        footMercato.setCompetition(Competition.CLUB_FRIENDLY);
+        footMercato.setMatchDate(LocalDate.of(2026, 7, 24));
+        footMercato.setKickoffTime(LocalTime.of(18, 30));
+        footMercato.setHomeScore(0);
+        footMercato.setAwayScore(1);
+        MatchSchedule futbol24 = completedSchedule(
+                "FUTBOL24-CLUB-FRIENDLY-3378927",
+                "Raith Rovers",
+                "Hearts FC");
+        futbol24.setCompetition(Competition.CLUB_FRIENDLY);
+        futbol24.setMatchDate(LocalDate.of(2026, 7, 25));
+        futbol24.setKickoffTime(LocalTime.of(2, 30));
+        futbol24.setHomeScore(0);
+        futbol24.setAwayScore(1);
+
+        List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(List.of(
+                footMercato,
+                futbol24));
+
+        assertEquals(1, schedules.size());
+        assertEquals("拉茨", schedules.get(0).getHomeTeamCn());
+        assertEquals("哈茨", schedules.get(0).getAwayTeamCn());
+    }
+
+    @Test
+    void shouldDeduplicateAdjacentDateFinnishLeagueAcrossProviders() {
+        MatchSchedule futbol24 = completedSchedule(
+                "FUTBOL24-FINNISH_VEIKKAUSLIIGA-3311994",
+                "Gnistan",
+                "KuPS Kuopio");
+        futbol24.setCompetition(Competition.FINNISH_VEIKKAUSLIIGA);
+        futbol24.setGroupName("芬超");
+        futbol24.setMatchDate(LocalDate.of(2026, 8, 1));
+        futbol24.setKickoffTime(LocalTime.of(19, 0));
+        futbol24.setHomeScore(0);
+        futbol24.setAwayScore(1);
+        MatchSchedule fotMob = completedSchedule(
+                "FOTMOB-FINNISH_VEIKKAUSLIIGA-5147613",
+                "IF Gnistan",
+                "KuPS");
+        fotMob.setCompetition(Competition.FINNISH_VEIKKAUSLIIGA);
+        fotMob.setGroupName("芬超");
+        fotMob.setMatchDate(LocalDate.of(2026, 8, 2));
+        fotMob.setKickoffTime(LocalTime.MIDNIGHT);
+        fotMob.setHomeScore(0);
+        fotMob.setAwayScore(1);
+
+        List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(List.of(
+                futbol24,
+                fotMob));
+
+        assertEquals(1, schedules.size());
+    }
+
+    @Test
+    void shouldKeepOtherOfficialMatchesFromDifferentCompetitionContexts() {
+        MatchSchedule league = completedSchedule("FUTBOL24-107-001", "测试队甲", "测试队乙");
+        league.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        league.setGroupName("波甲 第1轮");
+        MatchSchedule cup = completedSchedule("FOTMOB-9551-001", "测试队甲", "测试队乙");
+        cup.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        cup.setGroupName("波兰杯");
+
+        List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(List.of(league, cup));
+
+        assertEquals(2, schedules.size());
+    }
+
+    @Test
     void shouldKeepNorwegianEliteserienSchedules() {
         MatchSchedule norwegianSchedule = completedSchedule("NORWAY-001", "挪威主队", "挪威客队");
         norwegianSchedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);

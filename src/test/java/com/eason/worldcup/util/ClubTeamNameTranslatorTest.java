@@ -68,7 +68,7 @@ class ClubTeamNameTranslatorTest {
         assertEquals("坦山猫", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "Ilves Tampere"));
-        assertEquals("赫尔辛基火花", ClubTeamNameTranslator.translate(
+        assertEquals("赫尔火花", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "IF Gnistan"));
         assertEquals("贝西克塔", ClubTeamNameTranslator.translate(
@@ -92,7 +92,7 @@ class ClubTeamNameTranslatorTest {
         assertEquals("默德林", ClubTeamNameTranslator.translate(
                 Competition.CLUB_FRIENDLY,
                 "FC Admira Wacker Modling"));
-        assertEquals("伏伊伏丁那", ClubTeamNameTranslator.translate(
+        assertEquals("伏伊伏丁", ClubTeamNameTranslator.translate(
                 Competition.EUROPA_LEAGUE,
                 "Vojvodina"));
         assertEquals("斯普利特海杜克", ClubTeamNameTranslator.translate(
@@ -170,7 +170,7 @@ class ClubTeamNameTranslatorTest {
         assertEquals("伊斯坦布", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "Istanbul Basaksehir"));
-        assertEquals("费伦茨瓦罗斯", ClubTeamNameTranslator.translate(
+        assertEquals("费伦茨", ClubTeamNameTranslator.translate(
                 Competition.CLUB_OFFICIAL_OTHER,
                 "Ferencvaros TC"));
         assertEquals("里耶卡", ClubTeamNameTranslator.translate(
@@ -254,6 +254,32 @@ class ClubTeamNameTranslatorTest {
     }
 
     @Test
+    void shouldUseRequestedManualCardTeamNames() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> expectedMappings = Map.ofEntries(
+                Map.entry("赫尔辛基火花", "赫尔火花"),
+                Map.entry("TPS图尔库", "TPS图尔"),
+                Map.entry("格拉斯哥流浪者", "流浪者"),
+                Map.entry("West Ham", "西汉姆联"),
+                Map.entry("塞萨洛尼基", "塞萨洛"),
+                Map.entry("AEK拉纳卡", "拉纳卡"),
+                Map.entry("阿尔克马尔", "阿尔克马"),
+                Map.entry("SC N.E.C.", "奈梅亨"),
+                Map.entry("Boulogne", "布洛涅"),
+                Map.entry("US Boulogne", "布洛涅"),
+                Map.entry("比利亚雷亚尔", "比利亚雷"),
+                Map.entry("埃斯托里尔", "埃斯托里"),
+                Map.entry("拉茨流浪", "拉茨"),
+                Map.entry("Vallecano", "巴列卡诺"));
+
+        expectedMappings.forEach((source, expected) ->
+                assertEquals(expected, ClubTeamNameTranslator.translate(
+                        Competition.CLUB_FRIENDLY,
+                        source), source));
+    }
+
+    @Test
     void shouldApplyManualCanonicalNameOverrides() throws IOException {
         assumeMappingsImported();
 
@@ -270,6 +296,105 @@ class ClubTeamNameTranslatorTest {
         assertEquals("哈尔姆斯", ClubTeamNameTranslator.translate("哈尔姆斯塔德"));
         assertEquals("佐加顿斯", ClubTeamNameTranslator.translate("Djurgårdens IF"));
         assertEquals("韦斯特罗", ClubTeamNameTranslator.translate("Västerås"));
+    }
+
+    @Test
+    void shouldApplyRequestedDutchPortugueseAndItalianTeamAliases() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> expectedMappings = Map.of(
+                "NFC Volos", "Volos NFC",
+                "SBV Excelsior", "SBV精英",
+                "NAC", "布雷达",
+                "鹿特丹斯巴达", "鹿斯巴达",
+                "Atlético CP", "葡竞技",
+                "Como 1907", "科莫",
+                "Lusitânia Lourosa", "鲁斯塔尼亚",
+                "GD Estoril", "埃斯托里",
+                "CF Belenenses", "CF Os Belenenses");
+
+        expectedMappings.forEach((source, expected) ->
+                assertEquals(expected, ClubTeamNameTranslator.translate(
+                        Competition.CLUB_FRIENDLY,
+                        source), source));
+    }
+
+    @Test
+    void shouldApplyRequestedCardAndSupplementalTeamAliases() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> expectedMappings = Map.ofEntries(
+                Map.entry("FC Den Bosch", "登博思"),
+                Map.entry("Heracles Almelo", "赫拉克勒"),
+                Map.entry("União Torreense", "托林斯"),
+                Map.entry("Lourosa", "鲁斯塔尼亚"),
+                Map.entry("Lusitânia", "鲁斯塔尼亚"),
+                Map.entry("Kalmar", "卡尔马"),
+                Map.entry("Al Fayha Club", "迈季宽广"),
+                Map.entry("Sparta", "鹿斯巴达"),
+                Map.entry("Almere", "阿尔梅勒"),
+                Map.entry("Nacional Madeira", "葡国民"),
+                Map.entry("AD Camacha", "Camacha"),
+                Map.entry("Leixoes", "雷克斯欧"),
+                Map.entry("AVS", "阿维SAD"),
+                Map.entry("Académica Coimbra", "科英布拉"),
+                Map.entry("Benfica B", "Benfica II"),
+                Map.entry("Estrela", "阿马多拉"),
+                Map.entry("埃尔夫斯堡", "埃夫斯堡"),
+                Map.entry("OFI Creta", "OFI"),
+                Map.entry("OFI Crete", "OFI"),
+                Map.entry("TOP Oss", "奥斯"),
+                Map.entry("PSV埃因霍温", "埃因霍温"),
+                Map.entry("Malines", "梅赫伦"),
+                Map.entry("FC Eindhoven", "埃因FC"),
+                Map.entry("Quick Boys", "迅速男孩"),
+                Map.entry("GD Chaves", "沙维什"),
+                Map.entry("Al Ahli Jeddah", "吉达国民"),
+                Map.entry("吉阿赫利", "吉达国民"),
+                Map.entry("葡萄牙国民", "葡国民"),
+                Map.entry("K. Lierse SK", "Lierse K"),
+                Map.entry("Olympiakos", "奥林匹亚"),
+                Map.entry("ZW", "瓦雷赫姆"),
+                Map.entry("La Gantoise", "根特"),
+                Map.entry("Asteras Tripoli", "特里波利"),
+                Map.entry("里斯本竞技", "里斯本"),
+                Map.entry("Al Nassr Riyadh", "利亚胜利"),
+                Map.entry("Naval", "Naval 1893"),
+                Map.entry("诺丁汉森林", "诺丁汉"),
+                Map.entry("AD Machico", "马奇科"),
+                Map.entry("SV Meerssen", "SV梅尔森"),
+                Map.entry("VOC Rotterdam", "VOC"),
+                Map.entry("Jazira Abu Dhabi", "贾兹拉"),
+                Map.entry("伏伊伏丁那", "伏伊伏丁"),
+                Map.entry("AEK", "雅典AEK"),
+                Map.entry("FC Vaduz", "瓦杜兹"),
+                Map.entry("哥德堡盖斯", "盖斯"),
+                Map.entry("Louvain", "勒芬"),
+                Map.entry("DAC 1904 Dunajska Streda", "DAC 1904"),
+                Map.entry("费伦茨瓦罗斯", "费伦茨"),
+                Map.entry("Sportfreunde Lotte", "洛特"),
+                Map.entry("SF Lotte", "洛特"),
+                Map.entry("São João de Ver", "维拉"),
+                Map.entry("阿斯顿维拉", "维拉"),
+                Map.entry("Birmingham City", "伯明翰"),
+                Map.entry("Birmingham", "伯明翰"),
+                Map.entry("Sporting Lisboa B", "Sporting CP II"),
+                Map.entry("CD Mafra", "Mafra"),
+                Map.entry("Uniao Leiria", "莱里雅"),
+                Map.entry("Uniao de Leiria", "莱里雅"),
+                Map.entry("Varzim SC", "瓦兹姆"),
+                Map.entry("USC Paredes", "Paredes"),
+                Map.entry("Ahli", "吉达国民"),
+                Map.entry("FC Felgueiras", "Felgueiras 1932"),
+                Map.entry("维戈塞尔塔", "维尔塔"),
+                Map.entry("Stoke", "斯托克城"),
+                Map.entry("Leca", "勒卡"),
+                Map.entry("Machico", "马奇科"));
+
+        expectedMappings.forEach((source, expected) ->
+                assertEquals(expected, ClubTeamNameTranslator.translate(
+                        Competition.CLUB_FRIENDLY,
+                        source), source));
     }
 
     @Test
@@ -319,7 +444,15 @@ class ClubTeamNameTranslatorTest {
                 Map.entry("霍森斯", "霍尔森斯"),
                 Map.entry("布拉迪斯拉发", "布拉迪斯"),
                 Map.entry("Hradec Kralove", "Kralove"),
-                Map.entry("Mura", "穆拉"));
+                Map.entry("Mura", "穆拉"),
+                Map.entry("Petrolul Ploiesti", "Petrolul 52"),
+                Map.entry("Levski Sofia", "索列夫"),
+                Map.entry("UTA Arad", "UTA"),
+                Map.entry("FK Maxline Vitebsk", "ML Vitebsk"),
+                Map.entry("Universitatea Cluj", "U Cluj"),
+                Map.entry("比亚韦斯托克", "比亚韦"),
+                Map.entry("ASSE", "圣埃蒂安"),
+                Map.entry("帕纳辛纳科斯", "帕纳辛纳"));
 
         for (Map.Entry<String, String> mapping : expectedMappings.entrySet()) {
             assertEquals(mapping.getValue(), ClubTeamNameTranslator.translate(mapping.getKey()));

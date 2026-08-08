@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -32,6 +33,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -64,8 +67,51 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final Pattern PERIOD_SCORE_PATTERN = Pattern.compile("(\\d+)\\s*-\\s*(\\d+)");
 
+    private static final Pattern FUTBOL24_SLUG_DATE_PATTERN = Pattern.compile(
+            "^(\\d{4})/(\\d{2})/(\\d{2})(?:/|$)");
+
     private static final Map<String, ScorePair> VERIFIED_REGULATION_TIME_SCORES = Map.of(
-            "FUTBOL24-CLUB_FRIENDLY-3383418", new ScorePair(4, 0));
+            "FUTBOL24-CLUB_FRIENDLY-3383418", new ScorePair(4, 0),
+            "FUTBOL24-CLUB_OFFICIAL_OTHER-3328575", new ScorePair(1, 1));
+
+    private static final Set<String> EXCLUDED_FOTMOB_MATCH_IDS = Set.of(
+            "5838416",
+            "5838413",
+            "5900532",
+            "5900828",
+            "5961030");
+
+    private static final Set<String> EXCLUDED_FUTBOL24_MATCH_IDS = Set.of("3384993");
+
+    private static final List<VerifiedSupplementalSchedule> VERIFIED_SUPPLEMENTAL_SCHEDULES = List.of(
+            new VerifiedSupplementalSchedule(
+                    "OPEN-VERIFIED-CLUB-FRIENDLY-69700CD4DDD265D7",
+                    LocalDate.of(2026, 7, 11),
+                    "FC Utrecht",
+                    "K Beerschot VA",
+                    2,
+                    0),
+            new VerifiedSupplementalSchedule(
+                    "OPEN-VERIFIED-CLUB-FRIENDLY-8804CBED20BD6757",
+                    LocalDate.of(2026, 8, 1),
+                    "FC Groningen",
+                    "Almere City FC",
+                    1,
+                    3),
+            new VerifiedSupplementalSchedule(
+                    "OPEN-VERIFIED-CLUB-FRIENDLY-CA9155D88D009242",
+                    LocalDate.of(2026, 7, 26),
+                    "Maritimo",
+                    "AD Machico",
+                    0,
+                    0),
+            new VerifiedSupplementalSchedule(
+                    "OPEN-VERIFIED-CLUB-FRIENDLY-B664A862ED73EE99",
+                    LocalDate.of(2026, 7, 31),
+                    "SV Meerssen",
+                    "Fortuna Sittard",
+                    0,
+                    2));
 
     private static final List<EspnLeagueSource> BASE_ESPN_SOURCES = List.of(
             new EspnLeagueSource(Competition.EUROPEAN_CHAMPIONSHIP, "uefa.euro"),
@@ -145,6 +191,12 @@ public class ClubCompetitionScheduleUpdater {
             new FotMobLeagueSource(Competition.SWEDISH_ALLSVENSKAN, "67", "瑞超", true),
             new FotMobLeagueSource(Competition.FINNISH_VEIKKAUSLIIGA, "51", "芬超", true),
             new FotMobLeagueSource(Competition.EREDIVISIE, "57", "荷甲", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "111", "荷乙", false),
+            new FotMobLeagueSource(Competition.PRIMEIRA_LIGA, "61", "葡超", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "185", "葡甲", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "187", "葡联赛杯", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "58", "荷乙附加赛", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "188", "葡超杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "10216", "欧协联", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "10615", "欧协联资格赛", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "135", "希超", false),
@@ -179,6 +231,11 @@ public class ClubCompetitionScheduleUpdater {
     private static final List<String> SOFA_SCORE_CLUB_FRIENDLY_TEAM_IDS = List.of("267828");
 
     private static final List<Futbol24LeagueSource> FUTBOL24_SOURCES = List.of(
+            new Futbol24LeagueSource(Competition.CHAMPIONS_LEAGUE, "8", "欧冠", true),
+            new Futbol24LeagueSource(Competition.EUROPA_LEAGUE, "9", "欧罗巴", true),
+            new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "48", "罗甲", true),
+            new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "286", "罗超杯", true),
+            new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "338", "葡超杯", true),
             new Futbol24LeagueSource(Competition.CLUB_FRIENDLY, "472", "俱乐部友谊赛", false),
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "525", "阿塞杯", true),
             new Futbol24LeagueSource(Competition.FINNISH_VEIKKAUSLIIGA, "322", "芬超", true),
@@ -373,6 +430,7 @@ public class ClubCompetitionScheduleUpdater {
         notifyRefreshProgress(progressConsumer, 94, "SportsDB 已处理，正在合并俱乐部赛程");
         remoteSchedules.addAll(sportsDbSchedules);
         remoteSchedules.addAll(fotMobBatch.schedules());
+        remoteSchedules.addAll(verifiedSupplementalSchedules());
         remoteSchedules = deduplicateSchedulesByFixture(remoteSchedules);
         notifyRefreshProgress(progressConsumer, 96, "俱乐部赛程已合并，正在写入本地缓存");
         int updatedCount = mergeSchedules(schedules, remoteSchedules);
@@ -393,6 +451,33 @@ public class ClubCompetitionScheduleUpdater {
         if (progressConsumer != null) {
             progressConsumer.accept(progress, message);
         }
+    }
+
+    List<MatchSchedule> verifiedSupplementalSchedules() {
+        List<MatchSchedule> schedules = new ArrayList<>();
+        for (VerifiedSupplementalSchedule verified : VERIFIED_SUPPLEMENTAL_SCHEDULES) {
+            MatchSchedule schedule = new MatchSchedule();
+            schedule.setCompetition(Competition.CLUB_FRIENDLY);
+            schedule.setMatchId(verified.matchId());
+            schedule.setMatchDate(verified.matchDate());
+            schedule.setKickoffTime(LocalTime.MIDNIGHT);
+            schedule.setGroupName("俱乐部友谊赛");
+            schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(
+                    Competition.CLUB_FRIENDLY,
+                    verified.homeTeam()));
+            schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(
+                    Competition.CLUB_FRIENDLY,
+                    verified.awayTeam()));
+            schedule.setHomeTeamEn(verified.homeTeam());
+            schedule.setAwayTeamEn(verified.awayTeam());
+            schedule.setVenue("");
+            schedule.setNeutral(false);
+            schedule.setStatus("COMPLETED");
+            schedule.setHomeScore(verified.homeScore());
+            schedule.setAwayScore(verified.awayScore());
+            schedules.add(schedule);
+        }
+        return schedules;
     }
 
     private List<MatchSchedule> loadEspnSchedules(
@@ -550,7 +635,11 @@ public class ClubCompetitionScheduleUpdater {
         String awayTeam = readFotMobTeamName(match.path("away"));
         JsonNode status = match.path("status");
         String utcTime = status.path("utcTime").asText("");
-        if (eventId.isBlank() || homeTeam.isBlank() || awayTeam.isBlank() || utcTime.isBlank()) {
+        if (eventId.isBlank()
+                || EXCLUDED_FOTMOB_MATCH_IDS.contains(eventId)
+                || homeTeam.isBlank()
+                || awayTeam.isBlank()
+                || utcTime.isBlank()) {
             return null;
         }
         if (status.path("cancelled").asBoolean(false)) {
@@ -1163,6 +1252,9 @@ public class ClubCompetitionScheduleUpdater {
             JsonNode match,
             JsonNode statuses,
             ZoneId zoneId) {
+        if (eventId == null || EXCLUDED_FUTBOL24_MATCH_IDS.contains(eventId)) {
+            return null;
+        }
         String leagueId = match.path("league_id").asText("");
         Futbol24LeagueSource source = FUTBOL24_SOURCES.stream()
                 .filter(item -> item.leagueId().equals(leagueId))
@@ -1192,8 +1284,7 @@ public class ClubCompetitionScheduleUpdater {
         if (eventId == null || eventId.isBlank()
                 || homeTeam.isBlank()
                 || awayTeam.isBlank()
-                || dateText.isBlank()
-                || (completed && score == null)) {
+                || dateText.isBlank()) {
             return null;
         }
         Competition competition = source.competition();
@@ -1208,12 +1299,22 @@ public class ClubCompetitionScheduleUpdater {
         } catch (DateTimeParseException ex) {
             return null;
         }
+        LocalDate matchDate = competition == Competition.EUROPA_LEAGUE || "338".equals(leagueId)
+                ? matchDateTime.toLocalDate()
+                : parseFutbol24CalendarDate(match, matchDateTime.toLocalDate());
+        String matchId = buildMatchId(
+                "FUTBOL24", competition, eventId, matchDate, homeTeam, awayTeam);
+        if (completed && score == null) {
+            score = VERIFIED_REGULATION_TIME_SCORES.get(matchId);
+        }
+        if (completed && score == null) {
+            return null;
+        }
 
         MatchSchedule schedule = new MatchSchedule();
         schedule.setCompetition(competition);
-        schedule.setMatchId(buildMatchId(
-                "FUTBOL24", competition, eventId, matchDateTime.toLocalDate(), homeTeam, awayTeam));
-        schedule.setMatchDate(matchDateTime.toLocalDate());
+        schedule.setMatchId(matchId);
+        schedule.setMatchDate(matchDate);
         schedule.setKickoffTime(matchDateTime.toLocalTime().withSecond(0).withNano(0));
         schedule.setGroupName(source.sourceCompetition());
         schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(competition, homeTeam));
@@ -1229,6 +1330,21 @@ public class ClubCompetitionScheduleUpdater {
         }
         applyVerifiedRegulationTimeScore(schedule);
         return schedule;
+    }
+
+    private LocalDate parseFutbol24CalendarDate(JsonNode match, LocalDate fallbackDate) {
+        Matcher matcher = FUTBOL24_SLUG_DATE_PATTERN.matcher(match.path("slug").asText(""));
+        if (!matcher.find()) {
+            return fallbackDate;
+        }
+        try {
+            return LocalDate.of(
+                    Integer.parseInt(matcher.group(1)),
+                    Integer.parseInt(matcher.group(2)),
+                    Integer.parseInt(matcher.group(3)));
+        } catch (DateTimeException ex) {
+            return fallbackDate;
+        }
     }
 
     private void applyVerifiedRegulationTimeScore(MatchSchedule schedule) {
@@ -1251,7 +1367,11 @@ public class ClubCompetitionScheduleUpdater {
                 || statusText.contains("W/ET")
                 || statusText.contains("EXTRA TIME");
         if (afterExtraTime) {
-            return parseLastRegulationPeriodScore(match.path("score2").asText(""));
+            ScorePair regulationScore = parseLastRegulationPeriodScore(
+                    match.path("score2").asText(""));
+            return regulationScore != null
+                    ? regulationScore
+                    : parseScore(match.path("score1").asText(""));
         }
         return parseScore(match.path("score1").asText(""));
     }
@@ -1709,6 +1829,7 @@ public class ClubCompetitionScheduleUpdater {
             MatchSchedule[] cachedSchedules = objectMapper.readValue(path.toFile(), MatchSchedule[].class);
             List<MatchSchedule> normalizedSchedules = new ArrayList<>(List.of(cachedSchedules));
             normalizedSchedules.removeIf(schedule -> schedule == null
+                    || isExcludedSchedule(schedule)
                     || CompetitionDataPolicy.isExcludedSourceCompetition(schedule.getGroupName()));
             for (MatchSchedule schedule : normalizedSchedules) {
                 schedule.setCompetition(Competition.fromSourceCompetition(
@@ -1730,6 +1851,7 @@ public class ClubCompetitionScheduleUpdater {
         List<MatchSchedule> retainedSchedules = new ArrayList<>();
         for (MatchSchedule schedule : schedules) {
             if (schedule != null
+                    && !isExcludedSchedule(schedule)
                     && !CompetitionDataPolicy.isExcludedSourceCompetition(schedule.getGroupName())) {
                 retainedSchedules.add(schedule);
             }
@@ -1876,7 +1998,7 @@ public class ClubCompetitionScheduleUpdater {
             return List.of();
         }
         for (MatchSchedule schedule : schedules) {
-            if (schedule == null) {
+            if (schedule == null || isExcludedSchedule(schedule)) {
                 continue;
             }
             normalizeScheduleTeamNames(schedule);
@@ -1887,18 +2009,26 @@ public class ClubCompetitionScheduleUpdater {
         }
         List<MatchSchedule> schedulesByTeam = deduplicateSchedulesByTeamResult(
                 new ArrayList<>(schedulesByFixture.values()));
-        return deduplicateCrossProviderClubFriendlies(schedulesByTeam);
+        return deduplicateCrossProviderCompletedSchedules(schedulesByTeam);
     }
 
-    private List<MatchSchedule> deduplicateCrossProviderClubFriendlies(List<MatchSchedule> schedules) {
-        Map<String, List<MatchSchedule>> schedulesByKickoffResult = new HashMap<>();
+    private boolean isExcludedSchedule(MatchSchedule schedule) {
+        String matchId = schedule == null ? null : schedule.getMatchId();
+        return matchId != null && (EXCLUDED_FOTMOB_MATCH_IDS.stream()
+                .anyMatch(providerId -> matchId.endsWith("-" + providerId))
+                || EXCLUDED_FUTBOL24_MATCH_IDS.stream()
+                        .anyMatch(providerId -> matchId.endsWith("-" + providerId)));
+    }
+
+    private List<MatchSchedule> deduplicateCrossProviderCompletedSchedules(List<MatchSchedule> schedules) {
+        Map<String, List<MatchSchedule>> schedulesByResult = new HashMap<>();
         Set<MatchSchedule> duplicateSchedules = new HashSet<>();
         for (MatchSchedule schedule : schedules) {
-            if (!isCompletedClubFriendly(schedule)) {
+            if (!isCompletedSchedule(schedule)) {
                 continue;
             }
-            String key = buildKickoffResultIdentity(schedule);
-            List<MatchSchedule> candidates = schedulesByKickoffResult.computeIfAbsent(
+            String key = buildCompletedResultBucket(schedule);
+            List<MatchSchedule> candidates = schedulesByResult.computeIfAbsent(
                     key,
                     ignored -> new ArrayList<>());
             MatchSchedule duplicateCandidate = candidates.stream()
@@ -1921,20 +2051,19 @@ public class ClubCompetitionScheduleUpdater {
                 .toList();
     }
 
-    private boolean isCompletedClubFriendly(MatchSchedule schedule) {
-        return schedule.getCompetition() == Competition.CLUB_FRIENDLY
+    private boolean isCompletedSchedule(MatchSchedule schedule) {
+        return schedule.getCompetition() != null
                 && schedule.getMatchDate() != null
-                && schedule.getKickoffTime() != null
                 && schedule.getHomeScore() != null
                 && schedule.getAwayScore() != null;
     }
 
-    private String buildKickoffResultIdentity(MatchSchedule schedule) {
+    private String buildCompletedResultBucket(MatchSchedule schedule) {
+        int firstScore = Math.min(schedule.getHomeScore(), schedule.getAwayScore());
+        int secondScore = Math.max(schedule.getHomeScore(), schedule.getAwayScore());
         return schedule.getCompetition()
-                + "|" + schedule.getMatchDate()
-                + "|" + schedule.getKickoffTime()
-                + "|" + schedule.getHomeScore()
-                + "|" + schedule.getAwayScore();
+                + "|" + firstScore
+                + "|" + secondScore;
     }
 
     private boolean isCrossProviderDuplicate(MatchSchedule left, MatchSchedule right) {
@@ -1945,8 +2074,55 @@ public class ClubCompetitionScheduleUpdater {
                 || leftProvider.equals(rightProvider)) {
             return false;
         }
-        return areSimilarScheduleTeams(left, true, right, true)
-                || areSimilarScheduleTeams(left, false, right, false);
+        if (!hasCompatibleCompetitionContext(left, right)) {
+            return false;
+        }
+        long dateDifference = Math.abs(ChronoUnit.DAYS.between(
+                left.getMatchDate(),
+                right.getMatchDate()));
+        if (dateDifference > 1) {
+            return false;
+        }
+
+        boolean directResult = Objects.equals(left.getHomeScore(), right.getHomeScore())
+                && Objects.equals(left.getAwayScore(), right.getAwayScore());
+        boolean reversedResult = Objects.equals(left.getHomeScore(), right.getAwayScore())
+                && Objects.equals(left.getAwayScore(), right.getHomeScore());
+        boolean directTeams = areSimilarScheduleTeams(left, true, right, true)
+                && areSimilarScheduleTeams(left, false, right, false);
+        boolean reversedTeams = areSimilarScheduleTeams(left, true, right, false)
+                && areSimilarScheduleTeams(left, false, right, true);
+        if (directResult && directTeams || reversedResult && reversedTeams) {
+            return true;
+        }
+
+        return dateDifference == 0
+                && left.getKickoffTime() != null
+                && Objects.equals(left.getKickoffTime(), right.getKickoffTime())
+                && (directResult && (areSimilarScheduleTeams(left, true, right, true)
+                        || areSimilarScheduleTeams(left, false, right, false))
+                        || reversedResult && (areSimilarScheduleTeams(left, true, right, false)
+                        || areSimilarScheduleTeams(left, false, right, true)));
+    }
+
+    private boolean hasCompatibleCompetitionContext(MatchSchedule left, MatchSchedule right) {
+        if (left.getCompetition() != Competition.CLUB_OFFICIAL_OTHER) {
+            return true;
+        }
+        String leftContext = canonicalCompetitionContext(left.getGroupName());
+        String rightContext = canonicalCompetitionContext(right.getGroupName());
+        return leftContext.isBlank()
+                || rightContext.isBlank()
+                || leftContext.equals(rightContext);
+    }
+
+    private String canonicalCompetitionContext(String groupName) {
+        String withoutRound = groupName == null
+                ? ""
+                : groupName.replaceFirst(
+                        "(?i)\\s*第?\\s*(?:\\d+|FINAL|决赛)\\s*轮\\s*$",
+                        "");
+        return canonicalTeamName(withoutRound);
     }
 
     private String resolveScheduleProvider(MatchSchedule schedule) {
@@ -2040,6 +2216,9 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     private boolean isLikelyDuplicateSchedule(MatchSchedule left, MatchSchedule right) {
+        if (!hasCompatibleCompetitionContext(left, right)) {
+            return false;
+        }
         if (hasSportteryIdentity(left) || hasSportteryIdentity(right)) {
             return true;
         }
@@ -2065,9 +2244,10 @@ public class ClubCompetitionScheduleUpdater {
     private boolean areSimilarTeamNames(String left, String right) {
         String leftName = canonicalTeamName(left);
         String rightName = canonicalTeamName(right);
-        return leftName.length() >= 3
+        return (!leftName.isBlank() && leftName.equals(rightName))
+                || (leftName.length() >= 3
                 && rightName.length() >= 3
-                && (leftName.contains(rightName) || rightName.contains(leftName));
+                && (leftName.contains(rightName) || rightName.contains(leftName)));
     }
 
     private void normalizeScheduleTeamNames(MatchSchedule schedule) {
@@ -2114,7 +2294,14 @@ public class ClubCompetitionScheduleUpdater {
         return schedule.getCompetition()
                 + "|" + schedule.getMatchDate()
                 + "|" + firstTeam
-                + "|" + secondTeam;
+                + "|" + secondTeam
+                + "|" + fixtureCompetitionContext(schedule);
+    }
+
+    private String fixtureCompetitionContext(MatchSchedule schedule) {
+        return schedule.getCompetition() == Competition.CLUB_OFFICIAL_OTHER
+                ? canonicalCompetitionContext(schedule.getGroupName())
+                : "";
     }
 
     private String canonicalTeamName(String teamName) {
@@ -2263,7 +2450,7 @@ public class ClubCompetitionScheduleUpdater {
 
     }
 
-    private record Futbol24LeagueSource(
+    record Futbol24LeagueSource(
             Competition competition,
             String leagueId,
             String sourceCompetition,
@@ -2305,6 +2492,16 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     private record SportsDbLeagueSource(Competition competition, String leagueId, int maxRound) {
+
+    }
+
+    private record VerifiedSupplementalSchedule(
+            String matchId,
+            LocalDate matchDate,
+            String homeTeam,
+            String awayTeam,
+            int homeScore,
+            int awayScore) {
 
     }
 

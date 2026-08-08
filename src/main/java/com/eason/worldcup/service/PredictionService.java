@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.function.BiConsumer;
@@ -688,7 +689,7 @@ public class PredictionService {
             MatchSchedule target,
             BiPredicate<String, String> matchFilter,
             int resultLimit) {
-        Map<String, HeadToHeadMatchResponse> matchesByFixture = new HashMap<>();
+        Map<String, HeadToHeadCandidate> matchesByFixture = new HashMap<>();
         for (MatchSchedule schedule : dataRepository.getSchedules()) {
             if (!isCompletedSchedule(schedule)
                     || !isScheduleBeforeTarget(schedule, target)
@@ -701,7 +702,7 @@ public class PredictionService {
             matchesByFixture.putIfAbsent(buildHeadToHeadFixtureKey(
                     schedule.getMatchDate(),
                     response.getHomeTeamCn(),
-                    response.getAwayTeamCn()), response);
+                    response.getAwayTeamCn()), new HeadToHeadCandidate(response, true));
         }
 
         List<HistoricalMatch> historicalMatches = competition.isClubCompetition()
@@ -720,10 +721,13 @@ public class PredictionService {
             matchesByFixture.put(buildHeadToHeadFixtureKey(
                     historicalMatch.getMatchDate(),
                     response.getHomeTeamCn(),
-                    response.getAwayTeamCn()), response);
+                    response.getAwayTeamCn()), new HeadToHeadCandidate(response, false));
         }
 
-        return matchesByFixture.values().stream()
+        return deduplicateAdjacentCrossSourceHistory(
+                competition,
+                new ArrayList<>(matchesByFixture.values())).stream()
+                .map(HeadToHeadCandidate::match)
                 .sorted(Comparator
                         .comparing(
                                 HeadToHeadMatchResponse::getMatchDate,
@@ -733,6 +737,54 @@ public class PredictionService {
                                 Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(resultLimit)
                 .toList();
+    }
+
+    private List<HeadToHeadCandidate> deduplicateAdjacentCrossSourceHistory(
+            Competition competition,
+            List<HeadToHeadCandidate> candidates) {
+        candidates.sort(Comparator.comparing(
+                candidate -> candidate.match().getMatchDate(),
+                Comparator.nullsLast(Comparator.naturalOrder())));
+        List<HeadToHeadCandidate> result = new ArrayList<>();
+        for (HeadToHeadCandidate candidate : candidates) {
+            boolean duplicate = result.stream().anyMatch(existing ->
+                    isAdjacentCrossSourceDuplicate(competition, existing, candidate));
+            if (!duplicate) {
+                result.add(candidate);
+            }
+        }
+        return result;
+    }
+
+    private boolean isAdjacentCrossSourceDuplicate(
+            Competition competition,
+            HeadToHeadCandidate leftCandidate,
+            HeadToHeadCandidate rightCandidate) {
+        if (leftCandidate.runtimeSchedule() == rightCandidate.runtimeSchedule()) {
+            return false;
+        }
+        HeadToHeadMatchResponse left = leftCandidate.match();
+        HeadToHeadMatchResponse right = rightCandidate.match();
+        if (left.getMatchDate() == null
+                || right.getMatchDate() == null
+                || Math.abs(left.getMatchDate().toEpochDay() - right.getMatchDate().toEpochDay()) > 1
+                || !Objects.equals(left.getMatchTypeName(), right.getMatchTypeName())) {
+            return false;
+        }
+
+        boolean directTeams = canonicalHistoryTeamName(competition, left.getHomeTeamCn())
+                .equals(canonicalHistoryTeamName(competition, right.getHomeTeamCn()))
+                && canonicalHistoryTeamName(competition, left.getAwayTeamCn())
+                .equals(canonicalHistoryTeamName(competition, right.getAwayTeamCn()));
+        boolean reversedTeams = canonicalHistoryTeamName(competition, left.getHomeTeamCn())
+                .equals(canonicalHistoryTeamName(competition, right.getAwayTeamCn()))
+                && canonicalHistoryTeamName(competition, left.getAwayTeamCn())
+                .equals(canonicalHistoryTeamName(competition, right.getHomeTeamCn()));
+        boolean directResult = Objects.equals(left.getHomeScore(), right.getHomeScore())
+                && Objects.equals(left.getAwayScore(), right.getAwayScore());
+        boolean reversedResult = Objects.equals(left.getHomeScore(), right.getAwayScore())
+                && Objects.equals(left.getAwayScore(), right.getHomeScore());
+        return directTeams && directResult || reversedTeams && reversedResult;
     }
 
     private List<HeadToHeadMatchResponse> filterMatchHistory(
@@ -1236,6 +1288,12 @@ public class PredictionService {
                 throw new IllegalArgumentException("Invalid competition backtest period");
             }
         }
+
+    }
+
+    private record HeadToHeadCandidate(
+            HeadToHeadMatchResponse match,
+            boolean runtimeSchedule) {
 
     }
 
