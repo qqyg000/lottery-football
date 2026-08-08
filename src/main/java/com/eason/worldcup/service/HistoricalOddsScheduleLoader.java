@@ -3,6 +3,7 @@ package com.eason.worldcup.service;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.SportteryOdds;
+import com.eason.worldcup.model.SportteryTotalGoalsOdds;
 import com.eason.worldcup.util.ClubTeamNameTranslator;
 import com.eason.worldcup.util.CsvUtils;
 import org.slf4j.Logger;
@@ -58,6 +59,10 @@ public class HistoricalOddsScheduleLoader {
     private static final int NORMAL_ODDS_COLUMN = 12;
 
     private static final int HANDICAP_ODDS_COLUMN = 15;
+
+    private static final int TOTAL_GOALS_ODDS_COLUMN = 18;
+
+    private static final int TOTAL_GOALS_UPDATED_AT_COLUMN = 26;
 
     private final ResourceLoader resourceLoader;
 
@@ -123,6 +128,7 @@ public class HistoricalOddsScheduleLoader {
         String awayTeamEn = CsvUtils.get(row, AWAY_TEAM_EN_COLUMN);
         SportteryOdds normalOdds = parseOdds(row, NORMAL_ODDS_COLUMN, matchDate);
         SportteryOdds handicapOdds = parseOdds(row, HANDICAP_ODDS_COLUMN, matchDate);
+        SportteryTotalGoalsOdds totalGoalsOdds = parseTotalGoalsOdds(row, matchDate);
         schedule.setMatchId(CsvUtils.get(row, MATCH_ID_COLUMN));
         schedule.setMatchDate(matchDate);
         schedule.setCompetition(competition);
@@ -132,17 +138,20 @@ public class HistoricalOddsScheduleLoader {
         schedule.setAwayTeamCn(resolveChineseTeamName(competition, awayTeamCn, awayTeamEn));
         schedule.setHomeTeamEn(homeTeamEn);
         schedule.setAwayTeamEn(awayTeamEn);
-        schedule.setHomeScore(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, HOME_SCORE_COLUMN)));
-        schedule.setAwayScore(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, AWAY_SCORE_COLUMN)));
+        Integer homeScore = CsvUtils.parseIntegerOrNull(CsvUtils.get(row, HOME_SCORE_COLUMN));
+        Integer awayScore = CsvUtils.parseIntegerOrNull(CsvUtils.get(row, AWAY_SCORE_COLUMN));
+        schedule.setHomeScore(homeScore);
+        schedule.setAwayScore(awayScore);
         schedule.setNeutral(CsvUtils.parseBoolean(CsvUtils.get(row, NEUTRAL_COLUMN)));
         schedule.setVenue("");
-        schedule.setStatus("COMPLETED");
+        schedule.setStatus(homeScore != null && awayScore != null ? "COMPLETED" : "SCHEDULED");
         schedule.setSportteryMatchId(schedule.getMatchId());
         schedule.setSportteryMatchNumber(CsvUtils.get(row, SPORTTERY_MATCH_NUMBER_COLUMN));
         schedule.setSportteryHandicap(CsvUtils.parseIntegerOrNull(CsvUtils.get(row, HANDICAP_COLUMN)));
         schedule.setSportteryNormalAvailable(normalOdds != null);
         schedule.setSportteryNormalOdds(normalOdds);
         schedule.setSportteryHandicapOdds(handicapOdds);
+        schedule.setSportteryTotalGoalsOdds(totalGoalsOdds);
         return schedule;
     }
 
@@ -163,8 +172,28 @@ public class HistoricalOddsScheduleLoader {
         return Double.valueOf(value.trim());
     }
 
+    private SportteryTotalGoalsOdds parseTotalGoalsOdds(List<String> row, LocalDate matchDate) {
+        Double[] odds = new Double[8];
+        for (int index = 0; index < odds.length; index++) {
+            odds[index] = parseDoubleOrNull(CsvUtils.get(row, TOTAL_GOALS_ODDS_COLUMN + index));
+            if (odds[index] == null) {
+                return null;
+            }
+        }
+        String updatedAt = CsvUtils.get(row, TOTAL_GOALS_UPDATED_AT_COLUMN);
+        return new SportteryTotalGoalsOdds(
+                odds[0],
+                odds[1],
+                odds[2],
+                odds[3],
+                odds[4],
+                odds[5],
+                odds[6],
+                odds[7],
+                updatedAt.isBlank() ? matchDate + " 初盘" : updatedAt);
+    }
+
     private void applyHistoricalData(MatchSchedule target, MatchSchedule source) {
-        target.setStatus("COMPLETED");
         target.setHomeTeamCn(source.getHomeTeamCn());
         target.setAwayTeamCn(source.getAwayTeamCn());
         if (target.getHomeTeamEn() == null || target.getHomeTeamEn().isBlank()) {
@@ -173,14 +202,18 @@ public class HistoricalOddsScheduleLoader {
         if (target.getAwayTeamEn() == null || target.getAwayTeamEn().isBlank()) {
             target.setAwayTeamEn(source.getAwayTeamEn());
         }
-        target.setHomeScore(source.getHomeScore());
-        target.setAwayScore(source.getAwayScore());
+        if (source.getHomeScore() != null && source.getAwayScore() != null) {
+            target.setStatus("COMPLETED");
+            target.setHomeScore(source.getHomeScore());
+            target.setAwayScore(source.getAwayScore());
+        }
         target.setSportteryMatchId(source.getSportteryMatchId());
         target.setSportteryMatchNumber(source.getSportteryMatchNumber());
         target.setSportteryNormalAvailable(source.getSportteryNormalAvailable());
         target.setSportteryHandicap(source.getSportteryHandicap());
         target.setSportteryNormalOdds(source.getSportteryNormalOdds());
         target.setSportteryHandicapOdds(source.getSportteryHandicapOdds());
+        target.setSportteryTotalGoalsOdds(source.getSportteryTotalGoalsOdds());
     }
 
     private String buildFixtureKey(MatchSchedule schedule) {

@@ -51,6 +51,7 @@ class UserConfigServiceTest {
         UserConfig config = service.load();
 
         assertEquals(68, config.getParameterProfiles().size());
+        assertEquals(34, config.getTotalGoalsStrategies().size());
         ParameterProfile currentProfile = config.getParameterProfiles().get(UserConfig.parameterProfileKey(
                 Competition.WORLD_CUP,
                 UserConfig.CURRENT_EDITION_PROFILE,
@@ -109,6 +110,8 @@ class UserConfigServiceTest {
         assertFalse(persisted.has("globalParameters"));
         assertTrue(persisted.has("parameterProfiles"));
         assertEquals(68, persisted.get("parameterProfiles").size());
+        assertTrue(persisted.has("totalGoalsStrategies"));
+        assertEquals(34, persisted.get("totalGoalsStrategies").size());
         JsonNode modelFactors = persisted.get("parameterProfiles")
                 .get("WORLD_CUP:CURRENT:STABLE")
                 .get("modelFactors");

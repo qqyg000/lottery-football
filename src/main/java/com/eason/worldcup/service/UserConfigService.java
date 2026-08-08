@@ -4,6 +4,7 @@ import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.UserConfig;
 import com.eason.worldcup.model.UserConfig.ParameterProfile;
 import com.eason.worldcup.model.UserConfig.RecommendationSelection;
+import com.eason.worldcup.model.UserConfig.TotalGoalsStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,7 +46,7 @@ public class UserConfigService {
         }
         try {
             UserConfig loaded = objectMapper.readValue(resolvedUserConfigPath.toFile(), UserConfig.class);
-            boolean requiresMigration = requiresParameterProfileMigration(loaded);
+            boolean requiresMigration = requiresConfigMigration(loaded);
             UserConfig normalized = normalize(loaded);
             if (requiresMigration) {
                 writeConfig(normalized);
@@ -103,7 +104,54 @@ public class UserConfigService {
                 normalized.getParameterProfiles(),
                 legacyModelFactors,
                 legacyGlobalParameters));
+        normalized.setTotalGoalsStrategies(normalizeTotalGoalsStrategies(normalized.getTotalGoalsStrategies()));
         normalized.setSelectedRows(normalizeSelectedRows(normalized.getSelectedRows()));
+        return normalized;
+    }
+
+    private Map<String, TotalGoalsStrategy> normalizeTotalGoalsStrategies(
+            Map<String, TotalGoalsStrategy> totalGoalsStrategies) {
+        Map<String, TotalGoalsStrategy> normalized = new LinkedHashMap<>();
+        for (var competition : UserConfig.getParameterCompetitions()) {
+            for (String profileRange : UserConfig.getParameterProfileRanges()) {
+                String strategyKey = UserConfig.totalGoalsStrategyKey(competition, profileRange);
+                TotalGoalsStrategy source = totalGoalsStrategies == null
+                        ? null
+                        : totalGoalsStrategies.get(strategyKey);
+                normalized.put(strategyKey, normalizeTotalGoalsStrategy(source));
+            }
+        }
+        return normalized;
+    }
+
+    private TotalGoalsStrategy normalizeTotalGoalsStrategy(TotalGoalsStrategy strategy) {
+        TotalGoalsStrategy defaults = TotalGoalsStrategy.defaults();
+        TotalGoalsStrategy normalized = strategy == null ? new TotalGoalsStrategy() : strategy;
+        normalized.setMinimumProbability(normalizeNumber(
+                normalized.getMinimumProbability(),
+                defaults.getMinimumProbability(),
+                0.0D,
+                100.0D));
+        normalized.setMinimumExpectedValue(normalizeNumber(
+                normalized.getMinimumExpectedValue(),
+                defaults.getMinimumExpectedValue(),
+                0.0D,
+                10.0D));
+        normalized.setMinimumOdds(normalizeNumber(
+                normalized.getMinimumOdds(),
+                defaults.getMinimumOdds(),
+                1.0D,
+                100.0D));
+        normalized.setMaximumOdds(normalizeNumber(
+                normalized.getMaximumOdds(),
+                defaults.getMaximumOdds(),
+                normalized.getMinimumOdds(),
+                1000.0D));
+        normalized.setMaximumSelections(normalizeInteger(
+                normalized.getMaximumSelections(),
+                defaults.getMaximumSelections(),
+                0,
+                4));
         return normalized;
     }
 
@@ -185,7 +233,7 @@ public class UserConfigService {
         return copy;
     }
 
-    private boolean requiresParameterProfileMigration(UserConfig config) {
+    private boolean requiresConfigMigration(UserConfig config) {
         if (config == null || config.getParameterProfiles() == null
                 || config.getParameterProfiles().size() != UserConfig.getParameterCompetitions().size()
                 * UserConfig.getParameterProfileRanges().size()
@@ -204,7 +252,29 @@ public class UserConfigService {
                 }
             }
         }
+        if (config.getTotalGoalsStrategies() == null
+                || config.getTotalGoalsStrategies().size() != UserConfig.getParameterCompetitions().size()
+                * UserConfig.getParameterProfileRanges().size()) {
+            return true;
+        }
+        for (var competition : UserConfig.getParameterCompetitions()) {
+            for (String profileRange : UserConfig.getParameterProfileRanges()) {
+                if (!hasCompleteTotalGoalsStrategy(config.getTotalGoalsStrategies().get(
+                        UserConfig.totalGoalsStrategyKey(competition, profileRange)))) {
+                    return true;
+                }
+            }
+        }
         return false;
+    }
+
+    private boolean hasCompleteTotalGoalsStrategy(TotalGoalsStrategy strategy) {
+        return strategy != null
+                && strategy.getMinimumProbability() != null
+                && strategy.getMinimumExpectedValue() != null
+                && strategy.getMinimumOdds() != null
+                && strategy.getMaximumOdds() != null
+                && strategy.getMaximumSelections() != null;
     }
 
     private boolean hasCompleteParameterProfile(ParameterProfile profile) {
@@ -282,6 +352,13 @@ public class UserConfigService {
         return Math.max(min, Math.min(max, value));
     }
 
+    private Integer normalizeInteger(Integer value, Integer defaultValue, int min, int max) {
+        if (value == null) {
+            return defaultValue;
+        }
+        return Math.max(min, Math.min(max, value));
+    }
+
     private Map<String, RecommendationSelection> normalizeSelectedRows(Map<String, RecommendationSelection> selectedRows) {
         Map<String, RecommendationSelection> normalized = new LinkedHashMap<>();
         if (selectedRows == null) {
@@ -323,6 +400,7 @@ public class UserConfigService {
             config.setModelFactors(UserConfig.ModelFactors.defaults());
             config.setGlobalParameters(UserConfig.GlobalParameters.defaults());
             config.setParameterProfiles(new LinkedHashMap<>());
+            config.setTotalGoalsStrategies(new LinkedHashMap<>());
             config.setSelectedRows(new LinkedHashMap<>());
             return config;
         }

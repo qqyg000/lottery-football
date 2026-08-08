@@ -14,6 +14,8 @@ public class SportteryHistoricalOddsRefreshResponse {
 
     private int handicapOddsMatchCount;
 
+    private int totalGoalsOddsMatchCount;
+
     private int completeOddsMatchCount;
 
     private int failedOddsQueryCount;
@@ -62,6 +64,14 @@ public class SportteryHistoricalOddsRefreshResponse {
 
     public void setHandicapOddsMatchCount(int handicapOddsMatchCount) {
         this.handicapOddsMatchCount = handicapOddsMatchCount;
+    }
+
+    public int getTotalGoalsOddsMatchCount() {
+        return totalGoalsOddsMatchCount;
+    }
+
+    public void setTotalGoalsOddsMatchCount(int totalGoalsOddsMatchCount) {
+        this.totalGoalsOddsMatchCount = totalGoalsOddsMatchCount;
     }
 
     public int getCompleteOddsMatchCount() {

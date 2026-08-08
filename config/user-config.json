@@ -1,6 +1,6 @@
 {
   "modelMode" : "after",
-  "includePreviousEdition" : false,
+  "includePreviousEdition" : true,
   "parameterProfiles" : {
     "WORLD_CUP:CURRENT:STABLE" : {
       "modelFactors" : {
@@ -1157,6 +1157,246 @@
         "handicapReverseThreshold" : 66.26,
         "singleRecommendationThreshold" : 20.31
       }
+    }
+  },
+  "totalGoalsStrategies" : {
+    "WORLD_CUP:CURRENT" : {
+      "minimumProbability" : 5.0,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 4.0,
+      "maximumOdds" : 50.0,
+      "maximumSelections" : 3
+    },
+    "WORLD_CUP:PREVIOUS" : {
+      "minimumProbability" : 5.0,
+      "minimumExpectedValue" : 0.9,
+      "minimumOdds" : 3.5,
+      "maximumOdds" : 50.0,
+      "maximumSelections" : 3
+    },
+    "EUROPEAN_CHAMPIONSHIP:CURRENT" : {
+      "minimumProbability" : 25.0,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 4.0,
+      "maximumSelections" : 1
+    },
+    "EUROPEAN_CHAMPIONSHIP:PREVIOUS" : {
+      "minimumProbability" : 25.0,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 4.0,
+      "maximumSelections" : 1
+    },
+    "COPA_AMERICA:CURRENT" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 0.9,
+      "minimumOdds" : 4.0,
+      "maximumOdds" : 8.0,
+      "maximumSelections" : 1
+    },
+    "COPA_AMERICA:PREVIOUS" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 0.9,
+      "minimumOdds" : 4.0,
+      "maximumOdds" : 8.0,
+      "maximumSelections" : 1
+    },
+    "CLUB_WORLD_CUP:CURRENT" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.15,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 10.0,
+      "maximumSelections" : 2
+    },
+    "CLUB_WORLD_CUP:PREVIOUS" : {
+      "minimumProbability" : 22.5,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 3.5,
+      "maximumOdds" : 4.0,
+      "maximumSelections" : 1
+    },
+    "EUROPA_LEAGUE:CURRENT" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.0,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 10.0,
+      "maximumSelections" : 1
+    },
+    "EUROPA_LEAGUE:PREVIOUS" : {
+      "minimumProbability" : 15.0,
+      "minimumExpectedValue" : 1.0,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 8.0,
+      "maximumSelections" : 0
+    },
+    "CHAMPIONS_LEAGUE:CURRENT" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.4,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 20.0,
+      "maximumSelections" : 1
+    },
+    "CHAMPIONS_LEAGUE:PREVIOUS" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.4,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 20.0,
+      "maximumSelections" : 1
+    },
+    "PREMIER_LEAGUE:CURRENT" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 5.0,
+      "maximumSelections" : 1
+    },
+    "PREMIER_LEAGUE:PREVIOUS" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 5.0,
+      "maximumSelections" : 1
+    },
+    "LA_LIGA:CURRENT" : {
+      "minimumProbability" : 27.5,
+      "minimumExpectedValue" : 0.9,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 5.0,
+      "maximumSelections" : 1
+    },
+    "LA_LIGA:PREVIOUS" : {
+      "minimumProbability" : 27.5,
+      "minimumExpectedValue" : 0.9,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 5.0,
+      "maximumSelections" : 1
+    },
+    "SERIE_A:CURRENT" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.25,
+      "minimumOdds" : 4.0,
+      "maximumOdds" : 4.0,
+      "maximumSelections" : 1
+    },
+    "SERIE_A:PREVIOUS" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.25,
+      "minimumOdds" : 4.0,
+      "maximumOdds" : 4.0,
+      "maximumSelections" : 1
+    },
+    "BUNDESLIGA:CURRENT" : {
+      "minimumProbability" : 25.0,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 3.5,
+      "maximumOdds" : 4.0,
+      "maximumSelections" : 1
+    },
+    "BUNDESLIGA:PREVIOUS" : {
+      "minimumProbability" : 25.0,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 3.5,
+      "maximumOdds" : 4.0,
+      "maximumSelections" : 1
+    },
+    "LIGUE_1:CURRENT" : {
+      "minimumProbability" : 27.5,
+      "minimumExpectedValue" : 1.15,
+      "minimumOdds" : 4.0,
+      "maximumOdds" : 6.0,
+      "maximumSelections" : 1
+    },
+    "LIGUE_1:PREVIOUS" : {
+      "minimumProbability" : 27.5,
+      "minimumExpectedValue" : 1.15,
+      "minimumOdds" : 4.0,
+      "maximumOdds" : 6.0,
+      "maximumSelections" : 1
+    },
+    "PRIMEIRA_LIGA:CURRENT" : {
+      "minimumProbability" : 17.5,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 4.0,
+      "maximumOdds" : 5.0,
+      "maximumSelections" : 1
+    },
+    "PRIMEIRA_LIGA:PREVIOUS" : {
+      "minimumProbability" : 17.5,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 4.0,
+      "maximumOdds" : 5.0,
+      "maximumSelections" : 1
+    },
+    "EREDIVISIE:CURRENT" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.05,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 4.0,
+      "maximumSelections" : 1
+    },
+    "EREDIVISIE:PREVIOUS" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.05,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 4.0,
+      "maximumSelections" : 1
+    },
+    "ARGENTINE_PRIMERA_DIVISION:CURRENT" : {
+      "minimumProbability" : 15.0,
+      "minimumExpectedValue" : 1.0,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 8.0,
+      "maximumSelections" : 0
+    },
+    "ARGENTINE_PRIMERA_DIVISION:PREVIOUS" : {
+      "minimumProbability" : 15.0,
+      "minimumExpectedValue" : 1.0,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 8.0,
+      "maximumSelections" : 0
+    },
+    "SWEDISH_ALLSVENSKAN:CURRENT" : {
+      "minimumProbability" : 17.5,
+      "minimumExpectedValue" : 1.15,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 8.0,
+      "maximumSelections" : 1
+    },
+    "SWEDISH_ALLSVENSKAN:PREVIOUS" : {
+      "minimumProbability" : 17.5,
+      "minimumExpectedValue" : 1.15,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 8.0,
+      "maximumSelections" : 1
+    },
+    "FINNISH_VEIKKAUSLIIGA:CURRENT" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.05,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 5.0,
+      "maximumSelections" : 1
+    },
+    "FINNISH_VEIKKAUSLIIGA:PREVIOUS" : {
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.05,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 5.0,
+      "maximumSelections" : 1
+    },
+    "K_LEAGUE_1:CURRENT" : {
+      "minimumProbability" : 25.0,
+      "minimumExpectedValue" : 1.15,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 6.0,
+      "maximumSelections" : 1
+    },
+    "K_LEAGUE_1:PREVIOUS" : {
+      "minimumProbability" : 25.0,
+      "minimumExpectedValue" : 1.15,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 6.0,
+      "maximumSelections" : 1
     }
   },
   "selectedRows" : { }

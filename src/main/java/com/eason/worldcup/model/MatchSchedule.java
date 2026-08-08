@@ -53,6 +53,8 @@ public class MatchSchedule {
 
     private SportteryOdds sportteryHandicapOdds;
 
+    private SportteryTotalGoalsOdds sportteryTotalGoalsOdds;
+
     public Competition getCompetition() {
         return competition;
     }
@@ -227,6 +229,14 @@ public class MatchSchedule {
 
     public void setSportteryHandicapOdds(SportteryOdds sportteryHandicapOdds) {
         this.sportteryHandicapOdds = sportteryHandicapOdds;
+    }
+
+    public SportteryTotalGoalsOdds getSportteryTotalGoalsOdds() {
+        return sportteryTotalGoalsOdds;
+    }
+
+    public void setSportteryTotalGoalsOdds(SportteryTotalGoalsOdds sportteryTotalGoalsOdds) {
+        this.sportteryTotalGoalsOdds = sportteryTotalGoalsOdds;
     }
 
 }

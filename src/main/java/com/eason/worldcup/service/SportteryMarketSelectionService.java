@@ -4,6 +4,7 @@ import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.SportteryOdds;
 import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
+import com.eason.worldcup.model.SportteryTotalGoalsOdds;
 import com.eason.worldcup.util.ClubTeamNameTranslator;
 import com.eason.worldcup.util.CompetitionDataPolicy;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -278,6 +279,7 @@ public class SportteryMarketSelectionService {
         schedule.setSportteryHandicap(entry.getHandicap());
         schedule.setSportteryNormalOdds(entry.getNormalOdds());
         schedule.setSportteryHandicapOdds(entry.getHandicapOdds());
+        schedule.setSportteryTotalGoalsOdds(entry.getTotalGoalsOdds());
         return schedule;
     }
 
@@ -286,7 +288,9 @@ public class SportteryMarketSelectionService {
     }
 
     private boolean hasMarketOdds(SportteryMarketEntry entry) {
-        return entry.getNormalOdds() != null || entry.getHandicapOdds() != null;
+        return entry.getNormalOdds() != null
+                || entry.getHandicapOdds() != null
+                || entry.getTotalGoalsOdds() != null;
     }
 
     public synchronized int forceRefresh(LocalDate referenceDate) {
@@ -354,6 +358,9 @@ public class SportteryMarketSelectionService {
                 .count());
         response.setHandicapOddsMatchCount((int) candidates.stream()
                 .filter(entry -> entry.getHandicapOdds() != null)
+                .count());
+        response.setTotalGoalsOddsMatchCount((int) candidates.stream()
+                .filter(entry -> entry.getTotalGoalsOdds() != null)
                 .count());
         response.setCompleteOddsMatchCount((int) candidates.stream()
                 .filter(entry -> entry.getNormalOdds() != null && entry.getHandicapOdds() != null)
@@ -677,6 +684,7 @@ public class SportteryMarketSelectionService {
         JsonNode value = root.path("value");
         LatestMarketOdds normalOdds = parseLatestMarketOdds(value.path("hadList"));
         LatestMarketOdds handicapOdds = parseLatestMarketOdds(value.path("hhadList"));
+        SportteryTotalGoalsOdds totalGoalsOdds = parseLatestTotalGoalsOdds(value.path("ttgList"));
         if (normalOdds != null) {
             entry.setNormalOdds(normalOdds.odds());
             entry.setNormalAvailable(true);
@@ -686,6 +694,9 @@ public class SportteryMarketSelectionService {
             if (handicapOdds.handicap() != null) {
                 entry.setHandicap(handicapOdds.handicap());
             }
+        }
+        if (totalGoalsOdds != null) {
+            entry.setTotalGoalsOdds(totalGoalsOdds);
         }
         entry.setOddsLookupCompleted(true);
     }
@@ -705,6 +716,7 @@ public class SportteryMarketSelectionService {
         JsonNode value = root.path("value");
         LatestMarketOdds normalOdds = parseInitialMarketOdds(value.path("hadList"));
         LatestMarketOdds handicapOdds = parseInitialMarketOdds(value.path("hhadList"));
+        SportteryTotalGoalsOdds totalGoalsOdds = parseInitialTotalGoalsOdds(value.path("ttgList"));
         if (normalOdds != null) {
             entry.setNormalOdds(normalOdds.odds());
             entry.setNormalAvailable(true);
@@ -714,6 +726,9 @@ public class SportteryMarketSelectionService {
             if (handicapOdds.handicap() != null) {
                 entry.setHandicap(handicapOdds.handicap());
             }
+        }
+        if (totalGoalsOdds != null) {
+            entry.setTotalGoalsOdds(totalGoalsOdds);
         }
         entry.setOddsLookupCompleted(true);
     }
@@ -788,7 +803,9 @@ public class SportteryMarketSelectionService {
     }
 
     private boolean hasNoOdds(SportteryMarketEntry entry) {
-        return entry.getNormalOdds() == null && entry.getHandicapOdds() == null;
+        return entry.getNormalOdds() == null
+                && entry.getHandicapOdds() == null
+                && entry.getTotalGoalsOdds() == null;
     }
 
     private LatestMarketOdds parseLatestMarketOdds(JsonNode oddsList) {
@@ -826,6 +843,43 @@ public class SportteryMarketSelectionService {
                 initial = new LatestMarketOdds(
                         odds,
                         parseHandicap(item.path("goalLine").asText("")));
+                initialUpdatedAt = updatedAt;
+            }
+        }
+        return initial;
+    }
+
+    private SportteryTotalGoalsOdds parseLatestTotalGoalsOdds(JsonNode oddsList) {
+        SportteryTotalGoalsOdds latest = null;
+        String latestUpdatedAt = "";
+        for (JsonNode item : oddsList) {
+            SportteryTotalGoalsOdds odds = parseTotalGoalsOdds(item);
+            if (odds == null) {
+                continue;
+            }
+            String updatedAt = odds.getUpdatedAt() == null ? "" : odds.getUpdatedAt();
+            if (latest == null || updatedAt.compareTo(latestUpdatedAt) > 0) {
+                latest = odds;
+                latestUpdatedAt = updatedAt;
+            }
+        }
+        return latest;
+    }
+
+    private SportteryTotalGoalsOdds parseInitialTotalGoalsOdds(JsonNode oddsList) {
+        SportteryTotalGoalsOdds initial = null;
+        String initialUpdatedAt = "";
+        for (JsonNode item : oddsList) {
+            SportteryTotalGoalsOdds odds = parseTotalGoalsOdds(item);
+            if (odds == null) {
+                continue;
+            }
+            String updatedAt = odds.getUpdatedAt() == null ? "" : odds.getUpdatedAt();
+            boolean replaceBlankTimestamp = updatedAt.isBlank() && initialUpdatedAt.isBlank();
+            boolean replaceWithEarlierTimestamp = !updatedAt.isBlank()
+                    && (initialUpdatedAt.isBlank() || updatedAt.compareTo(initialUpdatedAt) < 0);
+            if (initial == null || replaceBlankTimestamp || replaceWithEarlierTimestamp) {
+                initial = odds;
                 initialUpdatedAt = updatedAt;
             }
         }
@@ -939,6 +993,7 @@ public class SportteryMarketSelectionService {
         entry.setAwayTeam(awayTeam);
         entry.setCurrentSale(false);
         entry.setNormalOdds(parseOdds(match));
+        entry.setTotalGoalsOdds(parseTotalGoalsOdds(match.path("ttg")));
         entry.setNormalAvailable(entry.getNormalOdds() != null);
         entry.setHandicap(parseHandicap(match.path("goalLine").asText("")));
         applyFullTimeScore(entry, match.path("sectionsNo999").asText(""));
@@ -965,6 +1020,7 @@ public class SportteryMarketSelectionService {
 
         JsonNode normalMarket = match.path("had");
         JsonNode handicapMarket = match.path("hhad");
+        JsonNode totalGoalsMarket = match.path("ttg");
         SportteryMarketEntry entry = new SportteryMarketEntry();
         entry.setSportteryMatchId(sportteryMatchId);
         entry.setSportteryMatchNumber(match.path("matchNumStr").asText(""));
@@ -977,6 +1033,7 @@ public class SportteryMarketSelectionService {
         entry.setCurrentSale(true);
         entry.setNormalOdds(parseOdds(normalMarket));
         entry.setHandicapOdds(parseOdds(handicapMarket));
+        entry.setTotalGoalsOdds(parseTotalGoalsOdds(totalGoalsMarket));
         entry.setNormalAvailable(entry.getNormalOdds() != null);
         entry.setHandicap(entry.getHandicapOdds() != null
                 ? parseHandicap(handicapMarket.path("goalLine").asText(""))
@@ -996,6 +1053,29 @@ public class SportteryMarketSelectionService {
             return null;
         }
         return new SportteryOdds(win, draw, lose, parseOddsUpdatedAt(market));
+    }
+
+    private SportteryTotalGoalsOdds parseTotalGoalsOdds(JsonNode market) {
+        if (market == null || market.isMissingNode() || market.isNull()) {
+            return null;
+        }
+        Double[] odds = new Double[8];
+        for (int index = 0; index < odds.length; index++) {
+            odds[index] = parseOddsValue(market.path("s" + index).asText(""));
+            if (odds[index] == null) {
+                return null;
+            }
+        }
+        return new SportteryTotalGoalsOdds(
+                odds[0],
+                odds[1],
+                odds[2],
+                odds[3],
+                odds[4],
+                odds[5],
+                odds[6],
+                odds[7],
+                parseOddsUpdatedAt(market));
     }
 
     private Double parseOddsValue(String value) {
@@ -1330,7 +1410,8 @@ public class SportteryMarketSelectionService {
 
         LatestMarketOdds normalOdds = parseLatestMarketOdds(value.path("hadList"));
         LatestMarketOdds handicapOdds = parseLatestMarketOdds(value.path("hhadList"));
-        if (normalOdds == null && handicapOdds == null) {
+        SportteryTotalGoalsOdds totalGoalsOdds = parseLatestTotalGoalsOdds(value.path("ttgList"));
+        if (normalOdds == null && handicapOdds == null && totalGoalsOdds == null) {
             return null;
         }
 
@@ -1346,6 +1427,7 @@ public class SportteryMarketSelectionService {
         entry.setNormalAvailable(normalOdds != null);
         entry.setHandicapOdds(handicapOdds == null ? null : handicapOdds.odds());
         entry.setHandicap(handicapOdds == null ? null : handicapOdds.handicap());
+        entry.setTotalGoalsOdds(totalGoalsOdds);
         entry.setOddsLookupCompleted(true);
         entry.setHomeScore(schedule.getHomeScore());
         entry.setAwayScore(schedule.getAwayScore());
@@ -1387,6 +1469,11 @@ public class SportteryMarketSelectionService {
         boolean oddsCacheChanged = false;
         boolean oddsLookupInterrupted = false;
         for (MatchSchedule schedule : schedules) {
+            Boolean existingNormalAvailable = schedule.getSportteryNormalAvailable();
+            Integer existingHandicap = schedule.getSportteryHandicap();
+            SportteryOdds existingNormalOdds = schedule.getSportteryNormalOdds();
+            SportteryOdds existingHandicapOdds = schedule.getSportteryHandicapOdds();
+            SportteryTotalGoalsOdds existingTotalGoalsOdds = schedule.getSportteryTotalGoalsOdds();
             SportteryMarketEntry entry = findBestEntry(
                     schedule,
                     entriesByCompetition.getOrDefault(schedule.getCompetition(), List.of()),
@@ -1427,10 +1514,21 @@ public class SportteryMarketSelectionService {
             schedule.setSportteryAwayTeamName(ClubTeamNameTranslator.translate(
                     schedule.getCompetition(),
                     entry.getAwayTeam()));
-            schedule.setSportteryNormalAvailable(entry.getNormalAvailable());
-            schedule.setSportteryHandicap(entry.getHandicap());
-            schedule.setSportteryNormalOdds(entry.getNormalOdds());
-            schedule.setSportteryHandicapOdds(entry.getHandicapOdds());
+            schedule.setSportteryNormalAvailable(entry.getNormalAvailable() == null
+                    ? existingNormalAvailable
+                    : entry.getNormalAvailable());
+            schedule.setSportteryHandicap(entry.getHandicap() == null
+                    ? existingHandicap
+                    : entry.getHandicap());
+            schedule.setSportteryNormalOdds(entry.getNormalOdds() == null
+                    ? existingNormalOdds
+                    : entry.getNormalOdds());
+            schedule.setSportteryHandicapOdds(entry.getHandicapOdds() == null
+                    ? existingHandicapOdds
+                    : entry.getHandicapOdds());
+            schedule.setSportteryTotalGoalsOdds(entry.getTotalGoalsOdds() == null
+                    ? existingTotalGoalsOdds
+                    : entry.getTotalGoalsOdds());
             usedMatchIds.add(entry.getSportteryMatchId());
             matchedCount++;
         }
@@ -1444,14 +1542,18 @@ public class SportteryMarketSelectionService {
         String matchId = schedule.getSportteryMatchId();
         return matchId != null
                 && matchId.startsWith("HIS-")
-                && (schedule.getSportteryNormalOdds() != null || schedule.getSportteryHandicapOdds() != null);
+                && (schedule.getSportteryNormalOdds() != null
+                || schedule.getSportteryHandicapOdds() != null
+                || schedule.getSportteryTotalGoalsOdds() != null);
     }
 
     private boolean needsOddsLookup(SportteryMarketEntry entry) {
         if (Boolean.TRUE.equals(entry.getOddsLookupCompleted())) {
             return false;
         }
-        return Boolean.TRUE.equals(entry.getNormalAvailable()) || entry.getHandicap() != null;
+        return Boolean.TRUE.equals(entry.getNormalAvailable())
+                || entry.getHandicap() != null
+                || entry.getTotalGoalsOdds() != null;
     }
 
     private void clearSelection(MatchSchedule schedule) {
@@ -1463,6 +1565,7 @@ public class SportteryMarketSelectionService {
         schedule.setSportteryHandicap(null);
         schedule.setSportteryNormalOdds(null);
         schedule.setSportteryHandicapOdds(null);
+        schedule.setSportteryTotalGoalsOdds(null);
     }
 
     private SportteryMarketEntry findBestEntry(
@@ -1771,6 +1874,8 @@ public class SportteryMarketSelectionService {
 
         private SportteryOdds handicapOdds;
 
+        private SportteryTotalGoalsOdds totalGoalsOdds;
+
         private Boolean oddsLookupCompleted;
 
         private Integer homeScore;
@@ -1873,6 +1978,14 @@ public class SportteryMarketSelectionService {
 
         public void setHandicapOdds(SportteryOdds handicapOdds) {
             this.handicapOdds = handicapOdds;
+        }
+
+        public SportteryTotalGoalsOdds getTotalGoalsOdds() {
+            return totalGoalsOdds;
+        }
+
+        public void setTotalGoalsOdds(SportteryTotalGoalsOdds totalGoalsOdds) {
+            this.totalGoalsOdds = totalGoalsOdds;
         }
 
         public Boolean getOddsLookupCompleted() {

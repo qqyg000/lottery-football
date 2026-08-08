@@ -330,7 +330,9 @@ public class PredictionService {
                 .filter(schedule -> schedule.getSportteryMatchId() != null && !schedule.getSportteryMatchId().isBlank())
                 .toList();
         List<MatchSchedule> oddsSchedules = sportterySchedules.stream()
-                .filter(schedule -> schedule.getSportteryNormalOdds() != null || schedule.getSportteryHandicapOdds() != null)
+                .filter(schedule -> schedule.getSportteryNormalOdds() != null
+                        || schedule.getSportteryHandicapOdds() != null
+                        || schedule.getSportteryTotalGoalsOdds() != null)
                 .sorted(Comparator
                         .comparing(
                                 MatchSchedule::getMatchDate,
@@ -434,7 +436,8 @@ public class PredictionService {
         int matchedScheduleCount = sportteryMarketSelectionService.applyCachedSelections(schedules);
         int matchedOddsScheduleCount = (int) schedules.stream()
                 .filter(schedule -> schedule.getSportteryNormalOdds() != null
-                        || schedule.getSportteryHandicapOdds() != null)
+                        || schedule.getSportteryHandicapOdds() != null
+                        || schedule.getSportteryTotalGoalsOdds() != null)
                 .count();
         response.setScheduleCount(schedules.size());
         response.setMatchedScheduleCount(matchedScheduleCount);
@@ -998,6 +1001,7 @@ public class PredictionService {
         response.setSportteryHandicap(schedule.getSportteryHandicap());
         response.setSportteryNormalOdds(schedule.getSportteryNormalOdds());
         response.setSportteryHandicapOdds(schedule.getSportteryHandicapOdds());
+        response.setSportteryTotalGoalsOdds(schedule.getSportteryTotalGoalsOdds());
         response.setSimulations(simulationCount);
         response.setExpectedHomeGoals(round(preMatchExpectedGoals.getHomeGoals(), 2));
         response.setExpectedAwayGoals(round(preMatchExpectedGoals.getAwayGoals(), 2));
@@ -1005,6 +1009,8 @@ public class PredictionService {
         response.setNormalProbability(preMatchProbability);
         response.setHandicapProbabilities(preMatchCounter.toHandicapProbabilities(simulationCount, preMatchProbability));
         response.setTotalGoalsProbabilities(preMatchCounter.toTopTotalGoalsProbabilities(simulationCount));
+        response.setSportteryTotalGoalsProbabilities(
+                preMatchCounter.toSportteryTotalGoalsProbabilities(simulationCount));
         response.setScoreProbabilities(preMatchCounter.toTopScoreProbabilities(simulationCount));
         response.setAdjustedExpectedHomeGoals(round(postMatchExpectedGoals.getHomeGoals(), 2));
         response.setAdjustedExpectedAwayGoals(round(postMatchExpectedGoals.getAwayGoals(), 2));
@@ -1012,6 +1018,8 @@ public class PredictionService {
         response.setAdjustedNormalProbability(postMatchProbability);
         response.setAdjustedHandicapProbabilities(postMatchCounter.toHandicapProbabilities(simulationCount, postMatchProbability));
         response.setAdjustedTotalGoalsProbabilities(postMatchCounter.toTopTotalGoalsProbabilities(simulationCount));
+        response.setAdjustedSportteryTotalGoalsProbabilities(
+                postMatchCounter.toSportteryTotalGoalsProbabilities(simulationCount));
         response.setAdjustedScoreProbabilities(postMatchCounter.toTopScoreProbabilities(simulationCount));
         response.setCorrectionMatchCount(postMatchExpectedGoals.getCorrectionMatchCount());
         response.setModelRemark(buildModelRemark(schedule));
@@ -1205,6 +1213,24 @@ public class PredictionService {
                             entry.getKey(),
                             roundPercent(entry.getValue() * 100.0D / simulationCount)))
                     .toList();
+        }
+
+        private List<TotalGoalsProbability> toSportteryTotalGoalsProbabilities(int simulationCount) {
+            int sevenPlusCount = totalGoalsCounters.entrySet().stream()
+                    .filter(entry -> entry.getKey() >= 7)
+                    .mapToInt(Map.Entry::getValue)
+                    .sum();
+            List<TotalGoalsProbability> probabilities = new ArrayList<>();
+            for (int totalGoals = 0; totalGoals <= 6; totalGoals++) {
+                int count = totalGoalsCounters.getOrDefault(totalGoals, 0);
+                probabilities.add(new TotalGoalsProbability(
+                        totalGoals,
+                        roundPercent(count * 100.0D / simulationCount)));
+            }
+            probabilities.add(new TotalGoalsProbability(
+                    7,
+                    roundPercent(sevenPlusCount * 100.0D / simulationCount)));
+            return probabilities;
         }
 
         private ThreeWayProbability toNormalProbability(int simulationCount) {

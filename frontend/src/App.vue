@@ -531,7 +531,8 @@
               <th>时间</th>
               <th>赛事</th>
               <th>对阵</th>
-              <th>推荐项</th>
+              <th>胜平负推荐项</th>
+              <th>进球数推荐项</th>
             </tr>
             </thead>
             <tbody>
@@ -557,6 +558,19 @@
                     <span class="recommendation-item-odds">{{ item.oddsText }}</span>
                   </div>
                 </div>
+              </td>
+              <td class="recommendation-items-cell recommendation-total-goals-cell">
+                <div v-if="row.totalGoalsRecommendations.length" class="recommendation-item-list">
+                  <div v-for="item in row.totalGoalsRecommendations" :key="item.key" class="recommendation-item">
+                    <span class="recommendation-market-name">总进球</span>
+                    <span class="recommendation-result-pill is-total-goals">
+                      {{ item.resultName }}
+                    </span>
+                    <span class="recommendation-item-probability">{{ item.probabilityText }}</span>
+                    <span class="recommendation-item-odds">{{ item.oddsText }}</span>
+                  </div>
+                </div>
+                <span v-else class="recommendation-empty">--</span>
               </td>
             </tr>
             </tbody>
@@ -655,7 +669,8 @@ import {
   evaluateRecommendationBacktest,
   getAutomaticMarketSelection,
   getRecommendationKeys as getSharedRecommendationKeys,
-  getRecommendationOddsDetails as getSharedRecommendationOddsDetails
+  getRecommendationOddsDetails as getSharedRecommendationOddsDetails,
+  getTotalGoalsRecommendations as getSharedTotalGoalsRecommendations
 } from './recommendation-backtest.mjs'
 
 const FIXED_SIMULATIONS = 50000
@@ -789,6 +804,23 @@ const PROBABILITY_LABELS = {
   draw: '平',
   lose: '负'
 }
+const TOTAL_GOALS_ODDS_KEYS = [
+  'goal0',
+  'goal1',
+  'goal2',
+  'goal3',
+  'goal4',
+  'goal5',
+  'goal6',
+  'goal7Plus'
+]
+const DEFAULT_TOTAL_GOALS_STRATEGY = {
+  minimumProbability: 5,
+  minimumExpectedValue: 1.05,
+  minimumOdds: 1.01,
+  maximumOdds: 50,
+  maximumSelections: 2
+}
 
 function createDefaultParameterProfile(parameterPreset = 'STABLE') {
   const preset = parameterPreset === 'AGGRESSIVE'
@@ -810,6 +842,17 @@ function createDefaultParameterProfiles() {
         })
       })
       return profiles
+    }, {})
+}
+
+function createDefaultTotalGoalsStrategies() {
+  return COMPETITIONS
+    .filter(competition => competition.code !== 'ALL')
+    .reduce((strategies, competition) => {
+      PARAMETER_PROFILE_RANGES.forEach(range => {
+        strategies[competition.code + ':' + range] = { ...DEFAULT_TOTAL_GOALS_STRATEGY }
+      })
+      return strategies
     }, {})
 }
 
@@ -862,6 +905,7 @@ export default {
       modelMode: 'after',
       includePreviousEdition: false,
       parameterProfiles: createDefaultParameterProfiles(),
+      totalGoalsStrategies: createDefaultTotalGoalsStrategies(),
       modelFactors: {
         hostTeamGoalFactor: DEFAULT_HOST_TEAM_GOAL_FACTOR.toFixed(2),
         homeTeamGoalFactor: DEFAULT_HOME_TEAM_GOAL_FACTOR.toFixed(2),
@@ -934,7 +978,9 @@ export default {
       return this.recommendationDialogRows.length
     },
     recommendationDialogItemCount() {
-      return this.recommendationDialogRows.reduce((count, row) => count + row.recommendations.length, 0)
+      return this.recommendationDialogRows.reduce((count, row) => {
+        return count + row.recommendations.length + row.totalGoalsRecommendations.length
+      }, 0)
     },
     headToHeadTitle() {
       if (!this.headToHeadMatch) {
@@ -1151,9 +1197,6 @@ export default {
         return null
       }
       const recommendationKeys = this.getRecommendationKeys(match)
-      if (recommendationKeys.size === 0) {
-        return null
-      }
       const competition = this.competitions.find(item => item.code === match.competition)
       const matchKey = (match.competition || '') + '-' + match.matchId
       const recommendations = []
@@ -1173,7 +1216,16 @@ export default {
           })
         })
       })
-      if (recommendations.length === 0) {
+      const totalGoalsRecommendations = getSharedTotalGoalsRecommendations(match, {
+        modelMode: this.modelMode,
+        strategy: this.getTotalGoalsStrategy(match.competition)
+      }).map(item => ({
+        ...item,
+        key: matchKey + '-' + item.key,
+        probabilityText: this.formatProbability(item.probability),
+        oddsText: this.formatSportteryOdds(item.odds)
+      }))
+      if (recommendations.length === 0 && totalGoalsRecommendations.length === 0) {
         return null
       }
       return {
@@ -1183,7 +1235,8 @@ export default {
         competitionName: competition ? competition.name : (match.competition || '--'),
         homeTeamCn: match.homeTeamCn,
         awayTeamCn: match.awayTeamCn,
-        recommendations
+        recommendations,
+        totalGoalsRecommendations
       }
     },
     async openHeadToHeadDialog(match) {
@@ -1319,6 +1372,7 @@ export default {
           : displayedProfile.globalParameters
       }
       this.parameterProfiles = this.normalizeParameterProfiles(config.parameterProfiles, legacyProfile)
+      this.totalGoalsStrategies = this.normalizeTotalGoalsStrategies(config.totalGoalsStrategies)
       this.loadActiveParameterProfile()
       if (config.selectedRows && typeof config.selectedRows === 'object' && !Array.isArray(config.selectedRows)) {
         this.selectedRows = this.normalizeSelectedRows(config.selectedRows)
@@ -1510,6 +1564,48 @@ export default {
       const profile = this.parameterProfiles[this.getParameterProfileKey(competition, includePreviousEdition)]
       const presetName = this.activeParameterPreset === 'aggressive' ? 'AGGRESSIVE' : 'STABLE'
       return profile || createDefaultParameterProfile(presetName)
+    },
+    getTotalGoalsStrategyKey(competition, includePreviousEdition = this.includePreviousEdition) {
+      const usePreviousProfile = includePreviousEdition || !this.isCurrentEditionStarted(competition)
+      return competition + ':' + (usePreviousProfile ? 'PREVIOUS' : 'CURRENT')
+    },
+    getTotalGoalsStrategy(competition, includePreviousEdition = this.includePreviousEdition) {
+      return this.totalGoalsStrategies[this.getTotalGoalsStrategyKey(competition, includePreviousEdition)] || {
+        ...DEFAULT_TOTAL_GOALS_STRATEGY
+      }
+    },
+    normalizeTotalGoalsStrategies(totalGoalsStrategies) {
+      const source = totalGoalsStrategies && typeof totalGoalsStrategies === 'object' && !Array.isArray(totalGoalsStrategies)
+        ? totalGoalsStrategies
+        : {}
+      return this.getConcreteCompetitions().reduce((strategies, competition) => {
+        PARAMETER_PROFILE_RANGES.forEach(range => {
+          const key = competition.code + ':' + range
+          const current = source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])
+            ? source[key]
+            : {}
+          const minimumOdds = this.normalizeTotalGoalsStrategyNumber(
+            current.minimumOdds,
+            DEFAULT_TOTAL_GOALS_STRATEGY.minimumOdds,
+            1,
+            100
+          )
+          strategies[key] = {
+            minimumProbability: this.normalizeTotalGoalsStrategyNumber(current.minimumProbability, DEFAULT_TOTAL_GOALS_STRATEGY.minimumProbability, 0, 100),
+            minimumExpectedValue: this.normalizeTotalGoalsStrategyNumber(current.minimumExpectedValue, DEFAULT_TOTAL_GOALS_STRATEGY.minimumExpectedValue, 0, 10),
+            minimumOdds,
+            maximumOdds: this.normalizeTotalGoalsStrategyNumber(current.maximumOdds, DEFAULT_TOTAL_GOALS_STRATEGY.maximumOdds, minimumOdds, 1000),
+            maximumSelections: Math.round(this.normalizeTotalGoalsStrategyNumber(current.maximumSelections, DEFAULT_TOTAL_GOALS_STRATEGY.maximumSelections, 0, 4))
+          }
+        })
+        return strategies
+      }, {})
+    },
+    normalizeTotalGoalsStrategyNumber(value, fallback, minimum, maximum) {
+      const numberValue = Number(value)
+      return Number.isFinite(numberValue)
+        ? Math.max(minimum, Math.min(maximum, numberValue))
+        : fallback
     },
     getMatchGlobalParameters(match) {
       const competition = match && match.competition
@@ -2205,6 +2301,7 @@ export default {
         modelMode: 'after',
         includePreviousEdition: this.includePreviousEdition,
         parameterProfiles: normalizedProfiles,
+        totalGoalsStrategies: this.normalizeTotalGoalsStrategies(this.totalGoalsStrategies),
         selectedRows: this.normalizeSelectedRows(this.selectedRows)
       }
     },
@@ -2642,12 +2739,17 @@ export default {
       if (!match) {
         return false
       }
-      return [match.sportteryNormalOdds, match.sportteryHandicapOdds].some(odds => {
+      const hasWinDrawLoseOdds = [match.sportteryNormalOdds, match.sportteryHandicapOdds].some(odds => {
         return odds && PROBABILITY_KEYS.some(key => {
           const value = Number(odds[key])
           return Number.isFinite(value) && value > 0
         })
       })
+      const totalGoalsOdds = match.sportteryTotalGoalsOdds
+      return hasWinDrawLoseOdds || Boolean(totalGoalsOdds && TOTAL_GOALS_ODDS_KEYS.some(key => {
+        const value = Number(totalGoalsOdds[key])
+        return Number.isFinite(value) && value > 0
+      }))
     },
     sportteryOddsForRow(match, item) {
       if (!match || !item) {
@@ -3929,7 +4031,7 @@ body.dialog-open {
 .recommendation-dialog {
   display: flex;
   flex-direction: column;
-  width: min(880px, calc(100vw - 48px));
+  width: min(1240px, calc(100vw - 48px));
   max-height: min(760px, calc(100vh - 48px));
   overflow: hidden;
   border: 1px solid #dbe4f0;
@@ -4013,7 +4115,7 @@ body.dialog-open {
 
 .recommendation-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 1120px;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
@@ -4073,14 +4175,22 @@ body.dialog-open {
 }
 
 .recommendation-table td.recommendation-items-cell {
-  min-width: 370px;
+  min-width: 330px;
   white-space: normal;
+}
+
+.recommendation-table td.recommendation-total-goals-cell {
+  min-width: 300px;
 }
 
 .recommendation-item-list {
   display: flex;
   flex-wrap: nowrap;
   gap: 7px;
+}
+
+.recommendation-empty {
+  color: #94a3b8;
 }
 
 .recommendation-item {
@@ -4139,6 +4249,10 @@ body.dialog-open {
 
 .recommendation-result-pill.is-lose {
   background: #2563eb;
+}
+
+.recommendation-result-pill.is-total-goals {
+  background: #7c3aed;
 }
 
 .head-to-head-columns {

@@ -1,0 +1,3927 @@
+{
+  "generatedAt": "2026-08-08T15:38:28.280Z",
+  "startDate": "2024-06-14",
+  "endDate": "2026-08-15",
+  "csvRowCount": 29251,
+  "officialMatchCount": 5465,
+  "matchedCsvMatchCount": 5465,
+  "matchedExistingCsvMatchCount": 4908,
+  "appendedCsvMatchCount": 557,
+  "oddsRefreshTargetCount": 674,
+  "updatedTotalGoalsMatchCount": 672,
+  "totalGoalsOddsMatchCount": 5463,
+  "unavailableTotalGoalsMatchCount": 2,
+  "failedRequestCount": 2,
+  "unmatchedOfficialMatches": [],
+  "appendedOfficialMatches": [
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026125",
+      "matchDate": "2024-07-13",
+      "homeTeam": "天狼星",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026119",
+      "matchDate": "2024-07-13",
+      "homeTeam": "米亚尔比",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026118",
+      "matchDate": "2024-07-13",
+      "homeTeam": "济州SK",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026117",
+      "matchDate": "2024-07-13",
+      "homeTeam": "大田市民",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026116",
+      "matchDate": "2024-07-13",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026103",
+      "matchDate": "2024-07-10",
+      "homeTeam": "全北现代",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026102",
+      "matchDate": "2024-07-10",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026096",
+      "matchDate": "2024-07-09",
+      "homeTeam": "大邱FC",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026095",
+      "matchDate": "2024-07-09",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026074",
+      "matchDate": "2024-07-09",
+      "homeTeam": "韦斯特罗斯",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026073",
+      "matchDate": "2024-07-09",
+      "homeTeam": "北雪平",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026065",
+      "matchDate": "2024-07-07",
+      "homeTeam": "哥德堡盖斯",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026064",
+      "matchDate": "2024-07-07",
+      "homeTeam": "马尔默",
+      "awayTeam": "哈尔姆斯塔德"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026062",
+      "matchDate": "2024-07-07",
+      "homeTeam": "韦纳穆",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026061",
+      "matchDate": "2024-07-07",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026060",
+      "matchDate": "2024-07-07",
+      "homeTeam": "江原FC",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026059",
+      "matchDate": "2024-07-07",
+      "homeTeam": "大田市民",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026051",
+      "matchDate": "2024-07-06",
+      "homeTeam": "米亚尔比",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026050",
+      "matchDate": "2024-07-06",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026049",
+      "matchDate": "2024-07-06",
+      "homeTeam": "大邱FC",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026048",
+      "matchDate": "2024-07-06",
+      "homeTeam": "济州SK",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026031",
+      "matchDate": "2024-07-05",
+      "homeTeam": "仁川联",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026030",
+      "matchDate": "2024-07-05",
+      "homeTeam": "水原FC",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025969",
+      "matchDate": "2024-06-30",
+      "homeTeam": "光州FC",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025968",
+      "matchDate": "2024-06-30",
+      "homeTeam": "仁川联",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025961",
+      "matchDate": "2024-06-30",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025947",
+      "matchDate": "2024-06-29",
+      "homeTeam": "大田市民",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025946",
+      "matchDate": "2024-06-29",
+      "homeTeam": "全北现代",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025939",
+      "matchDate": "2024-06-29",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "大邱FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025907",
+      "matchDate": "2024-06-26",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "大邱FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025906",
+      "matchDate": "2024-06-26",
+      "homeTeam": "全北现代",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025905",
+      "matchDate": "2024-06-26",
+      "homeTeam": "济州SK",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025904",
+      "matchDate": "2024-06-26",
+      "homeTeam": "首尔FC",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025890",
+      "matchDate": "2024-06-25",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "大田市民"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025889",
+      "matchDate": "2024-06-25",
+      "homeTeam": "水原FC",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025875",
+      "matchDate": "2024-06-23",
+      "homeTeam": "济州SK",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025874",
+      "matchDate": "2024-06-23",
+      "homeTeam": "仁川联",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025865",
+      "matchDate": "2024-06-22",
+      "homeTeam": "首尔FC",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025864",
+      "matchDate": "2024-06-22",
+      "homeTeam": "江原FC",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025863",
+      "matchDate": "2024-06-22",
+      "homeTeam": "大田市民",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025851",
+      "matchDate": "2024-06-22",
+      "homeTeam": "大邱FC",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025788",
+      "matchDate": "2024-06-16",
+      "homeTeam": "大邱FC",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025785",
+      "matchDate": "2024-06-16",
+      "homeTeam": "全北现代",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025784",
+      "matchDate": "2024-06-16",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025762",
+      "matchDate": "2024-06-15",
+      "homeTeam": "江原FC",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025761",
+      "matchDate": "2024-06-15",
+      "homeTeam": "光州FC",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1025756",
+      "matchDate": "2024-06-15",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "大田市民"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026478",
+      "matchDate": "2024-08-11",
+      "homeTeam": "天狼星",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026477",
+      "matchDate": "2024-08-11",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026476",
+      "matchDate": "2024-08-11",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026468",
+      "matchDate": "2024-08-11",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026452",
+      "matchDate": "2024-08-10",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "韦纳穆"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026447",
+      "matchDate": "2024-08-10",
+      "homeTeam": "北雪平",
+      "awayTeam": "韦斯特罗斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026446",
+      "matchDate": "2024-08-10",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026439",
+      "matchDate": "2024-08-10",
+      "homeTeam": "水原FC",
+      "awayTeam": "大田市民"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026438",
+      "matchDate": "2024-08-10",
+      "homeTeam": "济州SK",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026437",
+      "matchDate": "2024-08-10",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "大邱FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026417",
+      "matchDate": "2024-08-09",
+      "homeTeam": "全北现代",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026416",
+      "matchDate": "2024-08-09",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "1026403",
+      "matchDate": "2024-08-09",
+      "homeTeam": "莫尔德",
+      "awayTeam": "色格拉布鲁日"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026372",
+      "matchDate": "2024-08-04",
+      "homeTeam": "卡尔马",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026371",
+      "matchDate": "2024-08-04",
+      "homeTeam": "韦纳穆",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026370",
+      "matchDate": "2024-08-04",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026361",
+      "matchDate": "2024-08-03",
+      "homeTeam": "布鲁马波卡纳",
+      "awayTeam": "哈尔姆斯塔德"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026359",
+      "matchDate": "2024-08-03",
+      "homeTeam": "韦斯特罗斯",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026358",
+      "matchDate": "2024-08-03",
+      "homeTeam": "哥德堡盖斯",
+      "awayTeam": "北雪平"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "1026324",
+      "matchDate": "2024-08-02",
+      "homeTeam": "普罗夫迪夫博泰夫",
+      "awayTeam": "帕纳辛纳科斯"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "1026323",
+      "matchDate": "2024-08-02",
+      "homeTeam": "色格拉布鲁日",
+      "awayTeam": "基尔马诺克"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "1026320",
+      "matchDate": "2024-08-01",
+      "homeTeam": "巴尼亚卢卡战士",
+      "awayTeam": "塞萨洛尼基"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "1026325",
+      "matchDate": "2024-08-01",
+      "homeTeam": "贝尔格莱德游击",
+      "awayTeam": "基辅迪纳摩"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026297",
+      "matchDate": "2024-07-30",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026285",
+      "matchDate": "2024-07-28",
+      "homeTeam": "赫根",
+      "awayTeam": "韦斯特罗斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026284",
+      "matchDate": "2024-07-28",
+      "homeTeam": "哈马比",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026283",
+      "matchDate": "2024-07-28",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026282",
+      "matchDate": "2024-07-28",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026279",
+      "matchDate": "2024-07-28",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "韦纳穆"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026275",
+      "matchDate": "2024-07-27",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026274",
+      "matchDate": "2024-07-27",
+      "homeTeam": "马尔默",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026270",
+      "matchDate": "2024-07-27",
+      "homeTeam": "北雪平",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026267",
+      "matchDate": "2024-07-27",
+      "homeTeam": "仁川联",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026266",
+      "matchDate": "2024-07-27",
+      "homeTeam": "大邱FC",
+      "awayTeam": "大田市民"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026265",
+      "matchDate": "2024-07-27",
+      "homeTeam": "光州FC",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026251",
+      "matchDate": "2024-07-26",
+      "homeTeam": "济州SK",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026250",
+      "matchDate": "2024-07-26",
+      "homeTeam": "江原FC",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "1026248",
+      "matchDate": "2024-07-26",
+      "homeTeam": "基尔马诺克",
+      "awayTeam": "色格拉布鲁日"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "1026233",
+      "matchDate": "2024-07-26",
+      "homeTeam": "帕纳辛纳科斯",
+      "awayTeam": "普罗夫迪夫博泰夫"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026224",
+      "matchDate": "2024-07-23",
+      "homeTeam": "哥德堡盖斯",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026220",
+      "matchDate": "2024-07-21",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "韦斯特罗斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026219",
+      "matchDate": "2024-07-21",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026217",
+      "matchDate": "2024-07-21",
+      "homeTeam": "北雪平",
+      "awayTeam": "哈尔姆斯塔德"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026216",
+      "matchDate": "2024-07-21",
+      "homeTeam": "大田市民",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026215",
+      "matchDate": "2024-07-21",
+      "homeTeam": "大邱FC",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026214",
+      "matchDate": "2024-07-21",
+      "homeTeam": "仁川联",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026213",
+      "matchDate": "2024-07-21",
+      "homeTeam": "首尔FC",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026205",
+      "matchDate": "2024-07-20",
+      "homeTeam": "布鲁马波卡纳",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026204",
+      "matchDate": "2024-07-20",
+      "homeTeam": "卡尔马",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026203",
+      "matchDate": "2024-07-20",
+      "homeTeam": "韦纳穆",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026202",
+      "matchDate": "2024-07-20",
+      "homeTeam": "江原FC",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026201",
+      "matchDate": "2024-07-20",
+      "homeTeam": "全北现代",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026190",
+      "matchDate": "2024-07-20",
+      "homeTeam": "天狼星",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "1026182",
+      "matchDate": "2024-07-19",
+      "homeTeam": "马里博尔",
+      "awayTeam": "普罗夫迪夫博泰夫"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "1026177",
+      "matchDate": "2024-07-17",
+      "homeTeam": "沙姆洛克流浪",
+      "awayTeam": "雷克雅未克维京人"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026163",
+      "matchDate": "2024-07-16",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026162",
+      "matchDate": "2024-07-16",
+      "homeTeam": "哈马比",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026160",
+      "matchDate": "2024-07-14",
+      "homeTeam": "韦斯特罗斯",
+      "awayTeam": "北雪平"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026159",
+      "matchDate": "2024-07-14",
+      "homeTeam": "赫根",
+      "awayTeam": "埃尔夫斯堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026158",
+      "matchDate": "2024-07-14",
+      "homeTeam": "卡尔马",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026157",
+      "matchDate": "2024-07-14",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "韦纳穆"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026155",
+      "matchDate": "2024-07-14",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026154",
+      "matchDate": "2024-07-14",
+      "homeTeam": "光州FC",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026153",
+      "matchDate": "2024-07-14",
+      "homeTeam": "水原FC",
+      "awayTeam": "大邱FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026822",
+      "matchDate": "2024-09-01",
+      "homeTeam": "北雪平",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026816",
+      "matchDate": "2024-09-01",
+      "homeTeam": "马尔默",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026813",
+      "matchDate": "2024-09-01",
+      "homeTeam": "大田市民",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026812",
+      "matchDate": "2024-09-01",
+      "homeTeam": "全北现代",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026811",
+      "matchDate": "2024-09-01",
+      "homeTeam": "江原FC",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026810",
+      "matchDate": "2024-09-01",
+      "homeTeam": "济州SK",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026780",
+      "matchDate": "2024-08-31",
+      "homeTeam": "哥德堡盖斯",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026776",
+      "matchDate": "2024-08-31",
+      "homeTeam": "大邱FC",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026775",
+      "matchDate": "2024-08-31",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026714",
+      "matchDate": "2024-08-27",
+      "homeTeam": "北雪平",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026713",
+      "matchDate": "2024-08-27",
+      "homeTeam": "哈马比",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026690",
+      "matchDate": "2024-08-25",
+      "homeTeam": "水原FC",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026657",
+      "matchDate": "2024-08-24",
+      "homeTeam": "仁川联",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026576",
+      "matchDate": "2024-08-18",
+      "homeTeam": "布鲁马波卡纳",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026575",
+      "matchDate": "2024-08-18",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026574",
+      "matchDate": "2024-08-18",
+      "homeTeam": "米亚尔比",
+      "awayTeam": "埃尔夫斯堡"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026570",
+      "matchDate": "2024-08-18",
+      "homeTeam": "江原FC",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026548",
+      "matchDate": "2024-08-17",
+      "homeTeam": "马尔默",
+      "awayTeam": "北雪平"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026545",
+      "matchDate": "2024-08-17",
+      "homeTeam": "全北现代",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026526",
+      "matchDate": "2024-08-16",
+      "homeTeam": "首尔FC",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "1026514",
+      "matchDate": "2024-08-16",
+      "homeTeam": "色格拉布鲁日",
+      "awayTeam": "莫尔德"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026489",
+      "matchDate": "2024-08-13",
+      "homeTeam": "哈马比",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027261",
+      "matchDate": "2024-10-06",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027256",
+      "matchDate": "2024-10-06",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027212",
+      "matchDate": "2024-10-01",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027197",
+      "matchDate": "2024-09-29",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027193",
+      "matchDate": "2024-09-29",
+      "homeTeam": "首尔FC",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027168",
+      "matchDate": "2024-09-28",
+      "homeTeam": "全北现代",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027158",
+      "matchDate": "2024-09-27",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027145",
+      "matchDate": "2024-09-27",
+      "homeTeam": "哈马比",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027117",
+      "matchDate": "2024-09-24",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "哈尔姆斯塔德"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027099",
+      "matchDate": "2024-09-22",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027095",
+      "matchDate": "2024-09-22",
+      "homeTeam": "光州FC",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027068",
+      "matchDate": "2024-09-21",
+      "homeTeam": "水原FC",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027039",
+      "matchDate": "2024-09-20",
+      "homeTeam": "赫根",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027008",
+      "matchDate": "2024-09-17",
+      "homeTeam": "哈马比",
+      "awayTeam": "北雪平"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1026989",
+      "matchDate": "2024-09-15",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026986",
+      "matchDate": "2024-09-15",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026962",
+      "matchDate": "2024-09-14",
+      "homeTeam": "济州SK",
+      "awayTeam": "大邱FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1026947",
+      "matchDate": "2024-09-13",
+      "homeTeam": "光州FC",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027834",
+      "matchDate": "2024-11-10",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "北雪平"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027823",
+      "matchDate": "2024-11-10",
+      "homeTeam": "全北现代",
+      "awayTeam": "大邱FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027669",
+      "matchDate": "2024-11-02",
+      "homeTeam": "哈马比",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027664",
+      "matchDate": "2024-11-02",
+      "homeTeam": "首尔FC",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027555",
+      "matchDate": "2024-10-29",
+      "homeTeam": "马尔默",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027536",
+      "matchDate": "2024-10-27",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "1027527",
+      "matchDate": "2024-10-27",
+      "homeTeam": "博洛尼亚",
+      "awayTeam": "AC米兰"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027519",
+      "matchDate": "2024-10-26",
+      "homeTeam": "天狼星",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027513",
+      "matchDate": "2024-10-26",
+      "homeTeam": "江原FC",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1027422",
+      "matchDate": "2024-10-20",
+      "homeTeam": "哈马比",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1027418",
+      "matchDate": "2024-10-20",
+      "homeTeam": "江原FC",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028532",
+      "matchDate": "2024-12-08",
+      "homeTeam": "全北现代",
+      "awayTeam": "首尔衣恋"
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "matchId": "1028492",
+      "matchDate": "2024-12-07",
+      "homeTeam": "埃弗顿",
+      "awayTeam": "利物浦"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "1028349",
+      "matchDate": "2024-12-02",
+      "homeTeam": "佛罗伦萨",
+      "awayTeam": "国际米兰"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028362",
+      "matchDate": "2024-12-01",
+      "homeTeam": "首尔衣恋",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028322",
+      "matchDate": "2024-12-01",
+      "homeTeam": "大邱FC",
+      "awayTeam": "忠南牙山"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028231",
+      "matchDate": "2024-11-28",
+      "homeTeam": "忠南牙山",
+      "awayTeam": "大邱FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1028125",
+      "matchDate": "2024-11-24",
+      "homeTeam": "韦纳穆",
+      "awayTeam": "兰斯克鲁纳"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028114",
+      "matchDate": "2024-11-24",
+      "homeTeam": "大邱FC",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028113",
+      "matchDate": "2024-11-24",
+      "homeTeam": "光州FC",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028112",
+      "matchDate": "2024-11-24",
+      "homeTeam": "大田市民",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028070",
+      "matchDate": "2024-11-23",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028069",
+      "matchDate": "2024-11-23",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "1028068",
+      "matchDate": "2024-11-23",
+      "homeTeam": "江原FC",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "1028037",
+      "matchDate": "2024-11-22",
+      "homeTeam": "兰斯克鲁纳",
+      "awayTeam": "韦纳穆"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "1029173",
+      "matchDate": "2025-01-04",
+      "homeTeam": "葡萄牙国民",
+      "awayTeam": "波尔图"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "1028923",
+      "matchDate": "2024-12-22",
+      "homeTeam": "赫拉克勒斯",
+      "awayTeam": "格罗宁根"
+    },
+    {
+      "competition": "LA_LIGA",
+      "matchId": "2030325",
+      "matchDate": "2025-03-09",
+      "homeTeam": "巴塞罗那",
+      "awayTeam": "奥萨苏纳"
+    },
+    {
+      "competition": "LA_LIGA",
+      "matchId": "2030190",
+      "matchDate": "2025-03-04",
+      "homeTeam": "比利亚雷亚尔",
+      "awayTeam": "西班牙人"
+    },
+    {
+      "competition": "LIGUE_1",
+      "matchId": "2030527",
+      "matchDate": "2025-03-17",
+      "homeTeam": "蒙彼利埃",
+      "awayTeam": "圣埃蒂安"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2031367",
+      "matchDate": "2025-04-26",
+      "homeTeam": "亚特兰大",
+      "awayTeam": "莱切"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2031304",
+      "matchDate": "2025-04-22",
+      "homeTeam": "帕尔马",
+      "awayTeam": "尤文图斯"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2031300",
+      "matchDate": "2025-04-22",
+      "homeTeam": "热那亚",
+      "awayTeam": "拉齐奥"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2031299",
+      "matchDate": "2025-04-21",
+      "homeTeam": "卡利亚里",
+      "awayTeam": "佛罗伦萨"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2031296",
+      "matchDate": "2025-04-21",
+      "homeTeam": "都灵",
+      "awayTeam": "乌迪内斯"
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "matchId": "2032370",
+      "matchDate": "2025-06-27",
+      "homeTeam": "卡萨布兰卡热爱",
+      "awayTeam": "阿布扎比艾因"
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "matchId": "2032346",
+      "matchDate": "2025-06-25",
+      "homeTeam": "奥克兰城",
+      "awayTeam": "博卡青年"
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "matchId": "2032333",
+      "matchDate": "2025-06-24",
+      "homeTeam": "西雅图海湾人",
+      "awayTeam": "巴黎圣日尔曼"
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "matchId": "2032322",
+      "matchDate": "2025-06-23",
+      "homeTeam": "尤文图斯",
+      "awayTeam": "卡萨布兰卡热爱"
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "matchId": "2032280",
+      "matchDate": "2025-06-21",
+      "homeTeam": "拜仁慕尼黑",
+      "awayTeam": "博卡青年"
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "matchId": "2032261",
+      "matchDate": "2025-06-20",
+      "homeTeam": "西雅图海湾人",
+      "awayTeam": "马德里竞技"
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "matchId": "2032249",
+      "matchDate": "2025-06-19",
+      "homeTeam": "曼彻斯特城",
+      "awayTeam": "卡萨布兰卡热爱"
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "matchId": "2032219",
+      "matchDate": "2025-06-17",
+      "homeTeam": "博卡青年",
+      "awayTeam": "本菲卡"
+    },
+    {
+      "competition": "CLUB_WORLD_CUP",
+      "matchId": "2032216",
+      "matchDate": "2025-06-16",
+      "homeTeam": "博塔弗戈",
+      "awayTeam": "西雅图海湾人"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2032779",
+      "matchDate": "2025-08-01",
+      "homeTeam": "布拉加",
+      "awayTeam": "索菲亚列夫斯基"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2032710",
+      "matchDate": "2025-07-25",
+      "homeTeam": "索菲亚列夫斯基",
+      "awayTeam": "布拉加"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2032629",
+      "matchDate": "2025-07-18",
+      "homeTeam": "贝尔格莱德游击",
+      "awayTeam": "AEK拉纳卡"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2032627",
+      "matchDate": "2025-07-18",
+      "homeTeam": "赫根",
+      "awayTeam": "特尔纳瓦斯巴达"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2032607",
+      "matchDate": "2025-07-15",
+      "homeTeam": "阿拉木图凯拉特",
+      "awayTeam": "奥林匹亚"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2032539",
+      "matchDate": "2025-07-11",
+      "homeTeam": "特尔纳瓦斯巴达",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2032536",
+      "matchDate": "2025-07-11",
+      "homeTeam": "AEK拉纳卡",
+      "awayTeam": "贝尔格莱德游击"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2032529",
+      "matchDate": "2025-07-09",
+      "homeTeam": "奥林匹亚",
+      "awayTeam": "阿拉木图凯拉特"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2035700",
+      "matchDate": "2025-12-05",
+      "homeTeam": "富川FC",
+      "awayTeam": "水原FC"
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "matchId": "2035682",
+      "matchDate": "2025-12-04",
+      "homeTeam": "布赖顿",
+      "awayTeam": "阿斯顿维拉"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2035699",
+      "matchDate": "2025-12-03",
+      "homeTeam": "水原三星",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2035600",
+      "matchDate": "2025-12-01",
+      "homeTeam": "阿贾克斯",
+      "awayTeam": "格罗宁根"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2035544",
+      "matchDate": "2025-11-30",
+      "homeTeam": "尤文图斯",
+      "awayTeam": "卡利亚里"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2035528",
+      "matchDate": "2025-11-29",
+      "homeTeam": "北雪平",
+      "awayTeam": "厄尔格里特"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2035322",
+      "matchDate": "2025-11-22",
+      "homeTeam": "厄尔格里特",
+      "awayTeam": "北雪平"
+    },
+    {
+      "competition": "LA_LIGA",
+      "matchId": "2036052",
+      "matchDate": "2025-12-15",
+      "homeTeam": "莱万特",
+      "awayTeam": "比利亚雷亚尔"
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "matchId": "2036012",
+      "matchDate": "2025-12-14",
+      "homeTeam": "伯恩利",
+      "awayTeam": "富勒姆"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2035857",
+      "matchDate": "2025-12-08",
+      "homeTeam": "水原FC",
+      "awayTeam": "富川FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2035804",
+      "matchDate": "2025-12-07",
+      "homeTeam": "济州SK",
+      "awayTeam": "水原三星"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2037487",
+      "matchDate": "2026-02-02",
+      "homeTeam": "里斯本竞技",
+      "awayTeam": "葡萄牙国民"
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "matchId": "2037238",
+      "matchDate": "2026-01-24",
+      "homeTeam": "勒沃库森",
+      "awayTeam": "云达不来梅"
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "matchId": "2037236",
+      "matchDate": "2026-01-24",
+      "homeTeam": "美因茨",
+      "awayTeam": "沃尔夫斯堡"
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "matchId": "2036932",
+      "matchDate": "2026-01-14",
+      "homeTeam": "汉堡",
+      "awayTeam": "勒沃库森"
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "matchId": "2036827",
+      "matchDate": "2026-01-10",
+      "homeTeam": "云达不来梅",
+      "awayTeam": "霍芬海姆"
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "matchId": "2036825",
+      "matchDate": "2026-01-10",
+      "homeTeam": "圣保利",
+      "awayTeam": "莱比锡红牛"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2036791",
+      "matchDate": "2026-01-10",
+      "homeTeam": "奈梅亨",
+      "awayTeam": "乌德勒支"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2037977",
+      "matchDate": "2026-03-02",
+      "homeTeam": "大田市民",
+      "awayTeam": "安养FC"
+    },
+    {
+      "competition": "LA_LIGA",
+      "matchId": "2037975",
+      "matchDate": "2026-03-02",
+      "homeTeam": "赫罗纳",
+      "awayTeam": "维戈塞尔塔"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2037954",
+      "matchDate": "2026-03-01",
+      "homeTeam": "济州SK",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "matchId": "2037940",
+      "matchDate": "2026-02-28",
+      "homeTeam": "利物浦",
+      "awayTeam": "西汉姆联"
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "matchId": "2037938",
+      "matchDate": "2026-02-28",
+      "homeTeam": "门兴格拉德巴赫",
+      "awayTeam": "柏林联合"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2037930",
+      "matchDate": "2026-02-28",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2037927",
+      "matchDate": "2026-02-28",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "LA_LIGA",
+      "matchId": "2037637",
+      "matchDate": "2026-02-07",
+      "homeTeam": "巴列卡诺",
+      "awayTeam": "皇家奥维耶多"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2038816",
+      "matchDate": "2026-04-04",
+      "homeTeam": "哈马比",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2038811",
+      "matchDate": "2026-04-04",
+      "homeTeam": "国际图尔库",
+      "awayTeam": "瓦萨"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038809",
+      "matchDate": "2026-04-04",
+      "homeTeam": "江原FC",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038806",
+      "matchDate": "2026-04-04",
+      "homeTeam": "全北现代",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038665",
+      "matchDate": "2026-03-28",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038530",
+      "matchDate": "2026-03-22",
+      "homeTeam": "首尔FC",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038501",
+      "matchDate": "2026-03-21",
+      "homeTeam": "大田市民",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038424",
+      "matchDate": "2026-03-18",
+      "homeTeam": "全北现代",
+      "awayTeam": "安养FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038423",
+      "matchDate": "2026-03-18",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038414",
+      "matchDate": "2026-03-17",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2038366",
+      "matchDate": "2026-03-16",
+      "homeTeam": "波尔图",
+      "awayTeam": "摩雷伦斯"
+    },
+    {
+      "competition": "LA_LIGA",
+      "matchId": "2038365",
+      "matchDate": "2026-03-16",
+      "homeTeam": "皇家社会",
+      "awayTeam": "奥萨苏纳"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2038364",
+      "matchDate": "2026-03-16",
+      "homeTeam": "拉齐奥",
+      "awayTeam": "AC米兰"
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "matchId": "2038363",
+      "matchDate": "2026-03-16",
+      "homeTeam": "斯图加特",
+      "awayTeam": "莱比锡红牛"
+    },
+    {
+      "competition": "LA_LIGA",
+      "matchId": "2038362",
+      "matchDate": "2026-03-16",
+      "homeTeam": "皇家贝蒂斯",
+      "awayTeam": "维戈塞尔塔"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2038361",
+      "matchDate": "2026-03-16",
+      "homeTeam": "科莫",
+      "awayTeam": "罗马"
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "matchId": "2038360",
+      "matchDate": "2026-03-16",
+      "homeTeam": "弗赖堡",
+      "awayTeam": "柏林联合"
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "matchId": "2038359",
+      "matchDate": "2026-03-16",
+      "homeTeam": "利物浦",
+      "awayTeam": "托特纳姆热刺"
+    },
+    {
+      "competition": "LIGUE_1",
+      "matchId": "2038358",
+      "matchDate": "2026-03-16",
+      "homeTeam": "勒阿弗尔",
+      "awayTeam": "里昂"
+    },
+    {
+      "competition": "LA_LIGA",
+      "matchId": "2038356",
+      "matchDate": "2026-03-15",
+      "homeTeam": "巴塞罗那",
+      "awayTeam": "塞维利亚"
+    },
+    {
+      "competition": "BUNDESLIGA",
+      "matchId": "2038355",
+      "matchDate": "2026-03-15",
+      "homeTeam": "云达不来梅",
+      "awayTeam": "美因茨"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2038354",
+      "matchDate": "2026-03-15",
+      "homeTeam": "萨索洛",
+      "awayTeam": "博洛尼亚"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2038353",
+      "matchDate": "2026-03-15",
+      "homeTeam": "比萨",
+      "awayTeam": "卡利亚里"
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "matchId": "2038352",
+      "matchDate": "2026-03-15",
+      "homeTeam": "曼彻斯特联",
+      "awayTeam": "阿斯顿维拉"
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "matchId": "2038351",
+      "matchDate": "2026-03-15",
+      "homeTeam": "诺丁汉森林",
+      "awayTeam": "富勒姆"
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "matchId": "2038350",
+      "matchDate": "2026-03-15",
+      "homeTeam": "水晶宫",
+      "awayTeam": "利兹联"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2038348",
+      "matchDate": "2026-03-15",
+      "homeTeam": "费耶诺德",
+      "awayTeam": "SBV精英"
+    },
+    {
+      "competition": "LA_LIGA",
+      "matchId": "2038347",
+      "matchDate": "2026-03-15",
+      "homeTeam": "马洛卡",
+      "awayTeam": "西班牙人"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2038345",
+      "matchDate": "2026-03-15",
+      "homeTeam": "维罗纳",
+      "awayTeam": "热那亚"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2038344",
+      "matchDate": "2026-03-15",
+      "homeTeam": "特温特",
+      "awayTeam": "乌德勒支"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038342",
+      "matchDate": "2026-03-15",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038341",
+      "matchDate": "2026-03-15",
+      "homeTeam": "济州SK",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038313",
+      "matchDate": "2026-03-14",
+      "homeTeam": "大田市民",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038309",
+      "matchDate": "2026-03-14",
+      "homeTeam": "光州FC",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038153",
+      "matchDate": "2026-03-08",
+      "homeTeam": "安养FC",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038152",
+      "matchDate": "2026-03-08",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038125",
+      "matchDate": "2026-03-07",
+      "homeTeam": "光州FC",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039484",
+      "matchDate": "2026-05-03",
+      "homeTeam": "马尔默",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039466",
+      "matchDate": "2026-05-03",
+      "homeTeam": "AC奥卢",
+      "awayTeam": "库奥皮奥"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039455",
+      "matchDate": "2026-05-02",
+      "homeTeam": "代格福什",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039450",
+      "matchDate": "2026-05-02",
+      "homeTeam": "仁川联",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039448",
+      "matchDate": "2026-05-02",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039411",
+      "matchDate": "2026-04-30",
+      "homeTeam": "国际图尔库",
+      "awayTeam": "赫尔辛基"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039369",
+      "matchDate": "2026-04-28",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039368",
+      "matchDate": "2026-04-28",
+      "homeTeam": "赫根",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039367",
+      "matchDate": "2026-04-28",
+      "homeTeam": "米亚尔比",
+      "awayTeam": "哈尔姆斯塔德"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039351",
+      "matchDate": "2026-04-26",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039344",
+      "matchDate": "2026-04-26",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039337",
+      "matchDate": "2026-04-26",
+      "homeTeam": "全北现代",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039307",
+      "matchDate": "2026-04-25",
+      "homeTeam": "江原FC",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039290",
+      "matchDate": "2026-04-24",
+      "homeTeam": "TPS图尔库",
+      "awayTeam": "赫尔辛基火花"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039269",
+      "matchDate": "2026-04-24",
+      "homeTeam": "马尔默",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039255",
+      "matchDate": "2026-04-23",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039252",
+      "matchDate": "2026-04-22",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "AC奥卢"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039251",
+      "matchDate": "2026-04-22",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039241",
+      "matchDate": "2026-04-21",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039240",
+      "matchDate": "2026-04-21",
+      "homeTeam": "全北现代",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039194",
+      "matchDate": "2026-04-19",
+      "homeTeam": "赫根",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039187",
+      "matchDate": "2026-04-19",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039183",
+      "matchDate": "2026-04-19",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "安养FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039179",
+      "matchDate": "2026-04-19",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039163",
+      "matchDate": "2026-04-18",
+      "homeTeam": "雅罗",
+      "awayTeam": "库奥皮奥"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039162",
+      "matchDate": "2026-04-18",
+      "homeTeam": "天狼星",
+      "awayTeam": "韦斯特罗斯"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039155",
+      "matchDate": "2026-04-18",
+      "homeTeam": "济州SK",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039138",
+      "matchDate": "2026-04-18",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039108",
+      "matchDate": "2026-04-15",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039063",
+      "matchDate": "2026-04-14",
+      "homeTeam": "布鲁马波卡纳",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039062",
+      "matchDate": "2026-04-14",
+      "homeTeam": "天狼星",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039049",
+      "matchDate": "2026-04-12",
+      "homeTeam": "马尔默",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039041",
+      "matchDate": "2026-04-12",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039034",
+      "matchDate": "2026-04-12",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "安养FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039014",
+      "matchDate": "2026-04-11",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039008",
+      "matchDate": "2026-04-11",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "赫尔辛基火花"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039006",
+      "matchDate": "2026-04-11",
+      "homeTeam": "仁川联",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039003",
+      "matchDate": "2026-04-11",
+      "homeTeam": "首尔FC",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2038983",
+      "matchDate": "2026-04-10",
+      "homeTeam": "TPS图尔库",
+      "awayTeam": "拉赫蒂"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2038866",
+      "matchDate": "2026-04-06",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2038851",
+      "matchDate": "2026-04-05",
+      "homeTeam": "厄尔格里特",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2038845",
+      "matchDate": "2026-04-05",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "哈尔姆斯塔德"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038840",
+      "matchDate": "2026-04-05",
+      "homeTeam": "仁川联",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2038837",
+      "matchDate": "2026-04-05",
+      "homeTeam": "安养FC",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "SERIE_A",
+      "matchId": "2038830",
+      "matchDate": "2026-04-05",
+      "homeTeam": "拉齐奥",
+      "awayTeam": "帕尔马"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040061",
+      "matchDate": "2026-05-31",
+      "homeTeam": "AC奥卢",
+      "awayTeam": "雅罗"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040059",
+      "matchDate": "2026-05-31",
+      "homeTeam": "代格福什",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040058",
+      "matchDate": "2026-05-31",
+      "homeTeam": "赫根",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040057",
+      "matchDate": "2026-05-31",
+      "homeTeam": "韦斯特罗斯",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040051",
+      "matchDate": "2026-05-30",
+      "homeTeam": "TPS图尔库",
+      "awayTeam": "瓦萨"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040050",
+      "matchDate": "2026-05-30",
+      "homeTeam": "拉赫蒂",
+      "awayTeam": "坦佩雷山猫"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040049",
+      "matchDate": "2026-05-30",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "国际图尔库"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040048",
+      "matchDate": "2026-05-30",
+      "homeTeam": "赫尔辛基火花",
+      "awayTeam": "塞伊奈约基"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040046",
+      "matchDate": "2026-05-30",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040045",
+      "matchDate": "2026-05-30",
+      "homeTeam": "马尔默",
+      "awayTeam": "哈尔姆斯塔德"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040044",
+      "matchDate": "2026-05-30",
+      "homeTeam": "哥德堡盖斯",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040043",
+      "matchDate": "2026-05-30",
+      "homeTeam": "赫尔辛基",
+      "awayTeam": "玛丽港"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040017",
+      "matchDate": "2026-05-30",
+      "homeTeam": "厄尔格里特",
+      "awayTeam": "埃尔夫斯堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039958",
+      "matchDate": "2026-05-26",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039957",
+      "matchDate": "2026-05-26",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039932",
+      "matchDate": "2026-05-24",
+      "homeTeam": "马尔默",
+      "awayTeam": "韦斯特罗斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039929",
+      "matchDate": "2026-05-24",
+      "homeTeam": "天狼星",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039928",
+      "matchDate": "2026-05-24",
+      "homeTeam": "哈马比",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039905",
+      "matchDate": "2026-05-23",
+      "homeTeam": "雅罗",
+      "awayTeam": "玛丽港"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039904",
+      "matchDate": "2026-05-23",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "拉赫蒂"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039903",
+      "matchDate": "2026-05-23",
+      "homeTeam": "塞伊奈约基",
+      "awayTeam": "AC奥卢"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039902",
+      "matchDate": "2026-05-23",
+      "homeTeam": "坦佩雷山猫",
+      "awayTeam": "赫尔辛基火花"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039901",
+      "matchDate": "2026-05-23",
+      "homeTeam": "卡尔马",
+      "awayTeam": "代格福什"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039900",
+      "matchDate": "2026-05-23",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "厄尔格里特"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039899",
+      "matchDate": "2026-05-23",
+      "homeTeam": "国际图尔库",
+      "awayTeam": "TPS图尔库"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039883",
+      "matchDate": "2026-05-23",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039882",
+      "matchDate": "2026-05-23",
+      "homeTeam": "瓦萨",
+      "awayTeam": "赫尔辛基"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039858",
+      "matchDate": "2026-05-22",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039851",
+      "matchDate": "2026-05-21",
+      "homeTeam": "哥德堡盖斯",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039850",
+      "matchDate": "2026-05-21",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "雅罗"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039848",
+      "matchDate": "2026-05-20",
+      "homeTeam": "坦佩雷山猫",
+      "awayTeam": "国际图尔库"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039818",
+      "matchDate": "2026-05-19",
+      "homeTeam": "厄尔格里特",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039817",
+      "matchDate": "2026-05-19",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039816",
+      "matchDate": "2026-05-18",
+      "homeTeam": "拉赫蒂",
+      "awayTeam": "瓦萨"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039791",
+      "matchDate": "2026-05-17",
+      "homeTeam": "哈马比",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039785",
+      "matchDate": "2026-05-17",
+      "homeTeam": "富川FC",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039783",
+      "matchDate": "2026-05-17",
+      "homeTeam": "全北现代",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039774",
+      "matchDate": "2026-05-17",
+      "homeTeam": "AC奥卢",
+      "awayTeam": "TPS图尔库"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039773",
+      "matchDate": "2026-05-17",
+      "homeTeam": "赫尔辛基火花",
+      "awayTeam": "雅罗"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039761",
+      "matchDate": "2026-05-16",
+      "homeTeam": "哥德堡盖斯",
+      "awayTeam": "代格福什"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039760",
+      "matchDate": "2026-05-16",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "埃尔夫斯堡"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039758",
+      "matchDate": "2026-05-16",
+      "homeTeam": "赫尔辛基",
+      "awayTeam": "坦佩雷山猫"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039757",
+      "matchDate": "2026-05-16",
+      "homeTeam": "仁川联",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039754",
+      "matchDate": "2026-05-16",
+      "homeTeam": "大田市民",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039701",
+      "matchDate": "2026-05-13",
+      "homeTeam": "富川FC",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039694",
+      "matchDate": "2026-05-12",
+      "homeTeam": "光州FC",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039693",
+      "matchDate": "2026-05-12",
+      "homeTeam": "仁川联",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039655",
+      "matchDate": "2026-05-12",
+      "homeTeam": "天狼星",
+      "awayTeam": "厄尔格里特"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039624",
+      "matchDate": "2026-05-10",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "富川FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039606",
+      "matchDate": "2026-05-09",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039605",
+      "matchDate": "2026-05-09",
+      "homeTeam": "代格福什",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039603",
+      "matchDate": "2026-05-09",
+      "homeTeam": "国际图尔库",
+      "awayTeam": "雅罗"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039597",
+      "matchDate": "2026-05-09",
+      "homeTeam": "大田市民",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039596",
+      "matchDate": "2026-05-09",
+      "homeTeam": "光州FC",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039579",
+      "matchDate": "2026-05-09",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "塞伊奈约基"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039577",
+      "matchDate": "2026-05-09",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039574",
+      "matchDate": "2026-05-08",
+      "homeTeam": "坦佩雷山猫",
+      "awayTeam": "AC奥卢"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039573",
+      "matchDate": "2026-05-08",
+      "homeTeam": "TPS图尔库",
+      "awayTeam": "赫尔辛基"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039541",
+      "matchDate": "2026-05-06",
+      "homeTeam": "赫尔辛基火花",
+      "awayTeam": "国际图尔库"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039540",
+      "matchDate": "2026-05-05",
+      "homeTeam": "首尔FC",
+      "awayTeam": "安养FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039539",
+      "matchDate": "2026-05-05",
+      "homeTeam": "江原FC",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2039538",
+      "matchDate": "2026-05-05",
+      "homeTeam": "全北现代",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039511",
+      "matchDate": "2026-05-05",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2039510",
+      "matchDate": "2026-05-05",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2039508",
+      "matchDate": "2026-05-05",
+      "homeTeam": "赫尔辛基",
+      "awayTeam": "拉赫蒂"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040333",
+      "matchDate": "2026-06-28",
+      "homeTeam": "AC奥卢",
+      "awayTeam": "拉赫蒂"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040332",
+      "matchDate": "2026-06-28",
+      "homeTeam": "赫尔辛基火花",
+      "awayTeam": "瓦萨"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040331",
+      "matchDate": "2026-06-28",
+      "homeTeam": "TPS图尔库",
+      "awayTeam": "雅罗"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040330",
+      "matchDate": "2026-06-27",
+      "homeTeam": "玛丽港",
+      "awayTeam": "国际图尔库"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040329",
+      "matchDate": "2026-06-27",
+      "homeTeam": "赫尔辛基",
+      "awayTeam": "库奥皮奥"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040328",
+      "matchDate": "2026-06-27",
+      "homeTeam": "坦佩雷山猫",
+      "awayTeam": "塞伊奈约基"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040314",
+      "matchDate": "2026-06-24",
+      "homeTeam": "玛丽港",
+      "awayTeam": "赫尔辛基"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040313",
+      "matchDate": "2026-06-24",
+      "homeTeam": "国际图尔库",
+      "awayTeam": "塞伊奈约基"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040312",
+      "matchDate": "2026-06-24",
+      "homeTeam": "雅罗",
+      "awayTeam": "赫尔辛基火花"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040311",
+      "matchDate": "2026-06-23",
+      "homeTeam": "瓦萨",
+      "awayTeam": "AC奥卢"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040310",
+      "matchDate": "2026-06-23",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "坦佩雷山猫"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040309",
+      "matchDate": "2026-06-23",
+      "homeTeam": "拉赫蒂",
+      "awayTeam": "TPS图尔库"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040233",
+      "matchDate": "2026-06-18",
+      "homeTeam": "AC奥卢",
+      "awayTeam": "玛丽港"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040232",
+      "matchDate": "2026-06-18",
+      "homeTeam": "塞伊奈约基",
+      "awayTeam": "瓦萨"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040231",
+      "matchDate": "2026-06-18",
+      "homeTeam": "赫尔辛基火花",
+      "awayTeam": "拉赫蒂"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040230",
+      "matchDate": "2026-06-17",
+      "homeTeam": "TPS图尔库",
+      "awayTeam": "库奥皮奥"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040229",
+      "matchDate": "2026-06-17",
+      "homeTeam": "坦佩雷山猫",
+      "awayTeam": "雅罗"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040228",
+      "matchDate": "2026-06-17",
+      "homeTeam": "赫尔辛基",
+      "awayTeam": "国际图尔库"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040215",
+      "matchDate": "2026-06-14",
+      "homeTeam": "拉赫蒂",
+      "awayTeam": "塞伊奈约基"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040214",
+      "matchDate": "2026-06-14",
+      "homeTeam": "玛丽港",
+      "awayTeam": "赫尔辛基火花"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040213",
+      "matchDate": "2026-06-13",
+      "homeTeam": "瓦萨",
+      "awayTeam": "库奥皮奥"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040212",
+      "matchDate": "2026-06-13",
+      "homeTeam": "雅罗",
+      "awayTeam": "赫尔辛基"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040211",
+      "matchDate": "2026-06-13",
+      "homeTeam": "国际图尔库",
+      "awayTeam": "AC奥卢"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040210",
+      "matchDate": "2026-06-13",
+      "homeTeam": "坦佩雷山猫",
+      "awayTeam": "TPS图尔库"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040695",
+      "matchDate": "2026-08-02",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "厄尔格里特"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040694",
+      "matchDate": "2026-08-02",
+      "homeTeam": "AC奥卢",
+      "awayTeam": "坦佩雷山猫"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040693",
+      "matchDate": "2026-08-02",
+      "homeTeam": "瓦萨",
+      "awayTeam": "国际图尔库"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040692",
+      "matchDate": "2026-08-02",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "代格福什"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040691",
+      "matchDate": "2026-08-02",
+      "homeTeam": "布鲁马波卡纳",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040690",
+      "matchDate": "2026-08-02",
+      "homeTeam": "大田市民",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040689",
+      "matchDate": "2026-08-02",
+      "homeTeam": "济州SK",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040688",
+      "matchDate": "2026-08-02",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "安养FC"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040681",
+      "matchDate": "2026-08-02",
+      "homeTeam": "赫尔辛基火花",
+      "awayTeam": "库奥皮奥"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040679",
+      "matchDate": "2026-08-01",
+      "homeTeam": "拉赫蒂",
+      "awayTeam": "雅罗"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040677",
+      "matchDate": "2026-08-01",
+      "homeTeam": "赫根",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040676",
+      "matchDate": "2026-08-01",
+      "homeTeam": "TPS图尔库",
+      "awayTeam": "玛丽港"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040675",
+      "matchDate": "2026-08-01",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040674",
+      "matchDate": "2026-08-01",
+      "homeTeam": "全北现代",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040673",
+      "matchDate": "2026-08-01",
+      "homeTeam": "江原FC",
+      "awayTeam": "富川FC"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040655",
+      "matchDate": "2026-07-31",
+      "homeTeam": "本菲卡",
+      "awayTeam": "圣加仑"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040654",
+      "matchDate": "2026-07-31",
+      "homeTeam": "费伦茨瓦罗斯",
+      "awayTeam": "特温特"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040653",
+      "matchDate": "2026-07-31",
+      "homeTeam": "安德莱赫特",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040652",
+      "matchDate": "2026-07-31",
+      "homeTeam": "帕福斯",
+      "awayTeam": "斯普利特海杜克"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040651",
+      "matchDate": "2026-07-31",
+      "homeTeam": "中日德兰",
+      "awayTeam": "贝西克塔斯"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040646",
+      "matchDate": "2026-07-30",
+      "homeTeam": "波兹南莱赫",
+      "awayTeam": "奥胡斯"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040645",
+      "matchDate": "2026-07-29",
+      "homeTeam": "阿拉木图凯拉特",
+      "awayTeam": "奥莫尼亚"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040644",
+      "matchDate": "2026-07-29",
+      "homeTeam": "哈茨",
+      "awayTeam": "格拉茨风暴"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040643",
+      "matchDate": "2026-07-28",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "萨巴赫"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040641",
+      "matchDate": "2026-07-28",
+      "homeTeam": "赫根",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040634",
+      "matchDate": "2026-07-26",
+      "homeTeam": "马尔默",
+      "awayTeam": "埃尔夫斯堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040633",
+      "matchDate": "2026-07-26",
+      "homeTeam": "哥德堡盖斯",
+      "awayTeam": "哈尔姆斯塔德"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040632",
+      "matchDate": "2026-07-26",
+      "homeTeam": "赫尔辛基",
+      "awayTeam": "TPS图尔库"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040630",
+      "matchDate": "2026-07-26",
+      "homeTeam": "坦佩雷山猫",
+      "awayTeam": "拉赫蒂"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040629",
+      "matchDate": "2026-07-26",
+      "homeTeam": "国际图尔库",
+      "awayTeam": "赫尔辛基火花"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040628",
+      "matchDate": "2026-07-26",
+      "homeTeam": "天狼星",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040627",
+      "matchDate": "2026-07-26",
+      "homeTeam": "布鲁马波卡纳",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040626",
+      "matchDate": "2026-07-26",
+      "homeTeam": "安养FC",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040625",
+      "matchDate": "2026-07-26",
+      "homeTeam": "光州FC",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040624",
+      "matchDate": "2026-07-26",
+      "homeTeam": "仁川联",
+      "awayTeam": "富川FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040623",
+      "matchDate": "2026-07-26",
+      "homeTeam": "首尔FC",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040618",
+      "matchDate": "2026-07-25",
+      "homeTeam": "卡尔马",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040617",
+      "matchDate": "2026-07-25",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "瓦萨"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040615",
+      "matchDate": "2026-07-25",
+      "homeTeam": "玛丽港",
+      "awayTeam": "AC奥卢"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040614",
+      "matchDate": "2026-07-25",
+      "homeTeam": "代格福什",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040613",
+      "matchDate": "2026-07-25",
+      "homeTeam": "浦项制铁",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040612",
+      "matchDate": "2026-07-25",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "大田市民"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040611",
+      "matchDate": "2026-07-25",
+      "homeTeam": "韦斯特罗斯",
+      "awayTeam": "厄尔格里特"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040610",
+      "matchDate": "2026-07-25",
+      "homeTeam": "雅罗",
+      "awayTeam": "塞伊奈约基"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040600",
+      "matchDate": "2026-07-24",
+      "homeTeam": "斯普利特海杜克",
+      "awayTeam": "帕福斯"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040599",
+      "matchDate": "2026-07-24",
+      "homeTeam": "特温特",
+      "awayTeam": "费伦茨瓦罗斯"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040598",
+      "matchDate": "2026-07-24",
+      "homeTeam": "贝西克塔斯",
+      "awayTeam": "中日德兰"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040603",
+      "matchDate": "2026-07-24",
+      "homeTeam": "圣加仑",
+      "awayTeam": "本菲卡"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040597",
+      "matchDate": "2026-07-24",
+      "homeTeam": "哈马比",
+      "awayTeam": "安德莱赫特"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040596",
+      "matchDate": "2026-07-23",
+      "homeTeam": "奥莫尼亚",
+      "awayTeam": "阿拉木图凯拉特"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040586",
+      "matchDate": "2026-07-22",
+      "homeTeam": "光州FC",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040585",
+      "matchDate": "2026-07-22",
+      "homeTeam": "富川FC",
+      "awayTeam": "安养FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040584",
+      "matchDate": "2026-07-22",
+      "homeTeam": "首尔FC",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040582",
+      "matchDate": "2026-07-21",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040581",
+      "matchDate": "2026-07-21",
+      "homeTeam": "全北现代",
+      "awayTeam": "大田市民"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040580",
+      "matchDate": "2026-07-21",
+      "homeTeam": "济州SK",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040569",
+      "matchDate": "2026-07-21",
+      "homeTeam": "卡尔马",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040568",
+      "matchDate": "2026-07-21",
+      "homeTeam": "厄尔格里特",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040567",
+      "matchDate": "2026-07-21",
+      "homeTeam": "玛丽港",
+      "awayTeam": "拉赫蒂"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040566",
+      "matchDate": "2026-07-20",
+      "homeTeam": "TPS图尔库",
+      "awayTeam": "坦佩雷山猫"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040565",
+      "matchDate": "2026-07-19",
+      "homeTeam": "雅罗",
+      "awayTeam": "国际图尔库"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040564",
+      "matchDate": "2026-07-19",
+      "homeTeam": "哈马比",
+      "awayTeam": "代格福什"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040563",
+      "matchDate": "2026-07-19",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040562",
+      "matchDate": "2026-07-19",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040561",
+      "matchDate": "2026-07-19",
+      "homeTeam": "安养FC",
+      "awayTeam": "光州FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040560",
+      "matchDate": "2026-07-19",
+      "homeTeam": "富川FC",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040557",
+      "matchDate": "2026-07-18",
+      "homeTeam": "塞伊奈约基",
+      "awayTeam": "库奥皮奥"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040556",
+      "matchDate": "2026-07-18",
+      "homeTeam": "AC奥卢",
+      "awayTeam": "赫尔辛基火花"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040552",
+      "matchDate": "2026-07-18",
+      "homeTeam": "AIK索尔纳",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040551",
+      "matchDate": "2026-07-18",
+      "homeTeam": "赫尔辛基",
+      "awayTeam": "瓦萨"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040549",
+      "matchDate": "2026-07-18",
+      "homeTeam": "仁川联",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040548",
+      "matchDate": "2026-07-18",
+      "homeTeam": "济州SK",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040547",
+      "matchDate": "2026-07-18",
+      "homeTeam": "江原FC",
+      "awayTeam": "金泉尚武"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040546",
+      "matchDate": "2026-07-18",
+      "homeTeam": "大田市民",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040533",
+      "matchDate": "2026-07-18",
+      "homeTeam": "米亚尔比",
+      "awayTeam": "韦斯特罗斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040532",
+      "matchDate": "2026-07-18",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040499",
+      "matchDate": "2026-07-14",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "哈尔姆斯塔德"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040494",
+      "matchDate": "2026-07-12",
+      "homeTeam": "布鲁马波卡纳",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040493",
+      "matchDate": "2026-07-12",
+      "homeTeam": "哥德堡盖斯",
+      "awayTeam": "埃尔夫斯堡"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040491",
+      "matchDate": "2026-07-12",
+      "homeTeam": "韦斯特罗斯",
+      "awayTeam": "代格福什"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040490",
+      "matchDate": "2026-07-12",
+      "homeTeam": "哈马比",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040489",
+      "matchDate": "2026-07-12",
+      "homeTeam": "马尔默",
+      "awayTeam": "IFK哥德堡"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040488",
+      "matchDate": "2026-07-12",
+      "homeTeam": "首尔FC",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040487",
+      "matchDate": "2026-07-12",
+      "homeTeam": "济州SK",
+      "awayTeam": "大田市民"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040486",
+      "matchDate": "2026-07-12",
+      "homeTeam": "仁川联",
+      "awayTeam": "安养FC"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040484",
+      "matchDate": "2026-07-11",
+      "homeTeam": "厄尔格里特",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040483",
+      "matchDate": "2026-07-11",
+      "homeTeam": "赫尔辛基火花",
+      "awayTeam": "玛丽港"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040482",
+      "matchDate": "2026-07-11",
+      "homeTeam": "TPS图尔库",
+      "awayTeam": "AC奥卢"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040480",
+      "matchDate": "2026-07-11",
+      "homeTeam": "米亚尔比",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040479",
+      "matchDate": "2026-07-11",
+      "homeTeam": "拉赫蒂",
+      "awayTeam": "赫尔辛基"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040477",
+      "matchDate": "2026-07-11",
+      "homeTeam": "蔚山现代",
+      "awayTeam": "全北现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040476",
+      "matchDate": "2026-07-11",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "富川FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040475",
+      "matchDate": "2026-07-11",
+      "homeTeam": "光州FC",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040471",
+      "matchDate": "2026-07-11",
+      "homeTeam": "瓦萨",
+      "awayTeam": "塞伊奈约基"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040412",
+      "matchDate": "2026-07-07",
+      "homeTeam": "布鲁马波卡纳",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040411",
+      "matchDate": "2026-07-07",
+      "homeTeam": "赫根",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040410",
+      "matchDate": "2026-07-05",
+      "homeTeam": "埃尔夫斯堡",
+      "awayTeam": "哈马比"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040409",
+      "matchDate": "2026-07-05",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040408",
+      "matchDate": "2026-07-05",
+      "homeTeam": "卡尔马",
+      "awayTeam": "厄尔格里特"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040407",
+      "matchDate": "2026-07-05",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040406",
+      "matchDate": "2026-07-05",
+      "homeTeam": "光州FC",
+      "awayTeam": "蔚山现代"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040405",
+      "matchDate": "2026-07-05",
+      "homeTeam": "首尔FC",
+      "awayTeam": "仁川联"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040404",
+      "matchDate": "2026-07-04",
+      "homeTeam": "瓦萨",
+      "awayTeam": "玛丽港"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040403",
+      "matchDate": "2026-07-04",
+      "homeTeam": "雅罗",
+      "awayTeam": "坦佩雷山猫"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040402",
+      "matchDate": "2026-07-04",
+      "homeTeam": "塞伊奈约基",
+      "awayTeam": "TPS图尔库"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040401",
+      "matchDate": "2026-07-04",
+      "homeTeam": "代格福什",
+      "awayTeam": "马尔默"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040400",
+      "matchDate": "2026-07-04",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "韦斯特罗斯"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040399",
+      "matchDate": "2026-07-04",
+      "homeTeam": "拉赫蒂",
+      "awayTeam": "赫尔辛基火花"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040398",
+      "matchDate": "2026-07-04",
+      "homeTeam": "全北现代",
+      "awayTeam": "江原FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040397",
+      "matchDate": "2026-07-04",
+      "homeTeam": "大田市民",
+      "awayTeam": "富川FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040396",
+      "matchDate": "2026-07-04",
+      "homeTeam": "安养FC",
+      "awayTeam": "浦项制铁"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040375",
+      "matchDate": "2026-07-04",
+      "homeTeam": "天狼星",
+      "awayTeam": "米亚尔比"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2040761",
+      "matchDate": "2026-08-08",
+      "homeTeam": "马里迪莫",
+      "awayTeam": "卡萨皮亚"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2040760",
+      "matchDate": "2026-08-08",
+      "homeTeam": "奈梅亨",
+      "awayTeam": "特尔斯达"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040756",
+      "matchDate": "2026-08-08",
+      "homeTeam": "厄尔格里特",
+      "awayTeam": "AIK索尔纳"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040753",
+      "matchDate": "2026-08-08",
+      "homeTeam": "金泉尚武",
+      "awayTeam": "首尔FC"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040752",
+      "matchDate": "2026-08-08",
+      "homeTeam": "全北现代",
+      "awayTeam": "济州SK"
+    },
+    {
+      "competition": "K_LEAGUE_1",
+      "matchId": "2040751",
+      "matchDate": "2026-08-08",
+      "homeTeam": "安养FC",
+      "awayTeam": "大田市民"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2040746",
+      "matchDate": "2026-08-08",
+      "homeTeam": "埃斯托里尔",
+      "awayTeam": "法马利康"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2040741",
+      "matchDate": "2026-08-08",
+      "homeTeam": "坎布尔",
+      "awayTeam": "SBV精英"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040739",
+      "matchDate": "2026-08-08",
+      "homeTeam": "塞伊奈约基",
+      "awayTeam": "赫尔辛基火花"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040726",
+      "matchDate": "2026-08-07",
+      "homeTeam": "本菲卡",
+      "awayTeam": "哈茨"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040725",
+      "matchDate": "2026-08-07",
+      "homeTeam": "塞萨洛尼基",
+      "awayTeam": "安德莱赫特"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040724",
+      "matchDate": "2026-08-07",
+      "homeTeam": "比亚韦斯托克",
+      "awayTeam": "格拉斯哥流浪者"
+    },
+    {
+      "competition": "EUROPA_LEAGUE",
+      "matchId": "2040729",
+      "matchDate": "2026-08-06",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "克拉约瓦大学"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040723",
+      "matchDate": "2026-08-06",
+      "homeTeam": "费内巴切",
+      "awayTeam": "格拉茨风暴"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040722",
+      "matchDate": "2026-08-06",
+      "homeTeam": "奥胡斯",
+      "awayTeam": "萨巴赫"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040721",
+      "matchDate": "2026-08-05",
+      "homeTeam": "布拉格斯巴达",
+      "awayTeam": "里昂"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040720",
+      "matchDate": "2026-08-05",
+      "homeTeam": "圣吉尔联合",
+      "awayTeam": "博德闪耀"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040728",
+      "matchDate": "2026-08-05",
+      "homeTeam": "奥林匹亚科斯",
+      "awayTeam": "奈梅亨"
+    },
+    {
+      "competition": "CHAMPIONS_LEAGUE",
+      "matchId": "2040727",
+      "matchDate": "2026-08-05",
+      "homeTeam": "米亚尔比",
+      "awayTeam": "布拉迪斯拉发"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040703",
+      "matchDate": "2026-08-04",
+      "homeTeam": "佐加顿斯",
+      "awayTeam": "韦斯特罗斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040702",
+      "matchDate": "2026-08-04",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "天狼星"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040701",
+      "matchDate": "2026-08-04",
+      "homeTeam": "塞伊奈约基",
+      "awayTeam": "赫尔辛基"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040763",
+      "matchDate": "2026-08-09",
+      "homeTeam": "雅罗",
+      "awayTeam": "瓦萨"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2040764",
+      "matchDate": "2026-08-09",
+      "homeTeam": "前进之鹰",
+      "awayTeam": "威廉二世"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2040765",
+      "matchDate": "2026-08-09",
+      "homeTeam": "吉马良斯",
+      "awayTeam": "阿罗卡"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2040766",
+      "matchDate": "2026-08-09",
+      "homeTeam": "PSV埃因霍温",
+      "awayTeam": "福图纳锡塔德"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2040769",
+      "matchDate": "2026-08-09",
+      "homeTeam": "阿尔克马尔",
+      "awayTeam": "海牙"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2040771",
+      "matchDate": "2026-08-09",
+      "homeTeam": "阿马多拉",
+      "awayTeam": "里斯本竞技"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2040775",
+      "matchDate": "2026-08-09",
+      "homeTeam": "鹿特丹斯巴达",
+      "awayTeam": "费耶诺德"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040777",
+      "matchDate": "2026-08-09",
+      "homeTeam": "哈马比",
+      "awayTeam": "赫根"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040778",
+      "matchDate": "2026-08-09",
+      "homeTeam": "库奥皮奥",
+      "awayTeam": "TPS图尔库"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2040779",
+      "matchDate": "2026-08-09",
+      "homeTeam": "兹沃勒",
+      "awayTeam": "阿贾克斯"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2040780",
+      "matchDate": "2026-08-09",
+      "homeTeam": "格罗宁根",
+      "awayTeam": "乌德勒支"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040782",
+      "matchDate": "2026-08-09",
+      "homeTeam": "国际图尔库",
+      "awayTeam": "拉赫蒂"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040783",
+      "matchDate": "2026-08-09",
+      "homeTeam": "哈尔姆斯塔德",
+      "awayTeam": "哥德堡盖斯"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040784",
+      "matchDate": "2026-08-09",
+      "homeTeam": "IFK哥德堡",
+      "awayTeam": "卡尔马"
+    },
+    {
+      "competition": "EREDIVISIE",
+      "matchId": "2040785",
+      "matchDate": "2026-08-09",
+      "homeTeam": "海伦芬",
+      "awayTeam": "特温特"
+    },
+    {
+      "competition": "FINNISH_VEIKKAUSLIIGA",
+      "matchId": "2040787",
+      "matchDate": "2026-08-10",
+      "homeTeam": "AC奥卢",
+      "awayTeam": "赫尔辛基"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2040788",
+      "matchDate": "2026-08-10",
+      "homeTeam": "波尔图",
+      "awayTeam": "阿尔维卡"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2040801",
+      "matchDate": "2026-08-10",
+      "homeTeam": "本菲卡",
+      "awayTeam": "维塞乌"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2040790",
+      "matchDate": "2026-08-10",
+      "homeTeam": "吉维森特",
+      "awayTeam": "里奥阿维"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2040791",
+      "matchDate": "2026-08-10",
+      "homeTeam": "摩雷伦斯",
+      "awayTeam": "布拉加"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040794",
+      "matchDate": "2026-08-11",
+      "homeTeam": "天狼星",
+      "awayTeam": "布鲁马波卡纳"
+    },
+    {
+      "competition": "SWEDISH_ALLSVENSKAN",
+      "matchId": "2040795",
+      "matchDate": "2026-08-11",
+      "homeTeam": "韦斯特罗斯",
+      "awayTeam": "佐加顿斯"
+    },
+    {
+      "competition": "PRIMEIRA_LIGA",
+      "matchId": "2040796",
+      "matchDate": "2026-08-11",
+      "homeTeam": "圣克拉拉",
+      "awayTeam": "葡萄牙国民"
+    }
+  ],
+  "failures": [
+    {
+      "matchId": "2035682",
+      "message": "体彩接口返回失败"
+    },
+    {
+      "matchId": "2036791",
+      "message": "体彩接口返回失败"
+    }
+  ]
+}

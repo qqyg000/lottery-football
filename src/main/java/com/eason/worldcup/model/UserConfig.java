@@ -53,6 +53,8 @@ public class UserConfig {
 
     private Map<String, ParameterProfile> parameterProfiles = new LinkedHashMap<>();
 
+    private Map<String, TotalGoalsStrategy> totalGoalsStrategies = new LinkedHashMap<>();
+
     private Map<String, RecommendationSelection> selectedRows = new LinkedHashMap<>();
 
     public static List<Competition> getParameterCompetitions() {
@@ -86,6 +88,16 @@ public class UserConfig {
     }
 
     public static String legacyParameterProfileKey(Competition competition, String profileRange) {
+        return competition.name() + ":" + profileRange;
+    }
+
+    public static String totalGoalsStrategyKey(Competition competition, boolean includePreviousEdition) {
+        return totalGoalsStrategyKey(
+                competition,
+                includePreviousEdition ? PREVIOUS_EDITION_PROFILE : CURRENT_EDITION_PROFILE);
+    }
+
+    public static String totalGoalsStrategyKey(Competition competition, String profileRange) {
         return competition.name() + ":" + profileRange;
     }
 
@@ -131,6 +143,14 @@ public class UserConfig {
         this.parameterProfiles = parameterProfiles;
     }
 
+    public Map<String, TotalGoalsStrategy> getTotalGoalsStrategies() {
+        return totalGoalsStrategies;
+    }
+
+    public void setTotalGoalsStrategies(Map<String, TotalGoalsStrategy> totalGoalsStrategies) {
+        this.totalGoalsStrategies = totalGoalsStrategies;
+    }
+
     public Map<String, RecommendationSelection> getSelectedRows() {
         return selectedRows;
     }
@@ -174,6 +194,70 @@ public class UserConfig {
 
         public void setGlobalParameters(GlobalParameters globalParameters) {
             this.globalParameters = globalParameters;
+        }
+
+    }
+
+    public static class TotalGoalsStrategy {
+
+        private Double minimumProbability;
+
+        private Double minimumExpectedValue;
+
+        private Double minimumOdds;
+
+        private Double maximumOdds;
+
+        private Integer maximumSelections;
+
+        public static TotalGoalsStrategy defaults() {
+            TotalGoalsStrategy strategy = new TotalGoalsStrategy();
+            strategy.setMinimumProbability(5.0D);
+            strategy.setMinimumExpectedValue(1.05D);
+            strategy.setMinimumOdds(1.01D);
+            strategy.setMaximumOdds(50.0D);
+            strategy.setMaximumSelections(2);
+            return strategy;
+        }
+
+        public Double getMinimumProbability() {
+            return minimumProbability;
+        }
+
+        public void setMinimumProbability(Double minimumProbability) {
+            this.minimumProbability = minimumProbability;
+        }
+
+        public Double getMinimumExpectedValue() {
+            return minimumExpectedValue;
+        }
+
+        public void setMinimumExpectedValue(Double minimumExpectedValue) {
+            this.minimumExpectedValue = minimumExpectedValue;
+        }
+
+        public Double getMinimumOdds() {
+            return minimumOdds;
+        }
+
+        public void setMinimumOdds(Double minimumOdds) {
+            this.minimumOdds = minimumOdds;
+        }
+
+        public Double getMaximumOdds() {
+            return maximumOdds;
+        }
+
+        public void setMaximumOdds(Double maximumOdds) {
+            this.maximumOdds = maximumOdds;
+        }
+
+        public Integer getMaximumSelections() {
+            return maximumSelections;
+        }
+
+        public void setMaximumSelections(Integer maximumSelections) {
+            this.maximumSelections = maximumSelections;
         }
 
     }

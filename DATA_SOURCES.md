@@ -129,7 +129,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 系统只保存 90 分钟加伤停补时的全场比分，不抓取半场比分。ESPN 赛事会根据进球明细排除加时赛和点球大战；FotMob 对 `AET` 和点球决胜场次读取比赛详情中的 90 分钟 `FT` 检查点，详情缺失时不使用加时后的最终比分；Futbol24 加时场次读取分段比分中的 90 分钟赛果；Sofascore 优先读取 `normaltime`；OpenFootball 标记为加时赛的最终比分不会直接写入常规时间赛果。
 
-## 体彩玩法开售状态与让球数
+## 体彩玩法开售状态、让球数与总进球数
 
 全场胜平负和全场让球胜平负自动选择及最新赔率来自中国体彩网的[足球赛果开奖页面](https://www.lottery.gov.cn/jc/zqsgkj/)和[竞彩足球计算器](https://www.sporttery.cn/jc/jsq/zqbf/)。程序调用页面实际使用的三个官方接口：
 
@@ -144,6 +144,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - 赛果接口的 `h`、`d`、`a` 以及在售接口的 `had` 用于判断全场胜平负
 - 赛果接口的 `goalLine` 以及在售接口的 `hhad.goalLine` 表示全场让球胜平负的让球数
 - 在售接口的 `had`、`hhad` 直接提供当前赔率；已完赛场次从赔率历史接口的 `hadList`、`hhadList` 选择更新时间最新的一条
+- 在售接口的 `ttg` 和赔率历史接口的 `ttgList` 提供总进球数赔率，`s0` 至 `s6` 对应 0 至 6 球，`s7` 对应 7 球及以上
 - `matchId`、`matchDate`、`leagueId`、`allHomeTeam`、`allAwayTeam` 用于关联本地赛程
 - `sectionsNo999` 用于已完赛场次的比分复核
 
@@ -151,13 +152,13 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 ## 历史初盘赔率
 
-`src/main/resources/data/historical_odds_data.csv` 保存属于系统已支持赛事的胜平负和让球胜平负初盘赔率。字段为：
+`src/main/resources/data/historical_odds_data.csv` 保存属于系统已支持赛事的胜平负、让球胜平负和总进球数初盘赔率。字段为：
 
 ```text
-match_id,match_date,competition,home_team_cn,away_team_cn,home_team_en,away_team_en,home_score,away_score,neutral,sporttery_match_number,handicap,normal_win,normal_draw,normal_lose,handicap_win,handicap_draw,handicap_lose
+match_id,match_date,competition,home_team_cn,away_team_cn,home_team_en,away_team_en,home_score,away_score,neutral,sporttery_match_number,handicap,normal_win,normal_draw,normal_lose,handicap_win,handicap_draw,handicap_lose,total_goals_0,total_goals_1,total_goals_2,total_goals_3,total_goals_4,total_goals_5,total_goals_6,total_goals_7_plus,total_goals_updated_at,total_goals_source_match_id
 ```
 
-导入脚本只保留 17 类赛事、有完场比分且至少包含一组完整初盘赔率的记录。接口英文球队名与赔率表英文名关联后，统一转换为赔率表中的最新中文名。脚本会继续执行 `reconcile-historical-scores.mjs`，用 FotMob 或已核验接口赛果纠正原始文件中合计 7 球的压缩比分、跨日日期和主客顺序，再重建去重后的历史比赛文件。
+基础导入脚本只保留 17 类赛事、有完场比分且至少包含一组完整初盘赔率的记录。官方体彩增量脚本还会追加当前在售但本地尚无赛程行的比赛；未完赛行保留空比分并按 `SCHEDULED` 加载，不会误标为已完赛。接口英文球队名与赔率表英文名关联后，统一转换为赔率表中的最新中文名。脚本会继续执行 `reconcile-historical-scores.mjs`，用 FotMob 或已核验接口赛果纠正原始文件中合计 7 球的压缩比分、跨日日期和主客顺序，再重建去重后的历史比赛文件。
 
 运行以下命令可以从新的原始赔率文件重新生成：
 
@@ -173,6 +174,14 @@ powershell -ExecutionPolicy Bypass -File scripts/merge-sporttery-cache-odds.ps1 
 ```
 
 补取接口单次最多查询 366 天。程序启动时会把历史赔率合并到已有赛程，同一日期、赛事和主客队的记录只保留一场；动态获取到的官方赔率优先于内置初盘赔率。回测按北京时间计算，默认使用本届世界杯开赛日（2026-06-11）至今天的已完赛比赛，起始日期由 `sporttery.result-update.backtest-start-date` 配置。
+
+总进球数历史赔率可直接从中国体彩网官方赛果、计算器和赔率历史接口合并到现有 CSV。脚本按比赛选择 `hadList`、`hhadList` 和 `ttgList` 中更新时间最早的一组完整赔率；本地缺少比赛行时会追加完整的赛事、球队、赛果、编号和三类初盘赔率。球队关联优先使用全局已验证别名，再使用赛事级历史别名，避免“皇马/皇家马德里”等简称生成重复比赛。执行报告会记录新增行、赔率补全数量、官方接口不可用场次和失败明细：
+
+```powershell
+node scripts/import-sporttery-total-goals-odds.mjs --start=2024-06-14 --end=2026-08-15 --report=reports/sporttery-total-goals-import-2024-06-14-to-2026-08-15.json
+```
+
+点击“更新数据”时，运行时体彩更新链路会同时读取 `ttg` 和 `ttgList`，并把总进球数最新赔率写入 `config/sporttery-market-selections.json`。历史回测仍使用 CSV 中记录的最早完整赔率，避免使用临场或赛后信息。
 
 ## 球队中文名
 

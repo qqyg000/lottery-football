@@ -244,7 +244,8 @@ public class DataRepository {
 
     private boolean hasSportteryOdds(MatchSchedule schedule) {
         return hasPositiveOdds(schedule.getSportteryNormalOdds())
-                || hasPositiveOdds(schedule.getSportteryHandicapOdds());
+                || hasPositiveOdds(schedule.getSportteryHandicapOdds())
+                || schedule.getSportteryTotalGoalsOdds() != null;
     }
 
     private boolean hasPositiveOdds(SportteryOdds odds) {
@@ -745,7 +746,9 @@ public class DataRepository {
 
     private int scheduleQuality(MatchSchedule schedule) {
         int quality = 0;
-        if (schedule.getSportteryNormalOdds() != null || schedule.getSportteryHandicapOdds() != null) {
+        if (schedule.getSportteryNormalOdds() != null
+                || schedule.getSportteryHandicapOdds() != null
+                || schedule.getSportteryTotalGoalsOdds() != null) {
             quality += 4;
         }
         if (schedule.getSportteryMatchId() != null && !schedule.getSportteryMatchId().isBlank()) {

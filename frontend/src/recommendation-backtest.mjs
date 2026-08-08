@@ -6,6 +6,27 @@ import {
 
 export const PROBABILITY_KEYS = ['win', 'draw', 'lose']
 
+export const TOTAL_GOALS_KEYS = [0, 1, 2, 3, 4, 5, 6, 7]
+
+const TOTAL_GOALS_ODDS_KEYS = [
+  'goal0',
+  'goal1',
+  'goal2',
+  'goal3',
+  'goal4',
+  'goal5',
+  'goal6',
+  'goal7Plus'
+]
+
+const DEFAULT_TOTAL_GOALS_STRATEGY = {
+  minimumProbability: 5,
+  minimumExpectedValue: 1.05,
+  minimumOdds: 1.01,
+  maximumOdds: 50,
+  maximumSelections: 2
+}
+
 const DEFAULT_GLOBAL_PARAMETERS = {
   recommendationOdds: 1.03,
   handicapRecommendationThreshold: 68.16,
@@ -183,6 +204,132 @@ export function evaluateRecommendationBacktest(matches, options = {}) {
       volatility: calculateReturnVolatility(matchReturnRates),
       roi: financials.roi
     }
+  }
+}
+
+export function getTotalGoalsRecommendations(match, options = {}) {
+  const strategy = normalizeTotalGoalsStrategy(options.strategy)
+  if (strategy.maximumSelections === 0 || !match?.sportteryTotalGoalsOdds) {
+    return []
+  }
+  const probabilities = options.modelMode === 'after' && Array.isArray(match.adjustedSportteryTotalGoalsProbabilities)
+    ? match.adjustedSportteryTotalGoalsProbabilities
+    : (Array.isArray(match.sportteryTotalGoalsProbabilities)
+        ? match.sportteryTotalGoalsProbabilities
+        : [])
+  const probabilityByGoals = new Map(probabilities.map(item => [Number(item.totalGoals), Number(item.probability)]))
+  return TOTAL_GOALS_KEYS.reduce((recommendations, totalGoals, index) => {
+    const probability = probabilityByGoals.get(totalGoals)
+    const odds = Number(match.sportteryTotalGoalsOdds[TOTAL_GOALS_ODDS_KEYS[index]])
+    const expectedValue = probability / 100 * odds
+    if (
+      Number.isFinite(probability) &&
+      Number.isFinite(odds) &&
+      odds > 0 &&
+      probability >= strategy.minimumProbability &&
+      odds >= strategy.minimumOdds &&
+      odds <= strategy.maximumOdds &&
+      expectedValue >= strategy.minimumExpectedValue
+    ) {
+      recommendations.push({
+        key: 'total-goals-' + totalGoals,
+        totalGoals,
+        resultName: totalGoals === 7 ? '7+球' : totalGoals + '球',
+        probability,
+        odds,
+        expectedValue
+      })
+    }
+    return recommendations
+  }, [])
+    .sort((left, right) => right.probability - left.probability || right.expectedValue - left.expectedValue || left.totalGoals - right.totalGoals)
+    .slice(0, strategy.maximumSelections)
+}
+
+export function evaluateTotalGoalsBacktest(matches, options = {}) {
+  const sourceMatches = Array.isArray(matches) ? matches : []
+  let recommendedMatchCount = 0
+  let recommendedSelectionCount = 0
+  let winningSelectionCount = 0
+  let totalReturn = 0
+  const matchReturnRates = []
+
+  sourceMatches.forEach(match => {
+    const score = parseScore(match)
+    if (!score) {
+      return
+    }
+    const recommendations = getTotalGoalsRecommendations(match, {
+      modelMode: options.modelMode,
+      strategy: typeof options.resolveStrategy === 'function'
+        ? options.resolveStrategy(match)
+        : options.strategy
+    })
+    if (recommendations.length === 0) {
+      return
+    }
+    recommendedMatchCount += 1
+    recommendedSelectionCount += recommendations.length
+    const actualTotalGoals = score.home + score.away
+    const winningRecommendation = recommendations.find(item => (
+      item.totalGoals === actualTotalGoals || (item.totalGoals === 7 && actualTotalGoals >= 7)
+    ))
+    const matchReturn = winningRecommendation ? winningRecommendation.odds : 0
+    totalReturn += matchReturn
+    winningSelectionCount += winningRecommendation ? 1 : 0
+    matchReturnRates.push(matchReturn / recommendations.length - 1)
+  })
+
+  const totalStake = recommendedSelectionCount
+  const oddsMatchCount = Number(options.oddsMatchCount) || sourceMatches.length
+  return {
+    recommendedMatchCount,
+    recommendedSelectionCount,
+    winningSelectionCount,
+    totalStake,
+    totalReturn,
+    netProfit: totalReturn - totalStake,
+    roi: totalStake > 0 ? totalReturn / totalStake - 1 : null,
+    hitRate: totalStake > 0 ? winningSelectionCount / totalStake : null,
+    samplingRate: calculateSamplingRate(recommendedMatchCount, oddsMatchCount),
+    volatility: calculateReturnVolatility(matchReturnRates)
+  }
+}
+
+function normalizeTotalGoalsStrategy(strategy) {
+  const source = strategy && typeof strategy === 'object' ? strategy : {}
+  const minimumOdds = normalizeNumber(
+    source.minimumOdds,
+    DEFAULT_TOTAL_GOALS_STRATEGY.minimumOdds,
+    1,
+    100
+  )
+  return {
+    minimumProbability: normalizeNumber(
+      source.minimumProbability,
+      DEFAULT_TOTAL_GOALS_STRATEGY.minimumProbability,
+      0,
+      100
+    ),
+    minimumExpectedValue: normalizeNumber(
+      source.minimumExpectedValue,
+      DEFAULT_TOTAL_GOALS_STRATEGY.minimumExpectedValue,
+      0,
+      10
+    ),
+    minimumOdds,
+    maximumOdds: normalizeNumber(
+      source.maximumOdds,
+      DEFAULT_TOTAL_GOALS_STRATEGY.maximumOdds,
+      minimumOdds,
+      1000
+    ),
+    maximumSelections: Math.round(normalizeNumber(
+      source.maximumSelections,
+      DEFAULT_TOTAL_GOALS_STRATEGY.maximumSelections,
+      0,
+      4
+    ))
   }
 }
 

@@ -3,6 +3,7 @@ package com.eason.worldcup.service;
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.SportteryOdds;
+import com.eason.worldcup.model.SportteryTotalGoalsOdds;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -460,6 +461,48 @@ class SportteryMarketSelectionServiceTest {
     }
 
     @Test
+    void shouldParseEarliestCompleteTotalGoalsOddsForHistoricalRefresh() throws Exception {
+        var totalGoalsHistory = new ObjectMapper().readTree("""
+                [
+                  {
+                    "s0": "12.00",
+                    "s1": "5.50",
+                    "s2": "3.80",
+                    "s3": "3.60",
+                    "s4": "5.40",
+                    "s5": "10.00",
+                    "s6": "18.00",
+                    "s7": "25.00",
+                    "updateDate": "2026-07-17",
+                    "updateTime": "10:00:00"
+                  },
+                  {
+                    "s0": "11.00",
+                    "s1": "5.20",
+                    "s2": "3.70",
+                    "s3": "3.50",
+                    "s4": "5.20",
+                    "s5": "9.50",
+                    "s6": "17.00",
+                    "s7": "24.00",
+                    "updateDate": "2026-07-17",
+                    "updateTime": "18:00:00"
+                  }
+                ]
+                """);
+
+        SportteryTotalGoalsOdds odds = ReflectionTestUtils.invokeMethod(
+                service,
+                "parseInitialTotalGoalsOdds",
+                totalGoalsHistory);
+
+        assertNotNull(odds);
+        assertEquals(12.00, odds.getGoal0());
+        assertEquals(25.00, odds.getGoal7Plus());
+        assertEquals("2026-07-17 10:00:00", odds.getUpdatedAt());
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void shouldMatchUpcomingFixtureWhenOneTeamNameIsConfirmed() {
         SportteryMarketSelectionService.SportteryMarketEntry entry =
@@ -599,6 +642,48 @@ class SportteryMarketSelectionServiceTest {
         assertEquals(1.93, schedule.getSportteryNormalOdds().getWin());
         assertEquals(-1, schedule.getSportteryHandicap());
         assertEquals(3.70, schedule.getSportteryHandicapOdds().getWin());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldPreserveBundledTotalGoalsOddsWhenCachedEntryDoesNotContainThem() {
+        SportteryMarketSelectionService.SportteryMarketEntry entry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        entry.setSportteryMatchId("2040532");
+        entry.setMatchDate(LocalDate.of(2026, 7, 18));
+        entry.setCompetition(Competition.SWEDISH_ALLSVENSKAN);
+        entry.setHomeTeam("IFK哥德堡");
+        entry.setAwayTeam("布鲁马波卡纳");
+        entry.setNormalOdds(new SportteryOdds(1.93, 3.40, 3.15, "2026-07-17 21:17:42"));
+        Map<String, SportteryMarketSelectionService.SportteryMarketEntry> entries =
+                (Map<String, SportteryMarketSelectionService.SportteryMarketEntry>)
+                        ReflectionTestUtils.getField(service, "entriesByMatchId");
+        entries.put(entry.getSportteryMatchId(), entry);
+
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setMatchId("HIS-2040532");
+        schedule.setSportteryMatchId("HIS-2040532");
+        schedule.setCompetition(Competition.SWEDISH_ALLSVENSKAN);
+        schedule.setMatchDate(LocalDate.of(2026, 7, 18));
+        schedule.setHomeTeamCn("IFK哥德堡");
+        schedule.setAwayTeamCn("布鲁马波卡纳");
+        SportteryTotalGoalsOdds totalGoalsOdds = new SportteryTotalGoalsOdds(
+                12.0,
+                5.5,
+                3.8,
+                3.6,
+                5.4,
+                10.0,
+                18.0,
+                25.0,
+                "2026-07-17 10:00:00");
+        schedule.setSportteryTotalGoalsOdds(totalGoalsOdds);
+
+        int matchedCount = service.applyCachedSelections(List.of(schedule));
+
+        assertEquals(1, matchedCount);
+        assertEquals("2040532", schedule.getSportteryMatchId());
+        assertEquals(totalGoalsOdds, schedule.getSportteryTotalGoalsOdds());
     }
 
     @Test

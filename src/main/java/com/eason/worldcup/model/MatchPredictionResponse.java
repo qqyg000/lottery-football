@@ -43,6 +43,8 @@ public class MatchPredictionResponse {
 
     private SportteryOdds sportteryHandicapOdds;
 
+    private SportteryTotalGoalsOdds sportteryTotalGoalsOdds;
+
     private int simulations;
 
     private double expectedHomeGoals;
@@ -68,6 +70,10 @@ public class MatchPredictionResponse {
     private List<ScoreProbability> adjustedScoreProbabilities = new ArrayList<>();
 
     private List<TotalGoalsProbability> adjustedTotalGoalsProbabilities = new ArrayList<>();
+
+    private List<TotalGoalsProbability> sportteryTotalGoalsProbabilities = new ArrayList<>();
+
+    private List<TotalGoalsProbability> adjustedSportteryTotalGoalsProbabilities = new ArrayList<>();
 
     private int correctionMatchCount;
 
@@ -217,6 +223,14 @@ public class MatchPredictionResponse {
         this.sportteryHandicapOdds = sportteryHandicapOdds;
     }
 
+    public SportteryTotalGoalsOdds getSportteryTotalGoalsOdds() {
+        return sportteryTotalGoalsOdds;
+    }
+
+    public void setSportteryTotalGoalsOdds(SportteryTotalGoalsOdds sportteryTotalGoalsOdds) {
+        this.sportteryTotalGoalsOdds = sportteryTotalGoalsOdds;
+    }
+
     public int getSimulations() {
         return simulations;
     }
@@ -319,6 +333,23 @@ public class MatchPredictionResponse {
 
     public void setAdjustedTotalGoalsProbabilities(List<TotalGoalsProbability> adjustedTotalGoalsProbabilities) {
         this.adjustedTotalGoalsProbabilities = adjustedTotalGoalsProbabilities;
+    }
+
+    public List<TotalGoalsProbability> getSportteryTotalGoalsProbabilities() {
+        return sportteryTotalGoalsProbabilities;
+    }
+
+    public void setSportteryTotalGoalsProbabilities(List<TotalGoalsProbability> sportteryTotalGoalsProbabilities) {
+        this.sportteryTotalGoalsProbabilities = sportteryTotalGoalsProbabilities;
+    }
+
+    public List<TotalGoalsProbability> getAdjustedSportteryTotalGoalsProbabilities() {
+        return adjustedSportteryTotalGoalsProbabilities;
+    }
+
+    public void setAdjustedSportteryTotalGoalsProbabilities(
+            List<TotalGoalsProbability> adjustedSportteryTotalGoalsProbabilities) {
+        this.adjustedSportteryTotalGoalsProbabilities = adjustedSportteryTotalGoalsProbabilities;
     }
 
     public int getCorrectionMatchCount() {
