@@ -53,9 +53,11 @@ if (TARGET_COMPETITIONS.length === 0) {
   throw new Error('--competitions 未包含有效赛事代码')
 }
 const ODDS_KEYS = ['goal0', 'goal1', 'goal2', 'goal3', 'goal4', 'goal5', 'goal6', 'goal7Plus']
-const TARGET_ROI = 0.20
-const MINIMUM_PROBABILITIES = [0, 5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 35]
-const MINIMUM_EXPECTED_VALUES = [0.8, 0.9, 1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.4]
+const SMALL_CURRENT_SAMPLE_MAX = 10
+const PRIMARY_ROI_TARGET = 0.25
+const MINIMUM_SAMPLING_RATE = 0.333
+const MINIMUM_PROBABILITIES = [0, 5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 35, 40]
+const MINIMUM_EXPECTED_VALUES = [0, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.4]
 const MINIMUM_ODDS = [1.01, 1.5, 2, 2.5, 3, 3.5, 4]
 const MAXIMUM_ODDS = [3, 4, 5, 6, 8, 10, 20, 50]
 const MAXIMUM_SELECTIONS = [1, 2, 3, 4]
@@ -66,9 +68,11 @@ const DEFAULT_STRATEGY = {
   maximumOdds: 8,
   maximumSelections: 1
 }
+const JSON_EOL = process.platform === 'win32' ? '\r\n' : '\n'
 
 async function main() {
-  const config = JSON.parse(await fs.readFile(CONFIG_PATH, 'utf8'))
+  const configText = await fs.readFile(CONFIG_PATH, 'utf8')
+  const config = JSON.parse(configText)
   const existingReport = TARGET_COMPETITIONS.length === COMPETITIONS.length
     ? null
     : await readExistingReport()
@@ -77,7 +81,7 @@ async function main() {
     const includePreviousEdition = range === 'PREVIOUS'
     process.stdout.write(`开始回测${includePreviousEdition ? '含上届' : '仅本届'}策略\n`)
     const result = await runBacktest(config, range, includePreviousEdition)
-    rangeResults[range] = optimizeRange(result, range)
+    rangeResults[range] = optimizeRange(result, range, config.totalGoalsStrategies || {})
   }
 
   const strategies = { ...(config.totalGoalsStrategies || {}) }
@@ -88,12 +92,11 @@ async function main() {
     for (const range of ['CURRENT', 'PREVIOUS']) {
       const direct = rangeResults[range][competition]
       const fallback = rangeResults.PREVIOUS[competition]
-      const directSampleIsSufficient = direct?.roiTargetMet &&
-        direct.metrics.availableMatchCount >= 8 &&
-        direct.metrics.recommendedSelectionCount >= 8
-      const selected = directSampleIsSufficient || range === 'PREVIOUS' ? direct : fallback
-      const disabledBecauseRoiTargetNotMet = !selected?.roiTargetMet
-      const strategy = disabledBecauseRoiTargetNotMet
+      const usePreviousStrategy = range === 'CURRENT' &&
+        (direct?.metrics.availableMatchCount || 0) <= SMALL_CURRENT_SAMPLE_MAX
+      const selected = usePreviousStrategy ? fallback : direct
+      const disabledBecauseSamplingTargetNotMet = !selected?.strategyAvailable
+      const strategy = disabledBecauseSamplingTargetNotMet
         ? { ...(selected?.strategy || DEFAULT_STRATEGY), maximumSelections: 0 }
         : selected.strategy
       const key = `${competition}:${range}`
@@ -105,11 +108,22 @@ async function main() {
         range,
         rangeName: range === 'CURRENT' ? '仅本届' : '含上届',
         fallbackToPreviousEdition: selected !== direct,
-        disabledBecauseRoiTargetNotMet,
+        disabledBecauseRoiTargetNotMet: disabledBecauseSamplingTargetNotMet,
+        disabledBecauseSamplingTargetNotMet,
+        samplingRateTargetMet: Boolean(selected?.samplingRateTargetMet),
+        primaryRoiTargetMet: Boolean(selected?.primaryRoiTargetMet),
+        degradationLevel: selected?.degradationLevel || 'NO_STRATEGY',
+        roiFloor: selected?.roiFloor ?? null,
+        hitRateFloor: selected?.hitRateFloor ?? null,
+        reliabilityTier: selected?.reliabilityTier || null,
         strategy,
         metrics: selected?.metrics || emptyMetrics(),
         directMetrics: direct?.metrics || emptyMetrics(),
-        minimumSelectionConstraint: selected?.minimumSelectionConstraint || 0
+        previousStrategy: direct?.baselineStrategy || null,
+        previousStrategyMetrics: direct?.baselineMetrics || emptyMetrics(),
+        minimumRecommendedMatchConstraint: selected?.minimumRecommendedMatchConstraint || 0,
+        minimumSelectionConstraint: selected?.minimumSelectionConstraint || 0,
+        minimumWinningSelectionConstraint: selected?.minimumWinningSelectionConstraint || 0
       })
     }
   }
@@ -122,8 +136,11 @@ async function main() {
     return left.range === 'CURRENT' ? -1 : 1
   })
 
-  config.totalGoalsStrategies = strategies
-  await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf8')
+  await fs.writeFile(
+    CONFIG_PATH,
+    replaceConfigObject(configText, 'totalGoalsStrategies', strategies),
+    'utf8'
+  )
   const report = {
     generatedAt: new Date().toISOString(),
     source: '中国体彩网总进球数固定赔率初始值',
@@ -132,15 +149,20 @@ async function main() {
     stakeMethod: '每个推荐项作为独立单关等额投注1单位',
     roiFormula: 'ROI = (命中单关赔率返奖合计 - 推荐总注数) / 推荐总注数',
     hitRateFormula: '命中率 = 命中单关注数 / 推荐总注数',
-    optimizationObjective: 'ROI严格大于20%的前提下优先最大化单注命中率，其次最大化有效注数',
+    optimizationObjective: '所有有进球数赔率样本的策略采样率必须大于等于33.3%，在达标候选中优先最大化ROI，再比较单注命中率和采样率',
     constraints: {
-      minimumRoiExclusive: TARGET_ROI,
+      minimumSamplingRateInclusive: MINIMUM_SAMPLING_RATE,
+      minimumRecommendedMatches: `ceil(可用比赛数 * ${MINIMUM_SAMPLING_RATE})`,
+      minimumRoi: null,
+      minimumHitRate: null,
       maximumSelectionsPerMatch: '0-4',
-      minimumRecommendedSelections: '优先max(8, 可用比赛数的10%)，无解时依次降到5%和至少3注'
+      strategySearch: '先粗网格搜索，取ROI最高的8个达标候选，再基于实际概率、期望值和赔率分布执行最多3轮坐标细化',
+      smallCurrentSampleRule: `仅本届可用样本数不超过${SMALL_CURRENT_SAMPLE_MAX}场时跳过独立优化，直接沿用含上届策略`,
+      selectionPreference: '采样率达标后先比较ROI，再比较单注命中率、采样率、每场命中率和有效注数'
     },
     strategies: reportRows
   }
-  await fs.writeFile(REPORT_PATH, JSON.stringify(report, null, 2) + '\n', 'utf8')
+  await fs.writeFile(REPORT_PATH, serializeJson(report), 'utf8')
   process.stdout.write(`策略已写入 ${CONFIG_PATH}\n`)
   process.stdout.write(`回测报告已写入 ${REPORT_PATH}\n`)
   printSummary(reportRows)
@@ -190,7 +212,7 @@ async function runBacktest(config, range, includePreviousEdition) {
   return job.result
 }
 
-function optimizeRange(result, range) {
+function optimizeRange(result, range, existingStrategies) {
   const matchesByCompetition = Object.fromEntries(TARGET_COMPETITIONS.map(competition => [competition, []]))
   for (const match of result.matches || []) {
     if (matchesByCompetition[match.competition]) {
@@ -202,11 +224,30 @@ function optimizeRange(result, range) {
   }
   return Object.fromEntries(TARGET_COMPETITIONS.map(competition => {
     const matches = matchesByCompetition[competition]
-    const optimized = optimizeCompetition(matches)
+    const skipSmallCurrentSample = range === 'CURRENT' && matches.length <= SMALL_CURRENT_SAMPLE_MAX
+    const optimized = skipSmallCurrentSample
+      ? {
+          strategy: { ...DEFAULT_STRATEGY, maximumSelections: 0 },
+          metrics: emptyMetrics(matches.length),
+          minimumRecommendedMatchConstraint: 0,
+          minimumSelectionConstraint: 0,
+          minimumWinningSelectionConstraint: 0,
+          strategyAvailable: false,
+          samplingRateTargetMet: false,
+          primaryRoiTargetMet: false,
+          degradationLevel: 'SMALL_CURRENT_SAMPLE_SKIPPED'
+        }
+      : optimizeCompetition(matches)
+    const baselineStrategy = existingStrategies[`${competition}:${range}`] || DEFAULT_STRATEGY
+    optimized.baselineStrategy = { ...baselineStrategy }
+    optimized.baselineMetrics = skipSmallCurrentSample
+      ? emptyMetrics(matches.length)
+      : evaluateStrategy(matches, baselineStrategy)
     process.stdout.write(
       `  ${COMPETITION_NAMES[competition]} ${range}: ${matches.length} 场，` +
       `${optimized.metrics.recommendedSelectionCount} 注，` +
-      `命中率 ${formatPercent(optimized.metrics.hitRate)}，ROI ${formatPercent(optimized.metrics.roi)}\n`
+      `命中率 ${formatPercent(optimized.metrics.hitRate)}，ROI ${formatPercent(optimized.metrics.roi)}` +
+      `${skipSmallCurrentSample ? '（小样本跳过独立优化）' : ''}\n`
     )
     return [competition, optimized]
   }))
@@ -228,14 +269,23 @@ function applySmallCurrentSampleFallback(reportRows, strategies) {
       continue
     }
     const directMetrics = current.directMetrics || emptyMetrics()
-    if (directMetrics.availableMatchCount >= 8 && directMetrics.recommendedSelectionCount >= 8) {
+    if (directMetrics.availableMatchCount > SMALL_CURRENT_SAMPLE_MAX) {
       continue
     }
     current.fallbackToPreviousEdition = true
     current.disabledBecauseRoiTargetNotMet = false
+    current.disabledBecauseSamplingTargetNotMet = false
     current.strategy = { ...previous.strategy }
     current.metrics = { ...previous.metrics }
+    current.minimumRecommendedMatchConstraint = previous.minimumRecommendedMatchConstraint
     current.minimumSelectionConstraint = previous.minimumSelectionConstraint
+    current.minimumWinningSelectionConstraint = previous.minimumWinningSelectionConstraint
+    current.samplingRateTargetMet = previous.samplingRateTargetMet
+    current.primaryRoiTargetMet = previous.primaryRoiTargetMet
+    current.degradationLevel = previous.degradationLevel
+    current.roiFloor = previous.roiFloor
+    current.hitRateFloor = previous.hitRateFloor
+    current.reliabilityTier = previous.reliabilityTier
     strategies[`${competition}:CURRENT`] = current.strategy
   }
 }
@@ -261,6 +311,11 @@ function prepareMatch(match) {
       winning: totalGoals === actualTotalGoals || (totalGoals === 7 && actualTotalGoals >= 7)
     }
   }).filter(item => Number.isFinite(item.probability) && Number.isFinite(item.odds) && item.odds > 0)
+  items.sort((left, right) => (
+    right.probability - left.probability
+    || right.expectedValue - left.expectedValue
+    || left.totalGoals - right.totalGoals
+  ))
   return items.length > 0 ? { items } : null
 }
 
@@ -269,35 +324,55 @@ function optimizeCompetition(matches) {
     return {
       strategy: { ...DEFAULT_STRATEGY, maximumSelections: 0 },
       metrics: emptyMetrics(),
+      minimumRecommendedMatchConstraint: 0,
       minimumSelectionConstraint: 0,
-      roiTargetMet: false
+      minimumWinningSelectionConstraint: 0,
+      strategyAvailable: false,
+      samplingRateTargetMet: false,
+      primaryRoiTargetMet: false,
+      degradationLevel: 'NO_DATA'
     }
   }
-  const minimumSelectionConstraints = Array.from(new Set([
-    Math.min(matches.length, Math.max(8, Math.ceil(matches.length * 0.10))),
-    Math.min(matches.length, Math.max(8, Math.ceil(matches.length * 0.05))),
-    Math.min(matches.length, 3)
-  ])).sort((left, right) => right - left)
-  for (const minimumSelectionConstraint of minimumSelectionConstraints) {
-    const best = findBestStrategy(matches, minimumSelectionConstraint)
-    if (best) {
-      return {
-        ...best,
-        minimumSelectionConstraint,
-        roiTargetMet: true
+  const minimumRecommendedMatches = Math.ceil(matches.length * MINIMUM_SAMPLING_RATE)
+  const candidates = enumerateStrategies(matches)
+  const coarseCandidates = selectTopRoiStrategies(candidates, minimumRecommendedMatches, 8)
+  if (coarseCandidates.length > 0) {
+    let best = null
+    for (const coarseCandidate of coarseCandidates) {
+      const refined = refineStrategy(matches, coarseCandidate, minimumRecommendedMatches)
+      if (isHigherRoi(refined.metrics, best?.metrics)) {
+        best = refined
       }
+    }
+    return {
+      ...best,
+      minimumRecommendedMatchConstraint: minimumRecommendedMatches,
+      minimumSelectionConstraint: minimumRecommendedMatches,
+      minimumWinningSelectionConstraint: 0,
+      reliabilityTier: 'SAMPLING_RATE_33_3',
+      hitRateFloor: null,
+      roiFloor: null,
+      strategyAvailable: true,
+      samplingRateTargetMet: true,
+      primaryRoiTargetMet: best.metrics.roi > PRIMARY_ROI_TARGET,
+      degradationLevel: 'SAMPLING_RATE_33_3'
     }
   }
   return {
     strategy: { ...DEFAULT_STRATEGY, maximumSelections: 0 },
     metrics: emptyMetrics(matches.length),
+    minimumRecommendedMatchConstraint: 0,
     minimumSelectionConstraint: 0,
-    roiTargetMet: false
+    minimumWinningSelectionConstraint: 0,
+    strategyAvailable: false,
+    samplingRateTargetMet: false,
+    primaryRoiTargetMet: false,
+    degradationLevel: 'SAMPLING_RATE_TARGET_NOT_MET'
   }
 }
 
-function findBestStrategy(matches, minimumRecommendedSelections) {
-  let best = null
+function enumerateStrategies(matches) {
+  const candidates = []
   for (const minimumProbability of MINIMUM_PROBABILITIES) {
     for (const minimumExpectedValue of MINIMUM_EXPECTED_VALUES) {
       for (const minimumOdds of MINIMUM_ODDS) {
@@ -314,48 +389,133 @@ function findBestStrategy(matches, minimumRecommendedSelections) {
               maximumSelections
             }
             const metrics = evaluateStrategy(matches, strategy)
-            if (
-              metrics.recommendedSelectionCount < minimumRecommendedSelections ||
-              metrics.roi === null ||
-              metrics.roi <= TARGET_ROI
-            ) {
-              continue
-            }
-            if (isBetter(metrics, best?.metrics)) {
-              best = { strategy, metrics }
+            if (metrics.recommendedSelectionCount > 0 && metrics.roi !== null) {
+              candidates.push({ strategy, metrics })
             }
           }
         }
       }
     }
   }
+  return candidates
+}
+
+function selectTopRoiStrategies(candidates, minimumRecommendedMatches, limit) {
+  const best = []
+  for (const candidate of candidates) {
+    const metrics = candidate.metrics
+    if (metrics.recommendedMatchCount < minimumRecommendedMatches) {
+      continue
+    }
+    const insertionIndex = best.findIndex(existing => isHigherRoi(metrics, existing.metrics))
+    if (insertionIndex >= 0) {
+      best.splice(insertionIndex, 0, candidate)
+    } else if (best.length < limit) {
+      best.push(candidate)
+    }
+    if (best.length > limit) {
+      best.pop()
+    }
+  }
   return best
 }
 
+function refineStrategy(matches, initialBest, minimumRecommendedMatches) {
+  let best = initialBest
+  const parameterValues = [
+    ['minimumProbability', createRefinementValues(matches, item => item.probability, best.strategy.minimumProbability)],
+    ['minimumExpectedValue', createRefinementValues(matches, item => item.expectedValue, best.strategy.minimumExpectedValue)],
+    ['minimumOdds', createRefinementValues(matches, item => item.odds, best.strategy.minimumOdds)],
+    ['maximumOdds', createRefinementValues(matches, item => item.odds, best.strategy.maximumOdds)],
+    ['maximumSelections', MAXIMUM_SELECTIONS]
+  ]
+  for (let pass = 0; pass < 3; pass += 1) {
+    let improved = false
+    for (const [parameter, values] of parameterValues) {
+      for (const value of values) {
+        const strategy = { ...best.strategy, [parameter]: value }
+        if (strategy.maximumOdds < strategy.minimumOdds) {
+          continue
+        }
+        const metrics = evaluateStrategy(matches, strategy)
+        if (
+          metrics.recommendedMatchCount >= minimumRecommendedMatches
+          && isHigherRoi(metrics, best.metrics)
+        ) {
+          best = { strategy, metrics }
+          improved = true
+        }
+      }
+    }
+    if (!improved) {
+      break
+    }
+  }
+  return best
+}
+
+function createRefinementValues(matches, valueSelector, currentValue) {
+  const values = Array.from(new Set(matches.flatMap(match => (
+    match.items.map(item => round(valueSelector(item), 6))
+  )))).filter(Number.isFinite).sort((left, right) => left - right)
+  if (!values.includes(currentValue)) {
+    values.push(currentValue)
+    values.sort((left, right) => left - right)
+  }
+  if (values.length <= 121) {
+    return values
+  }
+  const selected = new Set([values[0], values.at(-1), currentValue])
+  for (let index = 0; index < 101; index += 1) {
+    selected.add(values[Math.round(index * (values.length - 1) / 100)])
+  }
+  const currentIndex = values.reduce((closestIndex, value, index) => (
+    Math.abs(value - currentValue) < Math.abs(values[closestIndex] - currentValue) ? index : closestIndex
+  ), 0)
+  for (let offset = -10; offset <= 10; offset += 1) {
+    const index = currentIndex + offset
+    if (index >= 0 && index < values.length) {
+      selected.add(values[index])
+    }
+  }
+  return Array.from(selected).sort((left, right) => left - right)
+}
+
 function evaluateStrategy(matches, strategy) {
+  if (!Number.isInteger(strategy.maximumSelections) || strategy.maximumSelections <= 0) {
+    return emptyMetrics(matches.length)
+  }
   let recommendedMatchCount = 0
   let recommendedSelectionCount = 0
   let winningSelectionCount = 0
   let totalReturn = 0
   for (const match of matches) {
-    const recommendations = match.items
-      .filter(item => (
+    let matchSelectionCount = 0
+    let winningOdds = null
+    for (const item of match.items) {
+      if (
         item.probability >= strategy.minimumProbability &&
         item.expectedValue >= strategy.minimumExpectedValue &&
         item.odds >= strategy.minimumOdds &&
         item.odds <= strategy.maximumOdds
-      ))
-      .sort((left, right) => right.probability - left.probability || right.expectedValue - left.expectedValue || left.totalGoals - right.totalGoals)
-      .slice(0, strategy.maximumSelections)
-    if (recommendations.length === 0) {
+      ) {
+        matchSelectionCount += 1
+        if (item.winning) {
+          winningOdds = item.odds
+        }
+        if (matchSelectionCount >= strategy.maximumSelections) {
+          break
+        }
+      }
+    }
+    if (matchSelectionCount === 0) {
       continue
     }
     recommendedMatchCount += 1
-    recommendedSelectionCount += recommendations.length
-    const winner = recommendations.find(item => item.winning)
-    if (winner) {
+    recommendedSelectionCount += matchSelectionCount
+    if (winningOdds != null) {
       winningSelectionCount += 1
-      totalReturn += winner.odds
+      totalReturn += winningOdds
     }
   }
   const totalStake = recommendedSelectionCount
@@ -374,17 +534,23 @@ function evaluateStrategy(matches, strategy) {
   }
 }
 
-function isBetter(candidate, current) {
+function isHigherRoi(candidate, current) {
   if (!current) {
     return true
+  }
+  if (candidate.roi !== current.roi) {
+    return candidate.roi > current.roi
   }
   if (candidate.hitRate !== current.hitRate) {
     return candidate.hitRate > current.hitRate
   }
-  if (candidate.recommendedSelectionCount !== current.recommendedSelectionCount) {
-    return candidate.recommendedSelectionCount > current.recommendedSelectionCount
+  if (candidate.samplingRate !== current.samplingRate) {
+    return candidate.samplingRate > current.samplingRate
   }
-  return candidate.roi > current.roi
+  if (candidate.matchHitRate !== current.matchHitRate) {
+    return candidate.matchHitRate > current.matchHitRate
+  }
+  return candidate.recommendedSelectionCount > current.recommendedSelectionCount
 }
 
 function emptyMetrics(availableMatchCount = 0) {
@@ -410,8 +576,9 @@ function printSummary(rows) {
       `${row.metrics.recommendedMatchCount}/${row.metrics.availableMatchCount} 场，` +
       `${row.metrics.recommendedSelectionCount} 注，` +
       `命中率 ${formatPercent(row.metrics.hitRate)}，ROI ${formatPercent(row.metrics.roi)}` +
+      `${row.degradationLevel && row.degradationLevel !== 'PRIMARY' ? `（${row.degradationLevel}）` : ''}` +
       `${row.fallbackToPreviousEdition ? '（沿用含上届样本）' : ''}` +
-      `${row.disabledBecauseRoiTargetNotMet ? '（ROI未超过20%，策略不投注）' : ''}\n`
+      `${row.disabledBecauseRoiTargetNotMet ? '（无可用样本或无满足采样率约束的策略，不投注）' : ''}\n`
     )
   }
 }
@@ -432,6 +599,65 @@ function readArgument(name, fallback) {
 
 function wait(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
+
+function serializeJson(value) {
+  return JSON.stringify(value, null, 2).replace(/\n/g, JSON_EOL) + JSON_EOL
+}
+
+function replaceConfigObject(configText, propertyName, value) {
+  const marker = `"${propertyName}"`
+  const propertyStart = configText.indexOf(marker)
+  if (propertyStart < 0) {
+    throw new Error(`配置文件缺少 ${propertyName} 字段`)
+  }
+  const colonIndex = configText.indexOf(':', propertyStart + marker.length)
+  const objectStart = configText.indexOf('{', colonIndex + 1)
+  if (colonIndex < 0 || objectStart < 0) {
+    throw new Error(`配置文件中 ${propertyName} 不是有效对象`)
+  }
+
+  let depth = 0
+  let inString = false
+  let escaped = false
+  let objectEnd = -1
+  for (let index = objectStart; index < configText.length; index += 1) {
+    const character = configText[index]
+    if (inString) {
+      if (escaped) {
+        escaped = false
+      } else if (character === '\\') {
+        escaped = true
+      } else if (character === '"') {
+        inString = false
+      }
+      continue
+    }
+    if (character === '"') {
+      inString = true
+    } else if (character === '{') {
+      depth += 1
+    } else if (character === '}') {
+      depth -= 1
+      if (depth === 0) {
+        objectEnd = index + 1
+        break
+      }
+    }
+  }
+  if (objectEnd < 0) {
+    throw new Error(`配置文件中 ${propertyName} 对象未正确结束`)
+  }
+
+  const eol = configText.includes('\r\n') ? '\r\n' : '\n'
+  const lineStart = configText.lastIndexOf('\n', propertyStart) + 1
+  const indent = configText.slice(lineStart, propertyStart)
+  const replacement = JSON.stringify(value, null, 2)
+    .replace(/^(\s*)"((?:\\.|[^"])*)":/gm, '$1"$2" :')
+    .split('\n')
+    .map((line, index) => index === 0 ? line : `${indent}${line}`)
+    .join(eol)
+  return configText.slice(0, objectStart) + replacement + configText.slice(objectEnd)
 }
 
 main().catch(error => {
