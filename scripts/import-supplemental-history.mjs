@@ -823,6 +823,34 @@ const FUTBOL24_SOURCES = [
 
 const VERIFIED_SUPPLEMENTAL_ROWS = [
   {
+    provider: 'FUTBOL24',
+    providerId: '357F4E1694EC2992',
+    source: 'VERIFIED-SIRIUS',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2025-01-30',
+    homeTeam: 'Sirius IK',
+    awayTeam: 'Brommapojkarna',
+    homeScore: 2,
+    awayScore: 1,
+    neutral: false
+  },
+  {
+    provider: 'ESPN',
+    providerId: '690498',
+    source: 'VERIFIED-ESPN-PORTUGUESE-CUP',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '葡萄牙杯',
+    matchDate: '2024-01-12',
+    homeTeam: 'Santa Clara',
+    awayTeam: 'C.D. Nacional',
+    homeScore: 0,
+    awayScore: 0,
+    neutral: false
+  },
+  {
     provider: 'USER',
     providerId: '20260711-UTRECHT-BEERSCHOT',
     source: 'VERIFIED-CLUB-FRIENDLY',

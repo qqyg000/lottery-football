@@ -85,6 +85,26 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final List<VerifiedSupplementalSchedule> VERIFIED_SUPPLEMENTAL_SCHEDULES = List.of(
             new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "FUTBOL24-CLUB_FRIENDLY-357F4E1694EC2992",
+                    LocalDate.of(2025, 1, 30),
+                    "Sirius IK",
+                    "Brommapojkarna",
+                    2,
+                    1),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_OFFICIAL_OTHER,
+                    "葡萄牙杯",
+                    "ESPN-CLUB_OFFICIAL_OTHER-690498",
+                    LocalDate.of(2024, 1, 12),
+                    "Santa Clara",
+                    "C.D. Nacional",
+                    0,
+                    0),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
                     "OPEN-VERIFIED-CLUB-FRIENDLY-69700CD4DDD265D7",
                     LocalDate.of(2026, 7, 11),
                     "FC Utrecht",
@@ -92,6 +112,8 @@ public class ClubCompetitionScheduleUpdater {
                     2,
                     0),
             new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
                     "OPEN-VERIFIED-CLUB-FRIENDLY-8804CBED20BD6757",
                     LocalDate.of(2026, 8, 1),
                     "FC Groningen",
@@ -99,6 +121,8 @@ public class ClubCompetitionScheduleUpdater {
                     1,
                     3),
             new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
                     "OPEN-VERIFIED-CLUB-FRIENDLY-CA9155D88D009242",
                     LocalDate.of(2026, 7, 26),
                     "Maritimo",
@@ -106,6 +130,8 @@ public class ClubCompetitionScheduleUpdater {
                     0,
                     0),
             new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
                     "OPEN-VERIFIED-CLUB-FRIENDLY-B664A862ED73EE99",
                     LocalDate.of(2026, 7, 31),
                     "SV Meerssen",
@@ -457,16 +483,16 @@ public class ClubCompetitionScheduleUpdater {
         List<MatchSchedule> schedules = new ArrayList<>();
         for (VerifiedSupplementalSchedule verified : VERIFIED_SUPPLEMENTAL_SCHEDULES) {
             MatchSchedule schedule = new MatchSchedule();
-            schedule.setCompetition(Competition.CLUB_FRIENDLY);
+            schedule.setCompetition(verified.competition());
             schedule.setMatchId(verified.matchId());
             schedule.setMatchDate(verified.matchDate());
             schedule.setKickoffTime(LocalTime.MIDNIGHT);
-            schedule.setGroupName("俱乐部友谊赛");
+            schedule.setGroupName(verified.groupName());
             schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(
-                    Competition.CLUB_FRIENDLY,
+                    verified.competition(),
                     verified.homeTeam()));
             schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(
-                    Competition.CLUB_FRIENDLY,
+                    verified.competition(),
                     verified.awayTeam()));
             schedule.setHomeTeamEn(verified.homeTeam());
             schedule.setAwayTeamEn(verified.awayTeam());
@@ -2496,6 +2522,8 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     private record VerifiedSupplementalSchedule(
+            Competition competition,
+            String groupName,
             String matchId,
             LocalDate matchDate,
             String homeTeam,

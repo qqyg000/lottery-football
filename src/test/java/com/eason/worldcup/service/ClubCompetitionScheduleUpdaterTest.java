@@ -1118,7 +1118,22 @@ class ClubCompetitionScheduleUpdaterTest {
     void shouldExposeVerifiedPrivateFriendliesToRuntimeCards() {
         List<MatchSchedule> schedules = updater.verifiedSupplementalSchedules();
 
-        assertEquals(4, schedules.size());
+        assertEquals(6, schedules.size());
+        assertTrue(schedules.stream().anyMatch(schedule ->
+                schedule.getMatchDate().equals(LocalDate.of(2025, 1, 30))
+                        && schedule.getCompetition() == Competition.CLUB_FRIENDLY
+                        && "天狼星".equals(schedule.getHomeTeamCn())
+                        && "布鲁马波".equals(schedule.getAwayTeamCn())
+                        && Integer.valueOf(2).equals(schedule.getHomeScore())
+                        && Integer.valueOf(1).equals(schedule.getAwayScore())));
+        assertTrue(schedules.stream().anyMatch(schedule ->
+                schedule.getMatchDate().equals(LocalDate.of(2024, 1, 12))
+                        && schedule.getCompetition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "葡萄牙杯".equals(schedule.getGroupName())
+                        && "圣克拉拉".equals(schedule.getHomeTeamCn())
+                        && "葡国民".equals(schedule.getAwayTeamCn())
+                        && Integer.valueOf(0).equals(schedule.getHomeScore())
+                        && Integer.valueOf(0).equals(schedule.getAwayScore())));
         assertTrue(schedules.stream().anyMatch(schedule ->
                 schedule.getMatchDate().equals(LocalDate.of(2026, 7, 11))
                         && "乌德勒支".equals(schedule.getHomeTeamCn())

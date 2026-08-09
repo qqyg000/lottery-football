@@ -369,6 +369,30 @@ class HistoricalMatchDataIntegrityTest {
     }
 
     @Test
+    void shouldContainRequestedClubFriendlyAndPortugueseCupMatches() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2025, 1, 30),
+                Competition.CLUB_FRIENDLY,
+                "天狼星",
+                "布鲁马波",
+                2,
+                1);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2024, 1, 12),
+                Competition.CLUB_OFFICIAL_OTHER,
+                "圣克拉拉",
+                "葡国民",
+                0,
+                0);
+        assertTrue(fixtures.stream().noneMatch(fixture ->
+                fixture.homeTeam().equals("莱里雅") || fixture.awayTeam().equals("莱里雅")));
+    }
+
+    @Test
     void shouldNotContainDuplicateNormalizedFixtures() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
         Map<String, Integer> fixtureCounts = new HashMap<>();

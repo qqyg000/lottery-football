@@ -302,16 +302,19 @@ class ClubTeamNameTranslatorTest {
     void shouldApplyRequestedDutchPortugueseAndItalianTeamAliases() throws IOException {
         assumeMappingsImported();
 
-        Map<String, String> expectedMappings = Map.of(
-                "NFC Volos", "Volos NFC",
-                "SBV Excelsior", "SBV精英",
-                "NAC", "布雷达",
-                "鹿特丹斯巴达", "鹿斯巴达",
-                "Atlético CP", "葡竞技",
-                "Como 1907", "科莫",
-                "Lusitânia Lourosa", "鲁斯塔尼亚",
-                "GD Estoril", "埃斯托里",
-                "CF Belenenses", "CF Os Belenenses");
+        Map<String, String> expectedMappings = Map.ofEntries(
+                Map.entry("NFC Volos", "Volos NFC"),
+                Map.entry("Volos", "Volos NFC"),
+                Map.entry("Amarante FC", "阿马兰蒂"),
+                Map.entry("Sporting CP B", "Sporting CP II"),
+                Map.entry("SBV Excelsior", "SBV精英"),
+                Map.entry("NAC", "布雷达"),
+                Map.entry("鹿特丹斯巴达", "鹿斯巴达"),
+                Map.entry("Atlético CP", "葡竞技"),
+                Map.entry("Como 1907", "科莫"),
+                Map.entry("Lusitânia Lourosa", "鲁斯塔尼亚"),
+                Map.entry("GD Estoril", "埃斯托里"),
+                Map.entry("CF Belenenses", "CF Os Belenenses"));
 
         expectedMappings.forEach((source, expected) ->
                 assertEquals(expected, ClubTeamNameTranslator.translate(
@@ -380,8 +383,9 @@ class ClubTeamNameTranslatorTest {
                 Map.entry("Birmingham", "伯明翰"),
                 Map.entry("Sporting Lisboa B", "Sporting CP II"),
                 Map.entry("CD Mafra", "Mafra"),
-                Map.entry("Uniao Leiria", "莱里雅"),
-                Map.entry("Uniao de Leiria", "莱里雅"),
+                Map.entry("莱里雅", "莱里亚"),
+                Map.entry("Uniao Leiria", "莱里亚"),
+                Map.entry("Uniao de Leiria", "莱里亚"),
                 Map.entry("Varzim SC", "瓦兹姆"),
                 Map.entry("USC Paredes", "Paredes"),
                 Map.entry("Ahli", "吉达国民"),
