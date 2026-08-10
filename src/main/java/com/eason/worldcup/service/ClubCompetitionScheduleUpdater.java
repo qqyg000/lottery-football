@@ -21,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
-import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -66,9 +65,6 @@ public class ClubCompetitionScheduleUpdater {
     private static final Duration PARALLEL_TASK_TIMEOUT_BUFFER = Duration.ofSeconds(5);
 
     private static final Pattern PERIOD_SCORE_PATTERN = Pattern.compile("(\\d+)\\s*-\\s*(\\d+)");
-
-    private static final Pattern FUTBOL24_SLUG_DATE_PATTERN = Pattern.compile(
-            "^(\\d{4})/(\\d{2})/(\\d{2})(?:/|$)");
 
     private static final Map<String, ScorePair> VERIFIED_REGULATION_TIME_SCORES = Map.of(
             "FUTBOL24-CLUB_FRIENDLY-3383418", new ScorePair(4, 0),
@@ -1325,9 +1321,7 @@ public class ClubCompetitionScheduleUpdater {
         } catch (DateTimeParseException ex) {
             return null;
         }
-        LocalDate matchDate = competition == Competition.EUROPA_LEAGUE || "338".equals(leagueId)
-                ? matchDateTime.toLocalDate()
-                : parseFutbol24CalendarDate(match, matchDateTime.toLocalDate());
+        LocalDate matchDate = matchDateTime.toLocalDate();
         String matchId = buildMatchId(
                 "FUTBOL24", competition, eventId, matchDate, homeTeam, awayTeam);
         if (completed && score == null) {
@@ -1356,21 +1350,6 @@ public class ClubCompetitionScheduleUpdater {
         }
         applyVerifiedRegulationTimeScore(schedule);
         return schedule;
-    }
-
-    private LocalDate parseFutbol24CalendarDate(JsonNode match, LocalDate fallbackDate) {
-        Matcher matcher = FUTBOL24_SLUG_DATE_PATTERN.matcher(match.path("slug").asText(""));
-        if (!matcher.find()) {
-            return fallbackDate;
-        }
-        try {
-            return LocalDate.of(
-                    Integer.parseInt(matcher.group(1)),
-                    Integer.parseInt(matcher.group(2)),
-                    Integer.parseInt(matcher.group(3)));
-        } catch (DateTimeException ex) {
-            return fallbackDate;
-        }
     }
 
     private void applyVerifiedRegulationTimeScore(MatchSchedule schedule) {

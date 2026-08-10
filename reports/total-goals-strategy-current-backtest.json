@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-10T14:16:36.124Z",
+  "generatedAt": "2026-08-10T14:27:56.693Z",
   "source": "中国体彩网总进球数固定赔率初始值",
   "modelMode": "after",
   "simulations": 50000,
   "stakeMethod": "每个推荐项作为独立单关等额投注1单位",
   "roiFormula": "ROI = (命中单关赔率返奖合计 - 推荐总注数) / 推荐总注数",
   "hitRateFormula": "命中率 = 命中单关注数 / 推荐总注数",
-  "optimizationObjective": "所有有进球数赔率样本的策略采样率必须严格大于33.30%、命中率必须严格大于33.30%，在达标候选中优先最大化ROI，再比较单注命中率和采样率",
+  "optimizationObjective": "使用当前已保存的进球数策略重新计算全部指标，不执行参数搜索",
   "constraints": {
     "strictGreaterThan": true,
     "minimumSamplingRate": 0.333,
@@ -17,7 +17,7 @@
     "fallbackMinimumHitRate": 0.25,
     "fallbackRule": "仅在主采样率和主命中率约束无可行解时，才使用降级约束重新搜索",
     "maximumSelectionsPerMatch": "0-4",
-    "strategySearch": "先粗网格搜索，取目标最优的16个达标候选，再基于实际概率、期望值和赔率分布执行最多3轮坐标细化",
+    "strategySearch": "先粗网格搜索，取目标最优的8个达标候选，再基于实际概率、期望值和赔率分布执行最多3轮坐标细化",
     "smallCurrentSampleRule": "仅本届存在样本时直接优化；无样本时沿用含上届策略",
     "selectionPreference": "采样率和命中率达标后先比较ROI，再比较单注命中率、采样率、每场命中率和有效注数"
   },
@@ -35,10 +35,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 25.11,
         "minimumExpectedValue": 0.8,
@@ -92,9 +92,9 @@
         "netProfit": 4.95,
         "roi": 0.141429
       },
-      "minimumRecommendedMatchConstraint": 35,
-      "minimumSelectionConstraint": 35,
-      "minimumWinningSelectionConstraint": 12
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "WORLD_CUP:PREVIOUS",
@@ -109,10 +109,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 20.44,
         "minimumExpectedValue": 0.84134,
@@ -166,9 +166,9 @@
         "netProfit": 20.85,
         "roi": 0.595714
       },
-      "minimumRecommendedMatchConstraint": 35,
-      "minimumSelectionConstraint": 35,
-      "minimumWinningSelectionConstraint": 12
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "EUROPEAN_CHAMPIONSHIP:CURRENT",
@@ -183,10 +183,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 25.11,
         "minimumExpectedValue": 0,
@@ -240,9 +240,9 @@
         "netProfit": 9.35,
         "roi": 0.55
       },
-      "minimumRecommendedMatchConstraint": 17,
-      "minimumSelectionConstraint": 17,
-      "minimumWinningSelectionConstraint": 6
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "EUROPEAN_CHAMPIONSHIP:PREVIOUS",
@@ -257,10 +257,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 25.11,
         "minimumExpectedValue": 0,
@@ -314,9 +314,9 @@
         "netProfit": 9.35,
         "roi": 0.55
       },
-      "minimumRecommendedMatchConstraint": 17,
-      "minimumSelectionConstraint": 17,
-      "minimumWinningSelectionConstraint": 6
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "COPA_AMERICA:CURRENT",
@@ -331,10 +331,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 0,
         "minimumExpectedValue": 0.9558,
@@ -388,9 +388,9 @@
         "netProfit": 6.55,
         "roi": 0.595455
       },
-      "minimumRecommendedMatchConstraint": 11,
-      "minimumSelectionConstraint": 11,
-      "minimumWinningSelectionConstraint": 4
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "COPA_AMERICA:PREVIOUS",
@@ -405,10 +405,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 0,
         "minimumExpectedValue": 0.9558,
@@ -462,9 +462,9 @@
         "netProfit": 6.55,
         "roi": 0.595455
       },
-      "minimumRecommendedMatchConstraint": 11,
-      "minimumSelectionConstraint": 11,
-      "minimumWinningSelectionConstraint": 4
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "CLUB_WORLD_CUP:CURRENT",
@@ -479,10 +479,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 23.5,
         "minimumExpectedValue": 0.80685,
@@ -517,8 +517,8 @@
         "roi": 0.4625
       },
       "previousStrategy": {
-        "minimumProbability": 23.71,
-        "minimumExpectedValue": 0.80454,
+        "minimumProbability": 23.5,
+        "minimumExpectedValue": 0.80685,
         "minimumOdds": 1.01,
         "maximumOdds": 4.5,
         "maximumSelections": 1
@@ -527,18 +527,18 @@
         "availableMatchCount": 59,
         "recommendedMatchCount": 20,
         "recommendedSelectionCount": 20,
-        "winningSelectionCount": 7,
-        "hitRate": 0.35,
-        "matchHitRate": 0.35,
+        "winningSelectionCount": 8,
+        "hitRate": 0.4,
+        "matchHitRate": 0.4,
         "samplingRate": 0.3389830508474576,
         "totalStake": 20,
-        "totalReturn": 24.75,
-        "netProfit": 4.75,
-        "roi": 0.2375
+        "totalReturn": 29.25,
+        "netProfit": 9.25,
+        "roi": 0.4625
       },
-      "minimumRecommendedMatchConstraint": 20,
-      "minimumSelectionConstraint": 20,
-      "minimumWinningSelectionConstraint": 7
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "CLUB_WORLD_CUP:PREVIOUS",
@@ -553,10 +553,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 20.46,
         "minimumExpectedValue": 0.8881,
@@ -591,7 +591,7 @@
         "roi": 0.421154
       },
       "previousStrategy": {
-        "minimumProbability": 20.34,
+        "minimumProbability": 20.46,
         "minimumExpectedValue": 0.8881,
         "minimumOdds": 1.01,
         "maximumOdds": 5,
@@ -599,20 +599,20 @@
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 59,
-        "recommendedMatchCount": 27,
-        "recommendedSelectionCount": 27,
+        "recommendedMatchCount": 26,
+        "recommendedSelectionCount": 26,
         "winningSelectionCount": 9,
-        "hitRate": 0.3333333333333333,
-        "matchHitRate": 0.3333333333333333,
-        "samplingRate": 0.4576271186440678,
-        "totalStake": 27,
+        "hitRate": 0.34615384615384615,
+        "matchHitRate": 0.34615384615384615,
+        "samplingRate": 0.4406779661016949,
+        "totalStake": 26,
         "totalReturn": 36.95,
-        "netProfit": 9.95,
-        "roi": 0.368519
+        "netProfit": 10.95,
+        "roi": 0.421154
       },
-      "minimumRecommendedMatchConstraint": 20,
-      "minimumSelectionConstraint": 20,
-      "minimumWinningSelectionConstraint": 9
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "EUROPA_LEAGUE:CURRENT",
@@ -627,10 +627,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 12.5,
         "minimumExpectedValue": 0,
@@ -684,9 +684,9 @@
         "netProfit": 16.85,
         "roi": 1.685
       },
-      "minimumRecommendedMatchConstraint": 7,
-      "minimumSelectionConstraint": 7,
-      "minimumWinningSelectionConstraint": 4
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "EUROPA_LEAGUE:PREVIOUS",
@@ -701,10 +701,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 21.51,
         "minimumExpectedValue": 0.7656,
@@ -739,28 +739,28 @@
         "roi": 0.294211
       },
       "previousStrategy": {
-        "minimumProbability": 22.13,
-        "minimumExpectedValue": 0.75752,
+        "minimumProbability": 21.51,
+        "minimumExpectedValue": 0.7656,
         "minimumOdds": 3.35,
-        "maximumOdds": 3.5,
-        "maximumSelections": 1
+        "maximumOdds": 3.65,
+        "maximumSelections": 2
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 183,
-        "recommendedMatchCount": 64,
-        "recommendedSelectionCount": 64,
-        "winningSelectionCount": 20,
-        "hitRate": 0.3125,
-        "matchHitRate": 0.3125,
-        "samplingRate": 0.34972677595628415,
-        "totalStake": 64,
-        "totalReturn": 68.4,
-        "netProfit": 4.4,
-        "roi": 0.06875
+        "recommendedMatchCount": 85,
+        "recommendedSelectionCount": 95,
+        "winningSelectionCount": 35,
+        "hitRate": 0.3684210526315789,
+        "matchHitRate": 0.4117647058823529,
+        "samplingRate": 0.4644808743169399,
+        "totalStake": 95,
+        "totalReturn": 122.95,
+        "netProfit": 27.95,
+        "roi": 0.294211
       },
-      "minimumRecommendedMatchConstraint": 61,
-      "minimumSelectionConstraint": 61,
-      "minimumWinningSelectionConstraint": 32
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "CHAMPIONS_LEAGUE:CURRENT",
@@ -775,10 +775,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 19.23,
         "minimumExpectedValue": 0,
@@ -813,28 +813,28 @@
         "roi": 1.65
       },
       "previousStrategy": {
-        "minimumProbability": 0,
-        "minimumExpectedValue": 0.9,
-        "minimumOdds": 1.01,
+        "minimumProbability": 19.23,
+        "minimumExpectedValue": 0,
+        "minimumOdds": 4,
         "maximumOdds": 5,
         "maximumSelections": 1
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 22,
-        "recommendedMatchCount": 10,
-        "recommendedSelectionCount": 10,
-        "winningSelectionCount": 4,
-        "hitRate": 0.4,
-        "matchHitRate": 0.4,
-        "samplingRate": 0.45454545454545453,
-        "totalStake": 10,
-        "totalReturn": 16.15,
-        "netProfit": 6.15,
-        "roi": 0.615
+        "recommendedMatchCount": 8,
+        "recommendedSelectionCount": 8,
+        "winningSelectionCount": 5,
+        "hitRate": 0.625,
+        "matchHitRate": 0.625,
+        "samplingRate": 0.36363636363636365,
+        "totalStake": 8,
+        "totalReturn": 21.2,
+        "netProfit": 13.2,
+        "roi": 1.65
       },
-      "minimumRecommendedMatchConstraint": 8,
-      "minimumSelectionConstraint": 8,
-      "minimumWinningSelectionConstraint": 3
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "CHAMPIONS_LEAGUE:PREVIOUS",
@@ -846,13 +846,13 @@
       "disabledBecauseRoiTargetNotMet": false,
       "disabledBecauseSamplingTargetNotMet": false,
       "disabledBecauseConstraintsNotMet": false,
-      "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
+      "samplingRateTargetMet": false,
+      "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.25,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 22.66,
         "minimumExpectedValue": 0,
@@ -887,28 +887,28 @@
         "roi": 0.035345
       },
       "previousStrategy": {
-        "minimumProbability": 22.57,
+        "minimumProbability": 22.66,
         "minimumExpectedValue": 0,
         "minimumOdds": 1.01,
         "maximumOdds": 4.4,
-        "maximumSelections": 1
+        "maximumSelections": 2
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 226,
-        "recommendedMatchCount": 61,
-        "recommendedSelectionCount": 61,
+        "recommendedMatchCount": 57,
+        "recommendedSelectionCount": 58,
         "winningSelectionCount": 17,
-        "hitRate": 0.2786885245901639,
-        "matchHitRate": 0.2786885245901639,
-        "samplingRate": 0.26991150442477874,
-        "totalStake": 61,
-        "totalReturn": 60.5,
-        "netProfit": -0.5,
-        "roi": -0.008197
+        "hitRate": 0.29310344827586204,
+        "matchHitRate": 0.2982456140350877,
+        "samplingRate": 0.252212389380531,
+        "totalStake": 58,
+        "totalReturn": 60.05,
+        "netProfit": 2.05,
+        "roi": 0.035345
       },
-      "minimumRecommendedMatchConstraint": 57,
-      "minimumSelectionConstraint": 57,
-      "minimumWinningSelectionConstraint": 15
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "PREMIER_LEAGUE:CURRENT",
@@ -916,36 +916,36 @@
       "competitionName": "英超",
       "range": "CURRENT",
       "rangeName": "仅本届",
-      "fallbackToPreviousEdition": true,
-      "disabledBecauseRoiTargetNotMet": false,
-      "disabledBecauseSamplingTargetNotMet": false,
-      "disabledBecauseConstraintsNotMet": false,
-      "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
+      "fallbackToPreviousEdition": false,
+      "disabledBecauseRoiTargetNotMet": true,
+      "disabledBecauseSamplingTargetNotMet": true,
+      "disabledBecauseConstraintsNotMet": true,
+      "samplingRateTargetMet": false,
+      "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.25,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 0.2,
         "minimumExpectedValue": 0.407445,
         "minimumOdds": 3.5,
         "maximumOdds": 3.65,
-        "maximumSelections": 2
+        "maximumSelections": 0
       },
       "metrics": {
-        "availableMatchCount": 340,
-        "recommendedMatchCount": 92,
-        "recommendedSelectionCount": 94,
-        "winningSelectionCount": 28,
-        "hitRate": 0.2978723404255319,
-        "matchHitRate": 0.30434782608695654,
-        "samplingRate": 0.27058823529411763,
-        "totalStake": 94,
-        "totalReturn": 99.5,
-        "netProfit": 5.5,
-        "roi": 0.058511
+        "availableMatchCount": 0,
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "hitRate": null,
+        "matchHitRate": null,
+        "samplingRate": null,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null
       },
       "directMetrics": {
         "availableMatchCount": 0,
@@ -961,8 +961,8 @@
         "roi": null
       },
       "previousStrategy": {
-        "minimumProbability": 11.04,
-        "minimumExpectedValue": 0.40176,
+        "minimumProbability": 0.2,
+        "minimumExpectedValue": 0.407445,
         "minimumOdds": 3.5,
         "maximumOdds": 3.65,
         "maximumSelections": 2
@@ -980,9 +980,9 @@
         "netProfit": 0,
         "roi": null
       },
-      "minimumRecommendedMatchConstraint": 86,
-      "minimumSelectionConstraint": 86,
-      "minimumWinningSelectionConstraint": 24
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "PREMIER_LEAGUE:PREVIOUS",
@@ -994,13 +994,13 @@
       "disabledBecauseRoiTargetNotMet": false,
       "disabledBecauseSamplingTargetNotMet": false,
       "disabledBecauseConstraintsNotMet": false,
-      "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
+      "samplingRateTargetMet": false,
+      "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.25,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 0.2,
         "minimumExpectedValue": 0.407445,
@@ -1035,28 +1035,28 @@
         "roi": 0.058511
       },
       "previousStrategy": {
-        "minimumProbability": 11.04,
-        "minimumExpectedValue": 0.40176,
+        "minimumProbability": 0.2,
+        "minimumExpectedValue": 0.407445,
         "minimumOdds": 3.5,
         "maximumOdds": 3.65,
         "maximumSelections": 2
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 340,
-        "recommendedMatchCount": 97,
-        "recommendedSelectionCount": 99,
+        "recommendedMatchCount": 92,
+        "recommendedSelectionCount": 94,
         "winningSelectionCount": 28,
-        "hitRate": 0.2828282828282828,
-        "matchHitRate": 0.28865979381443296,
-        "samplingRate": 0.2852941176470588,
-        "totalStake": 99,
+        "hitRate": 0.2978723404255319,
+        "matchHitRate": 0.30434782608695654,
+        "samplingRate": 0.27058823529411763,
+        "totalStake": 94,
         "totalReturn": 99.5,
-        "netProfit": 0.5,
-        "roi": 0.005051
+        "netProfit": 5.5,
+        "roi": 0.058511
       },
-      "minimumRecommendedMatchConstraint": 86,
-      "minimumSelectionConstraint": 86,
-      "minimumWinningSelectionConstraint": 24
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "LA_LIGA:CURRENT",
@@ -1064,36 +1064,36 @@
       "competitionName": "西甲",
       "range": "CURRENT",
       "rangeName": "仅本届",
-      "fallbackToPreviousEdition": true,
-      "disabledBecauseRoiTargetNotMet": false,
-      "disabledBecauseSamplingTargetNotMet": false,
-      "disabledBecauseConstraintsNotMet": false,
-      "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
+      "fallbackToPreviousEdition": false,
+      "disabledBecauseRoiTargetNotMet": true,
+      "disabledBecauseSamplingTargetNotMet": true,
+      "disabledBecauseConstraintsNotMet": true,
+      "samplingRateTargetMet": false,
+      "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 25.21,
         "minimumExpectedValue": 0,
         "minimumOdds": 3.3,
         "maximumOdds": 5,
-        "maximumSelections": 1
+        "maximumSelections": 0
       },
       "metrics": {
-        "availableMatchCount": 355,
-        "recommendedMatchCount": 124,
-        "recommendedSelectionCount": 124,
-        "winningSelectionCount": 42,
-        "hitRate": 0.3387096774193548,
-        "matchHitRate": 0.3387096774193548,
-        "samplingRate": 0.3492957746478873,
-        "totalStake": 124,
-        "totalReturn": 153.35,
-        "netProfit": 29.35,
-        "roi": 0.236694
+        "availableMatchCount": 0,
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "hitRate": null,
+        "matchHitRate": null,
+        "samplingRate": null,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null
       },
       "directMetrics": {
         "availableMatchCount": 0,
@@ -1109,9 +1109,9 @@
         "roi": null
       },
       "previousStrategy": {
-        "minimumProbability": 25.24,
-        "minimumExpectedValue": 0.8082,
-        "minimumOdds": 3.2,
+        "minimumProbability": 25.21,
+        "minimumExpectedValue": 0,
+        "minimumOdds": 3.3,
         "maximumOdds": 5,
         "maximumSelections": 1
       },
@@ -1128,9 +1128,9 @@
         "netProfit": 0,
         "roi": null
       },
-      "minimumRecommendedMatchConstraint": 119,
-      "minimumSelectionConstraint": 119,
-      "minimumWinningSelectionConstraint": 42
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "LA_LIGA:PREVIOUS",
@@ -1145,10 +1145,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 25.21,
         "minimumExpectedValue": 0,
@@ -1183,28 +1183,28 @@
         "roi": 0.236694
       },
       "previousStrategy": {
-        "minimumProbability": 25.24,
-        "minimumExpectedValue": 0.8082,
-        "minimumOdds": 3.2,
+        "minimumProbability": 25.21,
+        "minimumExpectedValue": 0,
+        "minimumOdds": 3.3,
         "maximumOdds": 5,
         "maximumSelections": 1
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 355,
-        "recommendedMatchCount": 146,
-        "recommendedSelectionCount": 146,
-        "winningSelectionCount": 46,
-        "hitRate": 0.3150684931506849,
-        "matchHitRate": 0.3150684931506849,
-        "samplingRate": 0.4112676056338028,
-        "totalStake": 146,
-        "totalReturn": 164.5,
-        "netProfit": 18.5,
-        "roi": 0.126712
+        "recommendedMatchCount": 124,
+        "recommendedSelectionCount": 124,
+        "winningSelectionCount": 42,
+        "hitRate": 0.3387096774193548,
+        "matchHitRate": 0.3387096774193548,
+        "samplingRate": 0.3492957746478873,
+        "totalStake": 124,
+        "totalReturn": 153.35,
+        "netProfit": 29.35,
+        "roi": 0.236694
       },
-      "minimumRecommendedMatchConstraint": 119,
-      "minimumSelectionConstraint": 119,
-      "minimumWinningSelectionConstraint": 42
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "SERIE_A:CURRENT",
@@ -1212,36 +1212,36 @@
       "competitionName": "意甲",
       "range": "CURRENT",
       "rangeName": "仅本届",
-      "fallbackToPreviousEdition": true,
-      "disabledBecauseRoiTargetNotMet": false,
-      "disabledBecauseSamplingTargetNotMet": false,
-      "disabledBecauseConstraintsNotMet": false,
-      "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
+      "fallbackToPreviousEdition": false,
+      "disabledBecauseRoiTargetNotMet": true,
+      "disabledBecauseSamplingTargetNotMet": true,
+      "disabledBecauseConstraintsNotMet": true,
+      "samplingRateTargetMet": false,
+      "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.25,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 26.05,
         "minimumExpectedValue": 1.009855,
         "minimumOdds": 3.9,
         "maximumOdds": 4.35,
-        "maximumSelections": 1
+        "maximumSelections": 0
       },
       "metrics": {
-        "availableMatchCount": 352,
-        "recommendedMatchCount": 99,
-        "recommendedSelectionCount": 99,
-        "winningSelectionCount": 29,
-        "hitRate": 0.29292929292929293,
-        "matchHitRate": 0.29292929292929293,
-        "samplingRate": 0.28125,
-        "totalStake": 99,
-        "totalReturn": 118.7,
-        "netProfit": 19.7,
-        "roi": 0.19899
+        "availableMatchCount": 0,
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "hitRate": null,
+        "matchHitRate": null,
+        "samplingRate": null,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null
       },
       "directMetrics": {
         "availableMatchCount": 0,
@@ -1257,10 +1257,10 @@
         "roi": null
       },
       "previousStrategy": {
-        "minimumProbability": 0,
-        "minimumExpectedValue": 1.00425,
-        "minimumOdds": 3.75,
-        "maximumOdds": 4,
+        "minimumProbability": 26.05,
+        "minimumExpectedValue": 1.009855,
+        "minimumOdds": 3.9,
+        "maximumOdds": 4.35,
         "maximumSelections": 1
       },
       "previousStrategyMetrics": {
@@ -1276,9 +1276,9 @@
         "netProfit": 0,
         "roi": null
       },
-      "minimumRecommendedMatchConstraint": 89,
-      "minimumSelectionConstraint": 89,
-      "minimumWinningSelectionConstraint": 25
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "SERIE_A:PREVIOUS",
@@ -1290,13 +1290,13 @@
       "disabledBecauseRoiTargetNotMet": false,
       "disabledBecauseSamplingTargetNotMet": false,
       "disabledBecauseConstraintsNotMet": false,
-      "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
+      "samplingRateTargetMet": false,
+      "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.25,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 26.05,
         "minimumExpectedValue": 1.009855,
@@ -1331,28 +1331,28 @@
         "roi": 0.19899
       },
       "previousStrategy": {
-        "minimumProbability": 0,
-        "minimumExpectedValue": 1.00425,
-        "minimumOdds": 3.75,
-        "maximumOdds": 4,
+        "minimumProbability": 26.05,
+        "minimumExpectedValue": 1.009855,
+        "minimumOdds": 3.9,
+        "maximumOdds": 4.35,
         "maximumSelections": 1
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 352,
-        "recommendedMatchCount": 94,
-        "recommendedSelectionCount": 94,
-        "winningSelectionCount": 26,
-        "hitRate": 0.2765957446808511,
-        "matchHitRate": 0.2765957446808511,
-        "samplingRate": 0.26704545454545453,
-        "totalStake": 94,
-        "totalReturn": 100.85,
-        "netProfit": 6.85,
-        "roi": 0.072872
+        "recommendedMatchCount": 99,
+        "recommendedSelectionCount": 99,
+        "winningSelectionCount": 29,
+        "hitRate": 0.29292929292929293,
+        "matchHitRate": 0.29292929292929293,
+        "samplingRate": 0.28125,
+        "totalStake": 99,
+        "totalReturn": 118.7,
+        "netProfit": 19.7,
+        "roi": 0.19899
       },
-      "minimumRecommendedMatchConstraint": 89,
-      "minimumSelectionConstraint": 89,
-      "minimumWinningSelectionConstraint": 25
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "BUNDESLIGA:CURRENT",
@@ -1360,36 +1360,36 @@
       "competitionName": "德甲",
       "range": "CURRENT",
       "rangeName": "仅本届",
-      "fallbackToPreviousEdition": true,
-      "disabledBecauseRoiTargetNotMet": false,
-      "disabledBecauseSamplingTargetNotMet": false,
-      "disabledBecauseConstraintsNotMet": false,
-      "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
+      "fallbackToPreviousEdition": false,
+      "disabledBecauseRoiTargetNotMet": true,
+      "disabledBecauseSamplingTargetNotMet": true,
+      "disabledBecauseConstraintsNotMet": true,
+      "samplingRateTargetMet": false,
+      "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.25,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 22.53,
         "minimumExpectedValue": 0,
         "minimumOdds": 3.5,
         "maximumOdds": 6,
-        "maximumSelections": 1
+        "maximumSelections": 0
       },
       "metrics": {
-        "availableMatchCount": 285,
-        "recommendedMatchCount": 95,
-        "recommendedSelectionCount": 95,
-        "winningSelectionCount": 26,
-        "hitRate": 0.2736842105263158,
-        "matchHitRate": 0.2736842105263158,
-        "samplingRate": 0.3333333333333333,
-        "totalStake": 95,
-        "totalReturn": 100.15,
-        "netProfit": 5.15,
-        "roi": 0.054211
+        "availableMatchCount": 0,
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "hitRate": null,
+        "matchHitRate": null,
+        "samplingRate": null,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null
       },
       "directMetrics": {
         "availableMatchCount": 0,
@@ -1405,11 +1405,11 @@
         "roi": null
       },
       "previousStrategy": {
-        "minimumProbability": 16.83,
-        "minimumExpectedValue": 0.8489,
-        "minimumOdds": 3.4,
-        "maximumOdds": 4,
-        "maximumSelections": 2
+        "minimumProbability": 22.53,
+        "minimumExpectedValue": 0,
+        "minimumOdds": 3.5,
+        "maximumOdds": 6,
+        "maximumSelections": 1
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 0,
@@ -1424,9 +1424,9 @@
         "netProfit": 0,
         "roi": null
       },
-      "minimumRecommendedMatchConstraint": 72,
-      "minimumSelectionConstraint": 72,
-      "minimumWinningSelectionConstraint": 24
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "BUNDESLIGA:PREVIOUS",
@@ -1439,12 +1439,12 @@
       "disabledBecauseSamplingTargetNotMet": false,
       "disabledBecauseConstraintsNotMet": false,
       "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
+      "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.25,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 22.53,
         "minimumExpectedValue": 0,
@@ -1479,28 +1479,28 @@
         "roi": 0.054211
       },
       "previousStrategy": {
-        "minimumProbability": 16.83,
-        "minimumExpectedValue": 0.8489,
-        "minimumOdds": 3.4,
-        "maximumOdds": 4,
-        "maximumSelections": 2
+        "minimumProbability": 22.53,
+        "minimumExpectedValue": 0,
+        "minimumOdds": 3.5,
+        "maximumOdds": 6,
+        "maximumSelections": 1
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 285,
-        "recommendedMatchCount": 77,
-        "recommendedSelectionCount": 77,
-        "winningSelectionCount": 21,
-        "hitRate": 0.2727272727272727,
-        "matchHitRate": 0.2727272727272727,
-        "samplingRate": 0.27017543859649124,
-        "totalStake": 77,
-        "totalReturn": 79.65,
-        "netProfit": 2.65,
-        "roi": 0.034416
+        "recommendedMatchCount": 95,
+        "recommendedSelectionCount": 95,
+        "winningSelectionCount": 26,
+        "hitRate": 0.2736842105263158,
+        "matchHitRate": 0.2736842105263158,
+        "samplingRate": 0.3333333333333333,
+        "totalStake": 95,
+        "totalReturn": 100.15,
+        "netProfit": 5.15,
+        "roi": 0.054211
       },
-      "minimumRecommendedMatchConstraint": 72,
-      "minimumSelectionConstraint": 72,
-      "minimumWinningSelectionConstraint": 24
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "LIGUE_1:CURRENT",
@@ -1508,36 +1508,36 @@
       "competitionName": "法甲",
       "range": "CURRENT",
       "rangeName": "仅本届",
-      "fallbackToPreviousEdition": true,
-      "disabledBecauseRoiTargetNotMet": false,
-      "disabledBecauseSamplingTargetNotMet": false,
-      "disabledBecauseConstraintsNotMet": false,
-      "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
-      "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "fallbackToPreviousEdition": false,
+      "disabledBecauseRoiTargetNotMet": true,
+      "disabledBecauseSamplingTargetNotMet": true,
+      "disabledBecauseConstraintsNotMet": true,
+      "samplingRateTargetMet": false,
+      "hitRateTargetMet": false,
+      "primaryRoiTargetMet": false,
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 26.23,
         "minimumExpectedValue": 1.129205,
         "minimumOdds": 4.05,
         "maximumOdds": 12,
-        "maximumSelections": 2
+        "maximumSelections": 0
       },
       "metrics": {
-        "availableMatchCount": 224,
-        "recommendedMatchCount": 76,
-        "recommendedSelectionCount": 79,
-        "winningSelectionCount": 27,
-        "hitRate": 0.34177215189873417,
-        "matchHitRate": 0.35526315789473684,
-        "samplingRate": 0.3392857142857143,
-        "totalStake": 79,
-        "totalReturn": 140.2,
-        "netProfit": 61.2,
-        "roi": 0.774684
+        "availableMatchCount": 0,
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "hitRate": null,
+        "matchHitRate": null,
+        "samplingRate": null,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null
       },
       "directMetrics": {
         "availableMatchCount": 0,
@@ -1553,11 +1553,11 @@
         "roi": null
       },
       "previousStrategy": {
-        "minimumProbability": 25.16,
-        "minimumExpectedValue": 1.18634,
+        "minimumProbability": 26.23,
+        "minimumExpectedValue": 1.129205,
         "minimumOdds": 4.05,
-        "maximumOdds": 6.4,
-        "maximumSelections": 1
+        "maximumOdds": 12,
+        "maximumSelections": 2
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 0,
@@ -1572,9 +1572,9 @@
         "netProfit": 0,
         "roi": null
       },
-      "minimumRecommendedMatchConstraint": 75,
-      "minimumSelectionConstraint": 75,
-      "minimumWinningSelectionConstraint": 27
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "LIGUE_1:PREVIOUS",
@@ -1589,10 +1589,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 26.23,
         "minimumExpectedValue": 1.129205,
@@ -1627,28 +1627,28 @@
         "roi": 0.774684
       },
       "previousStrategy": {
-        "minimumProbability": 25.16,
-        "minimumExpectedValue": 1.18634,
+        "minimumProbability": 26.23,
+        "minimumExpectedValue": 1.129205,
         "minimumOdds": 4.05,
-        "maximumOdds": 6.4,
-        "maximumSelections": 1
+        "maximumOdds": 12,
+        "maximumSelections": 2
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 224,
-        "recommendedMatchCount": 78,
-        "recommendedSelectionCount": 78,
-        "winningSelectionCount": 24,
-        "hitRate": 0.3076923076923077,
-        "matchHitRate": 0.3076923076923077,
-        "samplingRate": 0.3482142857142857,
-        "totalStake": 78,
-        "totalReturn": 121.45,
-        "netProfit": 43.45,
-        "roi": 0.557051
+        "recommendedMatchCount": 76,
+        "recommendedSelectionCount": 79,
+        "winningSelectionCount": 27,
+        "hitRate": 0.34177215189873417,
+        "matchHitRate": 0.35526315789473684,
+        "samplingRate": 0.3392857142857143,
+        "totalStake": 79,
+        "totalReturn": 140.2,
+        "netProfit": 61.2,
+        "roi": 0.774684
       },
-      "minimumRecommendedMatchConstraint": 75,
-      "minimumSelectionConstraint": 75,
-      "minimumWinningSelectionConstraint": 27
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "PRIMEIRA_LIGA:CURRENT",
@@ -1663,10 +1663,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 17.5,
         "minimumExpectedValue": 0,
@@ -1720,9 +1720,9 @@
         "netProfit": 10.55,
         "roi": 3.516667
       },
-      "minimumRecommendedMatchConstraint": 3,
-      "minimumSelectionConstraint": 3,
-      "minimumWinningSelectionConstraint": 1
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "PRIMEIRA_LIGA:PREVIOUS",
@@ -1737,10 +1737,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 15.91,
         "minimumExpectedValue": 0.68757,
@@ -1775,28 +1775,28 @@
         "roi": 0.593846
       },
       "previousStrategy": {
-        "minimumProbability": 15.65,
-        "minimumExpectedValue": 0.8154,
-        "minimumOdds": 4.85,
-        "maximumOdds": 6,
-        "maximumSelections": 1
+        "minimumProbability": 15.91,
+        "minimumExpectedValue": 0.68757,
+        "minimumOdds": 4.15,
+        "maximumOdds": 5.2,
+        "maximumSelections": 2
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 186,
-        "recommendedMatchCount": 75,
-        "recommendedSelectionCount": 75,
-        "winningSelectionCount": 21,
-        "hitRate": 0.28,
-        "matchHitRate": 0.28,
-        "samplingRate": 0.4032258064516129,
-        "totalStake": 75,
-        "totalReturn": 114.8,
-        "netProfit": 39.8,
-        "roi": 0.530667
+        "recommendedMatchCount": 65,
+        "recommendedSelectionCount": 65,
+        "winningSelectionCount": 22,
+        "hitRate": 0.3384615384615385,
+        "matchHitRate": 0.3384615384615385,
+        "samplingRate": 0.34946236559139787,
+        "totalStake": 65,
+        "totalReturn": 103.6,
+        "netProfit": 38.6,
+        "roi": 0.593846
       },
-      "minimumRecommendedMatchConstraint": 62,
-      "minimumSelectionConstraint": 62,
-      "minimumWinningSelectionConstraint": 22
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "EREDIVISIE:CURRENT",
@@ -1811,10 +1811,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 0,
         "minimumExpectedValue": 0.468,
@@ -1868,9 +1868,9 @@
         "netProfit": 15.95,
         "roi": 2.278571
       },
-      "minimumRecommendedMatchConstraint": 3,
-      "minimumSelectionConstraint": 3,
-      "minimumWinningSelectionConstraint": 3
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "EREDIVISIE:PREVIOUS",
@@ -1885,10 +1885,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 26.34,
         "minimumExpectedValue": 0.9,
@@ -1923,7 +1923,7 @@
         "roi": 0.315217
       },
       "previousStrategy": {
-        "minimumProbability": 26.31,
+        "minimumProbability": 26.34,
         "minimumExpectedValue": 0.9,
         "minimumOdds": 3.55,
         "maximumOdds": 4,
@@ -1931,20 +1931,20 @@
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 198,
-        "recommendedMatchCount": 72,
-        "recommendedSelectionCount": 72,
-        "winningSelectionCount": 25,
-        "hitRate": 0.3472222222222222,
-        "matchHitRate": 0.3472222222222222,
-        "samplingRate": 0.36363636363636365,
-        "totalStake": 72,
-        "totalReturn": 94.45,
-        "netProfit": 22.45,
-        "roi": 0.311806
+        "recommendedMatchCount": 69,
+        "recommendedSelectionCount": 69,
+        "winningSelectionCount": 24,
+        "hitRate": 0.34782608695652173,
+        "matchHitRate": 0.34782608695652173,
+        "samplingRate": 0.3484848484848485,
+        "totalStake": 69,
+        "totalReturn": 90.75,
+        "netProfit": 21.75,
+        "roi": 0.315217
       },
-      "minimumRecommendedMatchConstraint": 66,
-      "minimumSelectionConstraint": 66,
-      "minimumWinningSelectionConstraint": 23
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "ARGENTINE_PRIMERA_DIVISION:CURRENT",
@@ -1952,17 +1952,17 @@
       "competitionName": "阿甲",
       "range": "CURRENT",
       "rangeName": "仅本届",
-      "fallbackToPreviousEdition": true,
+      "fallbackToPreviousEdition": false,
       "disabledBecauseRoiTargetNotMet": true,
       "disabledBecauseSamplingTargetNotMet": true,
       "disabledBecauseConstraintsNotMet": true,
       "samplingRateTargetMet": false,
       "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "NO_DATA",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
       "hitRateFloor": null,
-      "reliabilityTier": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 15,
         "minimumExpectedValue": 1,
@@ -2033,10 +2033,10 @@
       "samplingRateTargetMet": false,
       "hitRateTargetMet": false,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "NO_DATA",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
       "hitRateFloor": null,
-      "reliabilityTier": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 15,
         "minimumExpectedValue": 1,
@@ -2107,10 +2107,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 23.3,
         "minimumExpectedValue": 0.80178,
@@ -2145,28 +2145,28 @@
         "roi": 0.353125
       },
       "previousStrategy": {
-        "minimumProbability": 23.32,
-        "minimumExpectedValue": 0.8,
+        "minimumProbability": 23.3,
+        "minimumExpectedValue": 0.80178,
         "minimumOdds": 3.25,
         "maximumOdds": 5,
         "maximumSelections": 1
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 92,
-        "recommendedMatchCount": 29,
-        "recommendedSelectionCount": 29,
-        "winningSelectionCount": 11,
-        "hitRate": 0.3793103448275862,
-        "matchHitRate": 0.3793103448275862,
-        "samplingRate": 0.31521739130434784,
-        "totalStake": 29,
-        "totalReturn": 39.75,
-        "netProfit": 10.75,
-        "roi": 0.37069
+        "recommendedMatchCount": 32,
+        "recommendedSelectionCount": 32,
+        "winningSelectionCount": 12,
+        "hitRate": 0.375,
+        "matchHitRate": 0.375,
+        "samplingRate": 0.34782608695652173,
+        "totalStake": 32,
+        "totalReturn": 43.3,
+        "netProfit": 11.3,
+        "roi": 0.353125
       },
-      "minimumRecommendedMatchConstraint": 31,
-      "minimumSelectionConstraint": 31,
-      "minimumWinningSelectionConstraint": 11
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "SWEDISH_ALLSVENSKAN:PREVIOUS",
@@ -2181,10 +2181,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 25.15,
         "minimumExpectedValue": 0.80937,
@@ -2221,26 +2221,26 @@
       "previousStrategy": {
         "minimumProbability": 25.15,
         "minimumExpectedValue": 0.80937,
-        "minimumOdds": 1.01,
+        "minimumOdds": 3.1,
         "maximumOdds": 5,
         "maximumSelections": 1
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 260,
-        "recommendedMatchCount": 90,
-        "recommendedSelectionCount": 90,
+        "recommendedMatchCount": 89,
+        "recommendedSelectionCount": 89,
         "winningSelectionCount": 33,
-        "hitRate": 0.36666666666666664,
-        "matchHitRate": 0.36666666666666664,
-        "samplingRate": 0.34615384615384615,
-        "totalStake": 90,
+        "hitRate": 0.3707865168539326,
+        "matchHitRate": 0.3707865168539326,
+        "samplingRate": 0.3423076923076923,
+        "totalStake": 89,
         "totalReturn": 115.3,
-        "netProfit": 25.3,
-        "roi": 0.281111
+        "netProfit": 26.3,
+        "roi": 0.295506
       },
-      "minimumRecommendedMatchConstraint": 87,
-      "minimumSelectionConstraint": 87,
-      "minimumWinningSelectionConstraint": 30
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "FINNISH_VEIKKAUSLIIGA:CURRENT",
@@ -2255,10 +2255,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 11.11,
         "minimumExpectedValue": 0.4,
@@ -2312,9 +2312,9 @@
         "netProfit": 18.3,
         "roi": 0.61
       },
-      "minimumRecommendedMatchConstraint": 29,
-      "minimumSelectionConstraint": 29,
-      "minimumWinningSelectionConstraint": 10
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "FINNISH_VEIKKAUSLIIGA:PREVIOUS",
@@ -2329,10 +2329,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 22.56,
         "minimumExpectedValue": 0.82222,
@@ -2367,28 +2367,28 @@
         "roi": 0.274576
       },
       "previousStrategy": {
-        "minimumProbability": 22.51,
-        "minimumExpectedValue": 0.8,
-        "minimumOdds": 3.5,
-        "maximumOdds": 4,
+        "minimumProbability": 22.56,
+        "minimumExpectedValue": 0.82222,
+        "minimumOdds": 3.25,
+        "maximumOdds": 4.15,
         "maximumSelections": 1
       },
       "previousStrategyMetrics": {
         "availableMatchCount": 159,
-        "recommendedMatchCount": 53,
-        "recommendedSelectionCount": 53,
-        "winningSelectionCount": 17,
-        "hitRate": 0.32075471698113206,
-        "matchHitRate": 0.32075471698113206,
-        "samplingRate": 0.3333333333333333,
-        "totalStake": 53,
-        "totalReturn": 64,
-        "netProfit": 11,
-        "roi": 0.207547
+        "recommendedMatchCount": 59,
+        "recommendedSelectionCount": 59,
+        "winningSelectionCount": 20,
+        "hitRate": 0.3389830508474576,
+        "matchHitRate": 0.3389830508474576,
+        "samplingRate": 0.3710691823899371,
+        "totalStake": 59,
+        "totalReturn": 75.2,
+        "netProfit": 16.2,
+        "roi": 0.274576
       },
-      "minimumRecommendedMatchConstraint": 53,
-      "minimumSelectionConstraint": 53,
-      "minimumWinningSelectionConstraint": 20
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "K_LEAGUE_1:CURRENT",
@@ -2403,10 +2403,10 @@
       "samplingRateTargetMet": true,
       "hitRateTargetMet": true,
       "primaryRoiTargetMet": false,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.333,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_33_3_HIT_33_3_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 26.7,
         "minimumExpectedValue": 0,
@@ -2460,9 +2460,9 @@
         "netProfit": 7.95,
         "roi": 0.220833
       },
-      "minimumRecommendedMatchConstraint": 29,
-      "minimumSelectionConstraint": 29,
-      "minimumWinningSelectionConstraint": 12
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     },
     {
       "key": "K_LEAGUE_1:PREVIOUS",
@@ -2474,13 +2474,13 @@
       "disabledBecauseRoiTargetNotMet": false,
       "disabledBecauseSamplingTargetNotMet": false,
       "disabledBecauseConstraintsNotMet": false,
-      "samplingRateTargetMet": true,
-      "hitRateTargetMet": true,
+      "samplingRateTargetMet": false,
+      "hitRateTargetMet": false,
       "primaryRoiTargetMet": true,
-      "degradationLevel": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "degradationLevel": "CONFIGURED_STRATEGY_EVALUATION",
       "roiFloor": null,
-      "hitRateFloor": 0.25,
-      "reliabilityTier": "DUAL_CONSTRAINT_SAMPLING_25_HIT_25_STRICT",
+      "hitRateFloor": null,
+      "reliabilityTier": "CONFIGURED_STRATEGY_EVALUATION",
       "strategy": {
         "minimumProbability": 0,
         "minimumExpectedValue": 0,
@@ -2534,9 +2534,9 @@
         "netProfit": 23.15,
         "roi": 0.399138
       },
-      "minimumRecommendedMatchConstraint": 58,
-      "minimumSelectionConstraint": 58,
-      "minimumWinningSelectionConstraint": 15
+      "minimumRecommendedMatchConstraint": 0,
+      "minimumSelectionConstraint": 0,
+      "minimumWinningSelectionConstraint": 0
     }
   ]
 }

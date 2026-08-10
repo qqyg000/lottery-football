@@ -120,10 +120,13 @@ function requiredArgument(argv, index, optionName) {
 }
 
 function localDate(date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date).filter(part => part.type !== 'literal').map(part => [part.type, part.value]))
+  return `${parts.year}-${parts.month}-${parts.day}`
 }
 
 function parseCsv(text) {

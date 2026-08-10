@@ -1234,10 +1234,7 @@ function requiredArgument(argv, index, optionName) {
 }
 
 function localDate(date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return shanghaiDate(date)
 }
 
 function parseCsv(text) {
@@ -2226,9 +2223,7 @@ function parseFutbol24Rows(json, sources) {
     const score = futbol24RegulationScore(match, status)
     const homeTeam = String(match?.team1?.name ?? '').trim()
     const awayTeam = String(match?.team2?.name ?? '').trim()
-    const matchDate = usesShanghaiMatchDate(source)
-      ? shanghaiDate(match?.date)
-      : futbol24CalendarDate(match)
+    const matchDate = shanghaiDate(match?.date) ?? futbol24CalendarDate(match)
     if (!score || !homeTeam || !awayTeam || !matchDate) {
       continue
     }
@@ -2258,10 +2253,6 @@ function futbol24CalendarDate(match) {
     return `${slugDate[1]}-${slugDate[2]}-${slugDate[3]}`
   }
   return shanghaiDate(match?.date)
-}
-
-function usesShanghaiMatchDate(source) {
-  return source?.competition === 'EUROPA_LEAGUE' || source?.leagueId === '338'
 }
 
 function decodeHtml(value) {
@@ -2341,9 +2332,7 @@ function parseFutbol24SeasonResults(json, source) {
     const homeTeam = String(match?.team1?.name ?? '').trim()
     const awayTeam = String(match?.team2?.name ?? '').trim()
     const slug = String(match?.slug ?? '').trim()
-    const matchDate = usesShanghaiMatchDate(source)
-      ? shanghaiDate(match?.date)
-      : futbol24CalendarDate(match)
+    const matchDate = shanghaiDate(match?.date) ?? futbol24CalendarDate(match)
     if (!score || !homeTeam || !awayTeam || !matchDate || !slug) {
       continue
     }

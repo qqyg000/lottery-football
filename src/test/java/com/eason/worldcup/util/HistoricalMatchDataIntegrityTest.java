@@ -76,7 +76,7 @@ class HistoricalMatchDataIntegrityTest {
                 2);
         assertFixtureOccursOnce(
                 fixtures,
-                LocalDate.of(2026, 7, 8),
+                LocalDate.of(2026, 7, 9),
                 Competition.CHAMPIONS_LEAGUE,
                 "ML Vitebsk",
                 "克拉约瓦",
@@ -84,7 +84,7 @@ class HistoricalMatchDataIntegrityTest {
                 4);
         assertFixtureOccursOnce(
                 fixtures,
-                LocalDate.of(2026, 7, 15),
+                LocalDate.of(2026, 7, 16),
                 Competition.CHAMPIONS_LEAGUE,
                 "克拉约瓦",
                 "ML Vitebsk",
@@ -176,7 +176,7 @@ class HistoricalMatchDataIntegrityTest {
                 1);
         assertFixtureOccursOnce(
                 fixtures,
-                LocalDate.of(2026, 7, 31),
+                LocalDate.of(2026, 8, 1),
                 Competition.CLUB_FRIENDLY,
                 "CF Os Belenenses",
                 "埃斯托里",
@@ -184,8 +184,8 @@ class HistoricalMatchDataIntegrityTest {
                 1);
         assertShiftedFixtureRemoved(
                 fixtures,
-                LocalDate.of(2026, 7, 28),
                 LocalDate.of(2026, 7, 29),
+                LocalDate.of(2026, 7, 28),
                 "坎布尔",
                 "Volos NFC",
                 1,
@@ -237,8 +237,8 @@ class HistoricalMatchDataIntegrityTest {
                 2);
         assertShiftedFixtureRemoved(
                 fixtures,
-                LocalDate.of(2026, 7, 24),
                 LocalDate.of(2026, 7, 25),
+                LocalDate.of(2026, 7, 24),
                 "赫拉克勒",
                 "SBV精英",
                 3,
@@ -313,16 +313,16 @@ class HistoricalMatchDataIntegrityTest {
 
         assertShiftedFixtureRemoved(
                 fixtures,
-                LocalDate.of(2026, 7, 7),
                 LocalDate.of(2026, 7, 8),
+                LocalDate.of(2026, 7, 7),
                 "VOC",
                 "鹿斯巴达",
                 0,
                 4);
         assertShiftedFixtureRemoved(
                 fixtures,
-                LocalDate.of(2026, 7, 25),
                 LocalDate.of(2026, 7, 26),
+                LocalDate.of(2026, 7, 25),
                 "波尔图",
                 "维拉",
                 2,
@@ -352,7 +352,7 @@ class HistoricalMatchDataIntegrityTest {
         assertEquals(14L, clubMatchCount, "2026 比亚韦俱乐部赛数据不完整");
         assertFixtureOccursOnce(
                 fixtures,
-                LocalDate.of(2026, 7, 31),
+                LocalDate.of(2026, 8, 1),
                 Competition.CLUB_OFFICIAL_OTHER,
                 "莫托路宾",
                 "比亚韦",

@@ -880,7 +880,7 @@ class ClubCompetitionScheduleUpdaterTest {
                 ZoneId.of("Asia/Shanghai"));
 
         assertNotNull(schedule);
-        assertEquals(LocalDate.of(2026, 7, 12), schedule.getMatchDate());
+        assertEquals(LocalDate.of(2026, 7, 13), schedule.getMatchDate());
         assertEquals("罗超杯", schedule.getGroupName());
         assertEquals("克拉约瓦", schedule.getHomeTeamCn());
         assertEquals(1, schedule.getHomeScore());
@@ -914,7 +914,7 @@ class ClubCompetitionScheduleUpdaterTest {
                 ZoneId.of("Asia/Shanghai"));
 
         assertNotNull(schedule);
-        assertEquals(LocalDate.of(2026, 7, 31), schedule.getMatchDate());
+        assertEquals(LocalDate.of(2026, 8, 1), schedule.getMatchDate());
         assertEquals("SBV精英", schedule.getHomeTeamCn());
         assertEquals("Volos NFC", schedule.getAwayTeamCn());
         assertEquals(1, schedule.getHomeScore());
@@ -958,7 +958,7 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
-    void shouldKeepFutbol24SourceCalendarDateForEuropeanLateMatch() throws Exception {
+    void shouldUseUtcPlusEightDateForEuropeanLateMatch() throws Exception {
         JsonNode statuses = objectMapper.readTree("""
                 {
                   "5": { "name": "FT", "name_short": "FT", "is_ended": true }
@@ -983,7 +983,7 @@ class ClubCompetitionScheduleUpdaterTest {
                 ZoneId.of("Asia/Shanghai"));
 
         assertNotNull(schedule);
-        assertEquals(LocalDate.of(2026, 7, 15), schedule.getMatchDate());
+        assertEquals(LocalDate.of(2026, 7, 16), schedule.getMatchDate());
         assertEquals(LocalTime.of(1, 30), schedule.getKickoffTime());
         assertEquals("克拉约瓦", schedule.getHomeTeamCn());
         assertEquals("ML Vitebsk", schedule.getAwayTeamCn());
