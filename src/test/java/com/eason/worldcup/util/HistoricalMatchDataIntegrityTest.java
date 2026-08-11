@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -43,6 +44,31 @@ class HistoricalMatchDataIntegrityTest {
                 0);
         assertFixtureOccursOnce(
                 fixtures,
+                LocalDate.of(2026, 7, 30),
+                Competition.CHAMPIONS_LEAGUE,
+                "波兹南",
+                "奥胡斯",
+                0,
+                3);
+        assertFixtureOccurs(
+                fixtures,
+                LocalDate.of(2026, 7, 30),
+                Competition.CHAMPIONS_LEAGUE,
+                "波兹南",
+                "奥胡斯",
+                1,
+                4,
+                0L);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2020, 9, 24),
+                Competition.EUROPA_LEAGUE,
+                "亚拉腊",
+                "采列",
+                0,
+                0);
+        assertFixtureOccursOnce(
+                fixtures,
                 LocalDate.of(2026, 5, 16),
                 Competition.CLUB_OFFICIAL_OTHER,
                 "布拉迪斯",
@@ -60,6 +86,26 @@ class HistoricalMatchDataIntegrityTest {
                     .count();
             assertTrue(count > 0, sourceCompetition);
         }
+        assertSourceCompetitionCoverage(fixtures, "斯洛文甲", 1_500L);
+        assertSourceCompetitionCoverage(fixtures, "亚美尼超", 1_300L);
+
+        Set<String> replacedAliases = Set.of(
+                "阿拉木图凯拉特",
+                "索菲亚列夫斯基",
+                "Septemvri Sofia",
+                "PFC Lokomotiv Sofia 1929",
+                "Dunav Ruse",
+                "巴尼亚",
+                "FK Radnik Surdulica",
+                "U Craiova",
+                "利勒斯特罗姆",
+                "桑纳菲尤尔",
+                "K. Diegem Sport",
+                "Celje",
+                "Riga FC");
+        assertTrue(fixtures.stream().noneMatch(fixture ->
+                replacedAliases.contains(fixture.homeTeam())
+                        || replacedAliases.contains(fixture.awayTeam())), "指定队名别名未完全归一化");
     }
 
     @Test
@@ -393,6 +439,17 @@ class HistoricalMatchDataIntegrityTest {
     }
 
     @Test
+    void shouldStoreFotMobKnockoutMatchesAtRegulationTime() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertMatchScore(fixtures, "FOTMOB-1801921", 1, 1);
+        assertMatchScore(fixtures, "FOTMOB-3028221", 1, 1);
+        assertMatchScore(fixtures, "FOTMOB-3608943", 1, 0);
+        assertMatchScore(fixtures, "FOTMOB-3835647", 2, 1);
+        assertMatchScore(fixtures, "FOTMOB-4737736", 4, 3);
+    }
+
+    @Test
     void shouldNotContainDuplicateNormalizedFixtures() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
         Map<String, Integer> fixtureCounts = new HashMap<>();
@@ -512,6 +569,20 @@ class HistoricalMatchDataIntegrityTest {
             }
         }
         return fixtures;
+    }
+
+    private void assertMatchScore(
+            List<HistoricalFixture> fixtures,
+            String matchId,
+            int homeScore,
+            int awayScore) {
+        HistoricalFixture fixture = fixtures.stream()
+                .filter(candidate -> candidate.matchId().equals(matchId))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("缺少历史比赛：" + matchId));
+
+        assertEquals(homeScore, fixture.homeScore(), matchId + " 主队 90 分钟比分错误");
+        assertEquals(awayScore, fixture.awayScore(), matchId + " 客队 90 分钟比分错误");
     }
 
     private void assertFixtureOccursOnce(

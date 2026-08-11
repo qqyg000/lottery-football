@@ -108,6 +108,42 @@ test('进球数策略按照命中概率排序且每场最多推荐4项', () => {
   assert.deepEqual(recommendations.map(item => item.totalGoals), [3, 2, 4, 5])
 })
 
+test('进球数推荐优先使用独立固定模型的概率', () => {
+  const match = createMatch({
+    sportteryTotalGoalsOdds: {
+      goal0: 10,
+      goal1: 5,
+      goal2: 4,
+      goal3: 4,
+      goal4: 6,
+      goal5: 10,
+      goal6: 20,
+      goal7Plus: 30
+    },
+    adjustedSportteryTotalGoalsProbabilities: Array.from({ length: 8 }, (_, totalGoals) => ({
+      totalGoals,
+      probability: totalGoals === 2 ? 40 : 5
+    })),
+    fixedAdjustedSportteryTotalGoalsProbabilities: Array.from({ length: 8 }, (_, totalGoals) => ({
+      totalGoals,
+      probability: totalGoals === 4 ? 35 : 5
+    }))
+  })
+
+  const recommendations = getTotalGoalsRecommendations(match, {
+    modelMode: 'after',
+    strategy: {
+      minimumProbability: 0,
+      minimumExpectedValue: 0,
+      minimumOdds: 1,
+      maximumOdds: 100,
+      maximumSelections: 1
+    }
+  })
+
+  assert.deepEqual(recommendations.map(item => item.totalGoals), [4])
+})
+
 test('进球数策略允许每场0项并按单项等额投注计算ROI', () => {
   const match = createMatch({
     scoreText: '2 - 1',

@@ -5,14 +5,18 @@ import process from 'node:process'
 const ROOT = path.resolve(import.meta.dirname, '..')
 const CONFIG_PATH = path.join(ROOT, 'config', 'user-config.json')
 const EVALUATE_ONLY = process.argv.includes('--evaluate-only')
+const DRY_RUN = process.argv.includes('--dry-run')
 const STRICT_CONSTRAINTS = process.argv.includes('--strict-constraints')
 const OPTIMIZE_SMALL_CURRENT_SAMPLES = process.argv.includes('--optimize-small-current-samples')
+const ROBUST_VALIDATION = process.argv.includes('--robust-validation')
 const REPORT_PATH = path.resolve(ROOT, readArgument(
   '--report-path',
   EVALUATE_ONLY
     ? 'reports/total-goals-strategy-current-backtest.json'
     : 'reports/total-goals-strategy-backtest.json'
 ))
+const BACKTEST_CACHE_PREFIX = readArgument('--backtest-cache-prefix', '')
+const BASELINE_REPORT_PATH = readArgument('--baseline-report-path', '')
 const BASE_URL = readArgument('--base-url', 'http://127.0.0.1:18080')
 const SIMULATIONS = Number(readArgument('--simulations', '5000'))
 const COMPETITIONS = [
@@ -83,6 +87,22 @@ const TOP_CANDIDATE_LIMIT = Number(readArgument('--candidate-limit', '8'))
 if (!Number.isInteger(TOP_CANDIDATE_LIMIT) || TOP_CANDIDATE_LIMIT <= 0) {
   throw new Error('--candidate-limit 必须是正整数')
 }
+const VALIDATION_FRACTION = Number(readArgument('--validation-fraction', '0.3'))
+if (!Number.isFinite(VALIDATION_FRACTION) || VALIDATION_FRACTION <= 0 || VALIDATION_FRACTION >= 0.5) {
+  throw new Error('--validation-fraction 必须是大于0且小于0.5的数字')
+}
+const MINIMUM_VALIDATION_MATCHES = Number(readArgument('--minimum-validation-matches', '6'))
+if (!Number.isInteger(MINIMUM_VALIDATION_MATCHES) || MINIMUM_VALIDATION_MATCHES < 3) {
+  throw new Error('--minimum-validation-matches 必须是不小于3的整数')
+}
+const MINIMUM_TRAINING_MATCHES = Number(readArgument('--minimum-training-matches', '10'))
+if (!Number.isInteger(MINIMUM_TRAINING_MATCHES) || MINIMUM_TRAINING_MATCHES < 5) {
+  throw new Error('--minimum-training-matches 必须是不小于5的整数')
+}
+const MINIMUM_VALIDATION_ROI = Number(readArgument('--minimum-validation-roi', '0'))
+if (!Number.isFinite(MINIMUM_VALIDATION_ROI)) {
+  throw new Error('--minimum-validation-roi 必须是有效数字')
+}
 const MINIMUM_SAMPLING_RATE = Number(readArgument('--minimum-sampling-rate', '0.333'))
 if (!Number.isFinite(MINIMUM_SAMPLING_RATE) || MINIMUM_SAMPLING_RATE <= 0 || MINIMUM_SAMPLING_RATE > 1) {
   throw new Error('--minimum-sampling-rate 必须是大于0且不大于1的数字')
@@ -110,6 +130,28 @@ if (
 ) {
   throw new Error('--fallback-minimum-hit-rate 必须是不小于0且不大于主命中率的数字')
 }
+const SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE = Number(readArgument(
+  '--secondary-fallback-minimum-sampling-rate',
+  '0.2'
+))
+if (
+  !Number.isFinite(SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE) ||
+  SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE <= 0 ||
+  SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE > FALLBACK_MINIMUM_SAMPLING_RATE
+) {
+  throw new Error('--secondary-fallback-minimum-sampling-rate 必须是大于0且不大于25%降级采样率的数字')
+}
+const SECONDARY_FALLBACK_MINIMUM_HIT_RATE = Number(readArgument(
+  '--secondary-fallback-minimum-hit-rate',
+  String(Math.min(FALLBACK_MINIMUM_HIT_RATE, 0.2))
+))
+if (
+  !Number.isFinite(SECONDARY_FALLBACK_MINIMUM_HIT_RATE) ||
+  SECONDARY_FALLBACK_MINIMUM_HIT_RATE < 0 ||
+  SECONDARY_FALLBACK_MINIMUM_HIT_RATE > FALLBACK_MINIMUM_HIT_RATE
+) {
+  throw new Error('--secondary-fallback-minimum-hit-rate 必须是不小于0且不大于25%降级命中率的数字')
+}
 const MINIMUM_PROBABILITIES = [0, 5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 35, 40]
 const MINIMUM_EXPECTED_VALUES = [0, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.4]
 const MINIMUM_ODDS = [1.01, 1.5, 2, 2.5, 3, 3.5, 4]
@@ -127,6 +169,7 @@ const JSON_EOL = process.platform === 'win32' ? '\r\n' : '\n'
 async function main() {
   const configText = await fs.readFile(CONFIG_PATH, 'utf8')
   const config = JSON.parse(configText)
+  const baselineStrategies = await readBaselineStrategies(config.totalGoalsStrategies || {})
   const existingReport = TARGET_COMPETITIONS.length === COMPETITIONS.length && TARGET_RANGES.length === RANGES.length
     ? null
     : await readExistingReport()
@@ -135,7 +178,7 @@ async function main() {
     const includePreviousEdition = range === 'PREVIOUS'
     process.stdout.write(`开始回测${includePreviousEdition ? '含上届' : '仅本届'}策略\n`)
     const result = await runBacktest(config, range, includePreviousEdition)
-    rangeResults[range] = optimizeRange(result, range, config.totalGoalsStrategies || {})
+    rangeResults[range] = optimizeRange(result, range, baselineStrategies)
   }
 
   const strategies = { ...(config.totalGoalsStrategies || {}) }
@@ -171,14 +214,21 @@ async function main() {
         hitRateTargetMet: Boolean(selected?.hitRateTargetMet),
         primaryRoiTargetMet: Boolean(selected?.primaryRoiTargetMet),
         degradationLevel: selected?.degradationLevel || 'NO_STRATEGY',
+        samplingRateFloor: selected?.samplingRateFloor ?? null,
         roiFloor: selected?.roiFloor ?? null,
         hitRateFloor: selected?.hitRateFloor ?? null,
         reliabilityTier: selected?.reliabilityTier || null,
         strategy,
         metrics: selected?.metrics || emptyMetrics(),
         directMetrics: direct?.metrics || emptyMetrics(),
+        robustnessMetrics: selected?.robustnessMetrics || emptyRobustnessMetrics(),
+        overfittingDetected: Boolean(selected?.overfittingAudit?.overfittingDetected),
+        overfittingReasons: selected?.overfittingAudit?.reasons || [],
         previousStrategy: direct?.baselineStrategy || null,
         previousStrategyMetrics: direct?.baselineMetrics || emptyMetrics(),
+        previousStrategyRobustnessMetrics: direct?.baselineRobustnessMetrics || emptyRobustnessMetrics(),
+        previousStrategyOverfittingDetected: Boolean(direct?.baselineOverfittingAudit?.overfittingDetected),
+        previousStrategyOverfittingReasons: direct?.baselineOverfittingAudit?.reasons || [],
         minimumRecommendedMatchConstraint: selected?.minimumRecommendedMatchConstraint || 0,
         minimumSelectionConstraint: selected?.minimumSelectionConstraint || 0,
         minimumWinningSelectionConstraint: selected?.minimumWinningSelectionConstraint || 0
@@ -196,7 +246,7 @@ async function main() {
     return left.range === 'CURRENT' ? -1 : 1
   })
 
-  if (!EVALUATE_ONLY) {
+  if (!EVALUATE_ONLY && !DRY_RUN) {
     await fs.writeFile(
       CONFIG_PATH,
       replaceConfigObject(configText, 'totalGoalsStrategies', strategies),
@@ -213,7 +263,7 @@ async function main() {
     hitRateFormula: '命中率 = 命中单关注数 / 推荐总注数',
     optimizationObjective: EVALUATE_ONLY
       ? '使用当前已保存的进球数策略重新计算全部指标，不执行参数搜索'
-      : optimizationObjectiveDescription(),
+      : `${optimizationObjectiveDescription()}${DRY_RUN ? '；本次为试运行，不写入策略配置' : ''}`,
     constraints: {
       strictGreaterThan: STRICT_CONSTRAINTS,
       minimumSamplingRate: MINIMUM_SAMPLING_RATE,
@@ -222,18 +272,30 @@ async function main() {
       minimumHitRate: MINIMUM_HIT_RATE,
       fallbackMinimumSamplingRate: FALLBACK_MINIMUM_SAMPLING_RATE,
       fallbackMinimumHitRate: FALLBACK_MINIMUM_HIT_RATE,
-      fallbackRule: '仅在主采样率和主命中率约束无可行解时，才使用降级约束重新搜索',
+      secondaryFallbackMinimumSamplingRate: SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE,
+      secondaryFallbackMinimumHitRate: SECONDARY_FALLBACK_MINIMUM_HIT_RATE,
+      fallbackRule: '按主档、25%降级档、20%二级降级档顺序搜索，仅在上一档无可行解时进入下一档',
+      robustValidation: {
+        enabled: ROBUST_VALIDATION,
+        split: `按比赛日期升序，前${formatPercent(1 - VALIDATION_FRACTION)}为训练集，后${formatPercent(VALIDATION_FRACTION)}为验证集`,
+        minimumTrainingMatches: MINIMUM_TRAINING_MATCHES,
+        minimumValidationMatches: MINIMUM_VALIDATION_MATCHES,
+        minimumValidationRoi: MINIMUM_VALIDATION_ROI,
+        rule: '候选参数仅在训练集搜索和细化，最终策略必须同时满足训练集、验证集和完整样本的同档采样率与命中率约束，且验证集ROI不得低于下限'
+      },
       maximumSelectionsPerMatch: '0-4',
-      strategySearch: `先粗网格搜索，取目标最优的${TOP_CANDIDATE_LIMIT}个达标候选，再基于实际概率、期望值和赔率分布执行最多3轮坐标细化`,
+      strategySearch: ROBUST_VALIDATION
+        ? `仅使用训练集粗网格搜索，取目标最优的${TOP_CANDIDATE_LIMIT}个达标候选并执行最多3轮坐标细化，再通过时间留出验证集过滤过拟合候选`
+        : `先粗网格搜索，取目标最优的${TOP_CANDIDATE_LIMIT}个达标候选，再基于实际概率、期望值和赔率分布执行最多3轮坐标细化`,
       smallCurrentSampleRule: OPTIMIZE_SMALL_CURRENT_SAMPLES
         ? '仅本届存在样本时直接优化；无样本时沿用含上届策略'
-        : `仅本届可用样本数不超过${SMALL_CURRENT_SAMPLE_MAX}场时跳过独立优化，直接沿用含上届策略`,
+        : `仅本届可用样本数不超过${smallCurrentSampleLimit()}场时跳过独立优化，直接沿用含上届策略`,
       selectionPreference: optimizationSelectionPreference()
     },
     strategies: reportRows
   }
   await fs.writeFile(REPORT_PATH, serializeJson(report), 'utf8')
-  if (!EVALUATE_ONLY) {
+  if (!EVALUATE_ONLY && !DRY_RUN) {
     process.stdout.write(`策略已写入 ${CONFIG_PATH}\n`)
   }
   process.stdout.write(`回测报告已写入 ${REPORT_PATH}\n`)
@@ -247,6 +309,18 @@ async function runBacktest(config, range, includePreviousEdition) {
     const profile = config.parameterProfiles?.[key] || config.parameterProfiles?.[fallbackKey] || {}
     return [competition, profile.modelFactors || {}]
   }))
+  const cacheSignature = {
+    simulations: SIMULATIONS,
+    competitions: TARGET_COMPETITIONS,
+    range,
+    includePreviousEdition,
+    modelFactorsByCompetition
+  }
+  const cachedResult = await readBacktestCache(range, cacheSignature)
+  if (cachedResult) {
+    process.stdout.write(`  复用${range === 'CURRENT' ? '仅本届' : '含上届'}回测缓存，共 ${cachedResult.matches?.length || 0} 场\n`)
+    return cachedResult
+  }
   const params = new URLSearchParams({
     simulations: String(SIMULATIONS),
     competition: TARGET_COMPETITIONS.length === COMPETITIONS.length ? 'ALL' : TARGET_COMPETITIONS.join(','),
@@ -281,7 +355,39 @@ async function runBacktest(config, range, includePreviousEdition) {
     throw new Error(job.message || `回测任务状态异常: ${job.status}`)
   }
   process.stdout.write(`  完成，共 ${job.result.matches?.length || 0} 场\n`)
+  await writeBacktestCache(range, cacheSignature, job.result)
   return job.result
+}
+
+async function readBacktestCache(range, signature) {
+  const cachePath = backtestCachePath(range)
+  if (!cachePath) {
+    return null
+  }
+  try {
+    const cached = JSON.parse(await fs.readFile(cachePath, 'utf8'))
+    return JSON.stringify(cached.signature) === JSON.stringify(signature)
+      ? cached.result
+      : null
+  } catch {
+    return null
+  }
+}
+
+async function writeBacktestCache(range, signature, result) {
+  const cachePath = backtestCachePath(range)
+  if (!cachePath) {
+    return
+  }
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, serializeJson({ signature, result }), 'utf8')
+  process.stdout.write(`  回测缓存已写入 ${cachePath}\n`)
+}
+
+function backtestCachePath(range) {
+  return BACKTEST_CACHE_PREFIX
+    ? path.resolve(ROOT, `${BACKTEST_CACHE_PREFIX}-${range.toLowerCase()}.json`)
+    : null
 }
 
 function optimizeRange(result, range, existingStrategies) {
@@ -295,7 +401,7 @@ function optimizeRange(result, range, existingStrategies) {
     }
   }
   return Object.fromEntries(TARGET_COMPETITIONS.map(competition => {
-    const matches = matchesByCompetition[competition]
+    const matches = matchesByCompetition[competition].sort(compareMatchesChronologically)
     const skipSmallCurrentSample = range === 'CURRENT' && shouldFallbackToPreviousEdition(matches.length)
     const baselineStrategy = existingStrategies[`${competition}:${range}`] || DEFAULT_STRATEGY
     const optimized = EVALUATE_ONLY
@@ -318,10 +424,20 @@ function optimizeRange(result, range, existingStrategies) {
     optimized.baselineMetrics = !EVALUATE_ONLY && skipSmallCurrentSample
       ? emptyMetrics(matches.length)
       : evaluateStrategy(matches, baselineStrategy)
+    optimized.baselineOverfittingAudit = auditStrategyOverfitting(matches, baselineStrategy)
+    optimized.baselineRobustnessMetrics = optimized.baselineOverfittingAudit.robustnessMetrics
+    optimized.overfittingAudit = auditStrategyOverfitting(
+      matches,
+      optimized.strategy,
+      optimized.samplingRateFloor,
+      optimized.hitRateFloor
+    )
+    optimized.robustnessMetrics = optimized.overfittingAudit.robustnessMetrics
     process.stdout.write(
       `  ${COMPETITION_NAMES[competition]} ${range}: ${matches.length} 场，` +
       `${optimized.metrics.recommendedSelectionCount} 注，` +
       `命中率 ${formatPercent(optimized.metrics.hitRate)}，ROI ${formatPercent(optimized.metrics.roi)}` +
+      `${optimized.overfittingAudit.overfittingDetected ? '（样本外检查未通过）' : ''}` +
       `${!EVALUATE_ONLY && skipSmallCurrentSample ? '（小样本跳过独立优化）' : ''}\n`
     )
     return [competition, optimized]
@@ -341,6 +457,7 @@ function evaluateConfiguredStrategy(matches, strategy) {
     hitRateTargetMet: meetsRateConstraint(metrics.hitRate, MINIMUM_HIT_RATE),
     primaryRoiTargetMet: metrics.roi !== null && metrics.roi >= PRIMARY_ROI_TARGET,
     reliabilityTier: 'CONFIGURED_STRATEGY_EVALUATION',
+    samplingRateFloor: null,
     hitRateFloor: null,
     roiFloor: null,
     degradationLevel: 'CONFIGURED_STRATEGY_EVALUATION'
@@ -352,6 +469,20 @@ async function readExistingReport() {
     return JSON.parse(await fs.readFile(REPORT_PATH, 'utf8'))
   } catch {
     throw new Error('定向优化需要已有的完整回测报告')
+  }
+}
+
+async function readBaselineStrategies(configuredStrategies) {
+  if (!BASELINE_REPORT_PATH) {
+    return configuredStrategies
+  }
+  const baselinePath = path.resolve(ROOT, BASELINE_REPORT_PATH)
+  const report = JSON.parse(await fs.readFile(baselinePath, 'utf8'))
+  const reportStrategies = Object.fromEntries((report.strategies || []).map(row => [row.key, row.strategy]))
+  process.stdout.write(`基准策略读取自 ${baselinePath}\n`)
+  return {
+    ...configuredStrategies,
+    ...reportStrategies
   }
 }
 
@@ -379,9 +510,13 @@ function applySmallCurrentSampleFallback(reportRows, strategies) {
     current.hitRateTargetMet = previous.hitRateTargetMet
     current.primaryRoiTargetMet = previous.primaryRoiTargetMet
     current.degradationLevel = previous.degradationLevel
+    current.samplingRateFloor = previous.samplingRateFloor
     current.roiFloor = previous.roiFloor
     current.hitRateFloor = previous.hitRateFloor
     current.reliabilityTier = previous.reliabilityTier
+    current.robustnessMetrics = previous.robustnessMetrics
+    current.overfittingDetected = previous.overfittingDetected
+    current.overfittingReasons = previous.overfittingReasons
     strategies[`${competition}:CURRENT`] = current.strategy
   }
 }
@@ -412,10 +547,403 @@ function prepareMatch(match) {
     || right.expectedValue - left.expectedValue
     || left.totalGoals - right.totalGoals
   ))
-  return items.length > 0 ? { items } : null
+  return items.length > 0
+    ? {
+        matchId: String(match.matchId || match.sportteryMatchId || ''),
+        matchDate: String(match.matchDate || ''),
+        kickoffTime: String(match.kickoffTime || ''),
+        items
+      }
+    : null
+}
+
+function compareMatchesChronologically(left, right) {
+  return left.matchDate.localeCompare(right.matchDate) ||
+    left.kickoffTime.localeCompare(right.kickoffTime) ||
+    left.matchId.localeCompare(right.matchId)
+}
+
+function createChronologicalValidationSplit(matches) {
+  if (matches.length < MINIMUM_TRAINING_MATCHES + MINIMUM_VALIDATION_MATCHES) {
+    return {
+      available: false,
+      trainingMatches: matches,
+      validationMatches: []
+    }
+  }
+  const requestedValidationCount = Math.max(
+    MINIMUM_VALIDATION_MATCHES,
+    Math.ceil(matches.length * VALIDATION_FRACTION)
+  )
+  let splitIndex = Math.max(
+    MINIMUM_TRAINING_MATCHES,
+    matches.length - requestedValidationCount
+  )
+  splitIndex = Math.min(splitIndex, matches.length - MINIMUM_VALIDATION_MATCHES)
+  const boundaryDate = matches[splitIndex]?.matchDate
+  if (boundaryDate) {
+    let sameDateStart = splitIndex
+    while (sameDateStart > MINIMUM_TRAINING_MATCHES && matches[sameDateStart - 1]?.matchDate === boundaryDate) {
+      sameDateStart -= 1
+    }
+    if (matches.length - sameDateStart >= MINIMUM_VALIDATION_MATCHES) {
+      splitIndex = sameDateStart
+    }
+  }
+  return {
+    available: true,
+    trainingMatches: matches.slice(0, splitIndex),
+    validationMatches: matches.slice(splitIndex)
+  }
+}
+
+function auditStrategyOverfitting(
+  matches,
+  strategy,
+  configuredSamplingRate = null,
+  configuredHitRate = null
+) {
+  const fullMetrics = evaluateStrategy(matches, strategy)
+  if (!ROBUST_VALIDATION) {
+    return {
+      overfittingDetected: false,
+      reasons: [],
+      robustnessMetrics: {
+        ...emptyRobustnessMetrics(),
+        fullMetrics
+      }
+    }
+  }
+  const split = createChronologicalValidationSplit(matches)
+  if (!split.available || Number(strategy?.maximumSelections) <= 0) {
+    return {
+      overfittingDetected: false,
+      reasons: [],
+      robustnessMetrics: {
+        ...emptyRobustnessMetrics(),
+        validationAvailable: false,
+        fullMetrics,
+        trainingMetrics: evaluateStrategy(split.trainingMatches, strategy),
+        trainingMatchCount: split.trainingMatches.length
+      }
+    }
+  }
+  const trainingMetrics = evaluateStrategy(split.trainingMatches, strategy)
+  const validationMetrics = evaluateStrategy(split.validationMatches, strategy)
+  const fullMeetsPrimary = meetsDualRateConstraint(
+    fullMetrics,
+    MINIMUM_SAMPLING_RATE,
+    MINIMUM_HIT_RATE
+  )
+  const fullMeetsFirstFallback = meetsDualRateConstraint(
+    fullMetrics,
+    FALLBACK_MINIMUM_SAMPLING_RATE,
+    FALLBACK_MINIMUM_HIT_RATE
+  )
+  const targetSamplingRate = Number.isFinite(configuredSamplingRate)
+    ? configuredSamplingRate
+    : fullMeetsPrimary
+    ? MINIMUM_SAMPLING_RATE
+    : fullMeetsFirstFallback
+    ? FALLBACK_MINIMUM_SAMPLING_RATE
+    : SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE
+  const targetHitRate = Number.isFinite(configuredHitRate)
+    ? configuredHitRate
+    : fullMeetsPrimary
+    ? MINIMUM_HIT_RATE
+    : fullMeetsFirstFallback
+    ? FALLBACK_MINIMUM_HIT_RATE
+    : SECONDARY_FALLBACK_MINIMUM_HIT_RATE
+  const reasons = []
+  if (!meetsRateConstraint(validationMetrics.samplingRate, targetSamplingRate)) {
+    reasons.push(`验证集采样率${formatPercent(validationMetrics.samplingRate)}未达到${constraintLabel(targetSamplingRate)}`)
+  }
+  if (!meetsRateConstraint(validationMetrics.hitRate, targetHitRate)) {
+    reasons.push(`验证集命中率${formatPercent(validationMetrics.hitRate)}未达到${constraintLabel(targetHitRate)}`)
+  }
+  if (!Number.isFinite(validationMetrics.roi) || validationMetrics.roi < MINIMUM_VALIDATION_ROI) {
+    reasons.push(`验证集ROI${formatPercent(validationMetrics.roi)}低于${formatPercent(MINIMUM_VALIDATION_ROI)}`)
+  }
+  return {
+    overfittingDetected: reasons.length > 0,
+    reasons,
+    robustnessMetrics: {
+      validationAvailable: true,
+      trainingMatchCount: split.trainingMatches.length,
+      validationMatchCount: split.validationMatches.length,
+      targetSamplingRate,
+      targetHitRate,
+      minimumValidationRoi: MINIMUM_VALIDATION_ROI,
+      fullMetrics,
+      trainingMetrics,
+      validationMetrics
+    }
+  }
+}
+
+function optimizeCompetitionWithRobustValidation(matches, baselineStrategy) {
+  if (matches.length === 0) {
+    return unavailableStrategy('NO_DATA', 0)
+  }
+  const split = createChronologicalValidationSplit(matches)
+  if (!split.available) {
+    return unavailableStrategy('INSUFFICIENT_ROBUST_VALIDATION_SAMPLE', matches.length)
+  }
+  const candidates = enumerateStrategies(split.trainingMatches)
+  candidates.push({
+    strategy: { ...baselineStrategy },
+    metrics: evaluateStrategy(split.trainingMatches, baselineStrategy)
+  })
+  const primary = optimizeCompetitionForRobustConstraints(
+    matches,
+    split,
+    candidates,
+    MINIMUM_SAMPLING_RATE,
+    MINIMUM_HIT_RATE
+  )
+  if (primary) {
+    return primary
+  }
+  const fallback = optimizeCompetitionForRobustConstraints(
+    matches,
+    split,
+    candidates,
+    FALLBACK_MINIMUM_SAMPLING_RATE,
+    FALLBACK_MINIMUM_HIT_RATE
+  )
+  if (fallback) {
+    return fallback
+  }
+  const secondaryFallback = optimizeCompetitionForRobustConstraints(
+    matches,
+    split,
+    candidates,
+    SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE,
+    SECONDARY_FALLBACK_MINIMUM_HIT_RATE
+  )
+  if (secondaryFallback) {
+    return secondaryFallback
+  }
+  return unavailableStrategy('ROBUST_VALIDATION_TARGET_NOT_MET', matches.length)
+}
+
+function optimizeCompetitionForRobustConstraints(
+  matches,
+  split,
+  candidates,
+  minimumSamplingRate,
+  minimumHitRate
+) {
+  const minimumTrainingMatches = calculateMinimumCount(split.trainingMatches.length, minimumSamplingRate)
+  const coarseCandidates = selectTopRobustStrategies(
+    candidates,
+    split,
+    TOP_CANDIDATE_LIMIT,
+    minimumSamplingRate,
+    minimumHitRate
+  )
+  const candidatePool = []
+  for (const coarseCandidate of coarseCandidates) {
+    candidatePool.push(coarseCandidate)
+    candidatePool.push(refineStrategy(
+      split.trainingMatches,
+      coarseCandidate,
+      minimumTrainingMatches,
+      minimumSamplingRate,
+      minimumHitRate
+    ))
+  }
+  let best = null
+  const seenStrategies = new Set()
+  for (const candidate of candidatePool) {
+    const strategyKey = JSON.stringify(candidate.strategy)
+    if (seenStrategies.has(strategyKey)) {
+      continue
+    }
+    seenStrategies.add(strategyKey)
+    const trainingMetrics = candidate.trainingMetrics ||
+      evaluateStrategy(split.trainingMatches, candidate.strategy)
+    const validationMetrics = evaluateStrategy(split.validationMatches, candidate.strategy)
+    const fullMetrics = combinePartitionMetrics(trainingMetrics, validationMetrics)
+    if (!meetsRobustOptimizationConstraints(
+      trainingMetrics,
+      validationMetrics,
+      fullMetrics,
+      minimumSamplingRate,
+      minimumHitRate
+    )) {
+      continue
+    }
+    const evaluated = {
+      strategy: candidate.strategy,
+      metrics: fullMetrics,
+      trainingMetrics,
+      validationMetrics
+    }
+    if (isPreferredRobustCandidate(evaluated, best)) {
+      best = evaluated
+    }
+  }
+  if (!best) {
+    return null
+  }
+  const minimumRecommendedMatches = calculateMinimumCount(matches.length, minimumSamplingRate)
+  return {
+    strategy: best.strategy,
+    metrics: best.metrics,
+    minimumRecommendedMatchConstraint: minimumRecommendedMatches,
+    minimumSelectionConstraint: minimumRecommendedMatches,
+    minimumWinningSelectionConstraint: calculateMinimumCount(
+      best.metrics.recommendedSelectionCount,
+      minimumHitRate
+    ),
+    reliabilityTier: `${samplingRateTier(minimumSamplingRate, minimumHitRate)}_ROBUST_VALIDATED`,
+    samplingRateFloor: minimumSamplingRate,
+    hitRateFloor: minimumHitRate,
+    roiFloor: MINIMUM_VALIDATION_ROI,
+    strategyAvailable: true,
+    samplingRateTargetMet: true,
+    hitRateTargetMet: true,
+    primaryRoiTargetMet: best.metrics.roi > PRIMARY_ROI_TARGET,
+    degradationLevel: `${samplingRateTier(minimumSamplingRate, minimumHitRate)}_ROBUST_VALIDATED`
+  }
+}
+
+function selectTopRobustStrategies(
+  candidates,
+  split,
+  limit,
+  minimumSamplingRate,
+  minimumHitRate
+) {
+  const best = []
+  for (const candidate of candidates) {
+    const trainingMetrics = candidate.metrics
+    if (!meetsDualRateConstraint(trainingMetrics, minimumSamplingRate, minimumHitRate)) {
+      continue
+    }
+    const validationMetrics = evaluateStrategy(split.validationMatches, candidate.strategy)
+    const fullMetrics = combinePartitionMetrics(trainingMetrics, validationMetrics)
+    if (!meetsRobustOptimizationConstraints(
+      trainingMetrics,
+      validationMetrics,
+      fullMetrics,
+      minimumSamplingRate,
+      minimumHitRate
+    )) {
+      continue
+    }
+    const evaluated = {
+      strategy: candidate.strategy,
+      metrics: fullMetrics,
+      trainingMetrics,
+      validationMetrics
+    }
+    const insertionIndex = best.findIndex(existing => isPreferredRobustCandidate(evaluated, existing))
+    if (insertionIndex >= 0) {
+      best.splice(insertionIndex, 0, evaluated)
+    } else if (best.length < limit) {
+      best.push(evaluated)
+    }
+    if (best.length > limit) {
+      best.pop()
+    }
+  }
+  return best
+}
+
+function combinePartitionMetrics(left, right) {
+  const availableMatchCount = left.availableMatchCount + right.availableMatchCount
+  const recommendedMatchCount = left.recommendedMatchCount + right.recommendedMatchCount
+  const recommendedSelectionCount = left.recommendedSelectionCount + right.recommendedSelectionCount
+  const winningSelectionCount = left.winningSelectionCount + right.winningSelectionCount
+  const totalReturn = round(left.totalReturn + right.totalReturn)
+  const totalStake = recommendedSelectionCount
+  return {
+    availableMatchCount,
+    recommendedMatchCount,
+    recommendedSelectionCount,
+    winningSelectionCount,
+    hitRate: totalStake > 0 ? winningSelectionCount / totalStake : null,
+    matchHitRate: recommendedMatchCount > 0 ? winningSelectionCount / recommendedMatchCount : null,
+    samplingRate: availableMatchCount > 0 ? recommendedMatchCount / availableMatchCount : null,
+    totalStake,
+    totalReturn,
+    netProfit: round(totalReturn - totalStake),
+    roi: totalStake > 0 ? round(totalReturn / totalStake - 1, 6) : null
+  }
+}
+
+function meetsRobustOptimizationConstraints(
+  trainingMetrics,
+  validationMetrics,
+  fullMetrics,
+  minimumSamplingRate,
+  minimumHitRate
+) {
+  const partitions = [trainingMetrics, validationMetrics, fullMetrics]
+  if (!partitions.every(metrics => meetsDualRateConstraint(
+    metrics,
+    minimumSamplingRate,
+    minimumHitRate
+  ))) {
+    return false
+  }
+  if (!Number.isFinite(validationMetrics.roi) || validationMetrics.roi < MINIMUM_VALIDATION_ROI) {
+    return false
+  }
+  return OPTIMIZATION_OBJECTIVE !== 'HIT_RATE' ||
+    fullMetrics.roi >= HIT_RATE_OBJECTIVE_MINIMUM_ROI
+}
+
+function meetsDualRateConstraint(metrics, minimumSamplingRate, minimumHitRate) {
+  return meetsRateConstraint(metrics.samplingRate, minimumSamplingRate) &&
+    meetsRateConstraint(metrics.hitRate, minimumHitRate)
+}
+
+function isPreferredRobustCandidate(candidate, current) {
+  if (!current) {
+    return true
+  }
+  if (OPTIMIZATION_OBJECTIVE === 'HIT_RATE' && candidate.metrics.hitRate !== current.metrics.hitRate) {
+    return candidate.metrics.hitRate > current.metrics.hitRate
+  }
+  if (candidate.metrics.roi !== current.metrics.roi) {
+    return candidate.metrics.roi > current.metrics.roi
+  }
+  if (candidate.validationMetrics.roi !== current.validationMetrics.roi) {
+    return candidate.validationMetrics.roi > current.validationMetrics.roi
+  }
+  if (candidate.trainingMetrics.roi !== current.trainingMetrics.roi) {
+    return candidate.trainingMetrics.roi > current.trainingMetrics.roi
+  }
+  return isPreferredMetrics(candidate.metrics, current.metrics)
+}
+
+function unavailableStrategy(degradationLevel, availableMatchCount) {
+  return {
+    strategy: { ...DEFAULT_STRATEGY, maximumSelections: 0 },
+    metrics: emptyMetrics(availableMatchCount),
+    minimumRecommendedMatchConstraint: 0,
+    minimumSelectionConstraint: 0,
+    minimumWinningSelectionConstraint: 0,
+    strategyAvailable: false,
+    samplingRateFloor: null,
+    samplingRateTargetMet: false,
+    hitRateTargetMet: false,
+    primaryRoiTargetMet: false,
+    degradationLevel
+  }
 }
 
 function optimizeCompetition(matches, baselineStrategy) {
+  if (ROBUST_VALIDATION) {
+    return optimizeCompetitionWithRobustValidation(matches, baselineStrategy)
+  }
+  return optimizeCompetitionInSample(matches, baselineStrategy)
+}
+
+function optimizeCompetitionInSample(matches, baselineStrategy) {
   if (matches.length === 0) {
     return {
       strategy: { ...DEFAULT_STRATEGY, maximumSelections: 0 },
@@ -452,6 +980,15 @@ function optimizeCompetition(matches, baselineStrategy) {
   )
   if (fallback) {
     return fallback
+  }
+  const secondaryFallback = optimizeCompetitionForConstraints(
+    matches,
+    candidates,
+    SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE,
+    SECONDARY_FALLBACK_MINIMUM_HIT_RATE
+  )
+  if (secondaryFallback) {
+    return secondaryFallback
   }
   return {
     strategy: { ...DEFAULT_STRATEGY, maximumSelections: 0 },
@@ -505,6 +1042,7 @@ function optimizeCompetitionForConstraints(matches, candidates, minimumSamplingR
         minimumSelectionConstraint: minimumRecommendedMatches,
         minimumWinningSelectionConstraint: calculateMinimumCount(best.metrics.recommendedSelectionCount, minimumHitRate),
         reliabilityTier: samplingRateTier(minimumSamplingRate, minimumHitRate),
+        samplingRateFloor: minimumSamplingRate,
         hitRateFloor: minimumHitRate,
         roiFloor: null,
         strategyAvailable: true,
@@ -814,8 +1352,14 @@ function samplingRateTier(minimumSamplingRate, minimumHitRate) {
 
 function shouldFallbackToPreviousEdition(availableMatchCount) {
   return availableMatchCount === 0 || (
-    !OPTIMIZE_SMALL_CURRENT_SAMPLES && availableMatchCount <= SMALL_CURRENT_SAMPLE_MAX
+    !OPTIMIZE_SMALL_CURRENT_SAMPLES && availableMatchCount <= smallCurrentSampleLimit()
   )
+}
+
+function smallCurrentSampleLimit() {
+  return ROBUST_VALIDATION
+    ? Math.max(SMALL_CURRENT_SAMPLE_MAX, MINIMUM_TRAINING_MATCHES + MINIMUM_VALIDATION_MATCHES - 1)
+    : SMALL_CURRENT_SAMPLE_MAX
 }
 
 function calculateMinimumCount(totalCount, minimumRate) {
@@ -852,6 +1396,24 @@ function emptyMetrics(availableMatchCount = 0) {
     netProfit: 0,
     roi: null
   }
+}
+
+function emptyRobustnessMetrics() {
+  return {
+    validationAvailable: false,
+    trainingMatchCount: 0,
+    validationMatchCount: 0,
+    targetSamplingRate: null,
+    targetHitRate: null,
+    minimumValidationRoi: MINIMUM_VALIDATION_ROI,
+    fullMetrics: emptyMetrics(),
+    trainingMetrics: emptyMetrics(),
+    validationMetrics: emptyMetrics()
+  }
+}
+
+function constraintLabel(rate) {
+  return `${STRICT_CONSTRAINTS ? '严格大于' : '大于等于'}${formatPercent(rate)}`
 }
 
 function printSummary(rows) {

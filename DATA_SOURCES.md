@@ -31,7 +31,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 公共历史源通过 `scripts/import-public-history.mjs` 导入。脚本默认只检查增量，传入 `--write` 才会写文件；下载缓存位于 `target/public-history-cache`。公共源比赛使用 `OPEN-{source}-{hash}` ID，比分重建脚本会保留这些记录。
 
-参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。Futbol24 俱乐部友谊赛从 2014 年起读取完整年度赛果，旧数据不再受最近 30 天按日接口的限制；Foot Mercato 分页日历用于补齐当前赛季的来源内缺口。ESPN、FotMob、Soccerway、Futbol24、Foot Mercato、Sofascore、PFL、VietnamPlus、UEFA、圣吉联合官网和佐加顿斯官网核验比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`FOOTMERCATO-{id}`、`SOFASCORE-{id}`、`PFL-{id}`、`VIETNAMPLUS-{postId}`、`UEFA-{id}`、`RUSG-{id}`、`DIF-{date}-{opponent}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。国家队对俱乐部训练赛按 `CLUB_FRIENDLY` 归类；无传统主客场且在集训地进行的比赛标记为中立场。
+参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。Futbol24 俱乐部友谊赛从 2014 年起读取完整年度赛果，旧数据不再受最近 30 天按日接口的限制；Foot Mercato 分页日历用于补齐当前赛季的来源内缺口。ESPN、FotMob、Soccerway、Futbol24、Foot Mercato、Sofascore、PFL、VietnamPlus、UEFA、圣吉联合官网和佐加顿斯官网核验比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`FOOTMERCATO-{id}`、`SOFASCORE-{id}`、`PFL-{id}`、`VIETNAMPLUS-{postId}`、`UEFA-{id}`、`RUSG-{id}`、`DIF-{date}-{opponent}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。使用 `--update-existing-regulation-scores-only` 时，脚本只会更新已有比赛 ID 的 90 分钟比分，不新增比赛、不删除记录，也不执行全量去重；缺少可核验详情的加时或点球比赛会保持原值。国家队对俱乐部训练赛按 `CLUB_FRIENDLY` 归类；无传统主客场且在集训地进行的比赛标记为中立场。
 
 历史比赛使用以下内部类型和回测权重：
 
@@ -115,6 +115,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - Futbol24 `league_id=75`：塞浦甲完整赛季历史和近期比赛
 - Futbol24 `league_id=269`：哈萨超完整赛季历史和近期比赛
 - Futbol24 `league_id=70/534/868/291`：威联杯、塞杯、卢森杯和法罗杯完整赛季历史及近期比赛
+- Futbol24 `league_id=60/310`：斯洛文甲和亚美尼超完整赛季历史及近期比赛，统一按 `Asia/Shanghai` 转换开球日期
 - PFL 官方 `games/show/{id}`：阿塞杯第一资格轮和阿塞超升降级附加赛的核验赛果
 - Sofascore `tournamentId=853`：Futbol24 不可用时的俱乐部友谊赛降级来源
 - VietnamPlus/VFF 已核验赛报：国家队对俱乐部训练赛，使用 `VERIFIED-VIETNAMPLUS` 来源键定向导入
@@ -127,7 +128,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 ## 全场比分口径
 
-系统只保存 90 分钟加伤停补时的全场比分，不抓取半场比分。ESPN 赛事会根据进球明细排除加时赛和点球大战；FotMob 对 `AET` 和点球决胜场次读取比赛详情中的 90 分钟 `FT` 检查点，详情缺失时不使用加时后的最终比分；Futbol24 加时场次读取分段比分中的 90 分钟赛果；Sofascore 优先读取 `normaltime`；OpenFootball 标记为加时赛的最终比分不会直接写入常规时间赛果。
+系统只保存 90 分钟加伤停补时的全场比分，不抓取半场比分。ESPN 赛事会根据进球明细排除加时赛和点球大战；FotMob 对 `AET` 和点球决胜场次读取比赛详情中的 90 分钟 `FT` 检查点，详情缺失时不使用加时后的最终比分；Futbol24 的赛季接口出现 `AET`、`AP` 或点球比分时，会继续读取比赛详情页的 `FT` 比分，详情缺失时不使用加时后的最终比分；Sofascore 优先读取 `normaltime`；OpenFootball 标记为加时赛的最终比分不会直接写入常规时间赛果。俱乐部官网等 `VERIFIED-*` 核验源优先于聚合比分源，可覆盖同日同对阵的错误赛果。
 
 ## 体彩玩法开售状态、让球数与总进球数
 

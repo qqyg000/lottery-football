@@ -212,11 +212,18 @@ export function getTotalGoalsRecommendations(match, options = {}) {
   if (strategy.maximumSelections === 0 || !match?.sportteryTotalGoalsOdds) {
     return []
   }
-  const probabilities = options.modelMode === 'after' && Array.isArray(match.adjustedSportteryTotalGoalsProbabilities)
-    ? match.adjustedSportteryTotalGoalsProbabilities
-    : (Array.isArray(match.sportteryTotalGoalsProbabilities)
-        ? match.sportteryTotalGoalsProbabilities
-        : [])
+  const fixedProbabilities = options.modelMode === 'after' && Array.isArray(match.fixedAdjustedSportteryTotalGoalsProbabilities)
+    ? match.fixedAdjustedSportteryTotalGoalsProbabilities
+    : (Array.isArray(match.fixedSportteryTotalGoalsProbabilities)
+        ? match.fixedSportteryTotalGoalsProbabilities
+        : null)
+  const probabilities = fixedProbabilities || (
+    options.modelMode === 'after' && Array.isArray(match.adjustedSportteryTotalGoalsProbabilities)
+      ? match.adjustedSportteryTotalGoalsProbabilities
+      : (Array.isArray(match.sportteryTotalGoalsProbabilities)
+          ? match.sportteryTotalGoalsProbabilities
+          : [])
+  )
   const probabilityByGoals = new Map(probabilities.map(item => [Number(item.totalGoals), Number(item.probability)]))
   return TOTAL_GOALS_KEYS.reduce((recommendations, totalGoals, index) => {
     const probability = probabilityByGoals.get(totalGoals)

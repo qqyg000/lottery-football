@@ -178,7 +178,7 @@ class PredictionServiceTest {
                 "Zeleziarne Podbrezova", "Podbrezova",
                 "Dukla Banska Bystrica", "Banska Bystrica",
                 "FC Zbrojovka Brno", "布尔诺",
-                "Lillestrøm", "利勒斯特罗姆",
+                "Lillestrøm", "利勒斯特",
                 "腓特烈斯塔", "腓特烈",
                 "霍森斯", "霍尔森斯",
                 "布拉迪斯拉发", "布拉迪斯",

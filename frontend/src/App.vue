@@ -1560,10 +1560,21 @@ export default {
         defaults.globalParameters.singleRecommendationThreshold
       )
     },
-    getParameterProfile(competition, includePreviousEdition = this.includePreviousEdition) {
-      const profile = this.parameterProfiles[this.getParameterProfileKey(competition, includePreviousEdition)]
-      const presetName = this.activeParameterPreset === 'aggressive' ? 'AGGRESSIVE' : 'STABLE'
+    getParameterProfile(
+      competition,
+      includePreviousEdition = this.includePreviousEdition,
+      parameterPreset = this.activeParameterPreset
+    ) {
+      const profile = this.parameterProfiles[
+        this.getParameterProfileKey(competition, includePreviousEdition, parameterPreset)
+      ]
+      const presetName = String(parameterPreset || 'stable').toUpperCase() === 'AGGRESSIVE'
+        ? 'AGGRESSIVE'
+        : 'STABLE'
       return profile || createDefaultParameterProfile(presetName)
+    },
+    getTotalGoalsParameterProfile(competition, includePreviousEdition = this.includePreviousEdition) {
+      return this.getParameterProfile(competition, includePreviousEdition, 'STABLE')
     },
     getTotalGoalsStrategyKey(competition, includePreviousEdition = this.includePreviousEdition) {
       const usePreviousProfile = includePreviousEdition || !this.isCurrentEditionStarted(competition)
@@ -1764,16 +1775,49 @@ export default {
         .map(competition => competition.code)
     },
     async fetchCompetitionPredictions(competition) {
+      const activeModelFactors = this.getParameterProfile(competition).modelFactors
+      const totalGoalsModelFactors = this.getTotalGoalsParameterProfile(competition).modelFactors
+      const activeResponsePromise = this.fetchPredictionsWithModelFactors(competition, activeModelFactors)
+      if (this.areModelFactorsEqual(activeModelFactors, totalGoalsModelFactors)) {
+        const response = await activeResponsePromise
+        return this.attachFixedTotalGoalsProbabilities(response, response)
+      }
+      const [response, totalGoalsResponse] = await Promise.all([
+        activeResponsePromise,
+        this.fetchPredictionsWithModelFactors(competition, totalGoalsModelFactors)
+      ])
+      return this.attachFixedTotalGoalsProbabilities(response, totalGoalsResponse)
+    },
+    async fetchPredictionsWithModelFactors(competition, modelFactors) {
       const params = new URLSearchParams()
       params.append('date', this.queryDate)
       params.append('competition', competition)
       params.append('simulations', FIXED_SIMULATIONS)
-      this.appendModelFactorParams(params, this.getParameterProfile(competition).modelFactors)
+      this.appendModelFactorParams(params, modelFactors)
       const res = await fetch('/api/football/predictions?' + params.toString())
       if (!res.ok) {
         throw new Error('服务响应异常')
       }
       return res.json()
+    },
+    areModelFactorsEqual(left, right) {
+      return MODEL_FACTOR_KEYS.every(key => Number(left?.[key]) === Number(right?.[key]))
+    },
+    attachFixedTotalGoalsProbabilities(response, totalGoalsResponse) {
+      const totalGoalsMatchesById = new Map(
+        (totalGoalsResponse?.matches || []).map(match => [String(match.matchId), match])
+      )
+      return {
+        ...response,
+        matches: (response?.matches || []).map(match => {
+          const totalGoalsMatch = totalGoalsMatchesById.get(String(match.matchId)) || match
+          return {
+            ...match,
+            fixedSportteryTotalGoalsProbabilities: totalGoalsMatch.sportteryTotalGoalsProbabilities,
+            fixedAdjustedSportteryTotalGoalsProbabilities: totalGoalsMatch.adjustedSportteryTotalGoalsProbabilities
+          }
+        })
+      }
     },
     appendModelFactorParams(params, modelFactors) {
       const defaults = this.getActiveParameterPresetDefaults().modelFactors

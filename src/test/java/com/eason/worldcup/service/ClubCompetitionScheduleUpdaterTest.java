@@ -789,6 +789,40 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
+    void shouldUseRegulationTimeScoreForLechPoznanAndAarhus() throws Exception {
+        JsonNode statuses = objectMapper.readTree("""
+                {
+                  "9": { "name": "AP", "name_short": "AP", "is_ended": true }
+                }
+                """);
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "league_id": 8,
+                  "status_id": 9,
+                  "date": "2026-07-29T17:00:00+00:00",
+                  "score1": "1-4",
+                  "score2": "p.3-4",
+                  "team1": { "name": "Lech Poznań" },
+                  "team2": { "name": "AGF Aarhus" }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFutbol24Match(
+                "3332579",
+                match,
+                statuses,
+                ZoneId.of("Asia/Shanghai"));
+
+        assertNotNull(schedule);
+        assertEquals(LocalDate.of(2026, 7, 30), schedule.getMatchDate());
+        assertEquals(LocalTime.of(1, 0), schedule.getKickoffTime());
+        assertEquals("波兹南", schedule.getHomeTeamCn());
+        assertEquals("奥胡斯", schedule.getAwayTeamCn());
+        assertEquals(0, schedule.getHomeScore());
+        assertEquals(3, schedule.getAwayScore());
+    }
+
+    @Test
     void shouldParseAzerbaijanCupMatchInShanghaiTime() throws Exception {
         JsonNode statuses = objectMapper.readTree("""
                 {
@@ -888,7 +922,7 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
-    void shouldUseFutbol24FullTimeScoreWhenSecondScoreContainsOnlyPenalties() throws Exception {
+    void shouldRejectPenaltyOnlyScoreWithoutRegulationDetails() throws Exception {
         JsonNode statuses = objectMapper.readTree("""
                 {
                   "15": { "name": "AP w/ET", "name_short": "AP", "is_ended": true }
@@ -913,12 +947,23 @@ class ClubCompetitionScheduleUpdaterTest {
                 statuses,
                 ZoneId.of("Asia/Shanghai"));
 
-        assertNotNull(schedule);
-        assertEquals(LocalDate.of(2026, 8, 1), schedule.getMatchDate());
-        assertEquals("SBV精英", schedule.getHomeTeamCn());
-        assertEquals("Volos NFC", schedule.getAwayTeamCn());
-        assertEquals(1, schedule.getHomeScore());
-        assertEquals(1, schedule.getAwayScore());
+        assertNull(schedule);
+    }
+
+    @Test
+    void shouldParseRegulationScoreFromFutbol24MatchPage() {
+        Object score = ReflectionTestUtils.invokeMethod(
+                updater,
+                "parseFutbol24FullTimeScore",
+                "<div>HT 0-1, FT 0-3, AET 1-4</div>");
+
+        assertNotNull(score);
+        assertEquals(0, ReflectionTestUtils.getField(score, "homeScore"));
+        assertEquals(3, ReflectionTestUtils.getField(score, "awayScore"));
+        assertNull(ReflectionTestUtils.invokeMethod(
+                updater,
+                "parseFutbol24FullTimeScore",
+                "<div>AET 1-4, p.3-4</div>"));
     }
 
     @Test
@@ -1492,14 +1537,16 @@ class ClubCompetitionScheduleUpdaterTest {
                 List.of("70", "威联杯"),
                 List.of("534", "塞杯"),
                 List.of("868", "卢森杯"),
-                List.of("291", "法罗杯"));
+                List.of("291", "法罗杯"),
+                List.of("60", "斯洛文甲"),
+                List.of("310", "亚美尼超"));
 
         for (List<String> source : sources) {
             JsonNode match = objectMapper.readTree("""
                     {
                       "league_id": %s,
                       "status_id": 5,
-                      "date": "2026-07-18T14:00:00+00:00",
+                      "date": "2026-07-18T18:30:00+00:00",
                       "score1": "2-1",
                       "team1": { "name": "Home Team" },
                       "team2": { "name": "Away Team" }
@@ -1513,6 +1560,8 @@ class ClubCompetitionScheduleUpdaterTest {
                     ZoneId.of("Asia/Shanghai"));
 
             assertNotNull(schedule, source.get(1));
+            assertEquals(LocalDate.of(2026, 7, 19), schedule.getMatchDate());
+            assertEquals(LocalTime.of(2, 30), schedule.getKickoffTime());
             assertEquals(source.get(1), schedule.getGroupName());
             assertEquals(2, schedule.getHomeScore());
             assertEquals(1, schedule.getAwayScore());
@@ -1682,7 +1731,7 @@ class ClubCompetitionScheduleUpdaterTest {
 
         assertEquals("利特克斯", schedule.getHomeTeamCn());
         assertEquals("Litex Lovech", schedule.getHomeTeamEn());
-        assertEquals("PFC Lokomotiv Sofia 1929", schedule.getAwayTeamCn());
+        assertEquals("Lokomotiv Sf", schedule.getAwayTeamCn());
     }
 
     @Test

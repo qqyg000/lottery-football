@@ -443,7 +443,7 @@ class ClubTeamNameTranslatorTest {
                 Map.entry("Zeleziarne Podbrezova", "Podbrezova"),
                 Map.entry("Dukla Banska Bystrica", "Banska Bystrica"),
                 Map.entry("FC Zbrojovka Brno", "布尔诺"),
-                Map.entry("Lillestrøm", "利勒斯特罗姆"),
+                Map.entry("Lillestrøm", "利勒斯特"),
                 Map.entry("腓特烈斯塔", "腓特烈"),
                 Map.entry("霍森斯", "霍尔森斯"),
                 Map.entry("布拉迪斯拉发", "布拉迪斯"),
@@ -456,7 +456,22 @@ class ClubTeamNameTranslatorTest {
                 Map.entry("Universitatea Cluj", "U Cluj"),
                 Map.entry("比亚韦斯托克", "比亚韦"),
                 Map.entry("ASSE", "圣埃蒂安"),
-                Map.entry("帕纳辛纳科斯", "帕纳辛纳"));
+                Map.entry("帕纳辛纳科斯", "帕纳辛纳"),
+                Map.entry("阿拉木图凯拉特", "阿拉木图"),
+                Map.entry("索菲亚列夫斯基", "索列夫"),
+                Map.entry("Septemvri Sofia", "Septemvri"),
+                Map.entry("PFC Lokomotiv Sofia 1929", "Lokomotiv Sf"),
+                Map.entry("Dunav Ruse", "Dunav"),
+                Map.entry("巴尼亚", "巴战士"),
+                Map.entry("FK Radnik Surdulica", "Radnik"),
+                Map.entry("U Craiova", "克拉约瓦"),
+                Map.entry("利勒斯特罗姆", "利勒斯特"),
+                Map.entry("桑纳菲尤尔", "桑纳菲"),
+                Map.entry("K. Diegem Sport", "迪耶根体育"),
+                Map.entry("Celje", "采列"),
+                Map.entry("Riga FC", "里加FC"),
+                Map.entry("Gandzasar FC", "Gandzasar"),
+                Map.entry("巴黎圣日尔曼", "巴黎圣曼"));
 
         for (Map.Entry<String, String> mapping : expectedMappings.entrySet()) {
             assertEquals(mapping.getValue(), ClubTeamNameTranslator.translate(mapping.getKey()));

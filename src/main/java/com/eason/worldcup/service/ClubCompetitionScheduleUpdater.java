@@ -66,7 +66,12 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final Pattern PERIOD_SCORE_PATTERN = Pattern.compile("(\\d+)\\s*-\\s*(\\d+)");
 
+    private static final Pattern FUTBOL24_FULL_TIME_SCORE_PATTERN = Pattern.compile(
+            "\\bFT\\s+(\\d+)\\s*-\\s*(\\d+)",
+            Pattern.CASE_INSENSITIVE);
+
     private static final Map<String, ScorePair> VERIFIED_REGULATION_TIME_SCORES = Map.of(
+            "FUTBOL24-CHAMPIONS_LEAGUE-3332579", new ScorePair(0, 3),
             "FUTBOL24-CLUB_FRIENDLY-3383418", new ScorePair(4, 0),
             "FUTBOL24-CLUB_OFFICIAL_OTHER-3328575", new ScorePair(1, 1));
 
@@ -279,7 +284,9 @@ public class ClubCompetitionScheduleUpdater {
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "70", "威联杯", true),
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "534", "塞杯", true),
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "868", "卢森杯", true),
-            new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "291", "法罗杯", true)
+            new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "291", "法罗杯", true),
+            new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "60", "斯洛文甲", true),
+            new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "310", "亚美尼超", true)
     );
 
     private final ObjectMapper objectMapper;
@@ -319,6 +326,9 @@ public class ClubCompetitionScheduleUpdater {
 
     @Value("${club-competitions.schedule-update.futbol24-live-url-template:https://api.futbol24.com/api/live/matches?_=0&date={date}&lang=en&sort=league}")
     private String futbol24LiveUrlTemplate;
+
+    @Value("${club-competitions.schedule-update.futbol24-match-url-template:https://www.futbol24.com/match/{slug}}")
+    private String futbol24MatchUrlTemplate;
 
     @Value("${club-competitions.schedule-update.futbol24-parallelism:16}")
     private int futbol24Parallelism;
@@ -1250,11 +1260,22 @@ public class ClubCompetitionScheduleUpdater {
             var fields = live.path("matches").fields();
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> field = fields.next();
+                JsonNode match = field.getValue();
+                String leagueId = match.path("league_id").asText("");
+                ScorePair regulationTimeScore = FUTBOL24_SOURCES.stream()
+                        .anyMatch(source -> source.leagueId().equals(leagueId))
+                        ? loadFutbol24RegulationTimeScore(
+                                client,
+                                match,
+                                statuses.path(match.path("status_id").asText("")),
+                                timeout)
+                        : null;
                 MatchSchedule schedule = parseFutbol24Match(
                         field.getKey(),
-                        field.getValue(),
+                        match,
                         statuses,
-                        zoneId);
+                        zoneId,
+                        regulationTimeScore);
                 if (schedule != null) {
                     result.add(schedule);
                 }
@@ -1274,6 +1295,15 @@ public class ClubCompetitionScheduleUpdater {
             JsonNode match,
             JsonNode statuses,
             ZoneId zoneId) {
+        return parseFutbol24Match(eventId, match, statuses, zoneId, null);
+    }
+
+    private MatchSchedule parseFutbol24Match(
+            String eventId,
+            JsonNode match,
+            JsonNode statuses,
+            ZoneId zoneId,
+            ScorePair regulationTimeScore) {
         if (eventId == null || EXCLUDED_FUTBOL24_MATCH_IDS.contains(eventId)) {
             return null;
         }
@@ -1302,7 +1332,9 @@ public class ClubCompetitionScheduleUpdater {
         String homeTeam = match.path("team1").path("name").asText("");
         String awayTeam = match.path("team2").path("name").asText("");
         String dateText = match.path("date").asText("");
-        ScorePair score = parseFutbol24RegulationScore(match, statusNode);
+        ScorePair score = regulationTimeScore == null
+                ? parseFutbol24RegulationScore(match, statusNode)
+                : regulationTimeScore;
         if (eventId == null || eventId.isBlank()
                 || homeTeam.isBlank()
                 || awayTeam.isBlank()
@@ -1352,6 +1384,54 @@ public class ClubCompetitionScheduleUpdater {
         return schedule;
     }
 
+    private ScorePair loadFutbol24RegulationTimeScore(
+            HttpClient client,
+            JsonNode match,
+            JsonNode status,
+            Duration timeout) throws InterruptedException {
+        if (!futbol24StatusNeedsRegulationDetails(status)) {
+            return null;
+        }
+        String slug = match.path("slug").asText("");
+        if (slug.isBlank()) {
+            return null;
+        }
+        String url = futbol24MatchUrlTemplate.replace("{slug}", slug);
+        try {
+            String html = downloadTextWithRetry(client, url, timeout, 2);
+            ScorePair score = parseFutbol24FullTimeScore(html);
+            if (score == null) {
+                log.warn("Futbol24 match page does not contain a regulation-time score: {}", slug);
+                return null;
+            }
+            return score;
+        } catch (IOException ex) {
+            log.warn("Unable to load Futbol24 regulation-time score for {}: {}", slug, ex.getMessage());
+            return null;
+        }
+    }
+
+    private ScorePair parseFutbol24FullTimeScore(String html) {
+        Matcher matcher = FUTBOL24_FULL_TIME_SCORE_PATTERN.matcher(html == null ? "" : html);
+        if (!matcher.find()) {
+            return null;
+        }
+        return new ScorePair(
+                Integer.parseInt(matcher.group(1)),
+                Integer.parseInt(matcher.group(2)));
+    }
+
+    private boolean futbol24StatusNeedsRegulationDetails(JsonNode status) {
+        String statusText = (status.path("name_short").asText("") + " "
+                + status.path("name").asText(""))
+                .toUpperCase(Locale.ROOT);
+        return statusText.contains("AET")
+                || statusText.contains("W/ET")
+                || statusText.contains("EXTRA TIME")
+                || statusText.contains("PENALT")
+                || Set.of("AP", "PEN").contains(status.path("name_short").asText("").toUpperCase(Locale.ROOT));
+    }
+
     private void applyVerifiedRegulationTimeScore(MatchSchedule schedule) {
         if (schedule == null || !"COMPLETED".equalsIgnoreCase(schedule.getStatus())) {
             return;
@@ -1365,18 +1445,8 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     private ScorePair parseFutbol24RegulationScore(JsonNode match, JsonNode status) {
-        String statusText = (status.path("name_short").asText("") + " "
-                + status.path("name").asText(""))
-                .toUpperCase(Locale.ROOT);
-        boolean afterExtraTime = statusText.contains("AET")
-                || statusText.contains("W/ET")
-                || statusText.contains("EXTRA TIME");
-        if (afterExtraTime) {
-            ScorePair regulationScore = parseLastRegulationPeriodScore(
-                    match.path("score2").asText(""));
-            return regulationScore != null
-                    ? regulationScore
-                    : parseScore(match.path("score1").asText(""));
+        if (futbol24StatusNeedsRegulationDetails(status)) {
+            return parseLastRegulationPeriodScore(match.path("score2").asText(""));
         }
         return parseScore(match.path("score1").asText(""));
     }
@@ -1743,6 +1813,35 @@ public class ClubCompetitionScheduleUpdater {
             throw new IOException("Unexpected HTTP status " + response.statusCode());
         }
         return objectMapper.readTree(response.body());
+    }
+
+    private String downloadTextWithRetry(
+            HttpClient client,
+            String url,
+            Duration timeout,
+            int maxAttempts) throws IOException, InterruptedException {
+        IOException lastException = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                        .timeout(timeout)
+                        .header("Accept", "text/html,application/xhtml+xml")
+                        .header("User-Agent", "lottery-football/1.0")
+                        .GET()
+                        .build();
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                    throw new IOException("Unexpected HTTP status " + response.statusCode());
+                }
+                return response.body();
+            } catch (IOException ex) {
+                lastException = ex;
+                if (attempt < maxAttempts) {
+                    Thread.sleep(250L * attempt);
+                }
+            }
+        }
+        throw lastException == null ? new IOException("Unable to download text data") : lastException;
     }
 
     private JsonNode downloadSportsDbJson(HttpClient client, String url, Duration timeout) throws IOException, InterruptedException {

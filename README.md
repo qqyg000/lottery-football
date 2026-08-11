@@ -53,9 +53,9 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 184,063 | 2014-10-22 至 2026-08-03 |
-| `historical_odds_data.csv` | 28,694 | 2014-10-22 至 2026-07-22 |
-| `team_name_mappings.csv` | 21,289 | 2014-06-24 至 2026-08-23 |
+| `historical_matches.csv` | 206,142 | 2014-10-22 至 2026-08-11 |
+| `historical_odds_data.csv` | 29,251 | 2014-10-22 至 2026-08-11 |
+| `team_name_mappings.csv` | 22,917 | 2014-06-24 至 2026-08-23 |
 
 主要数据来自 FotMob、Futbol24、Foot Mercato、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 
@@ -223,6 +223,30 @@ ROI = (totalReturn / totalStake - 1) × 100%
 - `oddsMatchCount`：上述已完赛比赛中至少有一类体彩赔率的比赛数，是采样率分母
 - `recommendedMatchCount`：有赔率比赛中产生推荐的比赛数，是采样率分子
 
+### 进球数策略稳健优化
+
+进球数策略支持按比赛日期执行时间留出验证，避免在同一批比赛上搜索参数并直接报告最优收益。开启 `--robust-validation` 后，较早约 70% 的样本用于参数搜索和细化，较新约 30% 的样本作为验证集；最终策略必须在训练集、验证集和完整样本上同时满足同一档约束，且验证集 ROI 不得低于配置下限。
+
+```powershell
+node scripts/optimize-total-goals-strategies.mjs `
+  --robust-validation `
+  --strict-constraints `
+  --minimum-sampling-rate 0.333 `
+  --minimum-hit-rate 0.333 `
+  --fallback-minimum-sampling-rate 0.25 `
+  --fallback-minimum-hit-rate 0.25 `
+  --secondary-fallback-minimum-sampling-rate 0.20 `
+  --secondary-fallback-minimum-hit-rate 0.20 `
+  --minimum-validation-roi 0 `
+  --simulations 50000 `
+  --base-url http://127.0.0.1:8080 `
+  --backtest-cache-prefix temp/total-goals-robust-backtest-cache
+```
+
+每个赛事、每个时间范围只保存一套进球数策略，不区分稳健和激进。界面上的进球数推荐始终使用对应赛事、对应时间范围的 `STABLE` 模型参数计算概率，与进球数优化器的回测口径保持一致；切换稳健/激进只会改变胜平负和让球等推荐。优化器依次搜索 `>33.3%` 主档、`>25%` 降级档和 `>20%` 二级降级档，仅在上一档无可行解时进入下一档；三个档位都没有可行解时，将对应策略的 `maximumSelections` 设为 `0`。仅本届可用样本不足训练集和验证集最少场次时，不做独立优化，沿用通过稳健验证的含上届策略。
+
+`--dry-run` 只生成报告而不写入 `config/user-config.json`。`--backtest-cache-prefix` 会保存带模拟次数、赛事范围和模型因子签名的回测结果，仅在签名完全一致时复用。`--baseline-report-path` 可从旧报告读取基准策略，用于重新优化后保留原策略的样本外审计结果。
+
 当前保存的参数档案以 ROI 为第一目标，并执行以下硬约束：
 
 - 正式比赛权重不低于 `1.00`
@@ -306,7 +330,7 @@ node scripts/generate-team-name-mappings.mjs
 页面“更新数据”会异步执行以下阶段：
 
 1. 读取以当天为基准的体彩最近 30 天赛果
-2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；欧冠、罗甲、罗超杯、波甲和俱乐部友谊赛均在此阶段更新
+2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；欧冠、罗甲、罗超杯、波甲、斯洛文甲、亚美尼超和俱乐部友谊赛均在此阶段更新
 3. 重建球队模型
 4. 更新赛事概览
 
@@ -336,6 +360,10 @@ node scripts/import-supplemental-history.mjs --write --compact
 
 # 仅补充俱乐部历史，跳过国家队公共源
 node scripts/import-supplemental-history.mjs --write --compact --skip-national
+
+# 仅把已存在的加时、点球比赛修正为 90 分钟比分，不新增比赛或触发全量去重
+node scripts/import-supplemental-history.mjs --write --compact --skip-national `
+  --update-existing-regulation-scores-only
 
 # 回补 2014-10-22 至今的欧冠、罗甲、罗超杯、波甲和指定参赛球队俱乐部赛
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
@@ -367,6 +395,11 @@ node scripts/import-supplemental-history.mjs --write --compact --skip-national `
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
   --only-sources FUTBOL24-133,FUTBOL24-537,FUTBOL24-33,FUTBOL24-92,FUTBOL24-531,FUTBOL24-26
 
+# 只补取斯洛文甲、亚美尼超，并同步校正欧冠、欧罗巴的 90 分钟比分
+node scripts/import-supplemental-history.mjs --write --compact --skip-national `
+  --only-sources FUTBOL24-8,FUTBOL24-9,FUTBOL24-60,FUTBOL24-310 `
+  --source-min-date 2014-10-22
+
 # 校正比分并压缩数据
 node scripts/reconcile-historical-scores.mjs --write --compact
 
@@ -385,6 +418,7 @@ node scripts/reconcile-historical-scores.mjs --write --compact
 | `team_name_mappings.csv` | 体彩标准球队名与数据源别名 |
 | `reports/parameter-reoptimization-2026-07-25.md` | 全赛事方案参数重新优化和独立复核结果 |
 | `reports/sampling-rate-definition-audit-2026-07-24.md` | 新旧采样率口径、历史方案数据失真及复核结果 |
+| `reports/total-goals-strategy-overfitting-audit-2026-08-11.md` | 进球数策略时间留出验证、过拟合审计和稳健重优化结果 |
 
 修改 CSV 字段或赛事代码时，需要同步检查 Java 加载器、数据脚本和前端赛事列表。
 

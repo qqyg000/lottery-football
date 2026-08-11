@@ -818,6 +818,24 @@ const FUTBOL24_SOURCES = [
     sourceCompetition: '法罗杯',
     seasonPath: 'national/Faroe-Islands/Logmanssteypid',
     crossYearSeason: false
+  },
+  {
+    leagueId: '60',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '斯洛文甲',
+    seasonPath: 'national/Slovenia/Prva-Liga',
+    crossYearSeason: true,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '310',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '亚美尼超',
+    seasonPath: 'national/Armenia/Premier-League',
+    crossYearSeason: true,
+    firstSeasonStartYear: 2014
   }
 ]
 
@@ -1131,6 +1149,7 @@ function parseArguments(argv) {
     skipSofaScore: false,
     skipFootMercato: false,
     skipNational: false,
+    updateExistingRegulationScoresOnly: false,
     resetInferredMappings: false,
     onlySources: null,
     sourceRoot: null,
@@ -1164,6 +1183,8 @@ function parseArguments(argv) {
       options.skipFootMercato = true
     } else if (argument === '--skip-national') {
       options.skipNational = true
+    } else if (argument === '--update-existing-regulation-scores-only') {
+      options.updateExistingRegulationScoresOnly = true
     } else if (argument === '--reset-inferred-mappings') {
       options.resetInferredMappings = true
     } else if (argument === '--only-sources') {
@@ -2241,7 +2262,9 @@ function parseFutbol24Rows(json, sources) {
       awayTeam,
       homeScore: score.homeScore,
       awayScore: score.awayScore,
-      neutral: false
+      neutral: false,
+      futbol24MatchSlug: String(match?.slug ?? '').trim(),
+      needsRegulationDetails: futbol24NeedsRegulationDetails(match, status)
     })
   }
   return rows
@@ -2325,10 +2348,23 @@ function futbol24RegulationScore(match, status) {
   }
 }
 
+function futbol24NeedsRegulationDetails(match, status) {
+  const statusText = `${status?.name_short ?? ''} ${status?.name ?? ''}`.toUpperCase()
+  const finalScoreText = String(match?.score1 ?? '').toUpperCase()
+  const supplementalScoreText = String(match?.score2 ?? '').toUpperCase()
+  return statusText.includes('AET')
+    || statusText.includes('W/ET')
+    || statusText.includes('EXTRA TIME')
+    || statusText.includes('PENALT')
+    || ['AP', 'PEN'].includes(String(status?.name_short ?? '').toUpperCase())
+    || finalScoreText.includes('AET')
+    || /^\s*P\.?\s*\d+\s*-\s*\d+/u.test(supplementalScoreText)
+}
+
 function parseFutbol24SeasonResults(json, source) {
   const rows = []
   for (const match of json?.data ?? []) {
-    const score = String(match?.score1 ?? '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/)
+    const score = String(match?.score1 ?? '').match(/^\s*(\d+)\s*-\s*(\d+)/)
     const homeTeam = String(match?.team1?.name ?? '').trim()
     const awayTeam = String(match?.team2?.name ?? '').trim()
     const slug = String(match?.slug ?? '').trim()
@@ -2353,10 +2389,74 @@ function parseFutbol24SeasonResults(json, source) {
       awayTeam,
       homeScore: Number(score[1]),
       awayScore: Number(score[2]),
-      neutral: false
+      neutral: false,
+      futbol24MatchSlug: slug,
+      needsRegulationDetails: futbol24NeedsRegulationDetails(match, null)
     })
   }
   return rows
+}
+
+async function readFutbol24MatchPage(matchSlug, options) {
+  const cacheKey = crypto.createHash('sha1')
+    .update(matchSlug)
+    .digest('hex')
+    .slice(0, 20)
+    .toUpperCase()
+  const cachePath = path.join(cacheRoot, 'futbol24-match-details', `${cacheKey}.html`)
+  if (!options.refreshCache) {
+    try {
+      return await fs.readFile(cachePath, 'utf8')
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const url = `https://www.futbol24.com/match/${matchSlug}`
+  const html = await fetchTextWithRetry(url)
+  await fs.mkdir(path.dirname(cachePath), { recursive: true })
+  await fs.writeFile(cachePath, html, 'utf8')
+  return html
+}
+
+function futbol24FullTimeScore(html) {
+  const score = String(html ?? '').match(/\bFT\s+(\d+)\s*-\s*(\d+)/iu)
+  return score
+    ? { homeScore: Number(score[1]), awayScore: Number(score[2]) }
+    : null
+}
+
+async function enrichFutbol24RegulationScores(rows, options) {
+  return (await mapWithConcurrency(rows, Math.min(4, options.concurrency), async row => {
+    if (!row.needsRegulationDetails) {
+      const { futbol24MatchSlug, needsRegulationDetails, ...outputRow } = row
+      return outputRow
+    }
+    if (!row.futbol24MatchSlug) {
+      return null
+    }
+    try {
+      const score = futbol24FullTimeScore(
+        await readFutbol24MatchPage(row.futbol24MatchSlug, options))
+      if (!score) {
+        return null
+      }
+      const correctedExtraTimeGoals = Math.max(
+        0,
+        row.homeScore + row.awayScore - score.homeScore - score.awayScore
+      )
+      const { futbol24MatchSlug, needsRegulationDetails, ...outputRow } = row
+      return {
+        ...outputRow,
+        homeScore: score.homeScore,
+        awayScore: score.awayScore,
+        correctedExtraTimeGoals
+      }
+    } catch {
+      return null
+    }
+  })).filter(Boolean)
 }
 
 function futbol24SourceKey(source) {
@@ -2466,7 +2566,7 @@ async function readFutbol24SeasonResults(request, options) {
     if ((Number.isFinite(totalItems) && rows.length >= totalItems)
         || !Array.isArray(json?.data)
         || json.data.length < 100) {
-      return rows
+      return enrichFutbol24RegulationScores(rows, options)
     }
   }
   throw new Error(`Futbol24 赛季分页超过安全上限：${request.source.leagueId}/${request.season}`)
@@ -2559,9 +2659,12 @@ async function loadFutbol24Rows(options) {
   const errors = []
   const batches = await mapWithConcurrency(dates, Math.min(6, options.concurrency), async date => {
     try {
-      return parseFutbol24Rows(
-        await readFutbol24Date(date, options),
-        selectedSources
+      return await enrichFutbol24RegulationScores(
+        parseFutbol24Rows(
+          await readFutbol24Date(date, options),
+          selectedSources
+        ),
+        options
       )
     } catch (error) {
       errors.push({ source: 'FUTBOL24', date, message: error.message })
@@ -3130,7 +3233,8 @@ function normalizeAndDeduplicateHistoryRows(rows, nationalMappings, clubMappings
       const likelyDuplicate = duplicateEntry && (
         isSportteryBackedHistoryRow(duplicateEntry.existing.row)
         || isSportteryBackedHistoryRow(normalizedRow)
-        || sharedTeamMappingIsTrusted
+        || normalizedRow.competition !== 'CLUB_OFFICIAL_OTHER'
+          && sharedTeamMappingIsTrusted
         || areLikelyOpponentAliases(
           existingOpponent,
           candidateOpponent,
@@ -3271,6 +3375,7 @@ function emptySourceSummary() {
     parsedRows: 0,
     addedRows: 0,
     updatedRows: 0,
+    updatedMatchIds: new Set(),
     duplicateRows: 0,
     outsideDateRows: 0,
     outsideTargetRows: 0,
@@ -3285,6 +3390,7 @@ function outputSourceSummaries(summaries, compact) {
     parsedRows: summary.parsedRows,
     addedRows: summary.addedRows,
     updatedRows: summary.updatedRows,
+    updatedMatches: summary.updatedMatchIds.size,
     duplicateRows: summary.duplicateRows,
     outsideDateRows: summary.outsideDateRows,
     outsideTargetRows: summary.outsideTargetRows,
@@ -3339,16 +3445,28 @@ const replacedRows = originalRows.filter(row => (
   && row.match_date <= options.sourceMaxDate
 ))
 const replacedRowSet = new Set(replacedRows)
-const retainedHistory = normalizeAndDeduplicateHistoryRows(
-  originalRows.filter(row => (
+const retainedSourceRows = options.updateExistingRegulationScoresOnly
+  ? originalRows.map(row => ({ ...row }))
+  : originalRows.filter(row => (
     row.match_date >= options.minDate
     && row.match_date <= options.maxDate
     && !EXCLUDED_HISTORICAL_MATCH_IDS.has(row.match_id)
     && !replacedRowSet.has(row)
-  )),
-  nationalMappings,
-  clubMappings
-)
+  ))
+const retainedHistory = options.updateExistingRegulationScoresOnly
+  ? {
+      rows: retainedSourceRows,
+      duplicateRows: 0,
+      shiftedDateDuplicateRows: 0,
+      sameTeamScoreDuplicateRows: 0,
+      inferredAliases: [],
+      duplicateSamples: []
+    }
+  : normalizeAndDeduplicateHistoryRows(
+      retainedSourceRows,
+      nationalMappings,
+      clubMappings
+    )
 const retainedRows = retainedHistory.rows
 const targetNationalTeams = new Set(originalRows
   .filter(row => NATIONAL_COMPETITIONS.has(row.competition))
@@ -3415,6 +3533,11 @@ for (const sourceRow of sourceRows) {
   sourceSummaries.set(sourceRow.source, summary)
   summary.parsedRows += 1
   summary.correctedExtraTimeGoals += sourceRow.correctedExtraTimeGoals ?? 0
+  if (options.updateExistingRegulationScoresOnly
+      && (sourceRow.correctedExtraTimeGoals ?? 0) <= 0) {
+    summary.outsideTargetRows += 1
+    continue
+  }
   if (EXCLUDED_HISTORICAL_MATCH_IDS.has(sourceMatchId(sourceRow))) {
     summary.outsideTargetRows += 1
     continue
@@ -3442,7 +3565,7 @@ for (const sourceRow of sourceRows) {
   const importsWholeCompetition = sourceRow.provider === 'FUTBOL24'
       && ['8', '9', '15', '26', '28', '33', '48', '51', '75', '92', '107', '133', '269', '286', '297',
         '17',
-        '291', '322', '324', '338', '525', '531', '534', '537', '70', '868']
+        '291', '310', '322', '324', '338', '525', '531', '534', '537', '60', '70', '868']
         .includes(String(sourceRow.source).replace('FUTBOL24-', ''))
     || sourceRow.provider === 'FOTMOB' && FOTMOB_LEAGUE_SOURCES.some(
       source => `FOTMOB-${source.leagueId}` === sourceRow.source
@@ -3492,13 +3615,26 @@ for (const sourceRow of sourceRows) {
   }
   const existingById = rowsById.get(matchId)
   if (existingById) {
-    const changed = HISTORY_HEADERS.some(header => (
+    const changedHeaders = options.updateExistingRegulationScoresOnly
+      ? ['home_score', 'away_score']
+      : HISTORY_HEADERS
+    const changed = changedHeaders.some(header => (
       String(existingById[header] ?? '') !== String(expectedRow[header] ?? '')
     ))
     if (changed) {
-      Object.assign(existingById, expectedRow)
+      if (options.updateExistingRegulationScoresOnly) {
+        existingById.home_score = expectedRow.home_score
+        existingById.away_score = expectedRow.away_score
+      } else {
+        Object.assign(existingById, expectedRow)
+      }
       summary.updatedRows += 1
+      summary.updatedMatchIds.add(matchId)
     }
+    continue
+  }
+  if (options.updateExistingRegulationScoresOnly) {
+    summary.outsideTargetRows += 1
     continue
   }
 
@@ -3519,6 +3655,41 @@ for (const sourceRow of sourceRows) {
     sourceRow.awayScore
   )))
   const existingFixture = rowsByFixturePair.get(exactPair)
+  if (existingFixture && String(sourceRow.source ?? '').startsWith('VERIFIED-')) {
+    const previousMatchId = existingFixture.match_id
+    const previousResultKey = fixtureResultKey(
+      existingFixture.competition,
+      existingFixture.source_competition,
+      existingFixture.match_date,
+      existingFixture.home_team_cn,
+      existingFixture.away_team_cn,
+      existingFixture.home_score,
+      existingFixture.away_score
+    )
+    const changed = HISTORY_HEADERS.some(header => (
+      String(existingFixture[header] ?? '') !== String(expectedRow[header] ?? '')
+    ))
+    if (changed) {
+      rowsById.delete(previousMatchId)
+      fixtureResults.delete(previousResultKey)
+      Object.assign(existingFixture, expectedRow)
+      rowsById.set(matchId, existingFixture)
+      fixtureResults.add(fixtureResultKey(
+        expectedRow.competition,
+        expectedRow.source_competition,
+        expectedRow.match_date,
+        expectedRow.home_team_cn,
+        expectedRow.away_team_cn,
+        expectedRow.home_score,
+        expectedRow.away_score
+      ))
+      summary.updatedRows += 1
+      summary.updatedMatchIds.add(matchId)
+    } else {
+      summary.duplicateRows += 1
+    }
+    continue
+  }
   if (existingFixture
       && sourceRow.provider === 'SOCCERWAY'
       && sourceRow.sourceCompetition === '韩国杯') {
@@ -3537,6 +3708,7 @@ for (const sourceRow of sourceRows) {
       existingFixture.away_score = expectedAwayScore
       existingFixture.source_competition = sourceRow.sourceCompetition
       summary.updatedRows += 1
+      summary.updatedMatchIds.add(existingFixture.match_id)
     } else {
       summary.duplicateRows += 1
     }
@@ -3563,11 +3735,13 @@ for (const sourceRow of sourceRows) {
   summary.addedRows += 1
 }
 
-let finalHistory = normalizeAndDeduplicateHistoryRows(
-  retainedRows,
-  nationalMappings,
-  clubMappings
-)
+let finalHistory = options.updateExistingRegulationScoresOnly
+  ? retainedHistory
+  : normalizeAndDeduplicateHistoryRows(
+      retainedRows,
+      nationalMappings,
+      clubMappings
+    )
 const inferredAliasesByKey = new Map()
 function collectInferredAliases(aliases) {
   let changed = false
@@ -3590,7 +3764,7 @@ let finalShiftedDateDuplicateRows = finalHistory.shiftedDateDuplicateRows
 let finalSameTeamScoreDuplicateRows = finalHistory.sameTeamScoreDuplicateRows
 const finalDuplicateSamples = [...finalHistory.duplicateSamples]
 let refinementPasses = 0
-for (; refinementPasses < 10; refinementPasses += 1) {
+for (; !options.updateExistingRegulationScoresOnly && refinementPasses < 10; refinementPasses += 1) {
   const refinedMappingRows = mergeInferredMappings(
     effectiveMappingRows,
     [...inferredAliasesByKey.values()]
@@ -3651,6 +3825,7 @@ console.log(JSON.stringify({
   maxDate: options.maxDate,
   sourceMinDate: options.sourceMinDate,
   sourceMaxDate: options.sourceMaxDate,
+  updateExistingRegulationScoresOnly: options.updateExistingRegulationScoresOnly,
   originalRows: originalRows.length,
   replacedRows: replacedRows.length,
   removedBeforeOrAfterRange: originalRows.length - originalRows.filter(row => (
@@ -3671,6 +3846,10 @@ console.log(JSON.stringify({
   rebuiltRows: rebuiltRows.length,
   importedRows: [...sourceSummaries.values()].reduce((sum, summary) => sum + summary.addedRows, 0),
   updatedRows: [...sourceSummaries.values()].reduce((sum, summary) => sum + summary.updatedRows, 0),
+  ...(options.updateExistingRegulationScoresOnly ? {
+    updatedMatchIds: [...new Set([...sourceSummaries.values()]
+      .flatMap(summary => [...summary.updatedMatchIds]))].sort()
+  } : {}),
   targetNationalTeams: targetNationalTeams.size,
   targetClubTeams: targetClubTeams.size,
   matchTypes,
