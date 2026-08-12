@@ -225,7 +225,7 @@ ROI = (totalReturn / totalStake - 1) × 100%
 
 ### 进球数策略稳健优化
 
-进球数策略支持按比赛日期执行时间留出验证，避免在同一批比赛上搜索参数并直接报告最优收益。开启 `--robust-validation` 后，较早约 70% 的样本用于参数搜索和细化，较新约 30% 的样本作为验证集；最终策略必须在训练集、验证集和完整样本上同时满足同一档约束，且验证集 ROI 不得低于配置下限。
+进球数策略支持按比赛日期执行时间留出验证，避免在同一批比赛上搜索参数并直接报告最优收益。开启 `--robust-validation` 后，较早约 70% 的样本用于粗网格搜索、候选排名、参数细化和最终优先级比较，较新约 30% 的样本不会参与参数搜索或候选排名，只用于有限候选的最终门禁；最终策略必须在训练集、验证集和完整样本上同时满足同一档约束，且验证集 ROI 不得低于配置下限。
 
 ```powershell
 node scripts/optimize-total-goals-strategies.mjs `
@@ -237,13 +237,16 @@ node scripts/optimize-total-goals-strategies.mjs `
   --fallback-minimum-hit-rate 0.25 `
   --secondary-fallback-minimum-sampling-rate 0.20 `
   --secondary-fallback-minimum-hit-rate 0.20 `
+  --tertiary-fallback-minimum-sampling-rate 0.10 `
+  --tertiary-fallback-minimum-hit-rate 0.10 `
+  --minimum-roi 0 `
   --minimum-validation-roi 0 `
   --simulations 50000 `
   --base-url http://127.0.0.1:8080 `
   --backtest-cache-prefix temp/total-goals-robust-backtest-cache
 ```
 
-每个赛事、每个时间范围只保存一套进球数策略，不区分稳健和激进。界面上的进球数推荐始终使用对应赛事、对应时间范围的 `STABLE` 模型参数计算概率，与进球数优化器的回测口径保持一致；切换稳健/激进只会改变胜平负和让球等推荐。优化器依次搜索 `>33.3%` 主档、`>25%` 降级档和 `>20%` 二级降级档，仅在上一档无可行解时进入下一档；三个档位都没有可行解时，将对应策略的 `maximumSelections` 设为 `0`。仅本届可用样本不足训练集和验证集最少场次时，不做独立优化，沿用通过稳健验证的含上届策略。
+每个赛事、每个时间范围只保存一套进球数策略，不区分稳健和激进。界面上的进球数推荐始终使用对应赛事、对应时间范围的 `STABLE` 模型参数计算概率，与进球数优化器的回测口径保持一致；切换稳健/激进只会改变胜平负和让球等推荐。优化器依次搜索 `>33.3%` 主档、`>25%` 降级档、`>20%` 二级降级档和可配置的最低降级档，仅在上一档无可行解时进入下一档；最低降级档默认等于二级降级档，可通过 `--tertiary-fallback-minimum-sampling-rate` 和 `--tertiary-fallback-minimum-hit-rate` 下调。每一档都要求训练集和完整样本 ROI 严格大于 `--minimum-roi`，验证集 ROI 不低于 `--minimum-validation-roi`。所有档位都没有可行解时，将对应策略的 `maximumSelections` 设为 `0`。仅本届可用样本不足训练集和验证集最少场次时，不做独立优化；完全没有本届样本时沿用通过稳健验证的含上届策略，已有少量本届样本时还会把本届数据作为额外样本外门禁，未达到对应档位或 ROI 非正则关闭本届投注。
 
 `--dry-run` 只生成报告而不写入 `config/user-config.json`。`--backtest-cache-prefix` 会保存带模拟次数、赛事范围和模型因子签名的回测结果，仅在签名完全一致时复用。`--baseline-report-path` 可从旧报告读取基准策略，用于重新优化后保留原策略的样本外审计结果。
 

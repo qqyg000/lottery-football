@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+import { meetsMinimumConstraint } from './total-goals-optimization-constraints.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const CONFIG_PATH = path.join(ROOT, 'config', 'user-config.json')
@@ -79,8 +80,11 @@ if (!['ROI', 'HIT_RATE'].includes(OPTIMIZATION_OBJECTIVE)) {
 const ODDS_KEYS = ['goal0', 'goal1', 'goal2', 'goal3', 'goal4', 'goal5', 'goal6', 'goal7Plus']
 const SMALL_CURRENT_SAMPLE_MAX = 10
 const PRIMARY_ROI_TARGET = 0.25
-const HIT_RATE_OBJECTIVE_MINIMUM_ROI = Number(readArgument('--minimum-roi', String(PRIMARY_ROI_TARGET)))
-if (!Number.isFinite(HIT_RATE_OBJECTIVE_MINIMUM_ROI)) {
+const MINIMUM_ROI = Number(readArgument(
+  '--minimum-roi',
+  OPTIMIZATION_OBJECTIVE === 'HIT_RATE' ? String(PRIMARY_ROI_TARGET) : '0'
+))
+if (!Number.isFinite(MINIMUM_ROI)) {
   throw new Error('--minimum-roi 必须是有效数字')
 }
 const TOP_CANDIDATE_LIMIT = Number(readArgument('--candidate-limit', '8'))
@@ -152,6 +156,28 @@ if (
 ) {
   throw new Error('--secondary-fallback-minimum-hit-rate 必须是不小于0且不大于25%降级命中率的数字')
 }
+const TERTIARY_FALLBACK_MINIMUM_SAMPLING_RATE = Number(readArgument(
+  '--tertiary-fallback-minimum-sampling-rate',
+  String(SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE)
+))
+if (
+  !Number.isFinite(TERTIARY_FALLBACK_MINIMUM_SAMPLING_RATE) ||
+  TERTIARY_FALLBACK_MINIMUM_SAMPLING_RATE <= 0 ||
+  TERTIARY_FALLBACK_MINIMUM_SAMPLING_RATE > SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE
+) {
+  throw new Error('--tertiary-fallback-minimum-sampling-rate 必须是大于0且不大于二级降级采样率的数字')
+}
+const TERTIARY_FALLBACK_MINIMUM_HIT_RATE = Number(readArgument(
+  '--tertiary-fallback-minimum-hit-rate',
+  String(Math.min(SECONDARY_FALLBACK_MINIMUM_HIT_RATE, TERTIARY_FALLBACK_MINIMUM_SAMPLING_RATE))
+))
+if (
+  !Number.isFinite(TERTIARY_FALLBACK_MINIMUM_HIT_RATE) ||
+  TERTIARY_FALLBACK_MINIMUM_HIT_RATE < 0 ||
+  TERTIARY_FALLBACK_MINIMUM_HIT_RATE > SECONDARY_FALLBACK_MINIMUM_HIT_RATE
+) {
+  throw new Error('--tertiary-fallback-minimum-hit-rate 必须是不小于0且不大于二级降级命中率的数字')
+}
 const MINIMUM_PROBABILITIES = [0, 5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 35, 40]
 const MINIMUM_EXPECTED_VALUES = [0, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.4]
 const MINIMUM_ODDS = [1.01, 1.5, 2, 2.5, 3, 3.5, 4]
@@ -198,6 +224,9 @@ async function main() {
       const strategy = disabledBecauseConstraintsNotMet
         ? { ...(selected?.strategy || DEFAULT_STRATEGY), maximumSelections: 0 }
         : selected.strategy
+      const currentEditionFallbackMetrics = usePreviousStrategy
+        ? evaluateStrategy(direct?.evaluationMatches || [], strategy)
+        : null
       const key = `${competition}:${range}`
       strategies[key] = strategy
       reportRows.push({
@@ -221,6 +250,7 @@ async function main() {
         strategy,
         metrics: selected?.metrics || emptyMetrics(),
         directMetrics: direct?.metrics || emptyMetrics(),
+        currentEditionFallbackMetrics,
         robustnessMetrics: selected?.robustnessMetrics || emptyRobustnessMetrics(),
         overfittingDetected: Boolean(selected?.overfittingAudit?.overfittingDetected),
         overfittingReasons: selected?.overfittingAudit?.reasons || [],
@@ -235,7 +265,7 @@ async function main() {
       })
     }
   }
-  if (!EVALUATE_ONLY) {
+  if (!EVALUATE_ONLY && TARGET_RANGES.includes('CURRENT')) {
     applySmallCurrentSampleFallback(reportRows, strategies)
   }
   reportRows.sort((left, right) => {
@@ -268,13 +298,15 @@ async function main() {
       strictGreaterThan: STRICT_CONSTRAINTS,
       minimumSamplingRate: MINIMUM_SAMPLING_RATE,
       minimumRecommendedMatches: minimumRecommendedMatchesDescription(),
-      minimumRoi: OPTIMIZATION_OBJECTIVE === 'HIT_RATE' ? HIT_RATE_OBJECTIVE_MINIMUM_ROI : null,
+      minimumRoi: MINIMUM_ROI,
       minimumHitRate: MINIMUM_HIT_RATE,
       fallbackMinimumSamplingRate: FALLBACK_MINIMUM_SAMPLING_RATE,
       fallbackMinimumHitRate: FALLBACK_MINIMUM_HIT_RATE,
       secondaryFallbackMinimumSamplingRate: SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE,
       secondaryFallbackMinimumHitRate: SECONDARY_FALLBACK_MINIMUM_HIT_RATE,
-      fallbackRule: '按主档、25%降级档、20%二级降级档顺序搜索，仅在上一档无可行解时进入下一档',
+      tertiaryFallbackMinimumSamplingRate: TERTIARY_FALLBACK_MINIMUM_SAMPLING_RATE,
+      tertiaryFallbackMinimumHitRate: TERTIARY_FALLBACK_MINIMUM_HIT_RATE,
+      fallbackRule: '按主档、25%降级档、20%二级降级档、最低降级档顺序搜索，仅在上一档无可行解时进入下一档',
       robustValidation: {
         enabled: ROBUST_VALIDATION,
         split: `按比赛日期升序，前${formatPercent(1 - VALIDATION_FRACTION)}为训练集，后${formatPercent(VALIDATION_FRACTION)}为验证集`,
@@ -433,6 +465,7 @@ function optimizeRange(result, range, existingStrategies) {
       optimized.hitRateFloor
     )
     optimized.robustnessMetrics = optimized.overfittingAudit.robustnessMetrics
+    optimized.evaluationMatches = matches
     process.stdout.write(
       `  ${COMPETITION_NAMES[competition]} ${range}: ${matches.length} 场，` +
       `${optimized.metrics.recommendedSelectionCount} 注，` +
@@ -487,7 +520,7 @@ async function readBaselineStrategies(configuredStrategies) {
 }
 
 function applySmallCurrentSampleFallback(reportRows, strategies) {
-  for (const competition of COMPETITIONS) {
+  for (const competition of TARGET_COMPETITIONS) {
     const current = reportRows.find(row => row.competition === competition && row.range === 'CURRENT')
     const previous = reportRows.find(row => row.competition === competition && row.range === 'PREVIOUS')
     if (!current || !previous || previous.disabledBecauseRoiTargetNotMet) {
@@ -495,6 +528,43 @@ function applySmallCurrentSampleFallback(reportRows, strategies) {
     }
     const directMetrics = current.directMetrics || emptyMetrics()
     if (!shouldFallbackToPreviousEdition(directMetrics.availableMatchCount)) {
+      continue
+    }
+    const fallbackMetrics = current.currentEditionFallbackMetrics || emptyMetrics()
+    if (
+      fallbackMetrics.availableMatchCount > 0 &&
+      (
+        !meetsDualRateConstraint(
+          fallbackMetrics,
+          previous.samplingRateFloor,
+          previous.hitRateFloor
+        ) ||
+        !meetsRoiConstraint(fallbackMetrics.roi)
+      )
+    ) {
+      current.fallbackToPreviousEdition = false
+      current.disabledBecauseRoiTargetNotMet = true
+      current.disabledBecauseSamplingTargetNotMet = true
+      current.disabledBecauseConstraintsNotMet = true
+      current.strategy = { ...previous.strategy, maximumSelections: 0 }
+      current.metrics = emptyMetrics(fallbackMetrics.availableMatchCount)
+      current.minimumRecommendedMatchConstraint = 0
+      current.minimumSelectionConstraint = 0
+      current.minimumWinningSelectionConstraint = 0
+      current.samplingRateTargetMet = false
+      current.hitRateTargetMet = false
+      current.primaryRoiTargetMet = false
+      current.degradationLevel = 'CURRENT_EDITION_FALLBACK_VALIDATION_NOT_MET'
+      current.samplingRateFloor = previous.samplingRateFloor
+      current.roiFloor = MINIMUM_ROI
+      current.hitRateFloor = previous.hitRateFloor
+      current.reliabilityTier = null
+      current.overfittingDetected = true
+      current.overfittingReasons = [
+        `少样本本届回测未同时达到${constraintLabel(previous.samplingRateFloor)}采样率、` +
+        `${constraintLabel(previous.hitRateFloor)}命中率和${roiConstraintLabel()}ROI`
+      ]
+      strategies[`${competition}:CURRENT`] = current.strategy
       continue
     }
     current.fallbackToPreviousEdition = true
@@ -640,20 +710,29 @@ function auditStrategyOverfitting(
     FALLBACK_MINIMUM_SAMPLING_RATE,
     FALLBACK_MINIMUM_HIT_RATE
   )
+  const fullMeetsSecondFallback = meetsDualRateConstraint(
+    fullMetrics,
+    SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE,
+    SECONDARY_FALLBACK_MINIMUM_HIT_RATE
+  )
   const targetSamplingRate = Number.isFinite(configuredSamplingRate)
     ? configuredSamplingRate
     : fullMeetsPrimary
     ? MINIMUM_SAMPLING_RATE
     : fullMeetsFirstFallback
     ? FALLBACK_MINIMUM_SAMPLING_RATE
-    : SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE
+    : fullMeetsSecondFallback
+    ? SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE
+    : TERTIARY_FALLBACK_MINIMUM_SAMPLING_RATE
   const targetHitRate = Number.isFinite(configuredHitRate)
     ? configuredHitRate
     : fullMeetsPrimary
     ? MINIMUM_HIT_RATE
     : fullMeetsFirstFallback
     ? FALLBACK_MINIMUM_HIT_RATE
-    : SECONDARY_FALLBACK_MINIMUM_HIT_RATE
+    : fullMeetsSecondFallback
+    ? SECONDARY_FALLBACK_MINIMUM_HIT_RATE
+    : TERTIARY_FALLBACK_MINIMUM_HIT_RATE
   const reasons = []
   if (!meetsRateConstraint(validationMetrics.samplingRate, targetSamplingRate)) {
     reasons.push(`验证集采样率${formatPercent(validationMetrics.samplingRate)}未达到${constraintLabel(targetSamplingRate)}`)
@@ -663,6 +742,9 @@ function auditStrategyOverfitting(
   }
   if (!Number.isFinite(validationMetrics.roi) || validationMetrics.roi < MINIMUM_VALIDATION_ROI) {
     reasons.push(`验证集ROI${formatPercent(validationMetrics.roi)}低于${formatPercent(MINIMUM_VALIDATION_ROI)}`)
+  }
+  if (!meetsRoiConstraint(fullMetrics.roi)) {
+    reasons.push(`完整样本ROI${formatPercent(fullMetrics.roi)}未达到${roiConstraintLabel()}`)
   }
   return {
     overfittingDetected: reasons.length > 0,
@@ -698,6 +780,7 @@ function optimizeCompetitionWithRobustValidation(matches, baselineStrategy) {
     matches,
     split,
     candidates,
+    baselineStrategy,
     MINIMUM_SAMPLING_RATE,
     MINIMUM_HIT_RATE
   )
@@ -708,6 +791,7 @@ function optimizeCompetitionWithRobustValidation(matches, baselineStrategy) {
     matches,
     split,
     candidates,
+    baselineStrategy,
     FALLBACK_MINIMUM_SAMPLING_RATE,
     FALLBACK_MINIMUM_HIT_RATE
   )
@@ -718,11 +802,23 @@ function optimizeCompetitionWithRobustValidation(matches, baselineStrategy) {
     matches,
     split,
     candidates,
+    baselineStrategy,
     SECONDARY_FALLBACK_MINIMUM_SAMPLING_RATE,
     SECONDARY_FALLBACK_MINIMUM_HIT_RATE
   )
   if (secondaryFallback) {
     return secondaryFallback
+  }
+  const tertiaryFallback = optimizeCompetitionForRobustConstraints(
+    matches,
+    split,
+    candidates,
+    baselineStrategy,
+    TERTIARY_FALLBACK_MINIMUM_SAMPLING_RATE,
+    TERTIARY_FALLBACK_MINIMUM_HIT_RATE
+  )
+  if (tertiaryFallback) {
+    return tertiaryFallback
   }
   return unavailableStrategy('ROBUST_VALIDATION_TARGET_NOT_MET', matches.length)
 }
@@ -731,13 +827,13 @@ function optimizeCompetitionForRobustConstraints(
   matches,
   split,
   candidates,
+  baselineStrategy,
   minimumSamplingRate,
   minimumHitRate
 ) {
   const minimumTrainingMatches = calculateMinimumCount(split.trainingMatches.length, minimumSamplingRate)
   const coarseCandidates = selectTopRobustStrategies(
     candidates,
-    split,
     TOP_CANDIDATE_LIMIT,
     minimumSamplingRate,
     minimumHitRate
@@ -753,6 +849,10 @@ function optimizeCompetitionForRobustConstraints(
       minimumHitRate
     ))
   }
+  candidatePool.push({
+    strategy: { ...baselineStrategy },
+    trainingMetrics: evaluateStrategy(split.trainingMatches, baselineStrategy)
+  })
   let best = null
   const seenStrategies = new Set()
   for (const candidate of candidatePool) {
@@ -800,7 +900,7 @@ function optimizeCompetitionForRobustConstraints(
     reliabilityTier: `${samplingRateTier(minimumSamplingRate, minimumHitRate)}_ROBUST_VALIDATED`,
     samplingRateFloor: minimumSamplingRate,
     hitRateFloor: minimumHitRate,
-    roiFloor: MINIMUM_VALIDATION_ROI,
+    roiFloor: MINIMUM_ROI,
     strategyAvailable: true,
     samplingRateTargetMet: true,
     hitRateTargetMet: true,
@@ -811,7 +911,6 @@ function optimizeCompetitionForRobustConstraints(
 
 function selectTopRobustStrategies(
   candidates,
-  split,
   limit,
   minimumSamplingRate,
   minimumHitRate
@@ -819,27 +918,20 @@ function selectTopRobustStrategies(
   const best = []
   for (const candidate of candidates) {
     const trainingMetrics = candidate.metrics
-    if (!meetsDualRateConstraint(trainingMetrics, minimumSamplingRate, minimumHitRate)) {
-      continue
-    }
-    const validationMetrics = evaluateStrategy(split.validationMatches, candidate.strategy)
-    const fullMetrics = combinePartitionMetrics(trainingMetrics, validationMetrics)
-    if (!meetsRobustOptimizationConstraints(
-      trainingMetrics,
-      validationMetrics,
-      fullMetrics,
-      minimumSamplingRate,
-      minimumHitRate
-    )) {
+    if (
+      !meetsDualRateConstraint(trainingMetrics, minimumSamplingRate, minimumHitRate) ||
+      !meetsRoiConstraint(trainingMetrics.roi)
+    ) {
       continue
     }
     const evaluated = {
       strategy: candidate.strategy,
-      metrics: fullMetrics,
-      trainingMetrics,
-      validationMetrics
+      metrics: trainingMetrics,
+      trainingMetrics
     }
-    const insertionIndex = best.findIndex(existing => isPreferredRobustCandidate(evaluated, existing))
+    const insertionIndex = best.findIndex(existing => (
+      isPreferredMetrics(evaluated.trainingMetrics, existing.trainingMetrics)
+    ))
     if (insertionIndex >= 0) {
       best.splice(insertionIndex, 0, evaluated)
     } else if (best.length < limit) {
@@ -892,8 +984,7 @@ function meetsRobustOptimizationConstraints(
   if (!Number.isFinite(validationMetrics.roi) || validationMetrics.roi < MINIMUM_VALIDATION_ROI) {
     return false
   }
-  return OPTIMIZATION_OBJECTIVE !== 'HIT_RATE' ||
-    fullMetrics.roi >= HIT_RATE_OBJECTIVE_MINIMUM_ROI
+  return meetsRoiConstraint(trainingMetrics.roi) && meetsRoiConstraint(fullMetrics.roi)
 }
 
 function meetsDualRateConstraint(metrics, minimumSamplingRate, minimumHitRate) {
@@ -905,19 +996,13 @@ function isPreferredRobustCandidate(candidate, current) {
   if (!current) {
     return true
   }
-  if (OPTIMIZATION_OBJECTIVE === 'HIT_RATE' && candidate.metrics.hitRate !== current.metrics.hitRate) {
-    return candidate.metrics.hitRate > current.metrics.hitRate
+  if (isPreferredMetrics(candidate.trainingMetrics, current.trainingMetrics)) {
+    return true
   }
-  if (candidate.metrics.roi !== current.metrics.roi) {
-    return candidate.metrics.roi > current.metrics.roi
+  if (isPreferredMetrics(current.trainingMetrics, candidate.trainingMetrics)) {
+    return false
   }
-  if (candidate.validationMetrics.roi !== current.validationMetrics.roi) {
-    return candidate.validationMetrics.roi > current.validationMetrics.roi
-  }
-  if (candidate.trainingMetrics.roi !== current.trainingMetrics.roi) {
-    return candidate.trainingMetrics.roi > current.trainingMetrics.roi
-  }
-  return isPreferredMetrics(candidate.metrics, current.metrics)
+  return JSON.stringify(candidate.strategy).localeCompare(JSON.stringify(current.strategy)) < 0
 }
 
 function unavailableStrategy(degradationLevel, availableMatchCount) {
@@ -990,6 +1075,15 @@ function optimizeCompetitionInSample(matches, baselineStrategy) {
   if (secondaryFallback) {
     return secondaryFallback
   }
+  const tertiaryFallback = optimizeCompetitionForConstraints(
+    matches,
+    candidates,
+    TERTIARY_FALLBACK_MINIMUM_SAMPLING_RATE,
+    TERTIARY_FALLBACK_MINIMUM_HIT_RATE
+  )
+  if (tertiaryFallback) {
+    return tertiaryFallback
+  }
   return {
     strategy: { ...DEFAULT_STRATEGY, maximumSelections: 0 },
     metrics: emptyMetrics(matches.length),
@@ -1044,7 +1138,7 @@ function optimizeCompetitionForConstraints(matches, candidates, minimumSamplingR
         reliabilityTier: samplingRateTier(minimumSamplingRate, minimumHitRate),
         samplingRateFloor: minimumSamplingRate,
         hitRateFloor: minimumHitRate,
-        roiFloor: null,
+        roiFloor: MINIMUM_ROI,
         strategyAvailable: true,
         samplingRateTargetMet: true,
         hitRateTargetMet: true,
@@ -1254,7 +1348,7 @@ function meetsOptimizationConstraints(
   if (!meetsRateConstraint(metrics.hitRate, minimumHitRate)) {
     return false
   }
-  return OPTIMIZATION_OBJECTIVE !== 'HIT_RATE' || metrics.roi >= HIT_RATE_OBJECTIVE_MINIMUM_ROI
+  return meetsRoiConstraint(metrics.roi)
 }
 
 function isPreferredCandidateMetrics(
@@ -1333,15 +1427,23 @@ function isPreferredMetrics(candidate, current) {
 function optimizationObjectiveDescription() {
   const comparison = STRICT_CONSTRAINTS ? '严格大于' : '大于等于'
   if (OPTIMIZATION_OBJECTIVE === 'HIT_RATE') {
-    return `所有有进球数赔率样本的策略采样率必须${comparison}${formatPercent(MINIMUM_SAMPLING_RATE)}、命中率必须${comparison}${formatPercent(MINIMUM_HIT_RATE)}、ROI必须大于等于${formatPercent(HIT_RATE_OBJECTIVE_MINIMUM_ROI)}，在达标候选中优先最大化单注命中率，再比较ROI和采样率`
+    return `所有有进球数赔率样本的策略采样率必须${comparison}${formatPercent(MINIMUM_SAMPLING_RATE)}、命中率必须${comparison}${formatPercent(MINIMUM_HIT_RATE)}、ROI必须${comparison}${formatPercent(MINIMUM_ROI)}，在达标候选中优先最大化单注命中率，再比较ROI和采样率`
   }
-  return `所有有进球数赔率样本的策略采样率必须${comparison}${formatPercent(MINIMUM_SAMPLING_RATE)}、命中率必须${comparison}${formatPercent(MINIMUM_HIT_RATE)}，在达标候选中优先最大化ROI，再比较单注命中率和采样率`
+  return `所有有进球数赔率样本的策略采样率必须${comparison}${formatPercent(MINIMUM_SAMPLING_RATE)}、命中率必须${comparison}${formatPercent(MINIMUM_HIT_RATE)}、ROI必须${comparison}${formatPercent(MINIMUM_ROI)}，在达标候选中优先最大化ROI，再比较单注命中率和采样率`
 }
 
 function optimizationSelectionPreference() {
   return OPTIMIZATION_OBJECTIVE === 'HIT_RATE'
     ? '采样率、命中率和ROI达标后先比较单注命中率，再比较ROI、采样率、每场命中率和有效注数'
-    : '采样率和命中率达标后先比较ROI，再比较单注命中率、采样率、每场命中率和有效注数'
+    : '采样率、命中率和ROI达标后先比较ROI，再比较单注命中率、采样率、每场命中率和有效注数'
+}
+
+function meetsRoiConstraint(value) {
+  return meetsMinimumConstraint(value, MINIMUM_ROI, STRICT_CONSTRAINTS)
+}
+
+function roiConstraintLabel() {
+  return `${STRICT_CONSTRAINTS ? '严格大于' : '大于等于'}${formatPercent(MINIMUM_ROI)}`
 }
 
 function samplingRateTier(minimumSamplingRate, minimumHitRate) {
@@ -1370,10 +1472,7 @@ function calculateMinimumCount(totalCount, minimumRate) {
 }
 
 function meetsRateConstraint(value, minimumRate) {
-  if (!Number.isFinite(value)) {
-    return false
-  }
-  return STRICT_CONSTRAINTS ? value > minimumRate : value >= minimumRate
+  return meetsMinimumConstraint(value, minimumRate, STRICT_CONSTRAINTS)
 }
 
 function minimumRecommendedMatchesDescription() {
