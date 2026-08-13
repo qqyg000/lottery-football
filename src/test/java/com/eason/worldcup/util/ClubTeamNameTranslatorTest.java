@@ -20,6 +20,31 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class ClubTeamNameTranslatorTest {
 
     @Test
+    void shouldTranslateUserRequestedClubAliases() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> aliases = Map.ofEntries(
+                Map.entry("雷克雅未克维京人", "雷克维京"),
+                Map.entry("斯普利特海杜克", "斯海杜克"),
+                Map.entry("Slovan", "布拉迪斯"),
+                Map.entry("FC Arges Pitesti", "Arges"),
+                Map.entry("IBV Vestmannaeyjar", "韦斯特曼"),
+                Map.entry("IA Akranes", "IA"),
+                Map.entry("Thor Akureyri", "Thor"),
+                Map.entry("KA Akureyri", "KA"),
+                Map.entry("SV Elversberg", "埃沃斯堡"),
+                Map.entry("Waldhof Mannheim", "曼海姆"),
+                Map.entry("Neuchatel Xamax", "Xamax"),
+                Map.entry("RAAL La Louviere", "La Louviere"),
+                Map.entry("沃尔夫斯堡", "沃夫斯堡"),
+                Map.entry("斯特拉斯堡", "斯特拉斯"));
+
+        for (Map.Entry<String, String> alias : aliases.entrySet()) {
+            assertEquals(alias.getValue(), ClubTeamNameTranslator.translate(alias.getKey()));
+        }
+    }
+
+    @Test
     void shouldTranslateSupplementalClubCupAliases() throws IOException {
         assumeMappingsImported();
 
@@ -95,7 +120,7 @@ class ClubTeamNameTranslatorTest {
         assertEquals("伏伊伏丁", ClubTeamNameTranslator.translate(
                 Competition.EUROPA_LEAGUE,
                 "Vojvodina"));
-        assertEquals("斯普利特海杜克", ClubTeamNameTranslator.translate(
+        assertEquals("斯海杜克", ClubTeamNameTranslator.translate(
                 Competition.EUROPA_LEAGUE,
                 "斯海杜克"));
         assertEquals("索菲亚中央陆军", ClubTeamNameTranslator.translate(
@@ -104,7 +129,7 @@ class ClubTeamNameTranslatorTest {
         assertEquals("克拉克斯维克", ClubTeamNameTranslator.translate(
                 Competition.CHAMPIONS_LEAGUE,
                 "KI Klaksvik"));
-        assertEquals("雷克雅未克维京人", ClubTeamNameTranslator.translate(
+        assertEquals("雷克维京", ClubTeamNameTranslator.translate(
                 Competition.CHAMPIONS_LEAGUE,
                 "Vikingur Reykjavik"));
         assertEquals("沙特阿拉伯", ClubTeamNameTranslator.translate(
@@ -422,7 +447,7 @@ class ClubTeamNameTranslatorTest {
                 Map.entry("De Treffers", "赫鲁斯"),
                 Map.entry("Opava", "奥帕瓦"),
                 Map.entry("皇家贝蒂斯", "贝蒂斯"),
-                Map.entry("VfL Wolfsburg", "沃尔夫斯堡"),
+                Map.entry("VfL Wolfsburg", "沃夫斯堡"),
                 Map.entry("Saint-Gall", "圣加仑"),
                 Map.entry("Macon 71", "Mâcon"),
                 Map.entry("圣吉尔联合", "圣吉联合"),

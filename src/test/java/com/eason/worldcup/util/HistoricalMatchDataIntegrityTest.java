@@ -474,6 +474,27 @@ class HistoricalMatchDataIntegrityTest {
     }
 
     @Test
+    void shouldKeepOnlyVerifiedSlovanPafosFriendly() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 7, 16),
+                Competition.CLUB_FRIENDLY,
+                "布拉迪斯",
+                "帕福斯",
+                3,
+                2);
+        assertTrue(fixtures.stream().noneMatch(fixture ->
+                fixture.matchDate().equals(LocalDate.of(2026, 7, 17))
+                        && fixture.competition() == Competition.CLUB_FRIENDLY
+                        && fixture.homeTeam().equals("布拉迪斯")
+                        && fixture.awayTeam().equals("帕福斯")
+                        && fixture.homeScore() == 3
+                        && fixture.awayScore() == 2));
+    }
+
+    @Test
     void shouldContainVerifiedDjurgardenAndVasterasFixtures() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
 
