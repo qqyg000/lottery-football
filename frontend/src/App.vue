@@ -627,7 +627,6 @@
                 <div class="head-to-head-meta">
                   <span>{{ item.matchDate }}{{ formatHeadToHeadKickoffTime(item.kickoffTime) }}</span>
                   <span>{{ item.competitionName }}</span>
-                  <span v-if="item.neutral" class="neutral-badge">中立场</span>
                 </div>
                 <div class="head-to-head-score">
                   <span class="head-to-head-team is-home">{{ item.homeTeamCn }}</span>
@@ -4412,16 +4411,6 @@ body.dialog-open {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.neutral-badge {
-  flex: 0 0 auto;
-  padding: 2px 5px;
-  border-radius: 4px;
-  color: #475569;
-  background: #e2e8f0;
-  font-size: 10px;
-  font-weight: 700;
 }
 
 .head-to-head-score {

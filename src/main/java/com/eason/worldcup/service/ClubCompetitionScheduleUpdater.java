@@ -138,7 +138,47 @@ public class ClubCompetitionScheduleUpdater {
                     "SV Meerssen",
                     "Fortuna Sittard",
                     0,
-                    2));
+                    2),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "FOOTMERCATO-3549299319698559335",
+                    LocalDate.of(2026, 7, 22),
+                    LocalTime.NOON,
+                    "Vitória Guimarães",
+                    "Uniao de Leiria",
+                    0,
+                    0),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "OPEN-VERIFIED-FC-TWENTE-ZWOLLE-20230719",
+                    LocalDate.of(2023, 7, 19),
+                    LocalTime.NOON,
+                    "FC Twente",
+                    "PEC Zwolle",
+                    3,
+                    2),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "OPEN-VERIFIED-ESTORIL-NACIONAL-20180715",
+                    LocalDate.of(2018, 7, 15),
+                    LocalTime.MIDNIGHT,
+                    "GD Estoril",
+                    "CD Nacional",
+                    2,
+                    1),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "OPEN-VERIFIED-CASTELLON-LEVANTE-20260809",
+                    LocalDate.of(2026, 8, 9),
+                    LocalTime.of(1, 0),
+                    "CD Castellón",
+                    "Levante UD",
+                    1,
+                    3));
 
     private static final List<EspnLeagueSource> BASE_ESPN_SOURCES = List.of(
             new EspnLeagueSource(Competition.EUROPEAN_CHAMPIONSHIP, "uefa.euro"),
@@ -217,7 +257,11 @@ public class ClubCompetitionScheduleUpdater {
             new FotMobLeagueSource(Competition.K_LEAGUE_1, "9080", "韩职", true),
             new FotMobLeagueSource(Competition.SWEDISH_ALLSVENSKAN, "67", "瑞超", true),
             new FotMobLeagueSource(Competition.FINNISH_VEIKKAUSLIIGA, "51", "芬超", true),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "251", "芬甲", true),
             new FotMobLeagueSource(Competition.EREDIVISIE, "57", "荷甲", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "235", "荷兰杯", false),
+            new FotMobLeagueSource(Competition.LA_LIGA, "87", "西甲", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "140", "西乙", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "111", "荷乙", false),
             new FotMobLeagueSource(Competition.PRIMEIRA_LIGA, "61", "葡超", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "185", "葡甲", false),
@@ -492,7 +536,7 @@ public class ClubCompetitionScheduleUpdater {
             schedule.setCompetition(verified.competition());
             schedule.setMatchId(verified.matchId());
             schedule.setMatchDate(verified.matchDate());
-            schedule.setKickoffTime(LocalTime.MIDNIGHT);
+            schedule.setKickoffTime(verified.kickoffTime());
             schedule.setGroupName(verified.groupName());
             schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(
                     verified.competition(),
@@ -2604,10 +2648,32 @@ public class ClubCompetitionScheduleUpdater {
             String groupName,
             String matchId,
             LocalDate matchDate,
+            LocalTime kickoffTime,
             String homeTeam,
             String awayTeam,
             int homeScore,
             int awayScore) {
+
+        private VerifiedSupplementalSchedule(
+                Competition competition,
+                String groupName,
+                String matchId,
+                LocalDate matchDate,
+                String homeTeam,
+                String awayTeam,
+                int homeScore,
+                int awayScore) {
+            this(
+                    competition,
+                    groupName,
+                    matchId,
+                    matchDate,
+                    LocalTime.NOON,
+                    homeTeam,
+                    awayTeam,
+                    homeScore,
+                    awayScore);
+        }
 
     }
 

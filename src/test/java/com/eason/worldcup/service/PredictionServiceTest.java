@@ -233,6 +233,46 @@ class PredictionServiceTest {
     }
 
     @Test
+    void shouldDisplayAlavesHeadToHeadAndRecentMatchesForAccentedCardName() {
+        MatchSchedule target = schedule(
+                "ALAVES-TARGET",
+                LocalDate.of(2026, 8, 10),
+                LocalTime.of(2, 0),
+                "Alavés",
+                "Levante UD",
+                "SCHEDULED");
+        target.setCompetition(Competition.LA_LIGA);
+        HistoricalMatch headToHead = historicalMatch(
+                LocalDate.of(2024, 7, 28),
+                "阿拉维斯",
+                "莱万特",
+                1,
+                1);
+        HistoricalMatch alavesRecent = historicalMatch(
+                LocalDate.of(2026, 7, 18),
+                "阿拉维斯",
+                "埃瓦尔",
+                1,
+                1);
+        DataRepository dataRepository = new StubDataRepository(
+                List.of(target),
+                List.of(target),
+                List.of(headToHead, alavesRecent));
+        PredictionService service = new PredictionService(dataRepository, null, null);
+
+        HeadToHeadOverviewResponse overview = service.queryHeadToHeadOverview(
+                Competition.LA_LIGA,
+                target.getMatchId(),
+                10);
+
+        assertEquals("阿拉维斯", service.resolveDisplayTeamName(target, true));
+        assertEquals("莱万特", service.resolveDisplayTeamName(target, false));
+        assertEquals(2, overview.getHomeRecentMatches().size());
+        assertEquals(1, overview.getHeadToHeadMatches().size());
+        assertEquals(1, overview.getAwayRecentMatches().size());
+    }
+
+    @Test
     void shouldUseHistoricalRegulationScoreWhenScheduleScoreDiffers() {
         MatchSchedule target = schedule(
                 "TARGET",

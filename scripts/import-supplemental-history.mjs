@@ -321,6 +321,14 @@ const FOTMOB_LEAGUE_SOURCES = [
     calendarYearSeason: true
   },
   {
+    leagueId: '251',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '芬甲',
+    calendarYearSeason: true,
+    firstSeasonStartYear: 2014
+  },
+  {
     leagueId: '9080',
     competition: 'K_LEAGUE_1',
     matchType: 'OFFICIAL',
@@ -340,6 +348,30 @@ const FOTMOB_LEAGUE_SOURCES = [
     matchType: 'OFFICIAL',
     sourceCompetition: '荷甲',
     calendarYearSeason: false
+  },
+  {
+    leagueId: '235',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '荷兰杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '87',
+    competition: 'LA_LIGA',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '西甲',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '140',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '西乙',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
   },
   {
     leagueId: '111',
@@ -571,6 +603,15 @@ const FOTMOB_LEAGUE_SOURCES = [
     calendarYearSeason: false
   }
 ]
+
+const AUTHORITATIVE_FOTMOB_LEAGUE_IDS = new Set([
+  '51',
+  '57',
+  '87',
+  '140',
+  '235',
+  '251'
+])
 
 const SOCCERWAY_KOREA_CUP_SOURCE = {
   competition: 'CLUB_OFFICIAL_OTHER',
@@ -1133,6 +1174,59 @@ const VERIFIED_SUPPLEMENTAL_ROWS = [
     competition: 'CLUB_OFFICIAL_OTHER', matchType: 'OFFICIAL', sourceCompetition: '阿塞超',
     matchDate: '2026-05-28', homeTeam: 'Qəbələ', awayTeam: 'Mingəçevir',
     homeScore: 2, awayScore: 0, neutral: false
+  },
+  {
+    provider: 'FOOTMERCATO',
+    providerId: '3549299319698559335',
+    source: 'VERIFIED-FOOTMERCATO-GUIMARAES-LEIRIA',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-22',
+    homeTeam: 'Vitória Guimarães',
+    awayTeam: 'Uniao de Leiria',
+    homeScore: 0,
+    awayScore: 0,
+    neutral: false
+  },
+  {
+    provider: 'OPEN',
+    source: 'VERIFIED-FC-TWENTE-ZWOLLE',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2023-07-19',
+    homeTeam: 'FC Twente',
+    awayTeam: 'PEC Zwolle',
+    homeScore: 3,
+    awayScore: 2,
+    neutral: true
+  },
+  {
+    provider: 'OPEN',
+    source: 'VERIFIED-ESTORIL-NACIONAL',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2018-07-15',
+    homeTeam: 'GD Estoril',
+    awayTeam: 'CD Nacional',
+    homeScore: 2,
+    awayScore: 1,
+    neutral: false
+  },
+  {
+    provider: 'OPEN',
+    source: 'VERIFIED-CASTELLON-LEVANTE',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-08-09',
+    homeTeam: 'CD Castellón',
+    awayTeam: 'Levante UD',
+    homeScore: 1,
+    awayScore: 3,
+    neutral: false
   }
 ]
 
@@ -3655,7 +3749,14 @@ for (const sourceRow of sourceRows) {
     sourceRow.awayScore
   )))
   const existingFixture = rowsByFixturePair.get(exactPair)
-  if (existingFixture && String(sourceRow.source ?? '').startsWith('VERIFIED-')) {
+  const authoritativeFotMobFixture = sourceRow.provider === 'FOTMOB'
+    && AUTHORITATIVE_FOTMOB_LEAGUE_IDS.has(
+      String(sourceRow.source ?? '').replace('FOTMOB-', '')
+    )
+  if (existingFixture && (
+    String(sourceRow.source ?? '').startsWith('VERIFIED-')
+      || authoritativeFotMobFixture
+  )) {
     const previousMatchId = existingFixture.match_id
     const previousResultKey = fixtureResultKey(
       existingFixture.competition,

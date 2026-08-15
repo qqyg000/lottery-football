@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -258,10 +259,13 @@ public class DataRepository {
     }
 
     private LocalDate getScheduleQueryDate(MatchSchedule schedule) {
-        return schedule.getMatchDate();
+        return ApplicationTime.toCardDate(schedule.getMatchDate(), schedule.getKickoffTime());
     }
 
     private int getScheduleSortSeconds(MatchSchedule schedule) {
+        if (LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())) {
+            return 24 * 60 * 60;
+        }
         return schedule.getKickoffTime().toSecondOfDay();
     }
 

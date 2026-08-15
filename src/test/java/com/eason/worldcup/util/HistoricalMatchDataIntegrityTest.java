@@ -439,6 +439,143 @@ class HistoricalMatchDataIntegrityTest {
     }
 
     @Test
+    void shouldContainRequestedFinnishDutchSpanishAndVerifiedFixtures() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertSourceCompetitionCount(fixtures, "芬甲", 1_650L);
+        assertSourceCompetitionCount(fixtures, "荷兰杯", 680L);
+        assertSourceCompetitionCount(fixtures, "西乙", 5_500L);
+        long laLiga2022To2023Count = fixtures.stream()
+                .filter(fixture -> fixture.sourceCompetition().equals("西甲"))
+                .filter(fixture -> !fixture.matchDate().isBefore(LocalDate.of(2022, 8, 1)))
+                .filter(fixture -> !fixture.matchDate().isAfter(LocalDate.of(2023, 6, 30)))
+                .count();
+        assertEquals(380L, laLiga2022To2023Count, "2022-2023 西甲应有 380 场");
+
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 7, 22),
+                Competition.CLUB_FRIENDLY,
+                "吉马良斯",
+                "莱里亚",
+                0,
+                0);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2023, 7, 19),
+                Competition.CLUB_FRIENDLY,
+                "特温特",
+                "兹沃勒",
+                3,
+                2);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2018, 7, 15),
+                Competition.CLUB_FRIENDLY,
+                "埃斯托里",
+                "葡国民",
+                2,
+                1);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 8, 9),
+                Competition.CLUB_FRIENDLY,
+                "卡斯特隆",
+                "莱万特",
+                1,
+                3);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2022, 8, 28),
+                Competition.EREDIVISIE,
+                "SBV精英",
+                "埃因霍温",
+                1,
+                6);
+        assertFixtureOccurs(
+                fixtures,
+                LocalDate.of(2022, 8, 28),
+                Competition.EREDIVISIE,
+                "SBV精英",
+                "埃因霍温",
+                3,
+                4,
+                0L);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2018, 7, 29),
+                Competition.CLUB_FRIENDLY,
+                "斯图加特",
+                "埃瓦尔",
+                2,
+                1);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2019, 7, 27),
+                Competition.CLUB_FRIENDLY,
+                "贝西克塔斯",
+                "埃瓦尔",
+                0,
+                2);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 7, 26),
+                Competition.CLUB_FRIENDLY,
+                "埃瓦尔",
+                "毕尔巴鄂",
+                2,
+                2);
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2015, 7, 18),
+                LocalDate.of(2015, 7, 19),
+                "埃瓦尔",
+                "凯尔特人",
+                1,
+                4);
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2016, 8, 4),
+                LocalDate.of(2016, 8, 5),
+                "科隆",
+                "埃瓦尔",
+                2,
+                0);
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2016, 8, 6),
+                LocalDate.of(2016, 8, 7),
+                "莱比锡红牛",
+                "埃瓦尔",
+                3,
+                2);
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2016, 8, 10),
+                LocalDate.of(2016, 8, 11),
+                "皇家社会",
+                "埃瓦尔",
+                1,
+                1);
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2016, 8, 12),
+                LocalDate.of(2016, 8, 13),
+                "奥萨苏纳",
+                "埃瓦尔",
+                0,
+                1);
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2026, 7, 18),
+                LocalDate.of(2026, 7, 19),
+                "阿拉维斯",
+                "埃瓦尔",
+                1,
+                1);
+    }
+
+    @Test
     void shouldStoreFotMobKnockoutMatchesAtRegulationTime() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
 

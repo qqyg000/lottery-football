@@ -875,7 +875,9 @@ public class PredictionService {
     private HeadToHeadMatchResponse toHeadToHeadResponse(MatchSchedule schedule) {
         HistoricalMatchType matchType = HistoricalMatchType.fromCompetition(schedule.getCompetition());
         HeadToHeadMatchResponse response = new HeadToHeadMatchResponse();
-        response.setMatchDate(schedule.getMatchDate());
+        response.setMatchDate(ApplicationTime.toCardDate(
+                schedule.getMatchDate(),
+                schedule.getKickoffTime()));
         response.setKickoffTime(schedule.getKickoffTime());
         response.setCompetitionName(buildHeadToHeadCompetitionName(schedule));
         response.setMatchTypeName(matchType.getDisplayName());
@@ -985,7 +987,9 @@ public class PredictionService {
         MatchPredictionResponse response = new MatchPredictionResponse();
         response.setCompetition(schedule.getCompetition());
         response.setMatchId(schedule.getMatchId());
-        response.setMatchDate(schedule.getMatchDate());
+        response.setMatchDate(ApplicationTime.toCardDate(
+                schedule.getMatchDate(),
+                schedule.getKickoffTime()));
         response.setKickoffTime(schedule.getKickoffTime());
         response.setGroupName(schedule.getGroupName());
         response.setHomeTeamCn(resolveDisplayTeamName(schedule, true));

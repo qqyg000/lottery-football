@@ -202,6 +202,28 @@ class DataRepositoryTest {
         assertEquals(List.of(norwegianSchedule, swedishSchedule), schedules);
     }
 
+    @Test
+    void shouldDisplayMidnightKickoffCardOnPreviousDateAfterLateMatches() {
+        MatchSchedule lateMatch = completedSchedule("LATE-001", "晚场主队", "晚场客队");
+        lateMatch.setMatchDate(LocalDate.of(2026, 8, 8));
+        lateMatch.setKickoffTime(LocalTime.of(23, 30));
+        MatchSchedule midnightMatch = completedSchedule("MIDNIGHT-001", "零点主队", "零点客队");
+        midnightMatch.setMatchDate(LocalDate.of(2026, 8, 9));
+        midnightMatch.setKickoffTime(LocalTime.MIDNIGHT);
+        ReflectionTestUtils.setField(repository, "schedules", List.of(midnightMatch, lateMatch));
+
+        List<MatchSchedule> schedules = repository.findSchedulesByDate(
+                LocalDate.of(2026, 8, 8),
+                Competition.CHAMPIONS_LEAGUE);
+
+        assertEquals(List.of("LATE-001", "MIDNIGHT-001"), schedules.stream()
+                .map(MatchSchedule::getMatchId)
+                .toList());
+        assertEquals(0, repository.findSchedulesByDate(
+                LocalDate.of(2026, 8, 9),
+                Competition.CHAMPIONS_LEAGUE).size());
+    }
+
     private MatchSchedule completedSchedule(String matchId, String homeTeam, String awayTeam) {
         MatchSchedule schedule = new MatchSchedule();
         schedule.setMatchId(matchId);

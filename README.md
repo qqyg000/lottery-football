@@ -2,7 +2,7 @@
 
 竞彩足球胜平负概率预测与推荐回测程序。后端使用 Spring Boot，前端使用 Vue 2，支持按赛事和日期查询赛程、赛果、体彩赔率及模型预测结果。
 
-> 当前内置比赛数据快照更新至 2026-08-06，球队名映射更新至 2026-08-23。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
+> 当前内置比赛数据快照更新至 2026-08-11，球队名映射更新至 2026-08-23。项目仅用于数据分析、算法学习和开发验证，不构成投注建议。
 
 ## 主要功能
 
@@ -53,9 +53,9 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 206,142 | 2014-10-22 至 2026-08-11 |
+| `historical_matches.csv` | 214,698 | 2014-10-22 至 2026-08-11 |
 | `historical_odds_data.csv` | 29,251 | 2014-10-22 至 2026-08-11 |
-| `team_name_mappings.csv` | 22,917 | 2014-06-24 至 2026-08-23 |
+| `team_name_mappings.csv` | 23,167 | 2014-06-24 至 2026-08-23 |
 
 主要数据来自 FotMob、Futbol24、Foot Mercato、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 
@@ -266,6 +266,24 @@ node scripts/optimize-total-goals-strategies.mjs `
 - 当方案不满足上述 ROI 关系时，允许突破原采样率限制重新优化，但正式比赛权重仍不得低于 `1.00`
 - 采样率分母使用方案回测时间范围内全部已完赛且有赔率的比赛数
 
+胜平负稳健/激进方案使用时间留出优化器：
+
+```powershell
+$env:FINAL_SIMULATIONS = '50000'
+$env:REPORT_JSON_PATH = 'reports/win-draw-loss-robust-optimization.json'
+$env:REPORT_MARKDOWN_PATH = 'reports/win-draw-loss-robust-optimization.md'
+$env:CHECKPOINT_PATH = 'target/win-draw-loss-robust-optimizer-checkpoint.json'
+node scripts/reoptimize-shared-backtest-profiles.mjs --reoptimize-all
+```
+
+优化器默认按比赛日期升序将前 `70%` 作为训练集、后 `30%` 作为验证集，同一天比赛不会跨分区。模型和推荐阈值只按训练集 ROI 排名，验证集只用于通过或拒绝门禁；训练集和验证集至少分别需要 `10` 场、`6` 场。训练集 ROI 必须非负、验证集 ROI 必须非负，且训练、验证、全量样本均需达到对应赛事的采样率下限。无法满足稳健门禁或稳健/激进 ROI 关系的时段关闭推荐；仅本届样本不足时沿用已验证的含上届参数并执行额外样本外门禁，失败则关闭。
+
+检查点通过全部 68 套档案的独立验收且报告 `violations` 为 `0` 后，可避免重复回测并安全应用已验证结果：
+
+```powershell
+node scripts/reoptimize-shared-backtest-profiles.mjs --apply-verified-checkpoint
+```
+
 没有已完赛且有赔率的比赛时，对应档案保留默认参数，不计算采样率和 ROI。采样率口径修正及历史数据失真范围见 [采样率口径与历史方案数据审计](reports/sampling-rate-definition-audit-2026-07-24.md)。
 
 ## 模型说明
@@ -333,7 +351,7 @@ node scripts/generate-team-name-mappings.mjs
 页面“更新数据”会异步执行以下阶段：
 
 1. 读取以当天为基准的体彩最近 30 天赛果
-2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；欧冠、罗甲、罗超杯、波甲、斯洛文甲、亚美尼超和俱乐部友谊赛均在此阶段更新
+2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；芬甲、荷兰杯、西乙、西甲、欧冠、罗甲、罗超杯、波甲、斯洛文甲、亚美尼超和俱乐部友谊赛均在此阶段更新
 3. 重建球队模型
 4. 更新赛事概览
 

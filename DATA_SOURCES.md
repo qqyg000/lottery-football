@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 153 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 202,435 场，日期范围为 2014-10-22 至 2026-08-08；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 157 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 214,698 场，日期范围为 2014-10-22 至 2026-08-11；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
@@ -20,7 +20,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - ESPN Scoreboard：国内杯赛、超级杯、洲际俱乐部赛事和俱乐部友谊赛
 - Futbol24 按日及赛季比赛接口：按年度回补 2014 年以来 ESPN、FotMob 未收录的欧冠、俱乐部友谊赛，并补充罗甲、罗超杯、阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
 - [Foot Mercato 俱乐部友谊赛日历](https://www.footmercato.net/international/amicaux-club/calendrier/)：补齐 Futbol24 和 FotMob 在 2026 当前赛季遗漏的已完场友谊赛
-- FotMob 按赛季接口：补充俱乐部赛、苏格兰联赛杯、芬兰联赛杯、瑞典杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、荷乙、葡超、欧协联、比甲、比利时杯、比超杯、希超、捷甲、挪超、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
+- FotMob 按赛季接口：补充俱乐部赛、芬甲、荷兰杯、西甲、西乙、苏格兰联赛杯、芬兰联赛杯、瑞典杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、荷乙、葡超、欧协联、比甲、比利时杯、比超杯、希超、捷甲、挪超、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
 - Soccerway 韩国杯赛季结果页：补齐 FotMob 旧赛季接口仅返回后期轮次的问题
 - Futbol24 按赛季接口：补齐 FotMob 历史覆盖不足的塞杯、卢森杯、法罗杯和威联杯
 - 阿塞拜疆职业足球联盟（PFL）官方接口：补齐 Futbol24 未收录的阿塞杯第一资格轮和阿塞超升降级附加赛
@@ -83,6 +83,8 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - Soccerway 韩国杯赛季结果页：补齐 FotMob 旧赛季接口遗漏的早期轮次，历史赛季按比赛 ID 去重合并
 - FotMob `leagueId=262`：阿塞超正式比赛
 - FotMob `leagueId=51`：芬超完整赛季历史
+- FotMob `leagueId=251/235/140`：芬甲、荷兰杯和西乙完整赛季历史，并接入点击“更新数据”的近期赛程刷新链路
+- FotMob `leagueId=87`：西甲完整赛季历史和近期赛程，其中 2022-2023 赛季已核对为 380 场
 - FotMob `leagueId=9080`：韩职完整赛季历史
 - FotMob `leagueId=67/57/111/61`：瑞超、荷甲、荷乙和葡超完整赛季历史
 - FotMob `leagueId=185/187/58`：葡甲、葡联赛杯和荷乙升降级附加赛完整赛季历史，并接入点击“更新数据”的近期赛程刷新链路
@@ -124,7 +126,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 巴甲、巴乙、巴西杯、巴西东北杯（Copa do Nordeste）和圣保罗州锦标赛（Campeonato Paulista）在历史导入、运行时赛程和体彩结果入口统一排除，不会写入静态数据或运行时缓存。
 
-所有成功结果都会缓存到 `config/club-competition-schedules.json`；点击“更新数据”时，常规赛程和俱乐部杯赛等补充赛事统一回溯过去 30 天并读取未来 7 天，窗口外历史缓存继续保留。2014-10-22 起的长期历史由 `historical_matches.csv` 提供。服务启动时读取已有补充缓存，只有点击“更新数据”或调用刷新接口时才主动请求补充远程源。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 和 `data-refresh` 节点。
+所有成功结果都会缓存到 `config/club-competition-schedules.json`；点击“更新数据”时，常规赛程和俱乐部杯赛等补充赛事统一回溯过去 30 天并读取未来 7 天，窗口外历史缓存继续保留。外部 UTC 开球时间统一转换为 `Asia/Shanghai`；北京时间 `00:00` 准点开赛的卡片归入前一天并排在当天其他比赛之后。2014-10-22 起的长期历史由 `historical_matches.csv` 提供。服务启动时读取已有补充缓存，只有点击“更新数据”或调用刷新接口时才主动请求补充远程源。相关配置位于 `application.yml` 的 `club-competitions.schedule-update` 和 `data-refresh` 节点。
 
 ## 全场比分口径
 

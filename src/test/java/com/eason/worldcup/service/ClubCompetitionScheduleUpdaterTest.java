@@ -658,6 +658,53 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
+    void shouldIncludeStoppageTimeGoalsAndExcludeExtraTimeGoals() throws Exception {
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "id": "9000001",
+                  "home": { "name": "Home" },
+                  "away": { "name": "Away" },
+                  "status": {
+                    "utcTime": "2026-08-08T16:00:00Z",
+                    "finished": true,
+                    "started": true,
+                    "cancelled": false,
+                    "scoreStr": "2 - 1",
+                    "reason": { "short": "AET", "long": "After extra time" }
+                  }
+                }
+                """);
+        JsonNode matchDetails = objectMapper.readTree("""
+                {
+                  "content": {
+                    "matchFacts": {
+                      "events": {
+                        "events": [
+                          { "type": "Goal", "time": 45, "isHome": true },
+                          { "type": "Goal", "time": 90, "overloadTime": 4, "isHome": false },
+                          { "type": "Goal", "time": 105, "isHome": true }
+                        ]
+                      }
+                    }
+                  }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFotMobLeagueMatch(
+                match,
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "235",
+                        "荷兰杯"),
+                ZoneId.of("Asia/Shanghai"),
+                matchDetails);
+
+        assertNotNull(schedule);
+        assertEquals(1, schedule.getHomeScore());
+        assertEquals(1, schedule.getAwayScore());
+    }
+
+    @Test
     void shouldNotUseFotMobExtraTimeScoreWithoutRegulationDetails() throws Exception {
         JsonNode match = objectMapper.readTree("""
                 {
@@ -1163,7 +1210,7 @@ class ClubCompetitionScheduleUpdaterTest {
     void shouldExposeVerifiedPrivateFriendliesToRuntimeCards() {
         List<MatchSchedule> schedules = updater.verifiedSupplementalSchedules();
 
-        assertEquals(6, schedules.size());
+        assertEquals(10, schedules.size());
         assertTrue(schedules.stream().anyMatch(schedule ->
                 schedule.getMatchDate().equals(LocalDate.of(2025, 1, 30))
                         && schedule.getCompetition() == Competition.CLUB_FRIENDLY
@@ -1193,6 +1240,25 @@ class ClubCompetitionScheduleUpdaterTest {
                         && Integer.valueOf(1).equals(schedule.getHomeScore())
                         && Integer.valueOf(3).equals(schedule.getAwayScore())
                         && "COMPLETED".equals(schedule.getStatus())));
+        assertTrue(schedules.stream().anyMatch(schedule ->
+                schedule.getMatchDate().equals(LocalDate.of(2026, 7, 22))
+                        && "吉马良斯".equals(schedule.getHomeTeamCn())
+                        && "莱里亚".equals(schedule.getAwayTeamCn())
+                        && Integer.valueOf(0).equals(schedule.getHomeScore())
+                        && Integer.valueOf(0).equals(schedule.getAwayScore())));
+        assertTrue(schedules.stream().anyMatch(schedule ->
+                schedule.getMatchDate().equals(LocalDate.of(2018, 7, 15))
+                        && LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())
+                        && "埃斯托里".equals(schedule.getHomeTeamCn())
+                        && "葡国民".equals(schedule.getAwayTeamCn())
+                        && Integer.valueOf(2).equals(schedule.getHomeScore())
+                        && Integer.valueOf(1).equals(schedule.getAwayScore())));
+        assertTrue(schedules.stream().anyMatch(schedule ->
+                schedule.getMatchDate().equals(LocalDate.of(2026, 8, 9))
+                        && "卡斯特隆".equals(schedule.getHomeTeamCn())
+                        && "莱万特".equals(schedule.getAwayTeamCn())
+                        && Integer.valueOf(1).equals(schedule.getHomeScore())
+                        && Integer.valueOf(3).equals(schedule.getAwayScore())));
     }
 
     @Test
@@ -1306,6 +1372,43 @@ class ClubCompetitionScheduleUpdaterTest {
         assertTrue(sources.stream().anyMatch(source ->
                 source.competition() == Competition.FINNISH_VEIKKAUSLIIGA
                         && "51".equals(source.leagueId())));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldConfigureRequestedHistoricalAndClickableUpdateSources() {
+        List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources =
+                (List<ClubCompetitionScheduleUpdater.FotMobLeagueSource>)
+                        ReflectionTestUtils.getField(
+                                ClubCompetitionScheduleUpdater.class,
+                                "FOTMOB_SOURCES");
+
+        assertNotNull(sources);
+        assertTrue(sources.stream().anyMatch(source ->
+                "251".equals(source.leagueId())
+                        && "芬甲".equals(source.sourceCompetition())
+                        && source.calendarYearSeason()));
+        assertTrue(sources.stream().anyMatch(source ->
+                "235".equals(source.leagueId())
+                        && "荷兰杯".equals(source.sourceCompetition())
+                        && !source.calendarYearSeason()));
+        assertTrue(sources.stream().anyMatch(source ->
+                "140".equals(source.leagueId())
+                        && "西乙".equals(source.sourceCompetition())
+                        && !source.calendarYearSeason()));
+        assertTrue(sources.stream().anyMatch(source ->
+                "87".equals(source.leagueId())
+                        && source.competition() == Competition.LA_LIGA));
+        assertEquals("2014", sources.stream()
+                .filter(source -> "251".equals(source.leagueId()))
+                .findFirst()
+                .orElseThrow()
+                .seasonValue(2014));
+        assertEquals("2022%2F2023", sources.stream()
+                .filter(source -> "140".equals(source.leagueId()))
+                .findFirst()
+                .orElseThrow()
+                .seasonValue(2022));
     }
 
     @Test
