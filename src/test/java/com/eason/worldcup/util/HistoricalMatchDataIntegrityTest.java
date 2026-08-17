@@ -611,6 +611,70 @@ class HistoricalMatchDataIntegrityTest {
     }
 
     @Test
+    void shouldNotContainAdjacentDateDuplicateNormalizedFixtures() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+        Map<String, HistoricalFixture> fixturesByResult = new HashMap<>();
+        List<String> duplicates = new ArrayList<>();
+        for (HistoricalFixture fixture : fixtures) {
+            HistoricalFixture previousFixture = fixturesByResult.get(buildFixtureResultKey(
+                    fixture,
+                    fixture.matchDate().minusDays(1)));
+            if (previousFixture != null && duplicates.size() < 20) {
+                duplicates.add(previousFixture.matchId() + " / " + fixture.matchId());
+            }
+            fixturesByResult.put(buildFixtureResultKey(fixture, fixture.matchDate()), fixture);
+        }
+
+        assertEquals(List.of(), duplicates, "存在统一队名后的跨日重复比赛");
+    }
+
+    @Test
+    void shouldKeepRequestedCanonicalFriendliesAndRemoveAliasDuplicates() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2015, 7, 9),
+                Competition.CLUB_FRIENDLY,
+                "柔佛",
+                "多特蒙德",
+                1,
+                6);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2022, 11, 28),
+                Competition.CLUB_FRIENDLY,
+                "柔佛",
+                "多特蒙德",
+                1,
+                4);
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2026, 7, 18),
+                LocalDate.of(2026, 7, 19),
+                "埃尔切",
+                "凯萨酋长",
+                2,
+                1);
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2026, 7, 18),
+                LocalDate.of(2026, 7, 19),
+                "Compostela",
+                "拉科",
+                0,
+                4);
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2026, 7, 24),
+                LocalDate.of(2026, 7, 25),
+                "埃尔切",
+                "柔佛",
+                0,
+                0);
+    }
+
+    @Test
     void shouldKeepOnlyVerifiedSlovanPafosFriendly() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
 
@@ -741,6 +805,26 @@ class HistoricalMatchDataIntegrityTest {
 
         assertEquals(homeScore, fixture.homeScore(), matchId + " 主队 90 分钟比分错误");
         assertEquals(awayScore, fixture.awayScore(), matchId + " 客队 90 分钟比分错误");
+    }
+
+    private String buildFixtureResultKey(HistoricalFixture fixture, LocalDate matchDate) {
+        String scope = fixture.competition() == Competition.CLUB_OFFICIAL_OTHER
+                ? fixture.competition().name() + "|" + fixture.sourceCompetition()
+                : fixture.competition().name();
+        if (fixture.homeTeam().compareTo(fixture.awayTeam()) <= 0) {
+            return scope
+                    + "|" + matchDate
+                    + "|" + fixture.homeTeam()
+                    + "|" + fixture.awayTeam()
+                    + "|" + fixture.homeScore()
+                    + "|" + fixture.awayScore();
+        }
+        return scope
+                + "|" + matchDate
+                + "|" + fixture.awayTeam()
+                + "|" + fixture.homeTeam()
+                + "|" + fixture.awayScore()
+                + "|" + fixture.homeScore();
     }
 
     private void assertFixtureOccursOnce(

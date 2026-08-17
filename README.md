@@ -53,9 +53,9 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 214,698 | 2014-10-22 至 2026-08-11 |
+| `historical_matches.csv` | 214,692 | 2014-10-22 至 2026-08-11 |
 | `historical_odds_data.csv` | 29,251 | 2014-10-22 至 2026-08-11 |
-| `team_name_mappings.csv` | 23,167 | 2014-06-24 至 2026-08-23 |
+| `team_name_mappings.csv` | 23,172 | 2014-06-24 至 2026-08-23 |
 
 主要数据来自 FotMob、Futbol24、Foot Mercato、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 

@@ -971,7 +971,17 @@ const USER_REQUESTED_TEAM_ALIASES = [
   ['阿拉维斯', 'Alavés', '2026-08-14'],
   ['阿拉维斯', 'Deportivo Alavés', '2026-08-14'],
   ['阿拉维斯', 'Deportivo Alaves', '2026-08-14'],
-  ['阿拉维斯', '阿拉维斯', '2026-08-14']
+  ['阿拉维斯', '阿拉维斯', '2026-08-14'],
+  ['拉科', '拉科鲁尼亚', '2026-08-18'],
+  ['卢戈', 'CD Lugo', '2026-07-30'],
+  ['奥维耶多', '奥维耶多', '2026-08-18'],
+  ['奥维耶多', '皇家奥维耶多', '2026-08-18'],
+  ['奥维耶多', 'Real Oviedo', '2026-08-18'],
+  ['Compostela', 'SD Compostela', '2026-07-18'],
+  ['柔佛', 'Johor Darul Takzim', '2026-07-24'],
+  ['柔佛', "Darul Ta'zim", '2026-07-24'],
+  ['凯萨酋长', 'Kaizer Chiefs', '2026-07-18'],
+  ['凯萨酋长', 'Chiefs', '2026-07-18']
 ].map(([standardName, aliasName, lastSeenDate = '2026-08-04']) => ({
   competition: '*',
   standardName,

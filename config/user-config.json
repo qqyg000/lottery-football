@@ -1,6 +1,6 @@
 {
   "modelMode" : "after",
-  "includePreviousEdition" : false,
+  "includePreviousEdition" : true,
   "parameterProfiles" : {
     "WORLD_CUP:CURRENT:STABLE" : {
       "modelFactors" : {
@@ -1203,10 +1203,10 @@
       "maximumSelections" : 1
     },
     "CLUB_WORLD_CUP:CURRENT" : {
-      "minimumProbability" : 15,
-      "minimumExpectedValue" : 1,
+      "minimumProbability" : 15.0,
+      "minimumExpectedValue" : 1.0,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8,
+      "maximumOdds" : 8.0,
       "maximumSelections" : 0
     },
     "CLUB_WORLD_CUP:PREVIOUS" : {
@@ -1262,7 +1262,7 @@
       "minimumProbability" : 26.41,
       "minimumExpectedValue" : 0.82044,
       "minimumOdds" : 3.1,
-      "maximumOdds" : 10,
+      "maximumOdds" : 10.0,
       "maximumSelections" : 0
     },
     "LA_LIGA:PREVIOUS" : {
@@ -1329,10 +1329,10 @@
       "maximumSelections" : 1
     },
     "EREDIVISIE:CURRENT" : {
-      "minimumProbability" : 15,
-      "minimumExpectedValue" : 1,
+      "minimumProbability" : 15.0,
+      "minimumExpectedValue" : 1.0,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8,
+      "maximumOdds" : 8.0,
       "maximumSelections" : 0
     },
     "EREDIVISIE:PREVIOUS" : {
@@ -1358,9 +1358,9 @@
     },
     "SWEDISH_ALLSVENSKAN:CURRENT" : {
       "minimumProbability" : 22.5,
-      "minimumExpectedValue" : 0,
+      "minimumExpectedValue" : 0.0,
       "minimumOdds" : 3.5,
-      "maximumOdds" : 4,
+      "maximumOdds" : 4.0,
       "maximumSelections" : 1
     },
     "SWEDISH_ALLSVENSKAN:PREVIOUS" : {
@@ -1371,7 +1371,7 @@
       "maximumSelections" : 1
     },
     "FINNISH_VEIKKAUSLIIGA:CURRENT" : {
-      "minimumProbability" : 10,
+      "minimumProbability" : 10.0,
       "minimumExpectedValue" : 0.0,
       "minimumOdds" : 3.5,
       "maximumOdds" : 4.0,
@@ -1388,7 +1388,7 @@
       "minimumProbability" : 16.09,
       "minimumExpectedValue" : 1.32526,
       "minimumOdds" : 10.5,
-      "maximumOdds" : 11,
+      "maximumOdds" : 11.0,
       "maximumSelections" : 1
     },
     "K_LEAGUE_1:PREVIOUS" : {

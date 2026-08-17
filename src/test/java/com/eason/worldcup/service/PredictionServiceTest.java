@@ -273,6 +273,43 @@ class PredictionServiceTest {
     }
 
     @Test
+    void shouldDisplaySegundaHistoryWhenSportteryUsesDeportivoAlias() {
+        MatchSchedule target = schedule(
+                "DEPORTIVO-ELCHE-TARGET",
+                LocalDate.of(2026, 8, 18),
+                LocalTime.of(3, 0),
+                "拉科鲁尼亚",
+                "埃尔切",
+                "SCHEDULED");
+        target.setCompetition(Competition.LA_LIGA);
+        List<HistoricalMatch> segundaHistory = List.of(
+                historicalMatch(LocalDate.of(2018, 10, 13), "拉科", "埃尔切", 4, 0),
+                historicalMatch(LocalDate.of(2019, 6, 5), "埃尔切", "拉科", 0, 0),
+                historicalMatch(LocalDate.of(2019, 11, 10), "拉科", "埃尔切", 1, 3),
+                historicalMatch(LocalDate.of(2020, 6, 24), "埃尔切", "拉科", 0, 1),
+                historicalMatch(LocalDate.of(2024, 10, 14), "埃尔切", "拉科", 0, 0),
+                historicalMatch(LocalDate.of(2025, 6, 2), "拉科", "埃尔切", 0, 4));
+        segundaHistory.forEach(match -> match.setSourceCompetition("西乙"));
+        DataRepository dataRepository = new StubDataRepository(
+                List.of(target),
+                List.of(target),
+                segundaHistory);
+        PredictionService service = new PredictionService(dataRepository, null, null);
+
+        HeadToHeadOverviewResponse overview = service.queryHeadToHeadOverview(
+                Competition.LA_LIGA,
+                target.getMatchId(),
+                10);
+
+        assertEquals("拉科", service.resolveDisplayTeamName(target, true));
+        assertEquals(6, overview.getHomeRecentMatches().size());
+        assertEquals(6, overview.getHeadToHeadMatches().size());
+        assertEquals(6, overview.getAwayRecentMatches().size());
+        assertEquals(LocalDate.of(2025, 6, 2), overview.getHeadToHeadMatches().get(0).getMatchDate());
+        assertEquals("西乙", overview.getHeadToHeadMatches().get(0).getCompetitionName());
+    }
+
+    @Test
     void shouldUseHistoricalRegulationScoreWhenScheduleScoreDiffers() {
         MatchSchedule target = schedule(
                 "TARGET",

@@ -523,7 +523,15 @@ class ClubTeamNameTranslatorTest {
                 Map.entry("Celje", "采列"),
                 Map.entry("Riga FC", "里加FC"),
                 Map.entry("Gandzasar FC", "Gandzasar"),
-                Map.entry("巴黎圣日尔曼", "巴黎圣曼"));
+                Map.entry("巴黎圣日尔曼", "巴黎圣曼"),
+                Map.entry("拉科鲁尼亚", "拉科"),
+                Map.entry("CD Lugo", "卢戈"),
+                Map.entry("皇家奥维耶多", "奥维耶多"),
+                Map.entry("SD Compostela", "Compostela"),
+                Map.entry("Johor Darul Takzim", "柔佛"),
+                Map.entry("Darul Ta'zim", "柔佛"),
+                Map.entry("Kaizer Chiefs", "凯萨酋长"),
+                Map.entry("Chiefs", "凯萨酋长"));
 
         for (Map.Entry<String, String> mapping : expectedMappings.entrySet()) {
             assertEquals(mapping.getValue(), ClubTeamNameTranslator.translate(mapping.getKey()));
