@@ -1182,6 +1182,65 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
+    void shouldUseShanghaiDateAndRegulationScoreForGreekSuperCup() throws Exception {
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "id": "5803515",
+                  "round": "final",
+                  "home": { "name": "AEK Athens" },
+                  "away": { "name": "OFI Crete" },
+                  "status": {
+                    "utcTime": "2026-08-12T17:00:00Z",
+                    "finished": true,
+                    "started": true,
+                    "cancelled": false,
+                    "scoreStr": "2 - 2",
+                    "reason": { "short": "Pen" }
+                  }
+                }
+                """);
+        JsonNode matchDetails = objectMapper.readTree("""
+                {
+                  "content": {
+                    "matchFacts": {
+                      "events": {
+                        "events": [
+                          {
+                            "type": "Half",
+                            "time": 90,
+                            "halfStrShort": "FT",
+                            "homeScore": 2,
+                            "awayScore": 2
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFotMobLeagueMatch(
+                match,
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "8816",
+                        "希腊超杯",
+                        false),
+                ZoneId.of("Asia/Shanghai"),
+                matchDetails);
+
+        assertNotNull(schedule);
+        assertEquals("FOTMOB-CLUB_OFFICIAL_OTHER-5803515", schedule.getMatchId());
+        assertEquals(LocalDate.of(2026, 8, 13), schedule.getMatchDate());
+        assertEquals(LocalTime.of(1, 0), schedule.getKickoffTime());
+        assertEquals("希腊超杯 第final轮", schedule.getGroupName());
+        assertEquals("雅典AEK", schedule.getHomeTeamCn());
+        assertEquals("OFI", schedule.getAwayTeamCn());
+        assertEquals(2, schedule.getHomeScore());
+        assertEquals(2, schedule.getAwayScore());
+    }
+
+    @Test
     void shouldRejectRequestedDuplicateFutbol24ClubFriendly() throws Exception {
         JsonNode statuses = objectMapper.readTree("""
                 {
@@ -1399,6 +1458,14 @@ class ClubCompetitionScheduleUpdaterTest {
         assertTrue(sources.stream().anyMatch(source ->
                 "87".equals(source.leagueId())
                         && source.competition() == Competition.LA_LIGA));
+        assertTrue(sources.stream().anyMatch(source ->
+                "53".equals(source.leagueId())
+                        && source.competition() == Competition.LIGUE_1
+                        && "法甲".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "8816".equals(source.leagueId())
+                        && source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "希腊超杯".equals(source.sourceCompetition())));
         assertEquals("2014", sources.stream()
                 .filter(source -> "251".equals(source.leagueId()))
                 .findFirst()
@@ -1409,6 +1476,11 @@ class ClubCompetitionScheduleUpdaterTest {
                 .findFirst()
                 .orElseThrow()
                 .seasonValue(2022));
+        assertEquals("2025%2F2026", sources.stream()
+                .filter(source -> "8816".equals(source.leagueId()))
+                .findFirst()
+                .orElseThrow()
+                .seasonValue(2025));
     }
 
     @Test

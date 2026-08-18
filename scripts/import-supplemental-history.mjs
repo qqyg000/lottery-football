@@ -350,6 +350,14 @@ const FOTMOB_LEAGUE_SOURCES = [
     calendarYearSeason: false
   },
   {
+    leagueId: '53',
+    competition: 'LIGUE_1',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '法甲',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
     leagueId: '235',
     competition: 'CLUB_OFFICIAL_OTHER',
     matchType: 'OFFICIAL',
@@ -444,6 +452,14 @@ const FOTMOB_LEAGUE_SOURCES = [
     sourceCompetition: '希超',
     calendarYearSeason: false,
     firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '8816',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '希腊超杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2025
   },
   {
     leagueId: '122',
@@ -605,12 +621,14 @@ const FOTMOB_LEAGUE_SOURCES = [
 ]
 
 const AUTHORITATIVE_FOTMOB_LEAGUE_IDS = new Set([
+  '53',
   '51',
   '57',
   '87',
   '140',
   '235',
-  '251'
+  '251',
+  '8816'
 ])
 
 const SOCCERWAY_KOREA_CUP_SOURCE = {

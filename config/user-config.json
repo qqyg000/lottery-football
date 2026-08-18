@@ -1,6 +1,6 @@
 {
   "modelMode" : "after",
-  "includePreviousEdition" : true,
+  "includePreviousEdition" : false,
   "parameterProfiles" : {
     "WORLD_CUP:CURRENT:STABLE" : {
       "modelFactors" : {

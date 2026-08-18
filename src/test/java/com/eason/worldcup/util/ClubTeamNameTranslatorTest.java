@@ -539,6 +539,30 @@ class ClubTeamNameTranslatorTest {
     }
 
     @Test
+    void shouldApplyRequestedCanonicalClubNames() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> expectedMappings = Map.ofEntries(
+                Map.entry("Sint-Truiden", "圣图尔登"),
+                Map.entry("萨姆松体育", "萨姆松"),
+                Map.entry("Samsunspor", "萨姆松"),
+                Map.entry("萨格勒布迪纳摩", "萨迪纳摩"),
+                Map.entry("FK Kauno Zalgiris", "FK Kauno Zalgiris"),
+                Map.entry("斯拉文贝鲁波", "斯拉文"),
+                Map.entry("NK Slaven Belupo", "斯拉文"),
+                Map.entry("Koper", "科佩尔"),
+                Map.entry("萨尔普斯堡", "萨普斯堡"),
+                Map.entry("Sarpsborg 08", "萨普斯堡"),
+                Map.entry("克里斯蒂安松", "克里斯蒂"),
+                Map.entry("Kristiansund", "克里斯蒂"));
+
+        expectedMappings.forEach((source, expected) ->
+                assertEquals(expected, ClubTeamNameTranslator.translate(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        source), source));
+    }
+
+    @Test
     void shouldResolveEveryMappingAliasToStableStandardName() throws IOException {
         assumeMappingsImported();
 

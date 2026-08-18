@@ -981,7 +981,22 @@ const USER_REQUESTED_TEAM_ALIASES = [
   ['柔佛', 'Johor Darul Takzim', '2026-07-24'],
   ['柔佛', "Darul Ta'zim", '2026-07-24'],
   ['凯萨酋长', 'Kaizer Chiefs', '2026-07-18'],
-  ['凯萨酋长', 'Chiefs', '2026-07-18']
+  ['凯萨酋长', 'Chiefs', '2026-07-18'],
+  ['圣图尔登', 'Sint-Truiden', '2026-08-18'],
+  ['圣图尔登', 'Sint-Truidense', '2026-08-18'],
+  ['萨姆松', '萨姆松体育', '2026-08-18'],
+  ['萨姆松', 'Samsunspor', '2026-08-18'],
+  ['萨迪纳摩', '萨格勒布迪纳摩', '2026-08-18'],
+  ['FK Kauno Zalgiris', 'FK Kauno Zalgiris', '2026-08-18'],
+  ['斯拉文', '斯拉文贝鲁波', '2026-08-18'],
+  ['斯拉文', 'NK Slaven Belupo', '2026-08-18'],
+  ['科佩尔', 'Koper', '2026-08-18'],
+  ['科佩尔', 'FC Koper', '2026-08-18'],
+  ['萨普斯堡', '萨尔普斯堡', '2026-08-18'],
+  ['萨普斯堡', 'Sarpsborg 08', '2026-08-18'],
+  ['克里斯蒂', '克里斯蒂安松', '2026-08-18'],
+  ['克里斯蒂', 'Kristiansund', '2026-08-18'],
+  ['克里斯蒂', 'Kristiansund BK', '2026-08-18']
 ].map(([standardName, aliasName, lastSeenDate = '2026-08-04']) => ({
   competition: '*',
   standardName,

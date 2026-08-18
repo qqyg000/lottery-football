@@ -4,6 +4,7 @@ import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.SportteryOdds;
 import com.eason.worldcup.model.SportteryTotalGoalsOdds;
+import com.eason.worldcup.util.ApplicationTime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -536,11 +537,12 @@ class SportteryMarketSelectionServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     void shouldExposeRecentCompletedResultAsMappedSchedule() {
+        LocalDate recentMatchDate = ApplicationTime.today().minusDays(1);
         SportteryMarketSelectionService.SportteryMarketEntry entry =
                 new SportteryMarketSelectionService.SportteryMarketEntry();
         entry.setSportteryMatchId("2040535");
         entry.setSportteryMatchNumber("周五204");
-        entry.setMatchDate(LocalDate.of(2026, 7, 18));
+        entry.setMatchDate(recentMatchDate);
         entry.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
         entry.setLeagueName("芬超");
         entry.setHomeTeam("玛丽港");

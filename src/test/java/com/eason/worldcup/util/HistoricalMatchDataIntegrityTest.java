@@ -750,6 +750,28 @@ class HistoricalMatchDataIntegrityTest {
                 0L);
     }
 
+    @Test
+    void shouldContainRequestedLigueOneAndGreekSuperCupFixtures() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 5, 11),
+                Competition.LIGUE_1,
+                "图卢兹",
+                "里昂",
+                2,
+                1);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 8, 13),
+                Competition.CLUB_OFFICIAL_OTHER,
+                "雅典AEK",
+                "OFI",
+                2,
+                2);
+    }
+
     private List<HistoricalFixture> readHistoricalFixtures() throws IOException {
         InputStream inputStream = HistoricalMatchDataIntegrityTest.class.getClassLoader()
                 .getResourceAsStream("data/historical_matches.csv");
