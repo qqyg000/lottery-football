@@ -51,7 +51,8 @@ const competitionNames = new Map(Object.entries({
   ARGENTINE_PRIMERA_DIVISION: '阿甲',
   SWEDISH_ALLSVENSKAN: '瑞超',
   FINNISH_VEIKKAUSLIIGA: '芬超',
-  K_LEAGUE_1: '韩职'
+  K_LEAGUE_1: '韩职',
+  SCOTTISH_FA_CUP: '苏足总杯'
 }))
 
 const verifiedOddsOverrides = new Map([

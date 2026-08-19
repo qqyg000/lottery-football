@@ -695,7 +695,8 @@ const COMPETITIONS = [
   { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲' },
   { code: 'SWEDISH_ALLSVENSKAN', name: '瑞超' },
   { code: 'FINNISH_VEIKKAUSLIIGA', name: '芬超' },
-  { code: 'K_LEAGUE_1', name: '韩职' }
+  { code: 'K_LEAGUE_1', name: '韩职' },
+  { code: 'SCOTTISH_FA_CUP', name: '苏足总杯' }
 ]
 const CURRENT_EDITION_START_DATES = {
   WORLD_CUP: '2026-06-11',
@@ -714,7 +715,8 @@ const CURRENT_EDITION_START_DATES = {
   ARGENTINE_PRIMERA_DIVISION: '2026-01-25',
   SWEDISH_ALLSVENSKAN: '2026-04-04',
   FINNISH_VEIKKAUSLIIGA: '2026-04-04',
-  K_LEAGUE_1: '2026-02-28'
+  K_LEAGUE_1: '2026-02-28',
+  SCOTTISH_FA_CUP: '2026-08-01'
 }
 const SELECTION_COOKIE = 'worldcup_recommendation_rows'
 const SELECTION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180

@@ -41,7 +41,8 @@ public class UserConfig {
             Competition.ARGENTINE_PRIMERA_DIVISION,
             Competition.SWEDISH_ALLSVENSKAN,
             Competition.FINNISH_VEIKKAUSLIIGA,
-            Competition.K_LEAGUE_1);
+            Competition.K_LEAGUE_1,
+            Competition.SCOTTISH_FA_CUP);
 
     private String modelMode = "after";
 

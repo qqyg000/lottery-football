@@ -37,7 +37,8 @@ const COMPETITIONS = [
   'ARGENTINE_PRIMERA_DIVISION',
   'SWEDISH_ALLSVENSKAN',
   'FINNISH_VEIKKAUSLIIGA',
-  'K_LEAGUE_1'
+  'K_LEAGUE_1',
+  'SCOTTISH_FA_CUP'
 ]
 const COMPETITION_NAMES = {
   WORLD_CUP: '世界杯',
@@ -56,7 +57,8 @@ const COMPETITION_NAMES = {
   ARGENTINE_PRIMERA_DIVISION: '阿甲',
   SWEDISH_ALLSVENSKAN: '瑞超',
   FINNISH_VEIKKAUSLIIGA: '芬超',
-  K_LEAGUE_1: '韩职'
+  K_LEAGUE_1: '韩职',
+  SCOTTISH_FA_CUP: '苏足总杯'
 }
 const requestedCompetitions = readArgument('--competitions', 'ALL')
 const TARGET_COMPETITIONS = requestedCompetitions === 'ALL'

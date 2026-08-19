@@ -27,7 +27,8 @@ public enum Competition {
     ARGENTINE_PRIMERA_DIVISION("阿甲", true, false),
     SWEDISH_ALLSVENSKAN("瑞超", true, false),
     FINNISH_VEIKKAUSLIIGA("芬超", true, false),
-    K_LEAGUE_1("韩职", true, false);
+    K_LEAGUE_1("韩职", true, false),
+    SCOTTISH_FA_CUP("苏足总杯", true, true);
 
     private final String displayName;
 
@@ -96,6 +97,7 @@ public enum Competition {
             case "ALLSVENSKAN", "SWEDISHALLSVENSKAN" -> SWEDISH_ALLSVENSKAN;
             case "VEIKKAUSLIIGA", "FINNISHVEIKKAUSLIIGA" -> FINNISH_VEIKKAUSLIIGA;
             case "KLEAGUE", "KLEAGUE1" -> K_LEAGUE_1;
+            case "SCOTTISHFACUP", "SCOTTISH_CUP" -> SCOTTISH_FA_CUP;
             default -> Competition.valueOf(normalized);
         };
     }
@@ -108,8 +110,16 @@ public enum Competition {
         if (normalized.startsWith("芬超")) {
             return FINNISH_VEIKKAUSLIIGA;
         }
-        if (normalized.startsWith("韩职") || normalized.startsWith("韩国职业联赛")) {
+        if (normalized.startsWith("韩职")
+                || normalized.startsWith("韩国职业联赛")
+                || normalized.startsWith("韩国杯")
+                || normalized.startsWith("韩足总杯")) {
             return K_LEAGUE_1;
+        }
+        if (normalized.startsWith("苏足总杯")
+                || normalized.startsWith("苏格兰足总杯")
+                || normalized.startsWith("苏格兰杯")) {
+            return SCOTTISH_FA_CUP;
         }
         return fallback;
     }

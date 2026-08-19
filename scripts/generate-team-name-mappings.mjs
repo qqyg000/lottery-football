@@ -996,7 +996,16 @@ const USER_REQUESTED_TEAM_ALIASES = [
   ['萨普斯堡', 'Sarpsborg 08', '2026-08-18'],
   ['克里斯蒂', '克里斯蒂安松', '2026-08-18'],
   ['克里斯蒂', 'Kristiansund', '2026-08-18'],
-  ['克里斯蒂', 'Kristiansund BK', '2026-08-18']
+  ['克里斯蒂', 'Kristiansund BK', '2026-08-18'],
+  ['里斯本', 'Sporting', '2026-08-19'],
+  ['杜塞多夫', 'Düsseldorf', '2026-08-19'],
+  ['基迪纳摩', 'Dynamo Kiev', '2026-08-19'],
+  ['鲁容贝罗', 'Ruzomberok', '2026-08-19'],
+  ['Nafta', 'Nafta 1903', '2026-08-19'],
+  ['埃沃斯堡', 'Elversberg', '2026-08-19'],
+  ['曼城', '曼彻斯特城', '2026-08-19'],
+  ['吉达联合', 'Ittihad Jeddah', '2026-08-19'],
+  ['莱切斯特', 'Leicester', '2026-08-19']
 ].map(([standardName, aliasName, lastSeenDate = '2026-08-04']) => ({
   competition: '*',
   standardName,
@@ -1421,8 +1430,16 @@ function selectableCompetition(sourceCompetition, fallback) {
   if (sourceName.startsWith('芬超')) {
     return 'FINNISH_VEIKKAUSLIIGA'
   }
-  if (sourceName.startsWith('韩职') || sourceName.startsWith('韩国职业联赛')) {
+  if (sourceName.startsWith('韩职')
+      || sourceName.startsWith('韩国职业联赛')
+      || sourceName.startsWith('韩国杯')
+      || sourceName.startsWith('韩足总杯')) {
     return 'K_LEAGUE_1'
+  }
+  if (sourceName.startsWith('苏足总杯')
+      || sourceName.startsWith('苏格兰足总杯')
+      || sourceName.startsWith('苏格兰杯')) {
+    return 'SCOTTISH_FA_CUP'
   }
   return fallback
 }

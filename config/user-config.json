@@ -1157,6 +1157,74 @@
         "handicapReverseThreshold" : 66.26,
         "singleRecommendationThreshold" : 20.31
       }
+    },
+    "SCOTTISH_FA_CUP:CURRENT:STABLE" : {
+      "modelFactors" : {
+        "hostTeamGoalFactor" : 1.1,
+        "homeTeamGoalFactor" : 1.06,
+        "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
+        "handicapSmoothingFactor" : 0.274
+      },
+      "globalParameters" : {
+        "recommendationOdds" : 1.03,
+        "handicapRecommendationThreshold" : 68.16,
+        "handicapReverseThreshold" : 46.78,
+        "singleRecommendationThreshold" : 71.72
+      }
+    },
+    "SCOTTISH_FA_CUP:CURRENT:AGGRESSIVE" : {
+      "modelFactors" : {
+        "hostTeamGoalFactor" : 2.3,
+        "homeTeamGoalFactor" : 1.75,
+        "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
+        "handicapSmoothingFactor" : 0.65
+      },
+      "globalParameters" : {
+        "recommendationOdds" : 2.46,
+        "handicapRecommendationThreshold" : 89.09,
+        "handicapReverseThreshold" : 43.41,
+        "singleRecommendationThreshold" : 78.71
+      }
+    },
+    "SCOTTISH_FA_CUP:PREVIOUS:STABLE" : {
+      "modelFactors" : {
+        "hostTeamGoalFactor" : 1.1,
+        "homeTeamGoalFactor" : 1.06,
+        "seedTeamGoalFactor" : 1.85,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
+        "handicapSmoothingFactor" : 0.274
+      },
+      "globalParameters" : {
+        "recommendationOdds" : 1.03,
+        "handicapRecommendationThreshold" : 68.16,
+        "handicapReverseThreshold" : 46.78,
+        "singleRecommendationThreshold" : 71.72
+      }
+    },
+    "SCOTTISH_FA_CUP:PREVIOUS:AGGRESSIVE" : {
+      "modelFactors" : {
+        "hostTeamGoalFactor" : 2.3,
+        "homeTeamGoalFactor" : 1.75,
+        "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.0,
+        "internationalFriendlyWeight" : 0.5,
+        "clubFriendlyWeight" : 0.3,
+        "handicapSmoothingFactor" : 0.65
+      },
+      "globalParameters" : {
+        "recommendationOdds" : 2.46,
+        "handicapRecommendationThreshold" : 89.09,
+        "handicapReverseThreshold" : 43.41,
+        "singleRecommendationThreshold" : 78.71
+      }
     }
   },
   "totalGoalsStrategies" : {
@@ -1397,6 +1465,20 @@
       "minimumOdds" : 4.2,
       "maximumOdds" : 4.45,
       "maximumSelections" : 1
+    },
+    "SCOTTISH_FA_CUP:CURRENT" : {
+      "minimumProbability" : 5.0,
+      "minimumExpectedValue" : 1.05,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 50.0,
+      "maximumSelections" : 2
+    },
+    "SCOTTISH_FA_CUP:PREVIOUS" : {
+      "minimumProbability" : 5.0,
+      "minimumExpectedValue" : 1.05,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 50.0,
+      "maximumSelections" : 2
     }
   },
   "selectedRows" : { }

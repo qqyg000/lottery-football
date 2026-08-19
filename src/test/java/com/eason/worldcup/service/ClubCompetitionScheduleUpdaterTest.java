@@ -428,6 +428,36 @@ class ClubCompetitionScheduleUpdaterTest {
     }
 
     @Test
+    void shouldDeduplicateAdjacentDateScheduledMatchesFromSameProvider() {
+        MatchSchedule first = completedSchedule(
+                "FOTMOB-SCOTTISH_FA_CUP-6000001",
+                "Sporting",
+                "Dynamo Kiev");
+        first.setCompetition(Competition.SCOTTISH_FA_CUP);
+        first.setGroupName("苏足总杯");
+        first.setMatchDate(LocalDate.of(2026, 8, 1));
+        first.setStatus("SCHEDULED");
+        first.setHomeScore(null);
+        first.setAwayScore(null);
+        MatchSchedule second = completedSchedule(
+                "FOTMOB-SCOTTISH_FA_CUP-6000002",
+                "里斯本",
+                "基迪纳摩");
+        second.setCompetition(Competition.SCOTTISH_FA_CUP);
+        second.setGroupName("苏格兰足总杯");
+        second.setMatchDate(LocalDate.of(2026, 8, 2));
+        second.setStatus("SCHEDULED");
+        second.setHomeScore(null);
+        second.setAwayScore(null);
+
+        List<MatchSchedule> schedules = updater.deduplicateSchedulesByFixture(List.of(
+                first,
+                second));
+
+        assertEquals(1, schedules.size());
+    }
+
+    @Test
     void shouldKeepOtherOfficialMatchesFromDifferentCompetitionContexts() {
         MatchSchedule league = completedSchedule("FUTBOL24-107-001", "测试队甲", "测试队乙");
         league.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
@@ -902,6 +932,38 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals("齐拉", schedule.getAwayTeamCn());
         assertEquals(2, schedule.getHomeScore());
         assertEquals(1, schedule.getAwayScore());
+    }
+
+    @Test
+    void shouldParseScottishFaCupMatchInShanghaiTime() throws Exception {
+        JsonNode statuses = objectMapper.readTree("""
+                {
+                  "1": { "name": "Not started", "name_short": "NS", "is_ended": false }
+                }
+                """);
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "league_id": 520,
+                  "status_id": 1,
+                  "date": "2026-08-01T18:30:00+00:00",
+                  "team1": { "name": "Dundee United" },
+                  "team2": { "name": "Dunfermline Athletic" }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFutbol24Match(
+                "3400001",
+                match,
+                statuses,
+                ZoneId.of("Asia/Shanghai"));
+
+        assertNotNull(schedule);
+        assertEquals("FUTBOL24-SCOTTISH_FA_CUP-3400001", schedule.getMatchId());
+        assertEquals(Competition.SCOTTISH_FA_CUP, schedule.getCompetition());
+        assertEquals(LocalDate.of(2026, 8, 2), schedule.getMatchDate());
+        assertEquals(LocalTime.of(2, 30), schedule.getKickoffTime());
+        assertEquals("苏足总杯", schedule.getGroupName());
+        assertEquals("SCHEDULED", schedule.getStatus());
     }
 
     @Test
@@ -1466,6 +1528,16 @@ class ClubCompetitionScheduleUpdaterTest {
                 "8816".equals(source.leagueId())
                         && source.competition() == Competition.CLUB_OFFICIAL_OTHER
                         && "希腊超杯".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "137".equals(source.leagueId())
+                        && source.competition() == Competition.SCOTTISH_FA_CUP
+                        && "苏足总杯".equals(source.sourceCompetition())
+                        && !source.calendarYearSeason()));
+        assertTrue(sources.stream().anyMatch(source ->
+                "9551".equals(source.leagueId())
+                        && source.competition() == Competition.K_LEAGUE_1
+                        && "韩国杯".equals(source.sourceCompetition())
+                        && source.calendarYearSeason()));
         assertEquals("2014", sources.stream()
                 .filter(source -> "251".equals(source.leagueId()))
                 .findFirst()

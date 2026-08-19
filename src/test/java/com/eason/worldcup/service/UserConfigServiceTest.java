@@ -25,7 +25,7 @@ class UserConfigServiceTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void shouldMigrateLegacyParametersToSixtyEightIndependentProfiles() throws Exception {
+    void shouldMigrateLegacyParametersToSeventyTwoIndependentProfiles() throws Exception {
         Path configPath = tempDirectory.resolve("user-config.json");
         Files.writeString(configPath, """
                 {
@@ -50,8 +50,8 @@ class UserConfigServiceTest {
 
         UserConfig config = service.load();
 
-        assertEquals(68, config.getParameterProfiles().size());
-        assertEquals(34, config.getTotalGoalsStrategies().size());
+        assertEquals(72, config.getParameterProfiles().size());
+        assertEquals(36, config.getTotalGoalsStrategies().size());
         ParameterProfile currentProfile = config.getParameterProfiles().get(UserConfig.parameterProfileKey(
                 Competition.WORLD_CUP,
                 UserConfig.CURRENT_EDITION_PROFILE,
@@ -89,7 +89,7 @@ class UserConfigServiceTest {
     }
 
     @Test
-    void shouldPersistOnlySixtyEightProfileStructureAfterMigration() throws Exception {
+    void shouldPersistOnlySeventyTwoProfileStructureAfterMigration() throws Exception {
         Path configPath = tempDirectory.resolve("user-config.json");
         Files.writeString(configPath, """
                 {
@@ -109,9 +109,9 @@ class UserConfigServiceTest {
         assertFalse(persisted.has("modelFactors"));
         assertFalse(persisted.has("globalParameters"));
         assertTrue(persisted.has("parameterProfiles"));
-        assertEquals(68, persisted.get("parameterProfiles").size());
+        assertEquals(72, persisted.get("parameterProfiles").size());
         assertTrue(persisted.has("totalGoalsStrategies"));
-        assertEquals(34, persisted.get("totalGoalsStrategies").size());
+        assertEquals(36, persisted.get("totalGoalsStrategies").size());
         JsonNode modelFactors = persisted.get("parameterProfiles")
                 .get("WORLD_CUP:CURRENT:STABLE")
                 .get("modelFactors");

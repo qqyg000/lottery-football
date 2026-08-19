@@ -174,6 +174,36 @@ class DataRepositoryTest {
     }
 
     @Test
+    void shouldDeduplicateAdjacentDateScheduledMatchesFromSameProvider() {
+        MatchSchedule first = completedSchedule(
+                "FOTMOB-SCOTTISH_FA_CUP-6000001",
+                "Sporting",
+                "Dynamo Kiev");
+        first.setCompetition(Competition.SCOTTISH_FA_CUP);
+        first.setGroupName("苏足总杯");
+        first.setMatchDate(LocalDate.of(2026, 8, 1));
+        first.setStatus("SCHEDULED");
+        first.setHomeScore(null);
+        first.setAwayScore(null);
+        MatchSchedule second = completedSchedule(
+                "FOTMOB-SCOTTISH_FA_CUP-6000002",
+                "里斯本",
+                "基迪纳摩");
+        second.setCompetition(Competition.SCOTTISH_FA_CUP);
+        second.setGroupName("苏格兰足总杯");
+        second.setMatchDate(LocalDate.of(2026, 8, 2));
+        second.setStatus("SCHEDULED");
+        second.setHomeScore(null);
+        second.setAwayScore(null);
+
+        List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(List.of(
+                first,
+                second));
+
+        assertEquals(1, schedules.size());
+    }
+
+    @Test
     void shouldKeepOtherOfficialMatchesFromDifferentCompetitionContexts() {
         MatchSchedule league = completedSchedule("FUTBOL24-107-001", "测试队甲", "测试队乙");
         league.setCompetition(Competition.CLUB_OFFICIAL_OTHER);

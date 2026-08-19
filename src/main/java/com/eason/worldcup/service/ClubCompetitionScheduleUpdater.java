@@ -229,6 +229,7 @@ public class ClubCompetitionScheduleUpdater {
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ned.cup"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ned.supercup"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "arg.copa"),
+            new EspnLeagueSource(Competition.SCOTTISH_FA_CUP, "sco.tennents"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "conmebol.libertadores"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "conmebol.sudamericana"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "conmebol.recopa"),
@@ -244,6 +245,7 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final List<FotMobLeagueSource> FOTMOB_SOURCES = List.of(
             new FotMobLeagueSource(Competition.CLUB_FRIENDLY, "489", "俱乐部赛", true),
+            new FotMobLeagueSource(Competition.SCOTTISH_FA_CUP, "137", "苏足总杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "180", "苏联赛杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "342", "联赛杯", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "171", "瑞典杯", false),
@@ -252,7 +254,7 @@ public class ClubCompetitionScheduleUpdater {
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "9422", "Play-offs 1/2", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "525", "亚冠精英", false, 2023),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "9116", "韩挑战联", true),
-            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "9551", "韩国杯", true),
+            new FotMobLeagueSource(Competition.K_LEAGUE_1, "9551", "韩国杯", true),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "262", "阿塞超", false),
             new FotMobLeagueSource(Competition.K_LEAGUE_1, "9080", "韩职", true),
             new FotMobLeagueSource(Competition.SWEDISH_ALLSVENSKAN, "67", "瑞超", true),
@@ -319,6 +321,7 @@ public class ClubCompetitionScheduleUpdater {
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "15", "奥甲", true),
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "17", "奥地利杯", true),
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "51", "苏超", true),
+            new Futbol24LeagueSource(Competition.SCOTTISH_FA_CUP, "520", "苏足总杯", true),
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "133", "土超", true),
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "537", "土耳其杯", true),
             new Futbol24LeagueSource(Competition.CLUB_OFFICIAL_OTHER, "33", "丹麦杯", true),
@@ -2159,7 +2162,7 @@ public class ClubCompetitionScheduleUpdater {
         }
         List<MatchSchedule> schedulesByTeam = deduplicateSchedulesByTeamResult(
                 new ArrayList<>(schedulesByFixture.values()));
-        return deduplicateCrossProviderCompletedSchedules(schedulesByTeam);
+        return deduplicateAdjacentSchedules(schedulesByTeam);
     }
 
     private boolean isExcludedSchedule(MatchSchedule schedule) {
@@ -2170,60 +2173,77 @@ public class ClubCompetitionScheduleUpdater {
                         .anyMatch(providerId -> matchId.endsWith("-" + providerId)));
     }
 
-    private List<MatchSchedule> deduplicateCrossProviderCompletedSchedules(List<MatchSchedule> schedules) {
-        Map<String, List<MatchSchedule>> schedulesByResult = new HashMap<>();
+    private List<MatchSchedule> deduplicateAdjacentSchedules(List<MatchSchedule> schedules) {
+        Map<String, List<MatchSchedule>> schedulesByTeamDate = new HashMap<>();
         Set<MatchSchedule> duplicateSchedules = new HashSet<>();
         for (MatchSchedule schedule : schedules) {
-            if (!isCompletedSchedule(schedule)) {
+            if (schedule.getCompetition() == null || schedule.getMatchDate() == null) {
                 continue;
             }
-            String key = buildCompletedResultBucket(schedule);
-            List<MatchSchedule> candidates = schedulesByResult.computeIfAbsent(
-                    key,
-                    ignored -> new ArrayList<>());
-            MatchSchedule duplicateCandidate = candidates.stream()
-                    .filter(candidate -> isCrossProviderDuplicate(candidate, schedule))
-                    .findFirst()
-                    .orElse(null);
+            MatchSchedule duplicateCandidate = null;
+            for (int dayOffset : List.of(-1, 0, 1)) {
+                LocalDate candidateDate = schedule.getMatchDate().plusDays(dayOffset);
+                duplicateCandidate = buildAdjacentTeamBuckets(schedule, candidateDate).stream()
+                        .flatMap(bucket -> schedulesByTeamDate
+                                .getOrDefault(bucket, List.of())
+                                .stream())
+                        .distinct()
+                        .filter(candidate -> isAdjacentFixtureDuplicate(candidate, schedule))
+                        .findFirst()
+                        .orElse(null);
+                if (duplicateCandidate != null) {
+                    break;
+                }
+            }
             if (duplicateCandidate == null) {
-                candidates.add(schedule);
+                indexAdjacentSchedule(schedulesByTeamDate, schedule);
                 continue;
             }
 
             MatchSchedule preferred = preferSchedule(duplicateCandidate, schedule);
             MatchSchedule duplicate = preferred == duplicateCandidate ? schedule : duplicateCandidate;
             duplicateSchedules.add(duplicate);
-            candidates.remove(duplicateCandidate);
-            candidates.add(preferred);
+            if (preferred == schedule) {
+                removeAdjacentSchedule(schedulesByTeamDate, duplicateCandidate);
+                indexAdjacentSchedule(schedulesByTeamDate, schedule);
+            }
         }
         return schedules.stream()
                 .filter(schedule -> !duplicateSchedules.contains(schedule))
                 .toList();
     }
 
-    private boolean isCompletedSchedule(MatchSchedule schedule) {
-        return schedule.getCompetition() != null
-                && schedule.getMatchDate() != null
-                && schedule.getHomeScore() != null
-                && schedule.getAwayScore() != null;
-    }
-
-    private String buildCompletedResultBucket(MatchSchedule schedule) {
-        int firstScore = Math.min(schedule.getHomeScore(), schedule.getAwayScore());
-        int secondScore = Math.max(schedule.getHomeScore(), schedule.getAwayScore());
-        return schedule.getCompetition()
-                + "|" + firstScore
-                + "|" + secondScore;
-    }
-
-    private boolean isCrossProviderDuplicate(MatchSchedule left, MatchSchedule right) {
-        String leftProvider = resolveScheduleProvider(left);
-        String rightProvider = resolveScheduleProvider(right);
-        if (leftProvider.isBlank()
-                || rightProvider.isBlank()
-                || leftProvider.equals(rightProvider)) {
-            return false;
+    private void indexAdjacentSchedule(
+            Map<String, List<MatchSchedule>> schedulesByTeamDate,
+            MatchSchedule schedule) {
+        for (String bucket : buildAdjacentTeamBuckets(schedule, schedule.getMatchDate())) {
+            schedulesByTeamDate.computeIfAbsent(bucket, ignored -> new ArrayList<>()).add(schedule);
         }
+    }
+
+    private void removeAdjacentSchedule(
+            Map<String, List<MatchSchedule>> schedulesByTeamDate,
+            MatchSchedule schedule) {
+        for (String bucket : buildAdjacentTeamBuckets(schedule, schedule.getMatchDate())) {
+            List<MatchSchedule> bucketSchedules = schedulesByTeamDate.get(bucket);
+            if (bucketSchedules != null) {
+                bucketSchedules.remove(schedule);
+            }
+        }
+    }
+
+    private List<String> buildAdjacentTeamBuckets(MatchSchedule schedule, LocalDate matchDate) {
+        return List.of(
+                        canonicalTeamName(schedule.getHomeTeamCn()),
+                        canonicalTeamName(schedule.getAwayTeamCn()))
+                .stream()
+                .filter(teamName -> !teamName.isBlank())
+                .map(teamName -> schedule.getCompetition() + "|" + matchDate + "|" + teamName)
+                .distinct()
+                .toList();
+    }
+
+    private boolean isAdjacentFixtureDuplicate(MatchSchedule left, MatchSchedule right) {
         if (!hasCompatibleCompetitionContext(left, right)) {
             return false;
         }
@@ -2242,17 +2262,40 @@ public class ClubCompetitionScheduleUpdater {
                 && areSimilarScheduleTeams(left, false, right, false);
         boolean reversedTeams = areSimilarScheduleTeams(left, true, right, false)
                 && areSimilarScheduleTeams(left, false, right, true);
-        if (directResult && directTeams || reversedResult && reversedTeams) {
+        boolean bothCompleted = left.getHomeScore() != null
+                && left.getAwayScore() != null
+                && right.getHomeScore() != null
+                && right.getAwayScore() != null;
+        if (directTeams && (!bothCompleted || directResult)
+                || reversedTeams && (!bothCompleted || reversedResult)) {
             return true;
         }
 
-        return dateDifference == 0
+        return bothCompleted
+                && (hasSportteryIdentity(left)
+                        || hasSportteryIdentity(right)
+                        || hasDifferentScheduleProvider(left, right))
+                && dateDifference == 0
                 && left.getKickoffTime() != null
                 && Objects.equals(left.getKickoffTime(), right.getKickoffTime())
                 && (directResult && (areSimilarScheduleTeams(left, true, right, true)
                         || areSimilarScheduleTeams(left, false, right, false))
                         || reversedResult && (areSimilarScheduleTeams(left, true, right, false)
                         || areSimilarScheduleTeams(left, false, right, true)));
+    }
+
+    private boolean hasDifferentScheduleProvider(MatchSchedule left, MatchSchedule right) {
+        String leftProvider = scheduleProvider(left);
+        String rightProvider = scheduleProvider(right);
+        return !leftProvider.isBlank()
+                && !rightProvider.isBlank()
+                && !leftProvider.equals(rightProvider);
+    }
+
+    private String scheduleProvider(MatchSchedule schedule) {
+        String matchId = schedule.getMatchId();
+        int separatorIndex = matchId == null ? -1 : matchId.indexOf('-');
+        return separatorIndex <= 0 ? "" : matchId.substring(0, separatorIndex);
     }
 
     private boolean hasCompatibleCompetitionContext(MatchSchedule left, MatchSchedule right) {
@@ -2273,15 +2316,6 @@ public class ClubCompetitionScheduleUpdater {
                         "(?i)\\s*第?\\s*(?:\\d+|FINAL|决赛)\\s*轮\\s*$",
                         "");
         return canonicalTeamName(withoutRound);
-    }
-
-    private String resolveScheduleProvider(MatchSchedule schedule) {
-        String matchId = schedule.getMatchId();
-        if (matchId == null || matchId.isBlank()) {
-            return "";
-        }
-        int delimiterIndex = matchId.indexOf('-');
-        return delimiterIndex < 0 ? matchId : matchId.substring(0, delimiterIndex);
     }
 
     private boolean areSimilarScheduleTeams(

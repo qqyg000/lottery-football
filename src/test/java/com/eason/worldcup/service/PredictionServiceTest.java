@@ -55,7 +55,9 @@ class PredictionServiceTest {
             Map.entry(Competition.FINNISH_VEIKKAUSLIIGA, period(
                     "2025-04-05", "2025-11-09", "2026-04-04", "2026-11-08")),
             Map.entry(Competition.K_LEAGUE_1, period(
-                    "2025-02-15", "2025-11-30", "2026-02-28", "2026-12-06")));
+                    "2025-02-15", "2025-11-30", "2026-02-28", "2026-12-06")),
+            Map.entry(Competition.SCOTTISH_FA_CUP, period(
+                    "2025-08-09", "2026-05-23", "2026-08-01", "2027-05-22")));
 
     private final PredictionService predictionService = new PredictionService(null, null, null);
 

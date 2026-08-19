@@ -145,6 +145,7 @@ public class SportteryMarketSelectionService {
         competitions.add(Competition.SWEDISH_ALLSVENSKAN);
         competitions.add(Competition.FINNISH_VEIKKAUSLIIGA);
         competitions.add(Competition.K_LEAGUE_1);
+        competitions.add(Competition.SCOTTISH_FA_CUP);
         return Set.copyOf(competitions);
     }
 
@@ -1125,14 +1126,14 @@ public class SportteryMarketSelectionService {
             case "阿甲" -> Competition.ARGENTINE_PRIMERA_DIVISION;
             case "瑞超", "瑞典超" -> Competition.SWEDISH_ALLSVENSKAN;
             case "芬超" -> Competition.FINNISH_VEIKKAUSLIIGA;
-            case "韩职", "韩国职业联赛" -> Competition.K_LEAGUE_1;
+            case "韩职", "韩国职业联赛", "韩国杯", "韩足总杯" -> Competition.K_LEAGUE_1;
+            case "苏足总杯", "苏格兰足总杯", "苏格兰杯" -> Competition.SCOTTISH_FA_CUP;
             case "俱乐部赛", "俱乐部友谊赛" -> Competition.CLUB_FRIENDLY;
             case "联赛杯", "苏联赛杯",
                     "瑞甲",
                     "亚冠精英", "亚洲冠军联赛精英",
                     "Play-offs 1/2",
                     "韩挑战联", "K联赛2",
-                    "韩国杯", "韩足总杯",
                     "芬兰杯", "芬杯",
                     "丹超",
                     "希超", "希腊超",

@@ -18,7 +18,8 @@ param(
         "ARGENTINE_PRIMERA_DIVISION",
         "SWEDISH_ALLSVENSKAN",
         "FINNISH_VEIKKAUSLIIGA",
-        "K_LEAGUE_1"
+        "K_LEAGUE_1",
+        "SCOTTISH_FA_CUP"
     )]
     [string]$Competition = "WORLD_CUP",
 

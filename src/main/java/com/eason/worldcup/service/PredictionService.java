@@ -98,7 +98,10 @@ public class PredictionService {
                     LocalDate.of(2026, 4, 4), LocalDate.of(2026, 11, 8))),
             Map.entry(Competition.K_LEAGUE_1, new CompetitionBacktestPeriod(
                     LocalDate.of(2025, 2, 15), LocalDate.of(2025, 11, 30),
-                    LocalDate.of(2026, 2, 28), LocalDate.of(2026, 12, 6))));
+                    LocalDate.of(2026, 2, 28), LocalDate.of(2026, 12, 6))),
+            Map.entry(Competition.SCOTTISH_FA_CUP, new CompetitionBacktestPeriod(
+                    LocalDate.of(2025, 8, 9), LocalDate.of(2026, 5, 23),
+                    LocalDate.of(2026, 8, 1), LocalDate.of(2027, 5, 22))));
 
     private final DataRepository dataRepository;
 
@@ -588,7 +591,7 @@ public class PredictionService {
             BiConsumer<Integer, String> progressConsumer) {
         notifyDataRefreshProgress(progressConsumer, 5, "正在读取体彩最近30天赛果");
         sportteryMarketSelectionService.forceRefresh(null);
-        notifyDataRefreshProgress(progressConsumer, 25, "体彩赛果已更新，正在刷新17类赛事赛程与补充数据");
+        notifyDataRefreshProgress(progressConsumer, 25, "体彩赛果已更新，正在刷新18类赛事赛程与补充数据");
         dataRepository.refreshSchedules(progressConsumer);
         notifyDataRefreshProgress(progressConsumer, 65, "赛程数据已更新，正在重建球队模型");
         teamStrengthService.rebuildModels();

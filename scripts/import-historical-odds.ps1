@@ -33,6 +33,11 @@ $competitionByLeague = @{
     "瑞超" = "SWEDISH_ALLSVENSKAN"
     "芬超" = "FINNISH_VEIKKAUSLIIGA"
     "韩职" = "K_LEAGUE_1"
+    "韩国杯" = "K_LEAGUE_1"
+    "韩足总杯" = "K_LEAGUE_1"
+    "苏足总杯" = "SCOTTISH_FA_CUP"
+    "苏格兰足总杯" = "SCOTTISH_FA_CUP"
+    "苏格兰杯" = "SCOTTISH_FA_CUP"
 }
 
 $supportedCompetitions = [Collections.Generic.HashSet[string]]::new(

@@ -150,10 +150,11 @@ class SportteryMarketSelectionServiceTest {
 
     @Test
     void shouldRecognizeNewSelectableCompetitionNames() throws Exception {
-        Map<String, Competition> competitionsByLeagueName = Map.of(
-                "瑞超", Competition.SWEDISH_ALLSVENSKAN,
-                "芬超", Competition.FINNISH_VEIKKAUSLIIGA,
-                "韩职", Competition.K_LEAGUE_1);
+        Map<String, Competition> competitionsByLeagueName = Map.ofEntries(
+                Map.entry("瑞超", Competition.SWEDISH_ALLSVENSKAN),
+                Map.entry("芬超", Competition.FINNISH_VEIKKAUSLIIGA),
+                Map.entry("韩职", Competition.K_LEAGUE_1),
+                Map.entry("苏足总杯", Competition.SCOTTISH_FA_CUP));
 
         for (Map.Entry<String, Competition> item : competitionsByLeagueName.entrySet()) {
             var match = new ObjectMapper().readTree("""
@@ -178,7 +179,7 @@ class SportteryMarketSelectionServiceTest {
                 Map.entry("亚冠精英", Competition.CLUB_OFFICIAL_OTHER),
                 Map.entry("Play-offs 1/2", Competition.CLUB_OFFICIAL_OTHER),
                 Map.entry("韩挑战联", Competition.CLUB_OFFICIAL_OTHER),
-                Map.entry("韩国杯", Competition.CLUB_OFFICIAL_OTHER));
+                Map.entry("韩国杯", Competition.K_LEAGUE_1));
 
         for (Map.Entry<String, Competition> item : competitionsByLeagueName.entrySet()) {
             var match = new ObjectMapper().readTree("""
@@ -727,6 +728,46 @@ class SportteryMarketSelectionServiceTest {
         assertEquals(1, schedule.getSportteryHandicap());
         assertNull(schedule.getHomeScore());
         assertNull(schedule.getAwayScore());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldExposeKoreanCupOddsAsKLeagueScheduleCard() throws Exception {
+        var match = new ObjectMapper().readTree("""
+                {
+                  "leagueNameAbbr": "韩国杯"
+                }
+                """);
+        Competition competition = ReflectionTestUtils.invokeMethod(
+                service,
+                "parseCompetition",
+                match);
+        SportteryMarketSelectionService.SportteryMarketEntry entry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        entry.setSportteryMatchId("2040801");
+        entry.setSportteryMatchNumber("周三001");
+        entry.setMatchDate(LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1));
+        entry.setKickoffTime(LocalTime.of(18, 30));
+        entry.setCompetition(competition);
+        entry.setLeagueName("韩国杯");
+        entry.setHomeTeam("蔚山现代");
+        entry.setAwayTeam("浦项制铁");
+        entry.setNormalOdds(new SportteryOdds(1.80, 3.40, 3.60, "2026-08-19 10:00:00"));
+
+        Map<String, SportteryMarketSelectionService.SportteryMarketEntry> entries =
+                (Map<String, SportteryMarketSelectionService.SportteryMarketEntry>)
+                        ReflectionTestUtils.getField(service, "entriesByMatchId");
+        entries.put(entry.getSportteryMatchId(), entry);
+
+        List<MatchSchedule> schedules = new ArrayList<>();
+        int addedCount = service.mergeRecentAndUpcomingSchedulesInto(schedules, 30, 7);
+
+        assertEquals(1, addedCount);
+        MatchSchedule schedule = schedules.get(0);
+        assertEquals(Competition.K_LEAGUE_1, schedule.getCompetition());
+        assertEquals("韩国杯", schedule.getGroupName());
+        assertEquals(1.80, schedule.getSportteryNormalOdds().getWin());
+        assertEquals("SCHEDULED", schedule.getStatus());
     }
 
 }

@@ -37,7 +37,16 @@ class ClubTeamNameTranslatorTest {
                 Map.entry("Neuchatel Xamax", "Xamax"),
                 Map.entry("RAAL La Louviere", "La Louviere"),
                 Map.entry("沃尔夫斯堡", "沃夫斯堡"),
-                Map.entry("斯特拉斯堡", "斯特拉斯"));
+                Map.entry("斯特拉斯堡", "斯特拉斯"),
+                Map.entry("Sporting", "里斯本"),
+                Map.entry("Düsseldorf", "杜塞多夫"),
+                Map.entry("Dynamo Kiev", "基迪纳摩"),
+                Map.entry("Ruzomberok", "鲁容贝罗"),
+                Map.entry("Nafta 1903", "Nafta"),
+                Map.entry("Elversberg", "埃沃斯堡"),
+                Map.entry("曼彻斯特城", "曼城"),
+                Map.entry("Ittihad Jeddah", "吉达联合"),
+                Map.entry("Leicester", "莱切斯特"));
 
         for (Map.Entry<String, String> alias : aliases.entrySet()) {
             assertEquals(alias.getValue(), ClubTeamNameTranslator.translate(alias.getKey()));

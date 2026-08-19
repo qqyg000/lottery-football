@@ -6,7 +6,7 @@
 
 ## 主要功能
 
-- 支持 17 类赛事，按赛事和日期查询近期赛程、完场比分与比赛状态
+- 支持 18 类赛事，按赛事和日期查询近期赛程、完场比分与比赛状态
 - 使用泊松分布和蒙特卡洛模拟计算常规及让球胜平负概率
 - 展示双方期望进球、总进球数和比分预测
 - 读取中国体彩网开售状态、让球数及胜平负赔率
@@ -40,6 +40,7 @@
 | 瑞超 | `SWEDISH_ALLSVENSKAN` |
 | 芬超 | `FINNISH_VEIKKAUSLIIGA` |
 | 韩职 | `K_LEAGUE_1` |
+| 苏足总杯 | `SCOTTISH_FA_CUP` |
 
 前端支持多选具体赛事。多选时参数区展示首个所选赛事的参数方案并禁止编辑具体数值，但仍允许统一切换稳健/激进方案；普通预测和推荐回测会按比赛所属赛事分别使用所选方案下各自的参数档案。推荐回测接口同时兼容 `ALL` 或逗号分隔的多个赛事代码，供脚本批量调用。
 
@@ -53,9 +54,9 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 214,705 | 2014-10-22 至 2026-08-13 |
+| `historical_matches.csv` | 214,693 | 2014-10-22 至 2026-08-13 |
 | `historical_odds_data.csv` | 29,251 | 2014-10-22 至 2026-08-11 |
-| `team_name_mappings.csv` | 23,194 | 2014-06-24 至 2026-08-23 |
+| `team_name_mappings.csv` | 23,397 | 2014-06-24 至 2026-08-23 |
 
 主要数据来自 FotMob、Futbol24、Foot Mercato、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 
@@ -160,7 +161,7 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 
 ## 参数档案
 
-每类赛事在 `config/user-config.json` 中保存四套参数档案，共 17 × 4 = 68 套：
+每类赛事在 `config/user-config.json` 中保存四套参数档案，共 18 × 4 = 72 套：
 
 | 后缀 | 范围 | 方案 |
 |---|---|---|
@@ -278,7 +279,7 @@ node scripts/reoptimize-shared-backtest-profiles.mjs --reoptimize-all
 
 优化器默认按比赛日期升序将前 `70%` 作为训练集、后 `30%` 作为验证集，同一天比赛不会跨分区。模型和推荐阈值只按训练集 ROI 排名，验证集只用于通过或拒绝门禁；训练集和验证集至少分别需要 `10` 场、`6` 场。训练集 ROI 必须非负、验证集 ROI 必须非负，且训练、验证、全量样本均需达到对应赛事的采样率下限。无法满足稳健门禁或稳健/激进 ROI 关系的时段关闭推荐；仅本届样本不足时沿用已验证的含上届参数并执行额外样本外门禁，失败则关闭。
 
-检查点通过全部 68 套档案的独立验收且报告 `violations` 为 `0` 后，可避免重复回测并安全应用已验证结果：
+检查点通过全部 72 套档案的独立验收且报告 `violations` 为 `0` 后，可避免重复回测并安全应用已验证结果：
 
 ```powershell
 node scripts/reoptimize-shared-backtest-profiles.mjs --apply-verified-checkpoint
@@ -351,7 +352,7 @@ node scripts/generate-team-name-mappings.mjs
 页面“更新数据”会异步执行以下阶段：
 
 1. 读取以当天为基准的体彩最近 30 天赛果
-2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；芬甲、荷兰杯、西乙、西甲、欧冠、罗甲、罗超杯、波甲、斯洛文甲、亚美尼超和俱乐部友谊赛均在此阶段更新
+2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；苏足总杯、韩国杯、芬甲、荷兰杯、西乙、西甲、欧冠、罗甲、罗超杯、波甲、斯洛文甲、亚美尼超和俱乐部友谊赛均在此阶段更新
 3. 重建球队模型
 4. 更新赛事概览
 
@@ -408,9 +409,9 @@ node scripts/import-supplemental-history.mjs --write --compact --skip-national `
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
   --only-sources FUTBOL24-322,FUTBOL24-324,FUTBOL24-28,FUTBOL24-297,FUTBOL24-107,FUTBOL24-15,FUTBOL24-51
 
-# 只补取韩职、芬超和瑞超
+# 只补取韩职、韩国杯、苏足总杯、芬超和瑞超
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
-  --only-sources FOTMOB-9080,FOTMOB-51,FOTMOB-67,FUTBOL24-322
+  --only-sources FOTMOB-9080,FOTMOB-9551,FOTMOB-137,FUTBOL24-520,FOTMOB-51,FOTMOB-67,FUTBOL24-322
 
 # 只补取土超、土耳其杯、丹麦杯、匈甲、匈牙利杯和克甲
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `
@@ -433,7 +434,7 @@ node scripts/reconcile-historical-scores.mjs --write --compact
 | 文件或节点 | 用途 |
 |---|---|
 | `src/main/resources/application.yml` | 数据源、时区、刷新窗口和缓存路径 |
-| `config/user-config.json` | 68 套参数档案和页面配置 |
+| `config/user-config.json` | 72 套参数档案和页面配置 |
 | `config/club-competition-schedules.json` | 俱乐部赛事运行时赛程缓存 |
 | `config/sporttery-market-selections.json` | 体彩玩法及赔率缓存 |
 | `team_name_mappings.csv` | 体彩标准球队名与数据源别名 |

@@ -39,7 +39,8 @@ $supportedCompetitions = [Collections.Generic.HashSet[string]]::new([string[]]@(
     "ARGENTINE_PRIMERA_DIVISION",
     "SWEDISH_ALLSVENSKAN",
     "FINNISH_VEIKKAUSLIIGA",
-    "K_LEAGUE_1"
+    "K_LEAGUE_1",
+    "SCOTTISH_FA_CUP"
 ))
 
 $neutralCompetitions = [Collections.Generic.HashSet[string]]::new([string[]]@(
@@ -125,8 +126,13 @@ function Get-SelectableCompetition {
     if ($sourceName.StartsWith("芬超")) {
         return "FINNISH_VEIKKAUSLIIGA"
     }
-    if ($sourceName.StartsWith("韩职") -or $sourceName.StartsWith("韩国职业联赛")) {
+    if ($sourceName.StartsWith("韩职") -or $sourceName.StartsWith("韩国职业联赛") `
+            -or $sourceName.StartsWith("韩国杯") -or $sourceName.StartsWith("韩足总杯")) {
         return "K_LEAGUE_1"
+    }
+    if ($sourceName.StartsWith("苏足总杯") -or $sourceName.StartsWith("苏格兰足总杯") `
+            -or $sourceName.StartsWith("苏格兰杯")) {
+        return "SCOTTISH_FA_CUP"
     }
     return $Competition
 }

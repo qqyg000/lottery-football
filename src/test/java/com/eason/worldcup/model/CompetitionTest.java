@@ -17,6 +17,12 @@ class CompetitionTest {
         assertEquals(
                 Competition.K_LEAGUE_1,
                 Competition.fromSourceCompetition("韩国职业联赛", Competition.CLUB_OFFICIAL_OTHER));
+        assertEquals(
+                Competition.K_LEAGUE_1,
+                Competition.fromSourceCompetition("韩国杯", Competition.CLUB_OFFICIAL_OTHER));
+        assertEquals(
+                Competition.SCOTTISH_FA_CUP,
+                Competition.fromSourceCompetition("苏足总杯 第1轮", Competition.CLUB_OFFICIAL_OTHER));
     }
 
     @Test

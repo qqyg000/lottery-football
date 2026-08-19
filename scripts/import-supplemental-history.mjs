@@ -95,7 +95,8 @@ const CLUB_COMPETITIONS = new Set([
   'ARGENTINE_PRIMERA_DIVISION',
   'SWEDISH_ALLSVENSKAN',
   'FINNISH_VEIKKAUSLIIGA',
-  'K_LEAGUE_1'
+  'K_LEAGUE_1',
+  'SCOTTISH_FA_CUP'
 ])
 
 const ALL_CLUB_COMPETITIONS = new Set([
@@ -125,7 +126,8 @@ const COMPETITION_NAMES = new Map(Object.entries({
   ARGENTINE_PRIMERA_DIVISION: '阿甲',
   SWEDISH_ALLSVENSKAN: '瑞超',
   FINNISH_VEIKKAUSLIIGA: '芬超',
-  K_LEAGUE_1: '韩职'
+  K_LEAGUE_1: '韩职',
+  SCOTTISH_FA_CUP: '苏足总杯'
 }))
 
 function isExcludedCompetition(competition, sourceCompetition) {
@@ -231,6 +233,14 @@ const FOTMOB_LEAGUE_SOURCES = [
     firstSeasonStartYear: 2026
   },
   {
+    leagueId: '137',
+    competition: 'SCOTTISH_FA_CUP',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '苏足总杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
     leagueId: '180',
     competition: 'CLUB_OFFICIAL_OTHER',
     matchType: 'OFFICIAL',
@@ -292,7 +302,7 @@ const FOTMOB_LEAGUE_SOURCES = [
   },
   {
     leagueId: '9551',
-    competition: 'CLUB_OFFICIAL_OTHER',
+    competition: 'K_LEAGUE_1',
     matchType: 'OFFICIAL',
     sourceCompetition: '韩国杯',
     calendarYearSeason: true,
@@ -628,11 +638,13 @@ const AUTHORITATIVE_FOTMOB_LEAGUE_IDS = new Set([
   '140',
   '235',
   '251',
+  '137',
+  '9551',
   '8816'
 ])
 
 const SOCCERWAY_KOREA_CUP_SOURCE = {
-  competition: 'CLUB_OFFICIAL_OTHER',
+  competition: 'K_LEAGUE_1',
   matchType: 'OFFICIAL',
   sourceCompetition: '韩国杯',
   firstSeasonStartYear: 2014
@@ -781,6 +793,15 @@ const FUTBOL24_SOURCES = [
     sourceCompetition: '苏超',
     seasonPath: 'national/Scotland/Premiership',
     crossYearSeason: true
+  },
+  {
+    leagueId: '520',
+    competition: 'SCOTTISH_FA_CUP',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '苏足总杯',
+    seasonPath: 'national/Scotland/FA-Cup',
+    crossYearSeason: true,
+    firstSeasonStartYear: 2014
   },
   {
     leagueId: '133',
@@ -3677,7 +3698,7 @@ for (const sourceRow of sourceRows) {
   const importsWholeCompetition = sourceRow.provider === 'FUTBOL24'
       && ['8', '9', '15', '26', '28', '33', '48', '51', '75', '92', '107', '133', '269', '286', '297',
         '17',
-        '291', '310', '322', '324', '338', '525', '531', '534', '537', '60', '70', '868']
+        '291', '310', '322', '324', '338', '520', '525', '531', '534', '537', '60', '70', '868']
         .includes(String(sourceRow.source).replace('FUTBOL24-', ''))
     || sourceRow.provider === 'FOTMOB' && FOTMOB_LEAGUE_SOURCES.some(
       source => `FOTMOB-${source.leagueId}` === sourceRow.source

@@ -505,63 +505,80 @@ public class DataRepository {
         }
         List<MatchSchedule> schedulesByTeam = deduplicateSchedulesByTeamResult(
                 new ArrayList<>(schedulesByFixture.values()));
-        return deduplicateCrossProviderCompletedSchedules(schedulesByTeam);
+        return deduplicateAdjacentSchedules(schedulesByTeam);
     }
 
-    private List<MatchSchedule> deduplicateCrossProviderCompletedSchedules(List<MatchSchedule> schedules) {
-        Map<String, List<MatchSchedule>> schedulesByResult = new HashMap<>();
+    private List<MatchSchedule> deduplicateAdjacentSchedules(List<MatchSchedule> schedules) {
+        Map<String, List<MatchSchedule>> schedulesByTeamDate = new HashMap<>();
         Set<MatchSchedule> duplicateSchedules = new HashSet<>();
         for (MatchSchedule schedule : schedules) {
-            if (!isCompletedSchedule(schedule)) {
+            if (schedule.getCompetition() == null || schedule.getMatchDate() == null) {
                 continue;
             }
-            String key = buildCompletedResultBucket(schedule);
-            List<MatchSchedule> candidates = schedulesByResult.computeIfAbsent(
-                    key,
-                    ignored -> new ArrayList<>());
-            MatchSchedule duplicateCandidate = candidates.stream()
-                    .filter(candidate -> isCrossProviderDuplicate(candidate, schedule))
-                    .findFirst()
-                    .orElse(null);
+            MatchSchedule duplicateCandidate = null;
+            for (int dayOffset : List.of(-1, 0, 1)) {
+                LocalDate candidateDate = schedule.getMatchDate().plusDays(dayOffset);
+                duplicateCandidate = buildAdjacentTeamBuckets(schedule, candidateDate).stream()
+                        .flatMap(bucket -> schedulesByTeamDate
+                                .getOrDefault(bucket, List.of())
+                                .stream())
+                        .distinct()
+                        .filter(candidate -> isAdjacentFixtureDuplicate(candidate, schedule))
+                        .findFirst()
+                        .orElse(null);
+                if (duplicateCandidate != null) {
+                    break;
+                }
+            }
             if (duplicateCandidate == null) {
-                candidates.add(schedule);
+                indexAdjacentSchedule(schedulesByTeamDate, schedule);
                 continue;
             }
 
             MatchSchedule preferred = preferSchedule(duplicateCandidate, schedule);
             MatchSchedule duplicate = preferred == duplicateCandidate ? schedule : duplicateCandidate;
             duplicateSchedules.add(duplicate);
-            candidates.remove(duplicateCandidate);
-            candidates.add(preferred);
+            if (preferred == schedule) {
+                removeAdjacentSchedule(schedulesByTeamDate, duplicateCandidate);
+                indexAdjacentSchedule(schedulesByTeamDate, schedule);
+            }
         }
         return schedules.stream()
                 .filter(schedule -> !duplicateSchedules.contains(schedule))
                 .collect(Collectors.toList());
     }
 
-    private boolean isCompletedSchedule(MatchSchedule schedule) {
-        return schedule.getCompetition() != null
-                && schedule.getMatchDate() != null
-                && schedule.getHomeScore() != null
-                && schedule.getAwayScore() != null;
-    }
-
-    private String buildCompletedResultBucket(MatchSchedule schedule) {
-        int firstScore = Math.min(schedule.getHomeScore(), schedule.getAwayScore());
-        int secondScore = Math.max(schedule.getHomeScore(), schedule.getAwayScore());
-        return schedule.getCompetition()
-                + "|" + firstScore
-                + "|" + secondScore;
-    }
-
-    private boolean isCrossProviderDuplicate(MatchSchedule left, MatchSchedule right) {
-        String leftProvider = resolveScheduleProvider(left);
-        String rightProvider = resolveScheduleProvider(right);
-        if (leftProvider.isBlank()
-                || rightProvider.isBlank()
-                || leftProvider.equals(rightProvider)) {
-            return false;
+    private void indexAdjacentSchedule(
+            Map<String, List<MatchSchedule>> schedulesByTeamDate,
+            MatchSchedule schedule) {
+        for (String bucket : buildAdjacentTeamBuckets(schedule, schedule.getMatchDate())) {
+            schedulesByTeamDate.computeIfAbsent(bucket, ignored -> new ArrayList<>()).add(schedule);
         }
+    }
+
+    private void removeAdjacentSchedule(
+            Map<String, List<MatchSchedule>> schedulesByTeamDate,
+            MatchSchedule schedule) {
+        for (String bucket : buildAdjacentTeamBuckets(schedule, schedule.getMatchDate())) {
+            List<MatchSchedule> bucketSchedules = schedulesByTeamDate.get(bucket);
+            if (bucketSchedules != null) {
+                bucketSchedules.remove(schedule);
+            }
+        }
+    }
+
+    private List<String> buildAdjacentTeamBuckets(MatchSchedule schedule, LocalDate matchDate) {
+        return List.of(
+                        canonicalScheduleTeamName(schedule, true),
+                        canonicalScheduleTeamName(schedule, false))
+                .stream()
+                .filter(teamName -> !teamName.isBlank())
+                .map(teamName -> schedule.getCompetition() + "|" + matchDate + "|" + teamName)
+                .distinct()
+                .toList();
+    }
+
+    private boolean isAdjacentFixtureDuplicate(MatchSchedule left, MatchSchedule right) {
         if (!hasCompatibleCompetitionContext(left, right)) {
             return false;
         }
@@ -580,17 +597,40 @@ public class DataRepository {
                 && areSimilarScheduleTeams(left, false, right, false);
         boolean reversedTeams = areSimilarScheduleTeams(left, true, right, false)
                 && areSimilarScheduleTeams(left, false, right, true);
-        if (directResult && directTeams || reversedResult && reversedTeams) {
+        boolean bothCompleted = left.getHomeScore() != null
+                && left.getAwayScore() != null
+                && right.getHomeScore() != null
+                && right.getAwayScore() != null;
+        if (directTeams && (!bothCompleted || directResult)
+                || reversedTeams && (!bothCompleted || reversedResult)) {
             return true;
         }
 
-        return dateDifference == 0
+        return bothCompleted
+                && (hasSportteryIdentity(left)
+                        || hasSportteryIdentity(right)
+                        || hasDifferentScheduleProvider(left, right))
+                && dateDifference == 0
                 && left.getKickoffTime() != null
                 && Objects.equals(left.getKickoffTime(), right.getKickoffTime())
                 && (directResult && (areSimilarScheduleTeams(left, true, right, true)
                         || areSimilarScheduleTeams(left, false, right, false))
                         || reversedResult && (areSimilarScheduleTeams(left, true, right, false)
                         || areSimilarScheduleTeams(left, false, right, true)));
+    }
+
+    private boolean hasDifferentScheduleProvider(MatchSchedule left, MatchSchedule right) {
+        String leftProvider = scheduleProvider(left);
+        String rightProvider = scheduleProvider(right);
+        return !leftProvider.isBlank()
+                && !rightProvider.isBlank()
+                && !leftProvider.equals(rightProvider);
+    }
+
+    private String scheduleProvider(MatchSchedule schedule) {
+        String matchId = schedule.getMatchId();
+        int separatorIndex = matchId == null ? -1 : matchId.indexOf('-');
+        return separatorIndex <= 0 ? "" : matchId.substring(0, separatorIndex);
     }
 
     private boolean hasCompatibleCompetitionContext(MatchSchedule left, MatchSchedule right) {
@@ -609,15 +649,6 @@ public class DataRepository {
                 ? ""
                 : groupName.replaceFirst("\\s*第?\\s*\\d+\\s*轮\\s*$", "");
         return normalizeTeamName(withoutRound).replaceAll("[^\\p{L}\\p{N}]", "");
-    }
-
-    private String resolveScheduleProvider(MatchSchedule schedule) {
-        String matchId = schedule.getMatchId();
-        if (matchId == null || matchId.isBlank()) {
-            return "";
-        }
-        int delimiterIndex = matchId.indexOf('-');
-        return delimiterIndex < 0 ? matchId : matchId.substring(0, delimiterIndex);
     }
 
     private boolean areSimilarScheduleTeams(
