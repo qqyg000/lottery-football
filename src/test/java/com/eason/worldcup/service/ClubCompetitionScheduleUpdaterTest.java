@@ -1145,7 +1145,7 @@ class ClubCompetitionScheduleUpdaterTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void shouldConfigureFutbol24ChampionsLeagueAndRomanianSources() {
+    void shouldConfigureFutbol24WholeCompetitionRefreshSources() {
         List<ClubCompetitionScheduleUpdater.Futbol24LeagueSource> sources =
                 (List<ClubCompetitionScheduleUpdater.Futbol24LeagueSource>)
                         ReflectionTestUtils.getField(
@@ -1156,11 +1156,23 @@ class ClubCompetitionScheduleUpdaterTest {
         assertTrue(sources.stream().anyMatch(source ->
                 source.competition() == Competition.CHAMPIONS_LEAGUE
                         && "8".equals(source.leagueId())
-                        && "欧冠".equals(source.sourceCompetition())));
+                        && "欧冠".equals(source.sourceCompetition())
+                        && source.importsWholeCompetition()));
         assertTrue(sources.stream().anyMatch(source ->
                 source.competition() == Competition.EUROPA_LEAGUE
                         && "9".equals(source.leagueId())
-                        && "欧罗巴".equals(source.sourceCompetition())));
+                        && "欧罗巴".equals(source.sourceCompetition())
+                        && source.importsWholeCompetition()));
+        assertTrue(sources.stream().anyMatch(source ->
+                source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "133".equals(source.leagueId())
+                        && "土超".equals(source.sourceCompetition())
+                        && source.importsWholeCompetition()));
+        assertTrue(sources.stream().anyMatch(source ->
+                source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "537".equals(source.leagueId())
+                        && "土耳其杯".equals(source.sourceCompetition())
+                        && source.importsWholeCompetition()));
         assertTrue(sources.stream().anyMatch(source ->
                 source.competition() == Competition.CLUB_OFFICIAL_OTHER
                         && "48".equals(source.leagueId())
@@ -2043,7 +2055,7 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals(LocalDate.of(2026, 7, 20), schedule.getMatchDate());
         assertEquals(LocalTime.of(21, 0), schedule.getKickoffTime());
         assertEquals("哈萨超", schedule.getGroupName());
-        assertEquals("奥达巴斯", schedule.getHomeTeamCn());
+        assertEquals("奇姆肯特", schedule.getHomeTeamCn());
         assertEquals("叶利迈塞米", schedule.getAwayTeamCn());
         assertEquals(3, schedule.getHomeScore());
         assertEquals(1, schedule.getAwayScore());

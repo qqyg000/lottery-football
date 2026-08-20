@@ -758,6 +758,21 @@ const VERIFIED_SPORTTERY_ENGLISH_ALIASES = [
 ]
 
 const USER_REQUESTED_TEAM_ALIASES = [
+  ['特拉布宗', '特拉布宗体育', '2026-08-20'],
+  ['奇姆肯特', '奥达巴斯', '2026-08-20'],
+  ['WSG Tirol', 'WSG蒂罗尔', '2026-08-20'],
+  ['Oberwart', 'SV Oberwart', '2026-08-20'],
+  ['Metalist 1925', 'FC Kharkiv', '2026-08-20'],
+  ['Metalist 1925', 'Metalist 1925 Kharkiv', '2026-08-20'],
+  ['乌迪内斯', 'Udinese Calcio', '2026-08-20'],
+  ['多哈萨德', '萨德', '2026-08-20'],
+  ['沃绍什', '华萨斯', '2026-08-20'],
+  ['克拉克斯', '克拉克斯维克', '2026-08-20'],
+  ['格里维治', '皮亚斯特', '2026-08-20'],
+  ['Wieczysta', 'Wieczysta Kraków', '2026-08-20'],
+  ['萨克森体育', 'FC Saxon Sports', '2026-08-20'],
+  ['马克瓦', 'Macva Sabac', '2026-08-20'],
+  ['特普利斯', 'FK Teplice', '2026-08-20'],
   ['红色小鬼', '林肯红色小鬼'],
   ['哥本哈根', 'Copenhague'],
   ['哈尔姆斯', 'Halmstad'],

@@ -275,6 +275,38 @@ class PredictionServiceTest {
     }
 
     @Test
+    void shouldDisplayTrabzonCardAndKeepMappedEuropaHeadToHeadMatches() {
+        MatchSchedule target = schedule(
+                "TRABZON-TARGET",
+                LocalDate.of(2026, 8, 21),
+                LocalTime.of(1, 0),
+                "特拉布宗",
+                "费伦茨",
+                "SCHEDULED");
+        target.setCompetition(Competition.EUROPA_LEAGUE);
+        target.setSportteryHomeTeamName("特拉布宗体育");
+        List<HistoricalMatch> europaHistory = List.of(
+                historicalMatch(LocalDate.of(2022, 9, 9), "费伦茨", "特拉布宗", 3, 2),
+                historicalMatch(LocalDate.of(2022, 11, 4), "特拉布宗", "费伦茨", 1, 0));
+        europaHistory.forEach(match -> match.setSourceCompetition("欧罗巴"));
+        DataRepository dataRepository = new StubDataRepository(
+                List.of(target),
+                List.of(target),
+                europaHistory);
+        PredictionService service = new PredictionService(dataRepository, null, null);
+
+        HeadToHeadOverviewResponse overview = service.queryHeadToHeadOverview(
+                Competition.EUROPA_LEAGUE,
+                target.getMatchId(),
+                10);
+
+        assertEquals("特拉布宗", service.resolveDisplayTeamName(target, true));
+        assertEquals(2, overview.getHeadToHeadMatches().size());
+        assertEquals("特拉布宗", overview.getHeadToHeadMatches().get(0).getHomeTeamCn());
+        assertEquals(LocalDate.of(2022, 11, 4), overview.getHeadToHeadMatches().get(0).getMatchDate());
+    }
+
+    @Test
     void shouldDisplaySegundaHistoryWhenSportteryUsesDeportivoAlias() {
         MatchSchedule target = schedule(
                 "DEPORTIVO-ELCHE-TARGET",

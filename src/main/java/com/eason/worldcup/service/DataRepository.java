@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -220,7 +219,7 @@ public class DataRepository {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         return schedules.stream()
                 .filter(item -> item.getCompetition() == effectiveCompetition)
-                .filter(item -> getScheduleQueryDate(item).equals(date))
+                .filter(item -> date.equals(item.getMatchDate()))
                 .sorted(Comparator.comparingInt(this::getScheduleSortSeconds)
                         .thenComparing(MatchSchedule::getMatchDate)
                         .thenComparing(MatchSchedule::getMatchId))
@@ -237,7 +236,7 @@ public class DataRepository {
                 .filter(item -> item.getCompetition() == effectiveCompetition)
                 .filter(item -> item.getMatchDate() != null)
                 .filter(this::hasSportteryOdds)
-                .map(item -> getScheduleQueryDate(item).toString())
+                .map(item -> item.getMatchDate().toString())
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
@@ -258,14 +257,7 @@ public class DataRepository {
         return value != null && Double.isFinite(value) && value > 0;
     }
 
-    private LocalDate getScheduleQueryDate(MatchSchedule schedule) {
-        return ApplicationTime.toCardDate(schedule.getMatchDate(), schedule.getKickoffTime());
-    }
-
     private int getScheduleSortSeconds(MatchSchedule schedule) {
-        if (LocalTime.MIDNIGHT.equals(schedule.getKickoffTime())) {
-            return 24 * 60 * 60;
-        }
         return schedule.getKickoffTime().toSecondOfDay();
     }
 

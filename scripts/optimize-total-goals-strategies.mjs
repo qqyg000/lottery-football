@@ -18,6 +18,7 @@ const REPORT_PATH = path.resolve(ROOT, readArgument(
 ))
 const BACKTEST_CACHE_PREFIX = readArgument('--backtest-cache-prefix', '')
 const BASELINE_REPORT_PATH = readArgument('--baseline-report-path', '')
+const OPTIMIZED_REPORT_PATH = path.join(ROOT, 'reports', 'total-goals-strategy-backtest.json')
 const BASE_URL = readArgument('--base-url', 'http://127.0.0.1:18080')
 const SIMULATIONS = Number(readArgument('--simulations', '5000'))
 const COMPETITIONS = [
@@ -198,6 +199,9 @@ async function main() {
   const configText = await fs.readFile(CONFIG_PATH, 'utf8')
   const config = JSON.parse(configText)
   const baselineStrategies = await readBaselineStrategies(config.totalGoalsStrategies || {})
+  const configuredStrategyConstraints = EVALUATE_ONLY
+    ? await readConfiguredStrategyConstraints()
+    : {}
   const existingReport = TARGET_COMPETITIONS.length === COMPETITIONS.length && TARGET_RANGES.length === RANGES.length
     ? null
     : await readExistingReport()
@@ -206,7 +210,11 @@ async function main() {
     const includePreviousEdition = range === 'PREVIOUS'
     process.stdout.write(`开始回测${includePreviousEdition ? '含上届' : '仅本届'}策略\n`)
     const result = await runBacktest(config, range, includePreviousEdition)
-    rangeResults[range] = optimizeRange(result, range, baselineStrategies)
+    rangeResults[range] = optimizeRange(
+      result,
+      range,
+      baselineStrategies,
+      configuredStrategyConstraints)
   }
 
   const strategies = { ...(config.totalGoalsStrategies || {}) }
@@ -424,7 +432,7 @@ function backtestCachePath(range) {
     : null
 }
 
-function optimizeRange(result, range, existingStrategies) {
+function optimizeRange(result, range, existingStrategies, configuredStrategyConstraints = {}) {
   const matchesByCompetition = Object.fromEntries(TARGET_COMPETITIONS.map(competition => [competition, []]))
   for (const match of result.matches || []) {
     if (matchesByCompetition[match.competition]) {
@@ -437,9 +445,11 @@ function optimizeRange(result, range, existingStrategies) {
   return Object.fromEntries(TARGET_COMPETITIONS.map(competition => {
     const matches = matchesByCompetition[competition].sort(compareMatchesChronologically)
     const skipSmallCurrentSample = range === 'CURRENT' && shouldFallbackToPreviousEdition(matches.length)
-    const baselineStrategy = existingStrategies[`${competition}:${range}`] || DEFAULT_STRATEGY
+    const strategyKey = `${competition}:${range}`
+    const baselineStrategy = existingStrategies[strategyKey] || DEFAULT_STRATEGY
+    const configuredConstraints = configuredStrategyConstraints[strategyKey] || null
     const optimized = EVALUATE_ONLY
-      ? evaluateConfiguredStrategy(matches, baselineStrategy)
+      ? evaluateConfiguredStrategy(matches, baselineStrategy, configuredConstraints)
       : skipSmallCurrentSample
       ? {
           strategy: { ...DEFAULT_STRATEGY, maximumSelections: 0 },
@@ -479,8 +489,14 @@ function optimizeRange(result, range, existingStrategies) {
   }))
 }
 
-function evaluateConfiguredStrategy(matches, strategy) {
+function evaluateConfiguredStrategy(matches, strategy, configuredConstraints) {
   const metrics = evaluateStrategy(matches, strategy)
+  const samplingRateFloor = Number.isFinite(configuredConstraints?.samplingRateFloor)
+    ? configuredConstraints.samplingRateFloor
+    : null
+  const hitRateFloor = Number.isFinite(configuredConstraints?.hitRateFloor)
+    ? configuredConstraints.hitRateFloor
+    : null
   return {
     strategy: { ...strategy },
     metrics,
@@ -488,14 +504,31 @@ function evaluateConfiguredStrategy(matches, strategy) {
     minimumSelectionConstraint: 0,
     minimumWinningSelectionConstraint: 0,
     strategyAvailable: Number(strategy.maximumSelections) > 0 && metrics.recommendedSelectionCount > 0,
-    samplingRateTargetMet: meetsRateConstraint(metrics.samplingRate, MINIMUM_SAMPLING_RATE),
-    hitRateTargetMet: meetsRateConstraint(metrics.hitRate, MINIMUM_HIT_RATE),
+    samplingRateTargetMet: meetsRateConstraint(
+      metrics.samplingRate,
+      samplingRateFloor ?? MINIMUM_SAMPLING_RATE),
+    hitRateTargetMet: meetsRateConstraint(
+      metrics.hitRate,
+      hitRateFloor ?? MINIMUM_HIT_RATE),
     primaryRoiTargetMet: metrics.roi !== null && metrics.roi >= PRIMARY_ROI_TARGET,
     reliabilityTier: 'CONFIGURED_STRATEGY_EVALUATION',
-    samplingRateFloor: null,
-    hitRateFloor: null,
+    samplingRateFloor,
+    hitRateFloor,
     roiFloor: null,
-    degradationLevel: 'CONFIGURED_STRATEGY_EVALUATION'
+    degradationLevel: configuredConstraints?.degradationLevel || 'CONFIGURED_STRATEGY_EVALUATION'
+  }
+}
+
+async function readConfiguredStrategyConstraints() {
+  try {
+    const report = JSON.parse(await fs.readFile(OPTIMIZED_REPORT_PATH, 'utf8'))
+    return Object.fromEntries((report.strategies || []).map(row => [row.key, {
+      samplingRateFloor: row.samplingRateFloor,
+      hitRateFloor: row.hitRateFloor,
+      degradationLevel: row.degradationLevel
+    }]))
+  } catch {
+    return {}
   }
 }
 

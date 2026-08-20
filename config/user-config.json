@@ -285,10 +285,10 @@
         "handicapSmoothingFactor" : 0.371
       },
       "globalParameters" : {
-        "recommendationOdds" : 100.0,
-        "handicapRecommendationThreshold" : 22.49,
-        "handicapReverseThreshold" : 54.56,
-        "singleRecommendationThreshold" : 5.7
+        "recommendationOdds" : 1.23,
+        "handicapRecommendationThreshold" : 27.2,
+        "handicapReverseThreshold" : 78.35,
+        "singleRecommendationThreshold" : 6.67
       }
     },
     "EUROPA_LEAGUE:CURRENT:AGGRESSIVE" : {
@@ -302,10 +302,10 @@
         "handicapSmoothingFactor" : 0.462
       },
       "globalParameters" : {
-        "recommendationOdds" : 100.0,
-        "handicapRecommendationThreshold" : 7.99,
-        "handicapReverseThreshold" : 6.96,
-        "singleRecommendationThreshold" : 10.17
+        "recommendationOdds" : 1.66,
+        "handicapRecommendationThreshold" : 48.21,
+        "handicapReverseThreshold" : 74.51,
+        "singleRecommendationThreshold" : 10.76
       }
     },
     "EUROPA_LEAGUE:PREVIOUS:STABLE" : {
@@ -319,10 +319,10 @@
         "handicapSmoothingFactor" : 0.049
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.21,
-        "handicapRecommendationThreshold" : 62.05,
-        "handicapReverseThreshold" : 70.34,
-        "singleRecommendationThreshold" : 15.59
+        "recommendationOdds" : 1.57,
+        "handicapRecommendationThreshold" : 82.12,
+        "handicapReverseThreshold" : 69.65,
+        "singleRecommendationThreshold" : 0.25
       }
     },
     "EUROPA_LEAGUE:PREVIOUS:AGGRESSIVE" : {
@@ -336,10 +336,10 @@
         "handicapSmoothingFactor" : 0.01
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.21,
-        "handicapRecommendationThreshold" : 45.16,
-        "handicapReverseThreshold" : 69.93,
-        "singleRecommendationThreshold" : 6.28
+        "recommendationOdds" : 2.26,
+        "handicapRecommendationThreshold" : 52.64,
+        "handicapReverseThreshold" : 69.91,
+        "singleRecommendationThreshold" : 12.15
       }
     },
     "CHAMPIONS_LEAGUE:CURRENT:STABLE" : {
@@ -353,7 +353,7 @@
         "handicapSmoothingFactor" : 0.155
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.46,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 85.71,
         "handicapReverseThreshold" : 54.85,
         "singleRecommendationThreshold" : 84.02
@@ -370,7 +370,7 @@
         "handicapSmoothingFactor" : 0.776
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.54,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 66.93,
         "handicapReverseThreshold" : 41.95,
         "singleRecommendationThreshold" : 31.13
@@ -387,10 +387,10 @@
         "handicapSmoothingFactor" : 0.104
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.43,
-        "handicapRecommendationThreshold" : 18.86,
-        "handicapReverseThreshold" : 66.28,
-        "singleRecommendationThreshold" : 0.85
+        "recommendationOdds" : 2.45,
+        "handicapRecommendationThreshold" : 9.22,
+        "handicapReverseThreshold" : 74.15,
+        "singleRecommendationThreshold" : 0.52
       }
     },
     "CHAMPIONS_LEAGUE:PREVIOUS:AGGRESSIVE" : {
@@ -404,10 +404,10 @@
         "handicapSmoothingFactor" : 0.239
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.44,
-        "handicapRecommendationThreshold" : 19.54,
-        "handicapReverseThreshold" : 58.89,
-        "singleRecommendationThreshold" : 19.03
+        "recommendationOdds" : 2.22,
+        "handicapRecommendationThreshold" : 40.21,
+        "handicapReverseThreshold" : 65.18,
+        "singleRecommendationThreshold" : 14.68
       }
     },
     "PREMIER_LEAGUE:CURRENT:STABLE" : {
@@ -1287,14 +1287,14 @@
     "EUROPA_LEAGUE:CURRENT" : {
       "minimumProbability" : 12.53,
       "minimumExpectedValue" : 0.413,
-      "minimumOdds" : 3.4,
+      "minimumOdds" : 3.3,
       "maximumOdds" : 3.45,
       "maximumSelections" : 1
     },
     "EUROPA_LEAGUE:PREVIOUS" : {
-      "minimumProbability" : 21.92,
-      "minimumExpectedValue" : 0.76734,
-      "minimumOdds" : 3.5,
+      "minimumProbability" : 0.32,
+      "minimumExpectedValue" : 0.7686,
+      "minimumOdds" : 3.45,
       "maximumOdds" : 3.65,
       "maximumSelections" : 2
     },
@@ -1306,10 +1306,10 @@
       "maximumSelections" : 1
     },
     "CHAMPIONS_LEAGUE:PREVIOUS" : {
-      "minimumProbability" : 22.62,
-      "minimumExpectedValue" : 0.0,
+      "minimumProbability" : 0.0,
+      "minimumExpectedValue" : 1.05,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 4.0,
+      "maximumOdds" : 20.0,
       "maximumSelections" : 1
     },
     "PREMIER_LEAGUE:CURRENT" : {

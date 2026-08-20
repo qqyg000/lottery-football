@@ -695,8 +695,7 @@ const COMPETITIONS = [
   { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲' },
   { code: 'SWEDISH_ALLSVENSKAN', name: '瑞超' },
   { code: 'FINNISH_VEIKKAUSLIIGA', name: '芬超' },
-  { code: 'K_LEAGUE_1', name: '韩职' },
-  { code: 'SCOTTISH_FA_CUP', name: '苏足总杯' }
+  { code: 'K_LEAGUE_1', name: '韩职' }
 ]
 const CURRENT_EDITION_START_DATES = {
   WORLD_CUP: '2026-06-11',

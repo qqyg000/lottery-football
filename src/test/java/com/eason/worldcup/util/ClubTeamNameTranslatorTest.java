@@ -135,7 +135,7 @@ class ClubTeamNameTranslatorTest {
         assertEquals("索菲亚中央陆军", ClubTeamNameTranslator.translate(
                 Competition.EUROPA_LEAGUE,
                 "CSKA Sofia"));
-        assertEquals("克拉克斯维克", ClubTeamNameTranslator.translate(
+        assertEquals("克拉克斯", ClubTeamNameTranslator.translate(
                 Competition.CHAMPIONS_LEAGUE,
                 "KI Klaksvik"));
         assertEquals("雷克维京", ClubTeamNameTranslator.translate(
@@ -330,6 +330,33 @@ class ClubTeamNameTranslatorTest {
         assertEquals("哈尔姆斯", ClubTeamNameTranslator.translate("哈尔姆斯塔德"));
         assertEquals("佐加顿斯", ClubTeamNameTranslator.translate("Djurgårdens IF"));
         assertEquals("韦斯特罗", ClubTeamNameTranslator.translate("Västerås"));
+    }
+
+    @Test
+    void shouldApplyRequestedClubCanonicalNames() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> expectedMappings = Map.ofEntries(
+                Map.entry("特拉布宗体育", "特拉布宗"),
+                Map.entry("奥达巴斯", "奇姆肯特"),
+                Map.entry("WSG蒂罗尔", "WSG Tirol"),
+                Map.entry("SV Oberwart", "Oberwart"),
+                Map.entry("FC Kharkiv", "Metalist 1925"),
+                Map.entry("Metalist 1925 Kharkiv", "Metalist 1925"),
+                Map.entry("Udinese Calcio", "乌迪内斯"),
+                Map.entry("萨德", "多哈萨德"),
+                Map.entry("华萨斯", "沃绍什"),
+                Map.entry("克拉克斯维克", "克拉克斯"),
+                Map.entry("皮亚斯特", "格里维治"),
+                Map.entry("Wieczysta Kraków", "Wieczysta"),
+                Map.entry("FC Saxon Sports", "萨克森体育"),
+                Map.entry("Macva Sabac", "马克瓦"),
+                Map.entry("FK Teplice", "特普利斯"));
+
+        expectedMappings.forEach((source, expected) ->
+                assertEquals(expected, ClubTeamNameTranslator.translate(
+                        Competition.CLUB_FRIENDLY,
+                        source), source));
     }
 
     @Test

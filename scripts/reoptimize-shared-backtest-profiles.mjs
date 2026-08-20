@@ -408,7 +408,7 @@ function searchRules(backtest, baseProfile, modelFactors, count, seed) {
   const oddsValues = observedOdds(backtest.matches)
   const buckets = new Map()
   const initialProfiles = [
-    normalizeProfile({ ...center, modelFactors: { ...modelFactors, handicapSmoothingFactor: center.modelFactors.handicapSmoothingFactor } }),
+    normalizeProfile({ ...center, modelFactors: { ...modelFactors } }),
     normalizeProfile({
       modelFactors: { ...modelFactors },
       globalParameters: {
@@ -701,13 +701,20 @@ async function fetchJson(url, options = {}, attempts = 3) {
   throw lastError
 }
 
-async function fetchBacktest(competition, range, modelFactors, simulations, smoothingFactor = 0) {
+async function fetchBacktest(
+  competition,
+  range,
+  modelFactors,
+  simulations,
+  smoothingFactor = 0,
+  forceRefresh = false
+) {
   const normalizedModel = normalizeProfile({
     modelFactors: { ...modelFactors, handicapSmoothingFactor: smoothingFactor }
   }).modelFactors
   const cacheKey = `${competition}:${range}:${simulations}:${modelSignature(normalizedModel)}`
   const cached = BACKTEST_MEMORY_CACHE.get(cacheKey)
-  if (cached) {
+  if (!forceRefresh && cached) {
     return cached
   }
   const url = new URL('/api/football/recommendation-backtest', API_BASE)
@@ -730,6 +737,35 @@ async function fetchBacktest(competition, range, modelFactors, simulations, smoo
   }
   BACKTEST_MEMORY_CACHE.set(cacheKey, backtest)
   return backtest
+}
+
+async function refreshCandidatePool(competition, range, pool) {
+  const candidatesByModel = new Map()
+  for (const candidate of deduplicatePool(pool)) {
+    const signature = modelSignature(candidate.profile.modelFactors)
+    const candidates = candidatesByModel.get(signature) || []
+    candidates.push(candidate)
+    candidatesByModel.set(signature, candidates)
+  }
+  const refreshed = []
+  let modelIndex = 0
+  for (const candidates of candidatesByModel.values()) {
+    modelIndex++
+    process.stdout.write(
+      `  refresh final pool model ${modelIndex}/${candidatesByModel.size} ${FINAL_SIMULATIONS}\n`
+    )
+    const model = candidates[0].profile.modelFactors
+    const backtest = await fetchBacktest(
+      competition,
+      range,
+      model,
+      FINAL_SIMULATIONS,
+      model.handicapSmoothingFactor,
+      true
+    )
+    refreshed.push(...candidates.map(candidate => enrichCandidate(backtest, candidate)))
+  }
+  return deduplicatePool(refreshed)
 }
 
 async function optimizePreset(competition, range, preset, originalProfile, options = {}) {
@@ -839,13 +875,18 @@ async function optimizePreset(competition, range, preset, originalProfile, optio
       REFINEMENT_PASSES
     ).map(candidate => enrichCandidate(finalistBacktest, candidate)))
   }
+  const refreshedPool = await refreshCandidatePool(
+    competition,
+    range,
+    finalPool
+  )
   return {
     key,
     status: 'OPTIMIZED',
     originalProfile: normalizedOriginal,
     baselineMetrics,
     baselineRobustness,
-    pool: deduplicatePool(finalPool)
+    pool: refreshedPool
   }
 }
 
