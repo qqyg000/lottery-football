@@ -148,6 +148,7 @@ public class DataRepository {
         notifyRefreshProgress(progressConsumer, 64, "赛程源已刷新，正在整理刷新窗口数据");
         preserveSchedulesOutsideRefreshWindow(refreshedSchedules, schedules);
         removeExcludedCompetitionSchedules(refreshedSchedules);
+        refreshedSchedules = deduplicateSchedulesByFixture(refreshedSchedules);
         refreshedSchedules.sort(Comparator
                 .comparing(MatchSchedule::getMatchDate)
                 .thenComparing(MatchSchedule::getKickoffTime));
@@ -639,8 +640,17 @@ public class DataRepository {
     private String canonicalCompetitionContext(String groupName) {
         String withoutRound = groupName == null
                 ? ""
-                : groupName.replaceFirst("\\s*第?\\s*\\d+\\s*轮\\s*$", "");
-        return normalizeTeamName(withoutRound).replaceAll("[^\\p{L}\\p{N}]", "");
+                : groupName.replaceFirst(
+                        "(?i)\\s*第?\\s*(?:\\d+(?:/\\d+)?|FINAL|决赛).*$",
+                        "");
+        String canonicalCompetition = switch (withoutRound.trim()) {
+            case "英格兰足总杯" -> "英足总杯";
+            case "英格兰联赛杯" -> "英联赛杯";
+            case "英格兰社区盾", "社区盾杯" -> "英社区盾";
+            case "法国超级杯" -> "法超杯";
+            default -> withoutRound;
+        };
+        return normalizeTeamName(canonicalCompetition).replaceAll("[^\\p{L}\\p{N}]", "");
     }
 
     private boolean areSimilarScheduleTeams(

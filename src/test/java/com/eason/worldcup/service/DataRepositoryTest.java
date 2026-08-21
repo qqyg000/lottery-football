@@ -218,6 +218,20 @@ class DataRepositoryTest {
     }
 
     @Test
+    void shouldDeduplicateEquivalentEnglishCupCompetitionNames() {
+        MatchSchedule espn = completedSchedule("ESPN-FA-001", "曼联", "赫尔城");
+        espn.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        espn.setGroupName("英格兰足总杯");
+        MatchSchedule fotMob = completedSchedule("FOTMOB-FA-001", "Manchester United", "Hull City");
+        fotMob.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        fotMob.setGroupName("英足总杯 第1/2轮");
+
+        List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(List.of(espn, fotMob));
+
+        assertEquals(1, schedules.size());
+    }
+
+    @Test
     void shouldKeepNorwegianEliteserienSchedules() {
         MatchSchedule norwegianSchedule = completedSchedule("NORWAY-001", "挪威主队", "挪威客队");
         norwegianSchedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);

@@ -32,12 +32,78 @@ class ClubCompetitionScheduleUpdaterTest {
     private final ClubCompetitionScheduleUpdater updater = new ClubCompetitionScheduleUpdater(objectMapper);
 
     @Test
+    @SuppressWarnings("unchecked")
+    void shouldConfigureRequestedHistoricalFotMobSources() {
+        List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources =
+                (List<ClubCompetitionScheduleUpdater.FotMobLeagueSource>)
+                        ReflectionTestUtils.getField(
+                                ClubCompetitionScheduleUpdater.class,
+                                "FOTMOB_SOURCES");
+        Set<String> historicalLeagueIds = (Set<String>) ReflectionTestUtils.getField(
+                ClubCompetitionScheduleUpdater.class,
+                "HISTORICAL_FOTMOB_LEAGUE_IDS");
+
+        assertNotNull(sources);
+        assertEquals(Set.of("47", "48", "53", "108", "132", "133", "141", "207", "247"),
+                historicalLeagueIds);
+        assertTrue(sources.stream().anyMatch(source ->
+                "47".equals(source.leagueId())
+                        && source.competition() == Competition.PREMIER_LEAGUE
+                        && "英超".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "48".equals(source.leagueId()) && "英冠".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "108".equals(source.leagueId()) && "英甲".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "132".equals(source.leagueId()) && "英足总杯".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "133".equals(source.leagueId()) && "英联赛杯".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "247".equals(source.leagueId()) && "英社区盾".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "207".equals(source.leagueId()) && "法超杯".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "141".equals(source.leagueId()) && "意大利杯".equals(source.sourceCompetition())));
+    }
+
+    @Test
     void shouldScaleTaskProgressWithinConfiguredStage() {
         assertEquals(10, ClubCompetitionScheduleUpdater.scaleTaskProgress(0, 40, 10, 35));
         assertEquals(23, ClubCompetitionScheduleUpdater.scaleTaskProgress(20, 40, 10, 35));
         assertEquals(35, ClubCompetitionScheduleUpdater.scaleTaskProgress(40, 40, 10, 35));
         assertEquals(10, ClubCompetitionScheduleUpdater.scaleTaskProgress(-1, 40, 10, 35));
         assertEquals(35, ClubCompetitionScheduleUpdater.scaleTaskProgress(41, 40, 10, 35));
+    }
+
+    @Test
+    void shouldOnlyLoadFotMobRegulationDetailsInsideRefreshWindow() throws Exception {
+        JsonNode historicalExtraTimeMatch = objectMapper.readTree("""
+                {
+                  "status": {
+                    "utcTime": "2021-11-20T15:00:00Z",
+                    "finished": true,
+                    "reason": { "short": "After extra time" }
+                  }
+                }
+                """);
+        JsonNode recentExtraTimeMatch = objectMapper.readTree("""
+                {
+                  "status": {
+                    "utcTime": "2026-08-16T18:45:00Z",
+                    "finished": true,
+                    "reason": { "short": "After extra time" }
+                  }
+                }
+                """);
+
+        assertFalse(updater.shouldLoadFotMobRegulationDetails(
+                historicalExtraTimeMatch,
+                ZoneId.of("Asia/Shanghai"),
+                LocalDate.of(2026, 7, 22)));
+        assertTrue(updater.shouldLoadFotMobRegulationDetails(
+                recentExtraTimeMatch,
+                ZoneId.of("Asia/Shanghai"),
+                LocalDate.of(2026, 7, 22)));
     }
 
     @Test
@@ -139,6 +205,48 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals(2, schedule.getHomeScore());
         assertEquals(0, schedule.getAwayScore());
         assertEquals("COMPLETED", schedule.getStatus());
+    }
+
+    @Test
+    void shouldKeepItalianCupNameWhenParsingEspnStage() throws Exception {
+        JsonNode event = objectMapper.readTree("""
+                {
+                  "id": "759119",
+                  "date": "2025-12-02T20:00Z",
+                  "season": { "slug": "round-of-16" },
+                  "status": {
+                    "type": { "completed": true, "state": "post" }
+                  },
+                  "competitions": [
+                    {
+                      "competitors": [
+                        {
+                          "homeAway": "home",
+                          "score": "3",
+                          "team": { "id": "1", "displayName": "Lazio" }
+                        },
+                        {
+                          "homeAway": "away",
+                          "score": "0",
+                          "team": { "id": "2", "displayName": "Varese" }
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseEspnEvent(
+                event,
+                Competition.CLUB_OFFICIAL_OTHER,
+                ZoneId.of("Asia/Shanghai"),
+                "意大利杯");
+
+        assertNotNull(schedule);
+        assertEquals(LocalDate.of(2025, 12, 3), schedule.getMatchDate());
+        assertEquals("意大利杯 16强", schedule.getGroupName());
+        assertEquals("拉齐奥", schedule.getHomeTeamCn());
+        assertEquals("瓦雷泽", schedule.getAwayTeamCn());
     }
 
     @Test
@@ -862,6 +970,76 @@ class ClubCompetitionScheduleUpdaterTest {
         assertNotNull(schedule);
         assertEquals("圣吉联合", schedule.getHomeTeamCn());
         assertEquals(4, schedule.getHomeScore());
+        assertEquals(0, schedule.getAwayScore());
+    }
+
+    @Test
+    void shouldUseNinetyMinuteScoreForLeedsAndRbLeipzig() throws Exception {
+        JsonNode statuses = objectMapper.readTree("""
+                {
+                  "5": { "name": "FT", "name_short": "FT", "is_ended": true }
+                }
+                """);
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "league_id": 472,
+                  "status_id": 5,
+                  "date": "2026-08-08T13:00:00+00:00",
+                  "score1": "2-0",
+                  "score2": "1-0",
+                  "team1": { "name": "Leeds United" },
+                  "team2": { "name": "RB Leipzig" }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFutbol24Match(
+                "3402888",
+                match,
+                statuses,
+                ZoneId.of("Asia/Shanghai"));
+
+        assertNotNull(schedule);
+        assertEquals("FUTBOL24-CLUB_FRIENDLY-3402888", schedule.getMatchId());
+        assertEquals(LocalDate.of(2026, 8, 8), schedule.getMatchDate());
+        assertEquals(LocalTime.of(21, 0), schedule.getKickoffTime());
+        assertEquals("利兹联", schedule.getHomeTeamCn());
+        assertEquals("莱红牛", schedule.getAwayTeamCn());
+        assertEquals(1, schedule.getHomeScore());
+        assertEquals(0, schedule.getAwayScore());
+    }
+
+    @Test
+    void shouldParseItalianCupMatchInShanghaiTime() throws Exception {
+        JsonNode match = objectMapper.readTree("""
+                {
+                  "id": "5852999",
+                  "home": { "name": "Lazio" },
+                  "away": { "name": "Varese" },
+                  "status": {
+                    "utcTime": "2026-08-20T18:30:00Z",
+                    "finished": true,
+                    "cancelled": false,
+                    "scoreStr": "3 - 0",
+                    "reason": { "short": "FT" }
+                  }
+                }
+                """);
+
+        MatchSchedule schedule = updater.parseFotMobLeagueMatch(
+                match,
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "141",
+                        "意大利杯"),
+                ZoneId.of("Asia/Shanghai"));
+
+        assertNotNull(schedule);
+        assertEquals(LocalDate.of(2026, 8, 21), schedule.getMatchDate());
+        assertEquals(LocalTime.of(2, 30), schedule.getKickoffTime());
+        assertEquals("意大利杯", schedule.getGroupName());
+        assertEquals("拉齐奥", schedule.getHomeTeamCn());
+        assertEquals("瓦雷泽", schedule.getAwayTeamCn());
+        assertEquals(3, schedule.getHomeScore());
         assertEquals(0, schedule.getAwayScore());
     }
 
@@ -1768,6 +1946,35 @@ class ClubCompetitionScheduleUpdaterTest {
         assertNotNull(loadedSchedules);
         assertEquals(1, loadedSchedules.size());
         assertEquals(4, loadedSchedules.get(0).getHomeScore());
+        assertEquals(0, loadedSchedules.get(0).getAwayScore());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldCorrectLeedsFriendlyScoreWhenLoadingScheduleCache(@TempDir Path tempDir)
+            throws Exception {
+        Path cachePath = tempDir.resolve("club-competition-schedules.json");
+        MatchSchedule cachedSchedule = completedClubFriendlySchedule(
+                "FUTBOL24-CLUB_FRIENDLY-3402888",
+                "利兹联",
+                "莱红牛",
+                2,
+                0);
+        cachedSchedule.setMatchDate(LocalDate.of(2026, 8, 8));
+        cachedSchedule.setGroupName("俱乐部友谊赛");
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(
+                cachePath.toFile(),
+                List.of(cachedSchedule));
+        ReflectionTestUtils.setField(updater, "cachePath", cachePath.toString());
+
+        List<MatchSchedule> loadedSchedules =
+                (List<MatchSchedule>) ReflectionTestUtils.invokeMethod(
+                        updater,
+                        "loadCachedSchedules");
+
+        assertNotNull(loadedSchedules);
+        assertEquals(1, loadedSchedules.size());
+        assertEquals(1, loadedSchedules.get(0).getHomeScore());
         assertEquals(0, loadedSchedules.get(0).getAwayScore());
     }
 

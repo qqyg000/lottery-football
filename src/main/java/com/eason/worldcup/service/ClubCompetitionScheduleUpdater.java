@@ -73,6 +73,7 @@ public class ClubCompetitionScheduleUpdater {
     private static final Map<String, ScorePair> VERIFIED_REGULATION_TIME_SCORES = Map.of(
             "FUTBOL24-CHAMPIONS_LEAGUE-3332579", new ScorePair(0, 3),
             "FUTBOL24-CLUB_FRIENDLY-3383418", new ScorePair(4, 0),
+            "FUTBOL24-CLUB_FRIENDLY-3402888", new ScorePair(1, 0),
             "FUTBOL24-CLUB_OFFICIAL_OTHER-3328575", new ScorePair(1, 1));
 
     private static final Set<String> EXCLUDED_FOTMOB_MATCH_IDS = Set.of(
@@ -83,6 +84,19 @@ public class ClubCompetitionScheduleUpdater {
             "5961030");
 
     private static final Set<String> EXCLUDED_FUTBOL24_MATCH_IDS = Set.of("3384993");
+
+    private static final LocalDate HISTORICAL_BACKFILL_START_DATE = LocalDate.of(2014, 10, 22);
+
+    private static final Set<String> HISTORICAL_FOTMOB_LEAGUE_IDS = Set.of(
+            "47",
+            "48",
+            "53",
+            "108",
+            "132",
+            "133",
+            "141",
+            "207",
+            "247");
 
     private static final List<VerifiedSupplementalSchedule> VERIFIED_SUPPLEMENTAL_SCHEDULES = List.of(
             new VerifiedSupplementalSchedule(
@@ -221,7 +235,7 @@ public class ClubCompetitionScheduleUpdater {
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "esp.super_cup"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ger.dfb_pokal"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ger.super_cup"),
-            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ita.coppa_italia"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ita.coppa_italia", "意大利杯"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ita.super_cup"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "fra.coupe_de_france"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "fra.super_cup"),
@@ -245,6 +259,14 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final List<FotMobLeagueSource> FOTMOB_SOURCES = List.of(
             new FotMobLeagueSource(Competition.CLUB_FRIENDLY, "489", "俱乐部赛", true),
+            new FotMobLeagueSource(Competition.PREMIER_LEAGUE, "47", "英超", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "48", "英冠", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "108", "英甲", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "132", "英足总杯", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "133", "英联赛杯", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "247", "英社区盾", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "207", "法超杯", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "141", "意大利杯", false),
             new FotMobLeagueSource(Competition.SCOTTISH_FA_CUP, "137", "苏足总杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "180", "苏联赛杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "342", "联赛杯", true),
@@ -612,18 +634,25 @@ public class ClubCompetitionScheduleUpdater {
         Set<CompetitionSeason> loadedSeasons = new HashSet<>();
         List<Supplier<List<MatchSchedule>>> tasks = new ArrayList<>();
         for (FotMobLeagueSource source : FOTMOB_SOURCES) {
-            int previousYear = startDate.getYear() - 1;
+            LocalDate sourceStartDate = HISTORICAL_FOTMOB_LEAGUE_IDS.contains(source.leagueId())
+                    ? HISTORICAL_BACKFILL_START_DATE
+                    : startDate;
+            int previousYear = sourceStartDate.getYear() - 1;
             int firstSeason = source.usesCrossYearSeason(previousYear)
                     ? previousYear
-                    : startDate.getYear();
+                    : sourceStartDate.getYear();
             for (int season = firstSeason; season <= endDate.getYear(); season++) {
                 int seasonValue = season;
-                tasks.add(() -> loadFotMobSeason(
-                        client,
-                        source,
-                        seasonValue,
-                        zoneId,
-                        timeout));
+                tasks.add(() -> filterSchedulesByDate(
+                        loadFotMobSeason(
+                                client,
+                                source,
+                                seasonValue,
+                                zoneId,
+                                timeout,
+                                startDate),
+                        sourceStartDate,
+                        endDate));
             }
         }
         for (MatchSchedule schedule : executeTasks(
@@ -634,10 +663,6 @@ public class ClubCompetitionScheduleUpdater {
                         progressConsumer,
                         scaleTaskProgress(completed, total, 10, 35),
                         "正在刷新 FotMob 赛程（" + completed + "/" + total + "）"))) {
-            if (schedule.getMatchDate().isBefore(startDate)
-                    || schedule.getMatchDate().isAfter(endDate)) {
-                continue;
-            }
             result.add(schedule);
             loadedSeasons.add(new CompetitionSeason(
                     schedule.getCompetition(),
@@ -655,7 +680,8 @@ public class ClubCompetitionScheduleUpdater {
             FotMobLeagueSource source,
             int season,
             ZoneId zoneId,
-            Duration timeout) {
+            Duration timeout,
+            LocalDate regulationDetailsStartDate) {
         String seasonValue = source.seasonValue(season);
         String url = fotMobLeagueUrlTemplate
                 .replace("{leagueId}", source.leagueId())
@@ -664,7 +690,12 @@ public class ClubCompetitionScheduleUpdater {
             JsonNode root = downloadJsonWithRetry(client, url, timeout, 2);
             List<MatchSchedule> result = new ArrayList<>();
             for (JsonNode match : root.path("fixtures").path("allMatches")) {
-                JsonNode matchDetails = loadFotMobRegulationDetails(client, match, timeout);
+                JsonNode matchDetails = shouldLoadFotMobRegulationDetails(
+                        match,
+                        zoneId,
+                        regulationDetailsStartDate)
+                                ? loadFotMobRegulationDetails(client, match, timeout)
+                                : null;
                 MatchSchedule schedule = parseFotMobLeagueMatch(match, source, zoneId, matchDetails);
                 if (schedule != null) {
                     result.add(schedule);
@@ -678,6 +709,27 @@ public class ClubCompetitionScheduleUpdater {
             log.debug("Unable to load FotMob league {} season {}: {}",
                     source.leagueId(), season, ex.getMessage());
             return List.of();
+        }
+    }
+
+    boolean shouldLoadFotMobRegulationDetails(
+            JsonNode match,
+            ZoneId zoneId,
+            LocalDate regulationDetailsStartDate) {
+        if (!fotMobStatusNeedsRegulationDetails(match.path("status"))) {
+            return false;
+        }
+        if (regulationDetailsStartDate == null) {
+            return true;
+        }
+        String utcTime = match.path("status").path("utcTime").asText("");
+        try {
+            LocalDate matchDate = OffsetDateTime.parse(utcTime)
+                    .atZoneSameInstant(zoneId)
+                    .toLocalDate();
+            return !matchDate.isBefore(regulationDetailsStartDate);
+        } catch (DateTimeParseException ex) {
+            return true;
         }
     }
 
@@ -894,8 +946,21 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     private String sourceCompetitionIdentity(String groupName) {
+        return canonicalSourceCompetitionName(groupName);
+    }
+
+    private static String canonicalSourceCompetitionName(String groupName) {
         String normalized = groupName == null ? "" : groupName.trim();
-        return normalized.replaceFirst("\\s+第.+轮$", "");
+        String withoutRound = normalized
+                .replaceFirst("(?i)\\s*第?\\s*(?:\\d+|FINAL|决赛).*$", "")
+                .trim();
+        return switch (withoutRound) {
+            case "英格兰足总杯" -> "英足总杯";
+            case "英格兰联赛杯" -> "英联赛杯";
+            case "英格兰社区盾", "社区盾杯" -> "英社区盾";
+            case "法国超级杯" -> "法超杯";
+            default -> withoutRound;
+        };
     }
 
     private List<MatchSchedule> filterSchedulesByDate(
@@ -929,7 +994,11 @@ public class ClubCompetitionScheduleUpdater {
             JsonNode root = downloadJsonWithRetry(client, url, timeout, 2);
             List<MatchSchedule> result = new ArrayList<>();
             for (JsonNode event : root.path("events")) {
-                MatchSchedule schedule = parseEspnEvent(event, source.competition(), zoneId);
+                MatchSchedule schedule = parseEspnEvent(
+                        event,
+                        source.competition(),
+                        zoneId,
+                        source.sourceCompetition());
                 if (schedule != null) {
                     result.add(schedule);
                 }
@@ -946,6 +1015,14 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     MatchSchedule parseEspnEvent(JsonNode event, Competition competition, ZoneId zoneId) {
+        return parseEspnEvent(event, competition, zoneId, "");
+    }
+
+    MatchSchedule parseEspnEvent(
+            JsonNode event,
+            Competition competition,
+            ZoneId zoneId,
+            String sourceCompetition) {
         JsonNode eventCompetition = event.path("competitions").path(0);
         JsonNode competitors = eventCompetition.path("competitors");
         if (!competitors.isArray() || competitors.size() < 2) {
@@ -1003,7 +1080,10 @@ public class ClubCompetitionScheduleUpdater {
         schedule.setMatchId(buildMatchId("ESPN", competition, eventId, matchDateTime.toLocalDate(), homeTeam, awayTeam));
         schedule.setMatchDate(matchDateTime.toLocalDate());
         schedule.setKickoffTime(matchDateTime.toLocalTime().withSecond(0).withNano(0));
-        schedule.setGroupName(toStageName(event.path("season").path("slug").asText(""), competition));
+        String stageName = toStageName(event.path("season").path("slug").asText(""), competition);
+        schedule.setGroupName(sourceCompetition == null || sourceCompetition.isBlank()
+                ? stageName
+                : (stageName.isBlank() ? sourceCompetition : sourceCompetition + " " + stageName));
         schedule.setHomeTeamCn(ClubTeamNameTranslator.translate(competition, homeTeam));
         schedule.setAwayTeamCn(ClubTeamNameTranslator.translate(competition, awayTeam));
         schedule.setHomeTeamEn(homeTeam);
@@ -1279,6 +1359,7 @@ public class ClubCompetitionScheduleUpdater {
         List<MatchSchedule> result = executeTasks(
                 tasks,
                 futbol24Parallelism,
+                calculateParallelTaskTimeout(timeout, 2),
                 (completed, total) -> notifyRefreshProgress(
                         progressConsumer,
                         scaleTaskProgress(completed, total, 60, 80),
@@ -2310,12 +2391,7 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     private String canonicalCompetitionContext(String groupName) {
-        String withoutRound = groupName == null
-                ? ""
-                : groupName.replaceFirst(
-                        "(?i)\\s*第?\\s*(?:\\d+|FINAL|决赛)\\s*轮\\s*$",
-                        "");
-        return canonicalTeamName(withoutRound);
+        return canonicalTeamName(canonicalSourceCompetitionName(groupName));
     }
 
     private boolean areSimilarScheduleTeams(
@@ -2588,7 +2664,14 @@ public class ClubCompetitionScheduleUpdater {
         return today.plusDays(normalizeWindowDays(daysForward));
     }
 
-    private record EspnLeagueSource(Competition competition, String leagueSlug) {
+    private record EspnLeagueSource(
+            Competition competition,
+            String leagueSlug,
+            String sourceCompetition) {
+
+        private EspnLeagueSource(Competition competition, String leagueSlug) {
+            this(competition, leagueSlug, "");
+        }
 
     }
 
@@ -2662,9 +2745,8 @@ public class ClubCompetitionScheduleUpdater {
             if (sourceCompetition.isBlank()) {
                 return true;
             }
-            String groupName = schedule.getGroupName() == null ? "" : schedule.getGroupName().trim();
-            return groupName.equals(sourceCompetition)
-                    || groupName.startsWith(sourceCompetition + " 第");
+            return canonicalSourceCompetitionName(schedule.getGroupName())
+                    .equals(canonicalSourceCompetitionName(sourceCompetition));
         }
 
     }

@@ -644,7 +644,7 @@ public class PredictionService {
             return overview;
         }
 
-        int resultLimit = limit == null ? 10 : Math.max(1, Math.min(10, limit));
+        int resultLimit = limit == null ? 15 : Math.max(1, Math.min(15, limit));
         String targetHomeTeam = getScheduleComparisonTeamName(target, true);
         String targetAwayTeam = getScheduleComparisonTeamName(target, false);
         String canonicalTargetHomeTeam = canonicalHistoryTeamName(effectiveCompetition, targetHomeTeam);

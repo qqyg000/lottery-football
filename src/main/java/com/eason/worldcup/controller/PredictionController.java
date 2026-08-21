@@ -161,7 +161,7 @@ public class PredictionController {
     public HeadToHeadOverviewResponse headToHeadOverview(
             @RequestParam(value = "competition", defaultValue = "WORLD_CUP") String competition,
             @RequestParam("matchId") String matchId,
-            @RequestParam(value = "limit", defaultValue = "10") Integer limit) {
+            @RequestParam(value = "limit", defaultValue = "15") Integer limit) {
         return predictionService.queryHeadToHeadOverview(parseCompetition(competition), matchId, limit);
     }
 

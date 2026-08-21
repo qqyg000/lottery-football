@@ -23,6 +23,83 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HistoricalMatchDataIntegrityTest {
 
     @Test
+    void shouldContainRequestedEnglishAndFrenchHistoricalFixtures() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2017, 2, 2),
+                Competition.PREMIER_LEAGUE, "曼联", "赫尔城", 0, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 5, 12),
+                Competition.CLUB_OFFICIAL_OTHER, "米尔沃尔", "赫尔城", 0, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2023, 4, 5),
+                Competition.PREMIER_LEAGUE, "利兹联", "诺丁汉", 2, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 5, 2),
+                Competition.CLUB_OFFICIAL_OTHER, "伊普斯", "女王巡游", 3, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 17),
+                Competition.CLUB_OFFICIAL_OTHER, "朗斯", "巴黎圣曼", 1, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 2, 15),
+                Competition.LIGUE_1, "马赛", "斯特拉斯", 2, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2024, 9, 30),
+                Competition.LIGUE_1, "斯特拉斯", "马赛", 1, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2023, 11, 26),
+                Competition.LIGUE_1, "斯特拉斯", "马赛", 1, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2025, 10, 5),
+                Competition.LIGUE_1, "欧塞尔", "朗斯", 1, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 5, 2),
+                Competition.CLUB_OFFICIAL_OTHER, "沃特福德", "考文垂", 0, 4);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 4, 22),
+                Competition.CLUB_OFFICIAL_OTHER, "考文垂", "朴次茅斯", 5, 1);
+
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2019, 8, 10),
+                Competition.CLUB_OFFICIAL_OTHER, "伊普斯", "桑德兰", 1, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2020, 2, 8),
+                Competition.CLUB_OFFICIAL_OTHER, "桑德兰", "伊普斯", 1, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2020, 11, 4),
+                Competition.CLUB_OFFICIAL_OTHER, "桑德兰", "伊普斯", 2, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2021, 1, 27),
+                Competition.CLUB_OFFICIAL_OTHER, "伊普斯", "桑德兰", 0, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2021, 11, 20),
+                Competition.CLUB_OFFICIAL_OTHER, "桑德兰", "伊普斯", 2, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2021, 12, 18),
+                Competition.CLUB_OFFICIAL_OTHER, "伊普斯", "桑德兰", 1, 1);
+
+        Map<String, Long> minimumCoverage = Map.of(
+                "英足总杯", 2_100L,
+                "英联赛杯", 1_280L,
+                "英社区盾", 12L,
+                "英冠", 8_100L,
+                "英甲", 8_700L,
+                "法超杯", 12L,
+                "法甲", 4_100L);
+        minimumCoverage.forEach((sourceCompetition, minimumCount) -> {
+            long count = fixtures.stream()
+                    .filter(fixture -> fixture.sourceCompetition().equals(sourceCompetition))
+                    .count();
+            assertTrue(count >= minimumCount, sourceCompetition + " 历史数据不完整：" + count);
+        });
+    }
+
+    @Test
+    void shouldContainCompleteItalianCupHistoryAndVerifiedLeedsFriendly() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2014, 12, 2),
+                Competition.CLUB_OFFICIAL_OTHER, "拉齐奥", "瓦雷泽", 3, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 18),
+                Competition.CLUB_OFFICIAL_OTHER, "巴勒莫", "莱切", 2, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 8),
+                Competition.CLUB_FRIENDLY, "利兹联", "莱红牛", 1, 0);
+
+        long italianCupCount = fixtures.stream()
+                .filter(fixture -> fixture.sourceCompetition().equals("意大利杯"))
+                .count();
+        assertTrue(italianCupCount >= 740L, "意大利杯历史数据不完整：" + italianCupCount);
+        assertTrue(fixtures.stream()
+                .filter(fixture -> fixture.sourceCompetition().equals("意大利杯"))
+                .allMatch(fixture -> fixture.matchId().startsWith("FOTMOB-")),
+                "意大利杯仍包含旧来源重复记录");
+    }
+
+    @Test
     void shouldContainRequestedVerifiedAndDomesticCompetitionFixtures() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
 
@@ -545,7 +622,7 @@ class HistoricalMatchDataIntegrityTest {
                 fixtures,
                 LocalDate.of(2016, 8, 6),
                 LocalDate.of(2016, 8, 7),
-                "莱比锡红牛",
+                "莱红牛",
                 "埃瓦尔",
                 3,
                 2);

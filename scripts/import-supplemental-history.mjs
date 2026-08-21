@@ -63,7 +63,12 @@ const MAPPING_SOURCE_PRIORITY = new Map([
 
 const SOURCE_COMPETITION_ALIASES = new Map([
   ['韩足总杯', '韩国杯'],
-  ['韩国足总杯', '韩国杯']
+  ['韩国足总杯', '韩国杯'],
+  ['英格兰足总杯', '英足总杯'],
+  ['英格兰联赛杯', '英联赛杯'],
+  ['英格兰社区盾', '英社区盾'],
+  ['社区盾杯', '英社区盾'],
+  ['法国超级杯', '法超杯']
 ])
 
 const EXCLUDED_HISTORICAL_MATCH_IDS = new Set([
@@ -231,6 +236,70 @@ const FOTMOB_LEAGUE_SOURCES = [
     sourceCompetition: '俱乐部赛',
     calendarYearSeason: true,
     firstSeasonStartYear: 2026
+  },
+  {
+    leagueId: '47',
+    competition: 'PREMIER_LEAGUE',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '英超',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '48',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '英冠',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '108',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '英甲',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '132',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '英足总杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '133',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '英联赛杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '247',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '英社区盾',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '207',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '法超杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '141',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '意大利杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
   },
   {
     leagueId: '137',
@@ -631,7 +700,15 @@ const FOTMOB_LEAGUE_SOURCES = [
 ]
 
 const AUTHORITATIVE_FOTMOB_LEAGUE_IDS = new Set([
+  '47',
+  '48',
   '53',
+  '108',
+  '132',
+  '133',
+  '141',
+  '207',
+  '247',
   '51',
   '57',
   '87',
@@ -920,6 +997,20 @@ const FUTBOL24_SOURCES = [
 ]
 
 const VERIFIED_SUPPLEMENTAL_ROWS = [
+  {
+    provider: 'FUTBOL24',
+    providerId: '3402888',
+    source: 'VERIFIED-LEEDS-RB-LEIPZIG',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-08-08',
+    homeTeam: 'Leeds United',
+    awayTeam: 'RB Leipzig',
+    homeScore: 1,
+    awayScore: 0,
+    neutral: false
+  },
   {
     provider: 'FUTBOL24',
     providerId: '357F4E1694EC2992',
@@ -3659,6 +3750,18 @@ const fixtureResults = new Set(retainedRows.map(row => fixtureResultKey(
   row.home_score,
   row.away_score
 )))
+const rowsByFixtureResult = new Map(retainedRows.map(row => [
+  fixtureResultKey(
+    row.competition,
+    row.source_competition,
+    row.match_date,
+    row.home_team_cn,
+    row.away_team_cn,
+    row.home_score,
+    row.away_score
+  ),
+  row
+]))
 const sourceSummaries = new Map()
 
 for (const sourceRow of sourceRows) {
@@ -3778,43 +3881,59 @@ for (const sourceRow of sourceRows) {
     homeTeam,
     awayTeam
   )
-  const shiftedDuplicate = [-1, 1].some(offset => fixtureResults.has(fixtureResultKey(
-    sourceRow.competition,
-    sourceRow.sourceCompetition,
-    dateWithOffset(sourceRow.matchDate, offset),
-    homeTeam,
-    awayTeam,
-    sourceRow.homeScore,
-    sourceRow.awayScore
-  )))
+  const shiftedExistingFixture = [-1, 1]
+    .map(offset => rowsByFixtureResult.get(fixtureResultKey(
+      sourceRow.competition,
+      sourceRow.sourceCompetition,
+      dateWithOffset(sourceRow.matchDate, offset),
+      homeTeam,
+      awayTeam,
+      sourceRow.homeScore,
+      sourceRow.awayScore
+    )))
+    .find(Boolean)
+  const shiftedDuplicate = Boolean(shiftedExistingFixture)
   const existingFixture = rowsByFixturePair.get(exactPair)
   const authoritativeFotMobFixture = sourceRow.provider === 'FOTMOB'
     && AUTHORITATIVE_FOTMOB_LEAGUE_IDS.has(
       String(sourceRow.source ?? '').replace('FOTMOB-', '')
     )
-  if (existingFixture && (
+  const replaceableFixture = existingFixture ?? shiftedExistingFixture
+  if (replaceableFixture && (
     String(sourceRow.source ?? '').startsWith('VERIFIED-')
       || authoritativeFotMobFixture
   )) {
-    const previousMatchId = existingFixture.match_id
+    const previousMatchId = replaceableFixture.match_id
+    const previousPairKey = fixturePairKey(
+      replaceableFixture.competition,
+      replaceableFixture.source_competition,
+      replaceableFixture.match_date,
+      replaceableFixture.home_team_cn,
+      replaceableFixture.away_team_cn
+    )
     const previousResultKey = fixtureResultKey(
-      existingFixture.competition,
-      existingFixture.source_competition,
-      existingFixture.match_date,
-      existingFixture.home_team_cn,
-      existingFixture.away_team_cn,
-      existingFixture.home_score,
-      existingFixture.away_score
+      replaceableFixture.competition,
+      replaceableFixture.source_competition,
+      replaceableFixture.match_date,
+      replaceableFixture.home_team_cn,
+      replaceableFixture.away_team_cn,
+      replaceableFixture.home_score,
+      replaceableFixture.away_score
     )
     const changed = HISTORY_HEADERS.some(header => (
-      String(existingFixture[header] ?? '') !== String(expectedRow[header] ?? '')
+      String(replaceableFixture[header] ?? '') !== String(expectedRow[header] ?? '')
     ))
     if (changed) {
       rowsById.delete(previousMatchId)
+      fixturePairs.delete(previousPairKey)
+      rowsByFixturePair.delete(previousPairKey)
       fixtureResults.delete(previousResultKey)
-      Object.assign(existingFixture, expectedRow)
-      rowsById.set(matchId, existingFixture)
-      fixtureResults.add(fixtureResultKey(
+      rowsByFixtureResult.delete(previousResultKey)
+      Object.assign(replaceableFixture, expectedRow)
+      rowsById.set(matchId, replaceableFixture)
+      fixturePairs.add(exactPair)
+      rowsByFixturePair.set(exactPair, replaceableFixture)
+      const expectedResultKey = fixtureResultKey(
         expectedRow.competition,
         expectedRow.source_competition,
         expectedRow.match_date,
@@ -3822,7 +3941,9 @@ for (const sourceRow of sourceRows) {
         expectedRow.away_team_cn,
         expectedRow.home_score,
         expectedRow.away_score
-      ))
+      )
+      fixtureResults.add(expectedResultKey)
+      rowsByFixtureResult.set(expectedResultKey, replaceableFixture)
       summary.updatedRows += 1
       summary.updatedMatchIds.add(matchId)
     } else {
@@ -3863,7 +3984,7 @@ for (const sourceRow of sourceRows) {
   rowsById.set(matchId, expectedRow)
   fixturePairs.add(exactPair)
   rowsByFixturePair.set(exactPair, expectedRow)
-  fixtureResults.add(fixtureResultKey(
+  const expectedResultKey = fixtureResultKey(
     sourceRow.competition,
     sourceRow.sourceCompetition,
     sourceRow.matchDate,
@@ -3871,7 +3992,9 @@ for (const sourceRow of sourceRows) {
     awayTeam,
     sourceRow.homeScore,
     sourceRow.awayScore
-  ))
+  )
+  fixtureResults.add(expectedResultKey)
+  rowsByFixtureResult.set(expectedResultKey, expectedRow)
   summary.addedRows += 1
 }
 

@@ -1262,7 +1262,7 @@ export default {
         const params = new URLSearchParams()
         params.append('competition', match.competition || this.activeCompetition)
         params.append('matchId', match.matchId)
-        params.append('limit', '10')
+        params.append('limit', '15')
         const res = await fetch('/api/football/head-to-head/overview?' + params.toString())
         if (!res.ok) {
           throw new Error('服务响应异常')

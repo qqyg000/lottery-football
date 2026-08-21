@@ -599,6 +599,74 @@ class ClubTeamNameTranslatorTest {
     }
 
     @Test
+    void shouldApplyAugustTwentyFirstRequestedTeamMappings() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> expectedMappings = Map.ofEntries(
+                Map.entry("Shahaniya", "Shahaniya"),
+                Map.entry("Al-Shahaniya", "Shahaniya"),
+                Map.entry("Shahaniya SC", "Shahaniya"),
+                Map.entry("Sheffield Wednesday", "谢周三"),
+                Map.entry("Charlton Athletic", "查尔顿"),
+                Map.entry("布伦特福德", "布伦特"),
+                Map.entry("Brentford", "布伦特"),
+                Map.entry("Brentford FC", "布伦特"),
+                Map.entry("Wycombe Wanderers", "威科姆"),
+                Map.entry("Auckland FC", "奥克兰FC"),
+                Map.entry("Milton Keynes Dons", "米尔顿"),
+                Map.entry("Swansea", "斯旺西"),
+                Map.entry("Swansea City", "斯旺西"),
+                Map.entry("Istra", "伊斯特拉1961"),
+                Map.entry("Karlsruher SC", "卡斯鲁厄"),
+                Map.entry("Milan Futuro", "Milan II"),
+                Map.entry("Aris Salonica", "阿里斯"),
+                Map.entry("Aris Thessaloniki", "阿里斯"),
+                Map.entry("Nîmes Olympique", "尼姆"),
+                Map.entry("Yamoussoukro FC", "Yamoussoukro"),
+                Map.entry("纽卡斯尔联", "纽卡斯尔"),
+                Map.entry("Blackburn Rovers", "布莱克本"),
+                Map.entry("Blackburn", "布莱克本"),
+                Map.entry("UD Almería", "阿梅里亚"),
+                Map.entry("Recreativo Huelva", "韦尔瓦"),
+                Map.entry("VfL Sportfreunde Lotte", "洛特"),
+                Map.entry("Santander", "桑坦德"),
+                Map.entry("Dangjin Citizen", "Dangjin"),
+                Map.entry("曼彻斯特联", "曼联"),
+                Map.entry("Kasimpasa", "卡斯帕萨"),
+                Map.entry("里泽体育", "里泽"),
+                Map.entry("Wrexham", "雷克斯"),
+                Map.entry("Notts County", "诺茨郡"),
+                Map.entry("莱比锡红牛", "莱红牛"),
+                Map.entry("伊普斯维奇", "伊普斯"),
+                Map.entry("Millwall", "米尔沃尔"),
+                Map.entry("Portsmouth", "朴次茅斯"),
+                Map.entry("Wycombe", "威科姆"),
+                Map.entry("Oxford United", "牛津联"),
+                Map.entry("York City", "约克城"),
+                Map.entry("York", "约克城"),
+                Map.entry("Bolton Wanderers", "博尔顿"),
+                Map.entry("Bolton", "博尔顿"),
+                Map.entry("Al Ula SC", "Al Ula"),
+                Map.entry("Swindon", "斯文登"),
+                Map.entry("Swindon Town", "斯文登"),
+                Map.entry("Burgos CF", "博格斯"),
+                Map.entry("Sestao", "Sestao River"),
+                Map.entry("SD Leioa", "Leioa"),
+                Map.entry("CD Derio", "Derio"),
+                Map.entry("Charleroi", "沙勒罗瓦"),
+                Map.entry("云达不来梅", "不来梅"),
+                Map.entry("ESTAC Troyes", "特鲁瓦"),
+                Map.entry("Sochaux", "索肖"),
+                Map.entry("US Orléans", "奥尔良"),
+                Map.entry("Orléans", "奥尔良"),
+                Map.entry("St Maur Lusitanos", "St Maur Lusita"),
+                Map.entry("St Maur Lusitanos US", "St Maur Lusita"));
+
+        expectedMappings.forEach((source, expected) ->
+                assertEquals(expected, ClubTeamNameTranslator.translate(source), source));
+    }
+
+    @Test
     void shouldResolveEveryMappingAliasToStableStandardName() throws IOException {
         assumeMappingsImported();
 

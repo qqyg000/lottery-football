@@ -494,6 +494,40 @@ class PredictionServiceTest {
                 .anyMatch(match -> LocalTime.of(21, 0).equals(match.getKickoffTime())));
     }
 
+    @Test
+    void shouldReturnFifteenMatchesPerOverviewSectionByDefault() {
+        MatchSchedule target = schedule(
+                "FIFTEEN-ROW-TARGET",
+                LocalDate.of(2026, 8, 21),
+                LocalTime.of(20, 0),
+                "甲队",
+                "乙队",
+                "SCHEDULED");
+        List<HistoricalMatch> historicalMatches = new java.util.ArrayList<>();
+        for (int index = 0; index < 20; index++) {
+            historicalMatches.add(historicalMatch(
+                    LocalDate.of(2026, 8, 20).minusDays(index),
+                    "甲队",
+                    "乙队",
+                    index % 3,
+                    (index + 1) % 3));
+        }
+        DataRepository dataRepository = new StubDataRepository(
+                List.of(target),
+                List.of(target),
+                historicalMatches);
+        PredictionService service = new PredictionService(dataRepository, null, null);
+
+        HeadToHeadOverviewResponse overview = service.queryHeadToHeadOverview(
+                Competition.WORLD_CUP,
+                target.getMatchId(),
+                null);
+
+        assertEquals(15, overview.getHomeRecentMatches().size());
+        assertEquals(15, overview.getHeadToHeadMatches().size());
+        assertEquals(15, overview.getAwayRecentMatches().size());
+    }
+
     private MatchSchedule completedSchedule(String matchId, String awayTeamEn) {
         MatchSchedule schedule = new MatchSchedule();
         schedule.setCompetition(Competition.WORLD_CUP);
