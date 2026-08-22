@@ -54,9 +54,9 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 214,693 | 2014-10-22 至 2026-08-13 |
+| `historical_matches.csv` | 235,195 | 2014-10-22 至 2026-08-22 |
 | `historical_odds_data.csv` | 29,251 | 2014-10-22 至 2026-08-11 |
-| `team_name_mappings.csv` | 23,397 | 2014-06-24 至 2026-08-23 |
+| `team_name_mappings.csv` | 24,338 | 2014-06-24 至 2026-08-24 |
 
 主要数据来自 FotMob、Futbol24、Foot Mercato、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 
@@ -249,7 +249,7 @@ node scripts/optimize-total-goals-strategies.mjs `
 
 每个赛事、每个时间范围只保存一套进球数策略，不区分稳健和激进。界面上的进球数推荐始终使用对应赛事、对应时间范围的 `STABLE` 模型参数计算概率，与进球数优化器的回测口径保持一致；切换稳健/激进只会改变胜平负和让球等推荐。优化器依次搜索 `>33.3%` 主档、`>25%` 降级档、`>20%` 二级降级档和可配置的最低降级档，仅在上一档无可行解时进入下一档；最低降级档默认等于二级降级档，可通过 `--tertiary-fallback-minimum-sampling-rate` 和 `--tertiary-fallback-minimum-hit-rate` 下调。每一档都要求训练集和完整样本 ROI 严格大于 `--minimum-roi`，验证集 ROI 不低于 `--minimum-validation-roi`。所有档位都没有可行解时，将对应策略的 `maximumSelections` 设为 `0`。仅本届可用样本不足训练集和验证集最少场次时，不做独立优化；完全没有本届样本时沿用通过稳健验证的含上届策略，已有少量本届样本时还会把本届数据作为额外样本外门禁，未达到对应档位或 ROI 非正则关闭本届投注。
 
-`--dry-run` 只生成报告而不写入 `config/user-config.json`。`--backtest-cache-prefix` 会保存带模拟次数、赛事范围和模型因子签名的回测结果，仅在签名完全一致时复用。`--baseline-report-path` 可从旧报告读取基准策略，用于重新优化后保留原策略的样本外审计结果。
+`--dry-run` 只生成报告而不写入 `config/user-config.json`。`--backtest-cache-prefix` 会保存带模拟次数、赛事范围和模型因子签名的回测结果，仅在签名完全一致时复用。`--baseline-report-path` 可从旧报告读取基准策略，用于重新优化后保留原策略的样本外审计结果；`--configured-report-path` 可让只评估模式读取指定优化报告中的采样率、命中率分档约束。
 
 当前保存的参数档案以 ROI 为第一目标，并执行以下硬约束：
 
@@ -271,11 +271,14 @@ node scripts/optimize-total-goals-strategies.mjs `
 
 ```powershell
 $env:FINAL_SIMULATIONS = '50000'
+$env:BACKTEST_PARALLELISM = '4'
 $env:REPORT_JSON_PATH = 'reports/win-draw-loss-robust-optimization.json'
 $env:REPORT_MARKDOWN_PATH = 'reports/win-draw-loss-robust-optimization.md'
 $env:CHECKPOINT_PATH = 'target/win-draw-loss-robust-optimizer-checkpoint.json'
 node scripts/reoptimize-shared-backtest-profiles.mjs --reoptimize-all
 ```
+
+异步回测服务默认使用 `recommendation-backtest.parallelism=4` 的固定线程池；胜平负优化器通过 `BACKTEST_PARALLELISM` 控制并发任务数。进球数优化器会同时回测“仅本届”和“含上届”，两个范围都完成后再执行确定性的策略搜索。
 
 优化器默认按比赛日期升序将前 `70%` 作为训练集、后 `30%` 作为验证集，同一天比赛不会跨分区。模型和推荐阈值只按训练集 ROI 排名，验证集只用于通过或拒绝门禁；训练集和验证集至少分别需要 `10` 场、`6` 场。训练集 ROI 必须非负、验证集 ROI 必须非负，且训练、验证、全量样本均需达到对应赛事的采样率下限。无法满足稳健门禁或稳健/激进 ROI 关系的时段关闭推荐；仅本届样本不足时沿用已验证的含上届参数并执行额外样本外门禁，失败则关闭。
 
@@ -354,7 +357,7 @@ node scripts/generate-team-name-mappings.mjs
 页面“更新数据”会异步执行以下阶段：
 
 1. 读取以当天为基准的体彩最近 30 天赛果
-2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；苏足总杯、韩国杯、芬甲、荷兰杯、西乙、西甲、欧冠、罗甲、罗超杯、波甲、斯洛文甲、亚美尼超和俱乐部友谊赛均在此阶段更新
+2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；意甲、意乙、法联赛杯、葡萄牙杯、苏足总杯、韩国杯、芬甲、荷兰杯、西乙、西甲、欧冠、罗甲、罗超杯、波甲、斯洛文甲、亚美尼超和俱乐部友谊赛均在此阶段更新
 3. 重建球队模型
 4. 更新赛事概览
 
@@ -384,6 +387,11 @@ node scripts/import-supplemental-history.mjs --write --compact
 
 # 仅补充俱乐部历史，跳过国家队公共源
 node scripts/import-supplemental-history.mjs --write --compact --skip-national
+
+# 回补 2014-10-22 至今的意甲、意乙、法联赛杯和葡萄牙杯
+node scripts/import-supplemental-history.mjs --write --compact `
+  --only-sources FOTMOB-55,FOTMOB-86,FOTMOB-150,FOTMOB-186 `
+  --source-min-date 2014-10-22
 
 # 仅把已存在的加时、点球比赛修正为 90 分钟比分，不新增比赛或触发全量去重
 node scripts/import-supplemental-history.mjs --write --compact --skip-national `

@@ -18,7 +18,10 @@ const REPORT_PATH = path.resolve(ROOT, readArgument(
 ))
 const BACKTEST_CACHE_PREFIX = readArgument('--backtest-cache-prefix', '')
 const BASELINE_REPORT_PATH = readArgument('--baseline-report-path', '')
-const OPTIMIZED_REPORT_PATH = path.join(ROOT, 'reports', 'total-goals-strategy-backtest.json')
+const CONFIGURED_REPORT_PATH = path.resolve(ROOT, readArgument(
+  '--configured-report-path',
+  'reports/total-goals-strategy-backtest.json'
+))
 const BASE_URL = readArgument('--base-url', 'http://127.0.0.1:18080')
 const SIMULATIONS = Number(readArgument('--simulations', '5000'))
 const COMPETITIONS = [
@@ -206,10 +209,13 @@ async function main() {
     ? null
     : await readExistingReport()
   const rangeResults = {}
-  for (const range of TARGET_RANGES) {
+  const backtestResults = await Promise.all(TARGET_RANGES.map(async range => {
     const includePreviousEdition = range === 'PREVIOUS'
     process.stdout.write(`开始回测${includePreviousEdition ? '含上届' : '仅本届'}策略\n`)
     const result = await runBacktest(config, range, includePreviousEdition)
+    return { range, result }
+  }))
+  for (const { range, result } of backtestResults) {
     rangeResults[range] = optimizeRange(
       result,
       range,
@@ -381,7 +387,7 @@ async function runBacktest(config, range, includePreviousEdition) {
   while (job.status === 'QUEUED' || job.status === 'RUNNING') {
     const progress = Math.floor(Number(job.progress) || 0)
     if (progress >= lastProgress + 10 || progress === 100) {
-      process.stdout.write(`  ${progress}% (${job.processedMatchCount}/${job.totalMatchCount})\n`)
+      process.stdout.write(`  ${range} ${progress}% (${job.processedMatchCount}/${job.totalMatchCount})\n`)
       lastProgress = progress
     }
     await wait(750)
@@ -521,7 +527,7 @@ function evaluateConfiguredStrategy(matches, strategy, configuredConstraints) {
 
 async function readConfiguredStrategyConstraints() {
   try {
-    const report = JSON.parse(await fs.readFile(OPTIMIZED_REPORT_PATH, 'utf8'))
+    const report = JSON.parse(await fs.readFile(CONFIGURED_REPORT_PATH, 'utf8'))
     return Object.fromEntries((report.strategies || []).map(row => [row.key, {
       samplingRateFloor: row.samplingRateFloor,
       hitRateFloor: row.hitRateFloor,

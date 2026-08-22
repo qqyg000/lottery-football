@@ -20,6 +20,99 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class ClubTeamNameTranslatorTest {
 
     @Test
+    void shouldTranslateAugustTwentyThirdRequestedClubAliases() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> aliases = Map.ofEntries(
+                Map.entry("Iraklis Salonica", "Iraklis 1908"),
+                Map.entry("Iraklis", "Iraklis 1908"),
+                Map.entry("Newport County", "纽波特郡"),
+                Map.entry("AS Cannes", "戛纳"),
+                Map.entry("QPR", "女王巡游"),
+                Map.entry("Gubbio", "古比奥"),
+                Map.entry("Al-Arabi", "阿拉比"),
+                Map.entry("Arabi Doha", "阿拉比"));
+
+        for (Map.Entry<String, String> alias : aliases.entrySet()) {
+            assertEquals(alias.getValue(), ClubTeamNameTranslator.translate(alias.getKey()));
+        }
+    }
+
+    @Test
+    void shouldTranslateLatestRequestedClubAliases() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> aliases = Map.ofEntries(
+                Map.entry("Juventud Torremolinos CF", "Juventud Torremolinos"),
+                Map.entry("Jong Ajax", "阿贾青年"),
+                Map.entry("K-League All-Stars", "K-League XI"),
+                Map.entry("Sankt Pauli", "圣保利"),
+                Map.entry("Créteil", "克雷泰伊"),
+                Map.entry("Les Herbiers", "莱塞比耶"),
+                Map.entry("RAA La Louvière", "La Louvière"),
+                Map.entry("La Louviere", "La Louvière"),
+                Map.entry("Le Mans", "勒芒"),
+                Map.entry("Stade Laval", "拉瓦勒"),
+                Map.entry("Laval", "拉瓦勒"),
+                Map.entry("Red Star", "圣旺红星"),
+                Map.entry("St Priest", "圣牧师"),
+                Map.entry("AS Saint-Priest", "圣牧师"),
+                Map.entry("Saint-Priest", "圣牧师"),
+                Map.entry("Bristol City", "布城"),
+                Map.entry("Gateshead", "盖茨海德"),
+                Map.entry("Darlington", "达灵顿"),
+                Map.entry("弗洛西诺内", "弗洛西诺"),
+                Map.entry("Juve Stabia", "斯塔比亚"),
+                Map.entry("Mantova FC", "Mantova"),
+                Map.entry("Dolomiti Bellunesi", "Dolomiti"),
+                Map.entry("NK Bistrica", "Bistrica"),
+                Map.entry("ASU Politehnica Timisoara", "SSU Poli"),
+                Map.entry("哈拉达斯", "松博特"),
+                Map.entry("Szombathelyi", "松博特"),
+                Map.entry("Vado FC", "Vado"),
+                Map.entry("Alcione Milano", "Alcione"),
+                Map.entry("Hapoel Tel Aviv", "特夏普尔"),
+                Map.entry("Folgore Caratese", "Caratese"),
+                Map.entry("S.P. Padova", "Padova"),
+                Map.entry("Calcio Padova", "Padova"));
+
+        for (Map.Entry<String, String> alias : aliases.entrySet()) {
+            assertEquals(alias.getValue(), ClubTeamNameTranslator.translate(alias.getKey()));
+        }
+    }
+
+    @Test
+    void shouldTranslateAugustTwentySecondRequestedClubAliases() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> aliases = Map.ofEntries(
+                Map.entry("莱切斯特城", "莱切斯特"),
+                Map.entry("Bromley", "布罗姆利"),
+                Map.entry("Derby County", "德比郡"),
+                Map.entry("Petro Atlético Luanda", "Petro Atletico"),
+                Map.entry("巴塞罗那", "巴萨"),
+                Map.entry("Gijon", "希洪竞技"),
+                Map.entry("Ascoli", "阿斯科利"),
+                Map.entry("LR Vicenza", "维琴察"),
+                Map.entry("AC Trento", "特伦托1921"),
+                Map.entry("Trento", "特伦托1921"),
+                Map.entry("Carrarese Calcio", "Carrarese"),
+                Map.entry("Arezzo", "阿雷佐"),
+                Map.entry("US Arezzo", "阿雷佐"),
+                Map.entry("Catania", "卡塔尼亚"),
+                Map.entry("Cagliari Calcio", "卡利亚里"),
+                Map.entry("Angers SCO", "昂热"),
+                Map.entry("Concarneau", "孔卡诺"),
+                Map.entry("US Concarneau", "孔卡诺"),
+                Map.entry("Rodez AF", "罗德兹"),
+                Map.entry("Rodez", "罗德兹"));
+
+        for (Map.Entry<String, String> alias : aliases.entrySet()) {
+            assertEquals(alias.getValue(), ClubTeamNameTranslator.translate(alias.getKey()));
+        }
+    }
+
+    @Test
     void shouldTranslateUserRequestedClubAliases() throws IOException {
         assumeMappingsImported();
 
@@ -35,7 +128,7 @@ class ClubTeamNameTranslatorTest {
                 Map.entry("SV Elversberg", "埃沃斯堡"),
                 Map.entry("Waldhof Mannheim", "曼海姆"),
                 Map.entry("Neuchatel Xamax", "Xamax"),
-                Map.entry("RAAL La Louviere", "La Louviere"),
+                Map.entry("RAAL La Louviere", "La Louvière"),
                 Map.entry("沃尔夫斯堡", "沃夫斯堡"),
                 Map.entry("斯特拉斯堡", "斯特拉斯"),
                 Map.entry("Sporting", "里斯本"),

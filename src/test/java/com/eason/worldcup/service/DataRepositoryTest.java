@@ -49,6 +49,20 @@ class DataRepositoryTest {
     }
 
     @Test
+    void shouldNormalizeRequestedAliasesForMatchCards() {
+        MatchSchedule schedule = completedSchedule(
+                "CARD-REQUESTED-ALIASES",
+                "Jong Ajax",
+                "Bristol City");
+
+        List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(List.of(schedule));
+
+        assertEquals(1, schedules.size());
+        assertEquals("阿贾青年", schedules.get(0).getHomeTeamCn());
+        assertEquals("布城", schedules.get(0).getAwayTeamCn());
+    }
+
+    @Test
     void shouldDeduplicateSameTeamDateAndScoreWithUnmappedOpponentAlias() {
         MatchSchedule sourceSchedule = completedSchedule(
                 "SOURCE-001",
@@ -141,6 +155,36 @@ class DataRepositoryTest {
         assertEquals(1, schedules.size());
         assertEquals("拉茨", schedules.get(0).getHomeTeamCn());
         assertEquals("哈茨", schedules.get(0).getAwayTeamCn());
+    }
+
+    @Test
+    void shouldDeduplicateAdjacentDateRequestedAliasAcrossProviders() {
+        MatchSchedule sourceSchedule = completedSchedule(
+                "SOURCE-CAGLIARI-NICE",
+                "Cagliari Calcio",
+                "Nice");
+        sourceSchedule.setCompetition(Competition.CLUB_FRIENDLY);
+        sourceSchedule.setMatchDate(LocalDate.of(2026, 8, 8));
+        sourceSchedule.setKickoffTime(LocalTime.of(20, 30));
+        sourceSchedule.setHomeScore(0);
+        sourceSchedule.setAwayScore(0);
+        MatchSchedule shanghaiSchedule = completedSchedule(
+                "FUTBOL24-CLUB_FRIENDLY-3402926",
+                "卡利亚里",
+                "尼斯");
+        shanghaiSchedule.setCompetition(Competition.CLUB_FRIENDLY);
+        shanghaiSchedule.setMatchDate(LocalDate.of(2026, 8, 9));
+        shanghaiSchedule.setKickoffTime(LocalTime.of(2, 30));
+        shanghaiSchedule.setHomeScore(0);
+        shanghaiSchedule.setAwayScore(0);
+
+        List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(List.of(
+                sourceSchedule,
+                shanghaiSchedule));
+
+        assertEquals(1, schedules.size());
+        assertEquals("卡利亚里", schedules.get(0).getHomeTeamCn());
+        assertEquals("尼斯", schedules.get(0).getAwayTeamCn());
     }
 
     @Test

@@ -382,20 +382,6 @@
             </div>
           </div>
           <div class="prediction-prob-stack">
-            <div v-if="activeScoreProbabilities(match).length" class="score-prob-row score-prob-summary" :title="scoreProbabilityTitle(match)">
-              <span class="score-prob-label">比分</span>
-              <span class="score-prob-items">
-                <span
-                  v-for="score in activeScoreProbabilities(match)"
-                  :key="match.matchId + '-' + score.homeScore + '-' + score.awayScore"
-                  class="score-prob-pill"
-                  :class="{ 'is-winning-prediction': isWinningScorePrediction(match, score) }"
-                >
-                  {{ score.homeScore }}-{{ score.awayScore }}
-                  <span>{{ formatProbability(score.probability) }}</span>
-                </span>
-              </span>
-            </div>
             <div v-if="activeTotalGoalsProbabilities(match).length" class="score-prob-row score-prob-summary" :title="totalGoalsProbabilityTitle(match)">
               <span class="score-prob-label">进球数</span>
               <span class="score-prob-items">
@@ -407,6 +393,20 @@
                 >
                   {{ item.totalGoals }}球
                   <span>{{ formatProbability(item.probability) }}</span>
+                </span>
+              </span>
+            </div>
+            <div v-if="activeScoreProbabilities(match).length" class="score-prob-row score-prob-summary score-prob-score" :title="scoreProbabilityTitle(match)">
+              <span class="score-prob-label">比分</span>
+              <span class="score-prob-items">
+                <span
+                  v-for="score in activeScoreProbabilities(match)"
+                  :key="match.matchId + '-' + score.homeScore + '-' + score.awayScore"
+                  class="score-prob-pill"
+                  :class="{ 'is-winning-prediction': isWinningScorePrediction(match, score) }"
+                >
+                  {{ score.homeScore }}-{{ score.awayScore }}
+                  <span>{{ formatProbability(score.probability) }}</span>
                 </span>
               </span>
             </div>
@@ -595,7 +595,7 @@
       >
         <header class="head-to-head-dialog-header">
           <div>
-            <h3 id="head-to-head-dialog-title">{{ headToHeadTitle }}</h3>
+            <h3 id="head-to-head-dialog-title" :title="headToHeadTitle">{{ headToHeadTitle }}</h3>
           </div>
           <button type="button" class="dialog-close" aria-label="关闭历史交战弹窗" @click="closeHeadToHeadDialog">×</button>
         </header>
@@ -608,7 +608,7 @@
             class="head-to-head-column"
           >
             <header class="head-to-head-column-header">
-              <h4>{{ section.title }}</h4>
+              <h4 :title="section.title">{{ section.title }}</h4>
               <span class="head-to-head-record">
                 <span class="is-win">{{ section.record.win }}</span>
                 <span class="record-separator">|</span>
@@ -629,9 +629,9 @@
                   <span>{{ item.competitionName }}</span>
                 </div>
                 <div class="head-to-head-score">
-                  <span class="head-to-head-team is-home">{{ item.homeTeamCn }}</span>
+                  <span class="head-to-head-team is-home" :title="item.homeTeamCn">{{ item.homeTeamCn }}</span>
                   <strong>{{ item.homeScore }} : {{ item.awayScore }}</strong>
-                  <span class="head-to-head-team is-away">{{ item.awayTeamCn }}</span>
+                  <span class="head-to-head-team is-away" :title="item.awayTeamCn">{{ item.awayTeamCn }}</span>
                 </div>
               </article>
             </div>
@@ -2734,7 +2734,7 @@ export default {
       const scores = this.modelMode === 'after' && match.adjustedScoreProbabilities
         ? match.adjustedScoreProbabilities
         : match.scoreProbabilities
-      return (scores || []).slice(0, 3)
+      return (scores || []).slice(0, 4)
     },
     activeTotalGoalsProbabilities(match) {
       const probabilities = this.modelMode === 'after' && match.adjustedTotalGoalsProbabilities
@@ -3635,6 +3635,14 @@ h1 {
   font-weight: 700;
 }
 
+.score-prob-score {
+  gap: 2px;
+}
+
+.score-prob-score .score-prob-pill {
+  gap: 2px;
+}
+
 .score-prob-pill.is-winning-prediction {
   color: #1e40af;
   background: #dbeafe;
@@ -3702,16 +3710,15 @@ h1 {
   display: grid;
   grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   align-items: end;
-  gap: 8px 12px;
-  margin-top: -22px;
-  margin-bottom: 4px;
+  gap: 8px 0;
+  margin: -25px -7px 4px 0;
   min-height: 50px;
 }
 
 .summary-title-row {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 4px;
   min-width: 0;
   white-space: nowrap;
 }

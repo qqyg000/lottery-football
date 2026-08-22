@@ -91,10 +91,14 @@ public class ClubCompetitionScheduleUpdater {
             "47",
             "48",
             "53",
+            "55",
+            "86",
             "108",
             "132",
             "133",
             "141",
+            "150",
+            "186",
             "207",
             "247");
 
@@ -192,7 +196,47 @@ public class ClubCompetitionScheduleUpdater {
                     "CD Castellón",
                     "Levante UD",
                     1,
-                    3));
+                    3),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "OPEN-VERIFIED-VISEU-COVILHA-20260710",
+                    LocalDate.of(2026, 7, 10),
+                    LocalTime.NOON,
+                    "Académico de Viseu",
+                    "Sporting da Covilhã",
+                    5,
+                    0),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "FUTBOL24-CLUB_FRIENDLY-3402926",
+                    LocalDate.of(2026, 8, 9),
+                    LocalTime.of(2, 30),
+                    "Cagliari Calcio",
+                    "Nice",
+                    0,
+                    0),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "FUTBOL24-CLUB_FRIENDLY-3402946",
+                    LocalDate.of(2026, 8, 10),
+                    LocalTime.of(2, 0),
+                    "Parma Calcio",
+                    "Sampdoria",
+                    0,
+                    2),
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "OPEN-VERIFIED-LECCE-MONOPOLI-20260809",
+                    LocalDate.of(2026, 8, 9),
+                    LocalTime.of(23, 30),
+                    "Lecce",
+                    "Monopoli",
+                    1,
+                    0));
 
     private static final List<EspnLeagueSource> BASE_ESPN_SOURCES = List.of(
             new EspnLeagueSource(Competition.EUROPEAN_CHAMPIONSHIP, "uefa.euro"),
@@ -284,12 +328,16 @@ public class ClubCompetitionScheduleUpdater {
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "251", "芬甲", true),
             new FotMobLeagueSource(Competition.EREDIVISIE, "57", "荷甲", false),
             new FotMobLeagueSource(Competition.LIGUE_1, "53", "法甲", false),
+            new FotMobLeagueSource(Competition.SERIE_A, "55", "意甲", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "86", "意乙", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "150", "法联赛杯", false, null, 2019),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "235", "荷兰杯", false),
             new FotMobLeagueSource(Competition.LA_LIGA, "87", "西甲", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "140", "西乙", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "111", "荷乙", false),
             new FotMobLeagueSource(Competition.PRIMEIRA_LIGA, "61", "葡超", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "185", "葡甲", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "186", "葡萄牙杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "187", "葡联赛杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "58", "荷乙附加赛", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "188", "葡超杯", false),
@@ -641,7 +689,12 @@ public class ClubCompetitionScheduleUpdater {
             int firstSeason = source.usesCrossYearSeason(previousYear)
                     ? previousYear
                     : sourceStartDate.getYear();
-            for (int season = firstSeason; season <= endDate.getYear(); season++) {
+            int lastSeason = Math.min(
+                    endDate.getYear(),
+                    source.lastSeasonStartYear() == null
+                            ? Integer.MAX_VALUE
+                            : source.lastSeasonStartYear());
+            for (int season = firstSeason; season <= lastSeason; season++) {
                 int seasonValue = season;
                 tasks.add(() -> filterSchedulesByDate(
                         loadFotMobSeason(
@@ -2680,10 +2733,11 @@ public class ClubCompetitionScheduleUpdater {
             String leagueId,
             String sourceCompetition,
             boolean calendarYearSeason,
-            Integer crossYearSeasonFrom) {
+            Integer crossYearSeasonFrom,
+            Integer lastSeasonStartYear) {
 
         FotMobLeagueSource(Competition competition, String leagueId, String sourceCompetition) {
-            this(competition, leagueId, sourceCompetition, false, null);
+            this(competition, leagueId, sourceCompetition, false, null, null);
         }
 
         FotMobLeagueSource(
@@ -2691,7 +2745,16 @@ public class ClubCompetitionScheduleUpdater {
                 String leagueId,
                 String sourceCompetition,
                 boolean calendarYearSeason) {
-            this(competition, leagueId, sourceCompetition, calendarYearSeason, null);
+            this(competition, leagueId, sourceCompetition, calendarYearSeason, null, null);
+        }
+
+        FotMobLeagueSource(
+                Competition competition,
+                String leagueId,
+                String sourceCompetition,
+                boolean calendarYearSeason,
+                Integer crossYearSeasonFrom) {
+            this(competition, leagueId, sourceCompetition, calendarYearSeason, crossYearSeasonFrom, null);
         }
 
         boolean usesCrossYearSeason(int seasonStartYear) {

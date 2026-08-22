@@ -1,6 +1,9 @@
 server:
   port: 8080
 
+recommendation-backtest:
+  parallelism: 4
+
 spring:
   application:
     name: lottery-football

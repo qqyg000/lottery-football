@@ -7,6 +7,7 @@ import com.eason.worldcup.model.UserConfig;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -17,6 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class RecommendationBacktestJobService {
@@ -37,14 +39,25 @@ public class RecommendationBacktestJobService {
 
     private final Map<String, BacktestJob> jobs = new ConcurrentHashMap<>();
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "recommendation-backtest-worker");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final ExecutorService executorService;
 
-    public RecommendationBacktestJobService(PredictionService predictionService) {
+    private final Object dynamicCacheLifecycleMonitor = new Object();
+
+    private int activeBacktestCount;
+
+    public RecommendationBacktestJobService(
+            PredictionService predictionService,
+            @Value("${recommendation-backtest.parallelism:4}") int parallelism) {
         this.predictionService = predictionService;
+        int threadCount = Math.max(1, Math.min(parallelism, Runtime.getRuntime().availableProcessors()));
+        AtomicInteger threadSequence = new AtomicInteger();
+        executorService = Executors.newFixedThreadPool(threadCount, runnable -> {
+            Thread thread = new Thread(
+                    runnable,
+                    "recommendation-backtest-worker-" + threadSequence.incrementAndGet());
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
     public RecommendationBacktestJobResponse start(
@@ -103,8 +116,8 @@ public class RecommendationBacktestJobService {
             boolean includePreviousEdition,
             Map<Competition, UserConfig.ModelFactors> modelFactorsByCompetition) {
         job.start();
+        beginBacktest();
         try {
-            predictionService.clearDynamicModelCaches();
             RecommendationBacktestResponse result = predictionService.queryRecommendationBacktest(
                     competitions,
                     simulations,
@@ -123,7 +136,25 @@ public class RecommendationBacktestJobService {
             log.error("Recommendation backtest job {} failed", job.getJobId(), ex);
             job.fail(resolveErrorMessage(ex));
         } finally {
-            predictionService.clearDynamicModelCaches();
+            endBacktest();
+        }
+    }
+
+    private void beginBacktest() {
+        synchronized (dynamicCacheLifecycleMonitor) {
+            if (activeBacktestCount == 0) {
+                predictionService.clearDynamicModelCaches();
+            }
+            activeBacktestCount++;
+        }
+    }
+
+    private void endBacktest() {
+        synchronized (dynamicCacheLifecycleMonitor) {
+            activeBacktestCount = Math.max(0, activeBacktestCount - 1);
+            if (activeBacktestCount == 0) {
+                predictionService.clearDynamicModelCaches();
+            }
         }
     }
 

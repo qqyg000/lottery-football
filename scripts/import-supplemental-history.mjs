@@ -437,6 +437,31 @@ const FOTMOB_LEAGUE_SOURCES = [
     firstSeasonStartYear: 2014
   },
   {
+    leagueId: '55',
+    competition: 'SERIE_A',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '意甲',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '86',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '意乙',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '150',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '法联赛杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014,
+    lastSeasonStartYear: 2019
+  },
+  {
     leagueId: '235',
     competition: 'CLUB_OFFICIAL_OTHER',
     matchType: 'OFFICIAL',
@@ -481,6 +506,14 @@ const FOTMOB_LEAGUE_SOURCES = [
     competition: 'CLUB_OFFICIAL_OTHER',
     matchType: 'OFFICIAL',
     sourceCompetition: '葡甲',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '186',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '葡萄牙杯',
     calendarYearSeason: false,
     firstSeasonStartYear: 2014
   },
@@ -703,10 +736,14 @@ const AUTHORITATIVE_FOTMOB_LEAGUE_IDS = new Set([
   '47',
   '48',
   '53',
+  '55',
+  '86',
   '108',
   '132',
   '133',
   '141',
+  '150',
+  '186',
   '207',
   '247',
   '51',
@@ -1356,6 +1393,60 @@ const VERIFIED_SUPPLEMENTAL_ROWS = [
     awayTeam: 'Levante UD',
     homeScore: 1,
     awayScore: 3,
+    neutral: false
+  },
+  {
+    provider: 'OPEN',
+    source: 'VERIFIED-VISEU-COVILHA',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-07-10',
+    homeTeam: 'Académico de Viseu',
+    awayTeam: 'Sporting da Covilhã',
+    homeScore: 5,
+    awayScore: 0,
+    neutral: false
+  },
+  {
+    provider: 'FUTBOL24',
+    providerId: '3402926',
+    source: 'VERIFIED-CAGLIARI-NICE',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-08-09',
+    homeTeam: 'Cagliari Calcio',
+    awayTeam: 'Nice',
+    homeScore: 0,
+    awayScore: 0,
+    neutral: false
+  },
+  {
+    provider: 'FUTBOL24',
+    providerId: '3402946',
+    source: 'VERIFIED-PARMA-SAMPDORIA',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-08-10',
+    homeTeam: 'Parma Calcio',
+    awayTeam: 'Sampdoria',
+    homeScore: 0,
+    awayScore: 2,
+    neutral: false
+  },
+  {
+    provider: 'OPEN',
+    source: 'VERIFIED-LECCE-MONOPOLI',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: '2026-08-09',
+    homeTeam: 'Lecce',
+    awayTeam: 'Monopoli',
+    homeScore: 1,
+    awayScore: 0,
     neutral: false
   }
 ]
@@ -2079,7 +2170,11 @@ function fotMobSeasonRequests(options) {
       includesPreviousCrossYearSeason ? previousYear : firstYear,
       source.firstSeasonStartYear ?? Number.MIN_SAFE_INTEGER
     )
-    for (let seasonStartYear = sourceFirstYear; seasonStartYear <= lastYear; seasonStartYear += 1) {
+    const sourceLastYear = Math.min(
+      lastYear,
+      source.lastSeasonStartYear ?? Number.MAX_SAFE_INTEGER
+    )
+    for (let seasonStartYear = sourceFirstYear; seasonStartYear <= sourceLastYear; seasonStartYear += 1) {
       requests.push({ source, seasonStartYear })
     }
   }
@@ -3809,6 +3904,7 @@ for (const sourceRow of sourceRows) {
     || sourceRow.provider === 'SOCCERWAY'
     || sourceRow.provider === 'PFL'
     || sourceRow.provider === 'VIETNAMPLUS'
+    || String(sourceRow.source ?? '').startsWith('VERIFIED-')
   if (!importsWholeCompetition && !homeIsTarget && !awayIsTarget) {
     summary.outsideTargetRows += 1
     continue

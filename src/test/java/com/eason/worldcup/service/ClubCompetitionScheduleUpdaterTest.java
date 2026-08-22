@@ -44,7 +44,7 @@ class ClubCompetitionScheduleUpdaterTest {
                 "HISTORICAL_FOTMOB_LEAGUE_IDS");
 
         assertNotNull(sources);
-        assertEquals(Set.of("47", "48", "53", "108", "132", "133", "141", "207", "247"),
+        assertEquals(Set.of("47", "48", "53", "55", "86", "108", "132", "133", "141", "150", "186", "207", "247"),
                 historicalLeagueIds);
         assertTrue(sources.stream().anyMatch(source ->
                 "47".equals(source.leagueId())
@@ -64,6 +64,23 @@ class ClubCompetitionScheduleUpdaterTest {
                 "207".equals(source.leagueId()) && "法超杯".equals(source.sourceCompetition())));
         assertTrue(sources.stream().anyMatch(source ->
                 "141".equals(source.leagueId()) && "意大利杯".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "55".equals(source.leagueId())
+                        && source.competition() == Competition.SERIE_A
+                        && "意甲".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "86".equals(source.leagueId())
+                        && source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "意乙".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "150".equals(source.leagueId())
+                        && source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "法联赛杯".equals(source.sourceCompetition())
+                        && Integer.valueOf(2019).equals(source.lastSeasonStartYear())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "186".equals(source.leagueId())
+                        && source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "葡萄牙杯".equals(source.sourceCompetition())));
     }
 
     @Test
@@ -1521,7 +1538,7 @@ class ClubCompetitionScheduleUpdaterTest {
     void shouldExposeVerifiedPrivateFriendliesToRuntimeCards() {
         List<MatchSchedule> schedules = updater.verifiedSupplementalSchedules();
 
-        assertEquals(10, schedules.size());
+        assertEquals(14, schedules.size());
         assertTrue(schedules.stream().anyMatch(schedule ->
                 schedule.getMatchDate().equals(LocalDate.of(2025, 1, 30))
                         && schedule.getCompetition() == Competition.CLUB_FRIENDLY
@@ -1570,6 +1587,34 @@ class ClubCompetitionScheduleUpdaterTest {
                         && "莱万特".equals(schedule.getAwayTeamCn())
                         && Integer.valueOf(1).equals(schedule.getHomeScore())
                         && Integer.valueOf(3).equals(schedule.getAwayScore())));
+        assertTrue(schedules.stream().anyMatch(schedule ->
+                schedule.getMatchDate().equals(LocalDate.of(2026, 7, 10))
+                        && LocalTime.NOON.equals(schedule.getKickoffTime())
+                        && "维塞乌".equals(schedule.getHomeTeamCn())
+                        && "科维良".equals(schedule.getAwayTeamCn())
+                        && Integer.valueOf(5).equals(schedule.getHomeScore())
+                        && Integer.valueOf(0).equals(schedule.getAwayScore())));
+        assertTrue(schedules.stream().anyMatch(schedule ->
+                schedule.getMatchDate().equals(LocalDate.of(2026, 8, 9))
+                        && LocalTime.of(2, 30).equals(schedule.getKickoffTime())
+                        && "卡利亚里".equals(schedule.getHomeTeamCn())
+                        && "尼斯".equals(schedule.getAwayTeamCn())
+                        && Integer.valueOf(0).equals(schedule.getHomeScore())
+                        && Integer.valueOf(0).equals(schedule.getAwayScore())));
+        assertTrue(schedules.stream().anyMatch(schedule ->
+                schedule.getMatchDate().equals(LocalDate.of(2026, 8, 10))
+                        && LocalTime.of(2, 0).equals(schedule.getKickoffTime())
+                        && "帕尔马".equals(schedule.getHomeTeamCn())
+                        && "桑普".equals(schedule.getAwayTeamCn())
+                        && Integer.valueOf(0).equals(schedule.getHomeScore())
+                        && Integer.valueOf(2).equals(schedule.getAwayScore())));
+        assertTrue(schedules.stream().anyMatch(schedule ->
+                schedule.getMatchDate().equals(LocalDate.of(2026, 8, 9))
+                        && LocalTime.of(23, 30).equals(schedule.getKickoffTime())
+                        && "莱切".equals(schedule.getHomeTeamCn())
+                        && "Monopoli".equals(schedule.getAwayTeamCn())
+                        && Integer.valueOf(1).equals(schedule.getHomeScore())
+                        && Integer.valueOf(0).equals(schedule.getAwayScore())));
     }
 
     @Test

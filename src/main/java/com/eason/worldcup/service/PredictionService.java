@@ -1193,7 +1193,7 @@ public class PredictionService {
                         }
                         return Integer.compare(left.awayScore, right.awayScore);
                     })
-                    .limit(3)
+                    .limit(4)
                     .map(counter -> new ScoreProbability(
                             counter.homeScore,
                             counter.awayScore,

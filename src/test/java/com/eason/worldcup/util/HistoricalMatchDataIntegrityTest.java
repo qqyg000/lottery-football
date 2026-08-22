@@ -66,7 +66,7 @@ class HistoricalMatchDataIntegrityTest {
                 "英足总杯", 2_100L,
                 "英联赛杯", 1_280L,
                 "英社区盾", 12L,
-                "英冠", 8_100L,
+                "英冠", 7_600L,
                 "英甲", 8_700L,
                 "法超杯", 12L,
                 "法甲", 4_100L);
@@ -706,6 +706,30 @@ class HistoricalMatchDataIntegrityTest {
     }
 
     @Test
+    void shouldKeepAugustTwentyThirdMappedFixturesAndRemoveAliasDuplicates() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2014, 11, 8),
+                Competition.CLUB_OFFICIAL_OTHER, "卢顿", "纽波特郡", 4, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 7, 22),
+                Competition.CLUB_FRIENDLY, "蒙彼利埃", "戛纳", 3, 4);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 7, 23),
+                Competition.CLUB_FRIENDLY, "佛罗伦萨", "古比奥", 1, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 7, 25),
+                Competition.CLUB_FRIENDLY, "博洛尼亚", "Iraklis 1908", 2, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 7, 25),
+                Competition.CLUB_FRIENDLY, "女王巡游", "佛罗伦萨", 3, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 6),
+                Competition.CLUB_FRIENDLY, "马拉加", "阿拉比", 4, 2);
+        assertShiftedFixtureRemoved(fixtures,
+                LocalDate.of(2016, 7, 8), LocalDate.of(2016, 7, 9),
+                "埃因霍温", "女王巡游", 0, 1);
+        assertShiftedFixtureRemoved(fixtures,
+                LocalDate.of(2016, 7, 11), LocalDate.of(2016, 7, 12),
+                "格罗宁根", "女王巡游", 3, 1);
+    }
+
+    @Test
     void shouldKeepRequestedCanonicalFriendliesAndRemoveAliasDuplicates() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
 
@@ -847,6 +871,50 @@ class HistoricalMatchDataIntegrityTest {
                 "OFI",
                 2,
                 2);
+    }
+
+    @Test
+    void shouldContainRequestedSerieAClubFriendlySerieBAndFrenchLeagueCupData() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 7, 10),
+                Competition.CLUB_FRIENDLY, "维塞乌", "科维良", 5, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 5, 17),
+                Competition.SERIE_A, "国际米兰", "维罗纳", 1, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2020, 9, 28),
+                Competition.SERIE_A, "那不勒斯", "热那亚", 6, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 5, 17),
+                Competition.SERIE_A, "比萨", "那不勒斯", 0, 3);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 10),
+                Competition.CLUB_FRIENDLY, "帕尔马", "桑普", 0, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 9),
+                Competition.CLUB_FRIENDLY, "卡利亚里", "尼斯", 0, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 5, 18),
+                Competition.SERIE_A, "卡利亚里", "都灵", 2, 1);
+
+        assertSourceCompetitionCount(fixtures, "意乙", 4_000L);
+        assertSourceCompetitionCount(fixtures, "法联赛杯", 200L);
+        assertTrue(fixtures.stream()
+                .filter(fixture -> fixture.sourceCompetition().equals("意乙"))
+                .allMatch(fixture -> !fixture.matchDate().isBefore(LocalDate.of(2014, 10, 22))),
+                "意乙包含超出导入范围的数据");
+        assertTrue(fixtures.stream()
+                .filter(fixture -> fixture.sourceCompetition().equals("法联赛杯"))
+                .allMatch(fixture -> !fixture.matchDate().isBefore(LocalDate.of(2014, 10, 22))),
+                "法联赛杯包含超出导入范围的数据");
+    }
+
+    @Test
+    void shouldContainRequestedLecceFriendlyAndCompletePortugueseCupHistory() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 9),
+                Competition.CLUB_FRIENDLY, "莱切", "Monopoli", 1, 0);
+        assertSourceCompetitionCount(fixtures, "葡萄牙杯", 850L);
+        assertTrue(fixtures.stream()
+                .filter(fixture -> fixture.sourceCompetition().equals("葡萄牙杯"))
+                .allMatch(fixture -> !fixture.matchDate().isBefore(LocalDate.of(2014, 10, 22))),
+                "葡萄牙杯包含超出导入范围的数据");
     }
 
     private List<HistoricalFixture> readHistoricalFixtures() throws IOException {

@@ -758,6 +758,14 @@ const VERIFIED_SPORTTERY_ENGLISH_ALIASES = [
 ]
 
 const USER_REQUESTED_TEAM_ALIASES = [
+  ['Iraklis 1908', 'Iraklis Salonica', '2026-08-23'],
+  ['Iraklis 1908', 'Iraklis', '2026-08-23'],
+  ['纽波特郡', 'Newport County', '2026-08-23'],
+  ['戛纳', 'AS Cannes', '2026-08-23'],
+  ['女王巡游', 'QPR', '2026-08-23'],
+  ['古比奥', 'Gubbio', '2026-08-23'],
+  ['阿拉比', 'Al-Arabi', '2026-08-23'],
+  ['阿拉比', 'Arabi Doha', '2026-08-23'],
   ['Shahaniya', 'Shahaniya', '2026-08-21'],
   ['Shahaniya', 'Al-Shahaniya', '2026-08-21'],
   ['Shahaniya', 'Shahaniya SC', '2026-08-21'],

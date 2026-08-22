@@ -38,6 +38,7 @@ const MINIMUM_TRAINING_MATCHES = numberOption('MINIMUM_TRAINING_MATCHES', 10)
 const MINIMUM_VALIDATION_MATCHES = numberOption('MINIMUM_VALIDATION_MATCHES', 6)
 const MINIMUM_VALIDATION_ROI = decimalOption('MINIMUM_VALIDATION_ROI', 0)
 const MINIMUM_TRAINING_ROI = decimalOption('MINIMUM_TRAINING_ROI', 0)
+const BACKTEST_PARALLELISM = clamp(numberOption('BACKTEST_PARALLELISM', 4), 1, 16)
 const ROI_EPSILON = 1e-9
 const APPLY_RESULTS = process.argv.includes('--apply')
 const RESUME_FROM_CHECKPOINT = process.argv.includes('--resume')
@@ -217,6 +218,35 @@ function observedOdds(matches) {
     }
   }
   return [...values].sort((left, right) => left - right)
+}
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+  if (items.length === 0) {
+    return []
+  }
+  const results = new Array(items.length)
+  let nextIndex = 0
+  let firstError = null
+  async function worker() {
+    while (!firstError) {
+      const index = nextIndex
+      if (index >= items.length) {
+        return
+      }
+      nextIndex++
+      try {
+        results[index] = await mapper(items[index], index)
+      } catch (error) {
+        firstError = firstError || error
+      }
+    }
+  }
+  const workerCount = Math.min(items.length, Math.max(1, concurrency))
+  await Promise.all(Array.from({ length: workerCount }, () => worker()))
+  if (firstError) {
+    throw firstError
+  }
+  return results
 }
 
 function booleanOption(name, fallback) {
@@ -717,11 +747,10 @@ async function fetchBacktest(
   if (!forceRefresh && cached) {
     return cached
   }
-  const url = new URL('/api/football/recommendation-backtest', API_BASE)
+  const url = new URL('/api/football/recommendation-backtest/jobs', API_BASE)
   url.searchParams.set('competition', competition)
   url.searchParams.set('includePreviousEdition', String(range === 'PREVIOUS'))
   url.searchParams.set('simulations', String(simulations))
-  url.searchParams.set('clearModelCacheBefore', 'true')
   url.searchParams.set('hostTeamGoalFactor', modelFactors.hostTeamGoalFactor)
   url.searchParams.set('homeTeamGoalFactor', modelFactors.homeTeamGoalFactor)
   url.searchParams.set('seedTeamGoalFactor', modelFactors.seedTeamGoalFactor)
@@ -729,7 +758,19 @@ async function fetchBacktest(
   url.searchParams.set('internationalFriendlyWeight', modelFactors.internationalFriendlyWeight)
   url.searchParams.set('clubFriendlyWeight', modelFactors.clubFriendlyWeight)
   url.searchParams.set('handicapSmoothingFactor', smoothingFactor)
-  const response = await fetchJson(url)
+  let job = await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}'
+  })
+  while (job.status === 'QUEUED' || job.status === 'RUNNING') {
+    await new Promise(resolve => setTimeout(resolve, 250))
+    job = await fetchJson(new URL(`/api/football/recommendation-backtest/jobs/${job.jobId}`, API_BASE))
+  }
+  if (job.status !== 'COMPLETED' || !job.result) {
+    throw new Error(job.message || `backtest job failed: ${competition}:${range}`)
+  }
+  const response = job.result
   const backtest = {
     completedMatchCount: Number(response.completedMatchCount) || 0,
     oddsMatchCount: Number(response.oddsMatchCount) || 0,
@@ -747,25 +788,27 @@ async function refreshCandidatePool(competition, range, pool) {
     candidates.push(candidate)
     candidatesByModel.set(signature, candidates)
   }
-  const refreshed = []
-  let modelIndex = 0
-  for (const candidates of candidatesByModel.values()) {
-    modelIndex++
-    process.stdout.write(
-      `  refresh final pool model ${modelIndex}/${candidatesByModel.size} ${FINAL_SIMULATIONS}\n`
-    )
-    const model = candidates[0].profile.modelFactors
-    const backtest = await fetchBacktest(
-      competition,
-      range,
-      model,
-      FINAL_SIMULATIONS,
-      model.handicapSmoothingFactor,
-      true
-    )
-    refreshed.push(...candidates.map(candidate => enrichCandidate(backtest, candidate)))
-  }
-  return deduplicatePool(refreshed)
+  const modelGroups = [...candidatesByModel.values()]
+  const refreshedGroups = await mapWithConcurrency(
+    modelGroups,
+    BACKTEST_PARALLELISM,
+    async (candidates, index) => {
+      process.stdout.write(
+        `  refresh final pool model ${index + 1}/${modelGroups.length} started ${FINAL_SIMULATIONS}\n`
+      )
+      const model = candidates[0].profile.modelFactors
+      const backtest = await fetchBacktest(
+        competition,
+        range,
+        model,
+        FINAL_SIMULATIONS,
+        model.handicapSmoothingFactor,
+        true
+      )
+      process.stdout.write(`  refresh final pool model ${index + 1}/${modelGroups.length} completed\n`)
+      return candidates.map(candidate => enrichCandidate(backtest, candidate))
+    })
+  return deduplicatePool(refreshedGroups.flat())
 }
 
 async function optimizePreset(competition, range, preset, originalProfile, options = {}) {
@@ -813,68 +856,79 @@ async function optimizePreset(competition, range, preset, originalProfile, optio
     options.samplingBounds,
     REFINEMENT_PASSES
   ).map(candidate => enrichCandidate(baselineBacktest, candidate))
-  const rankedModels = []
   const variants = buildModelVariants(normalizedOriginal, key).slice(1)
-  for (let index = 0; index < variants.length; index++) {
-    process.stdout.write(`  ${preset} model ${index + 1}/${variants.length}\n`)
-    const model = variants[index]
-    const coarseBacktest = await fetchBacktest(
-      competition,
-      range,
-      model,
-      COARSE_SIMULATIONS,
-      model.handicapSmoothingFactor
-    )
-    if (coarseBacktest.oddsMatchCount === 0) {
-      continue
-    }
-    const coarseSplit = createChronologicalValidationSplit(coarseBacktest)
-    if (ROBUST_VALIDATION && !coarseSplit.available) {
-      continue
-    }
-    const pool = searchRules(
-      coarseSplit.trainingBacktest,
-      normalizedOriginal,
-      model,
-      COARSE_RULE_CANDIDATES,
-      stringSeed(key + ':coarse:' + index)
-    )
-    const best = options.samplingBounds
-      ? bestForTargetSampling(pool, options.samplingBounds)
-      : bestForModelRanking(pool, baselineMetrics.samplingRate)
-    if (best) {
-      rankedModels.push({ model, best })
-    }
-  }
-  rankedModels.sort((left, right) => right.best.metrics.roi - left.best.metrics.roi)
-  const finalists = rankedModels.slice(0, FINALIST_MODEL_COUNT)
-  for (let index = 0; index < finalists.length; index++) {
-    const finalist = finalists[index]
-    process.stdout.write(`  ${preset} finalist ${index + 1}/${finalists.length} ${FINAL_SIMULATIONS}\n`)
-    const finalistBacktest = await fetchBacktest(
-      competition,
-      range,
-      finalist.model,
-      FINAL_SIMULATIONS,
-      finalist.model.handicapSmoothingFactor
-    )
-    const finalistSplit = createChronologicalValidationSplit(finalistBacktest)
-    if (ROBUST_VALIDATION && !finalistSplit.available) {
-      continue
-    }
-    finalPool = finalPool.concat(refineRulePool(
-      finalistSplit.trainingBacktest,
-      searchRules(
-        finalistSplit.trainingBacktest,
+  const modelResults = await mapWithConcurrency(
+    variants,
+    BACKTEST_PARALLELISM,
+    async (model, index) => {
+      process.stdout.write(`  ${preset} model ${index + 1}/${variants.length} started\n`)
+      const coarseBacktest = await fetchBacktest(
+        competition,
+        range,
+        model,
+        COARSE_SIMULATIONS,
+        model.handicapSmoothingFactor
+      )
+      if (coarseBacktest.oddsMatchCount === 0) {
+        return null
+      }
+      const coarseSplit = createChronologicalValidationSplit(coarseBacktest)
+      if (ROBUST_VALIDATION && !coarseSplit.available) {
+        return null
+      }
+      const pool = searchRules(
+        coarseSplit.trainingBacktest,
         normalizedOriginal,
+        model,
+        COARSE_RULE_CANDIDATES,
+        stringSeed(key + ':coarse:' + index)
+      )
+      const best = options.samplingBounds
+        ? bestForTargetSampling(pool, options.samplingBounds)
+        : bestForModelRanking(pool, baselineMetrics.samplingRate)
+      process.stdout.write(`  ${preset} model ${index + 1}/${variants.length} completed\n`)
+      return best ? { model, best } : null
+    })
+  const rankedModels = modelResults.filter(Boolean)
+  rankedModels.sort((left, right) => (
+    right.best.metrics.roi - left.best.metrics.roi ||
+    modelSignature(left.model).localeCompare(modelSignature(right.model))
+  ))
+  const finalists = rankedModels.slice(0, FINALIST_MODEL_COUNT)
+  const finalistPools = await mapWithConcurrency(
+    finalists,
+    BACKTEST_PARALLELISM,
+    async (finalist, index) => {
+      process.stdout.write(
+        `  ${preset} finalist ${index + 1}/${finalists.length} started ${FINAL_SIMULATIONS}\n`
+      )
+      const finalistBacktest = await fetchBacktest(
+        competition,
+        range,
         finalist.model,
-        FINAL_RULE_CANDIDATES,
-        stringSeed(key + ':final:alternative:' + index)
-      ),
-      options.samplingBounds,
-      REFINEMENT_PASSES
-    ).map(candidate => enrichCandidate(finalistBacktest, candidate)))
-  }
+        FINAL_SIMULATIONS,
+        finalist.model.handicapSmoothingFactor
+      )
+      const finalistSplit = createChronologicalValidationSplit(finalistBacktest)
+      if (ROBUST_VALIDATION && !finalistSplit.available) {
+        return []
+      }
+      const finalistPool = refineRulePool(
+        finalistSplit.trainingBacktest,
+        searchRules(
+          finalistSplit.trainingBacktest,
+          normalizedOriginal,
+          finalist.model,
+          FINAL_RULE_CANDIDATES,
+          stringSeed(key + ':final:alternative:' + index)
+        ),
+        options.samplingBounds,
+        REFINEMENT_PASSES
+      ).map(candidate => enrichCandidate(finalistBacktest, candidate))
+      process.stdout.write(`  ${preset} finalist ${index + 1}/${finalists.length} completed\n`)
+      return finalistPool
+    })
+  finalPool = finalPool.concat(finalistPools.flat())
   const refreshedPool = await refreshCandidatePool(
     competition,
     range,
@@ -1142,7 +1196,7 @@ async function startUiBacktest(competitions, range, preset, parameterProfiles) {
 }
 
 async function verifyAllProfiles(config, ranges = allCompetitionRanges()) {
-  const verification = []
+  const batches = []
   for (const range of ['PREVIOUS', 'CURRENT']) {
     const competitions = ranges
       .filter(item => item.range === range)
@@ -1151,38 +1205,50 @@ async function verifyAllProfiles(config, ranges = allCompetitionRanges()) {
       continue
     }
     for (const preset of ['STABLE', 'AGGRESSIVE']) {
-      process.stdout.write(`verify UI batch ${range}:${preset} competitions=${competitions.length}\n`)
+      batches.push({ range, preset, competitions })
+    }
+  }
+  const completedBatches = await mapWithConcurrency(
+    batches,
+    BACKTEST_PARALLELISM,
+    async batch => {
+      const { range, preset, competitions } = batch
+      process.stdout.write(`verify UI batch ${range}:${preset} competitions=${competitions.length} started\n`)
       const response = await startUiBacktest(competitions, range, preset, config.parameterProfiles)
-      const allMatches = Array.isArray(response.matches) ? response.matches : []
-      for (const [competition, competitionName] of competitions) {
-        const matches = allMatches.filter(match => match.competition === competition)
-        const oddsMatchCount = matches.length
-        const profile = config.parameterProfiles[`${competition}:${range}:${preset}`]
-        const normalizedModel = normalizeProfile(profile).modelFactors
-        const cacheKey = `${competition}:${range}:${FINAL_SIMULATIONS}:${modelSignature(normalizedModel)}`
-        BACKTEST_MEMORY_CACHE.set(cacheKey, {
-          completedMatchCount: matches.length,
-          oddsMatchCount,
-          matches
-        })
-        const robustness = oddsMatchCount > 0
-          ? evaluateProfileRobustly({
-              completedMatchCount: matches.length,
-              oddsMatchCount,
-              matches
-            }, profile)
-          : null
-        verification.push({
-          key: `${competition}:${range}:${preset}`,
-          competition,
-          competitionName,
-          range,
-          preset,
-          oddsMatchCount,
-          metrics: robustness?.fullMetrics || null,
-          robustness
-        })
-      }
+      process.stdout.write(`verify UI batch ${range}:${preset} completed\n`)
+      return { ...batch, response }
+    })
+  const verification = []
+  for (const { range, preset, competitions, response } of completedBatches) {
+    const allMatches = Array.isArray(response.matches) ? response.matches : []
+    for (const [competition, competitionName] of competitions) {
+      const matches = allMatches.filter(match => match.competition === competition)
+      const oddsMatchCount = matches.length
+      const profile = config.parameterProfiles[`${competition}:${range}:${preset}`]
+      const normalizedModel = normalizeProfile(profile).modelFactors
+      const cacheKey = `${competition}:${range}:${FINAL_SIMULATIONS}:${modelSignature(normalizedModel)}`
+      BACKTEST_MEMORY_CACHE.set(cacheKey, {
+        completedMatchCount: matches.length,
+        oddsMatchCount,
+        matches
+      })
+      const robustness = oddsMatchCount > 0
+        ? evaluateProfileRobustly({
+            completedMatchCount: matches.length,
+            oddsMatchCount,
+            matches
+          }, profile)
+        : null
+      verification.push({
+        key: `${competition}:${range}:${preset}`,
+        competition,
+        competitionName,
+        range,
+        preset,
+        oddsMatchCount,
+        metrics: robustness?.fullMetrics || null,
+        robustness
+      })
     }
   }
   return verification
@@ -1745,6 +1811,7 @@ async function main() {
       minimumValidationMatches: MINIMUM_VALIDATION_MATCHES,
       minimumTrainingRoi: MINIMUM_TRAINING_ROI,
       minimumValidationRoi: MINIMUM_VALIDATION_ROI,
+      backtestParallelism: BACKTEST_PARALLELISM,
       reoptimizeAll: REOPTIMIZE_ALL,
       targetRanges: [...TARGET_RANGES]
     },
