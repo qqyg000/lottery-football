@@ -24,6 +24,7 @@ class ClubTeamNameTranslatorTest {
         assumeMappingsImported();
 
         Map<String, String> aliases = Map.ofEntries(
+                Map.entry("Flaminia", "弗拉米纳西维塔"),
                 Map.entry("Iraklis Salonica", "Iraklis 1908"),
                 Map.entry("Iraklis", "Iraklis 1908"),
                 Map.entry("Newport County", "纽波特郡"),

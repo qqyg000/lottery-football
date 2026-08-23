@@ -709,6 +709,8 @@ class HistoricalMatchDataIntegrityTest {
     void shouldKeepAugustTwentyThirdMappedFixturesAndRemoveAliasDuplicates() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
 
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 7, 27),
+                Competition.CLUB_FRIENDLY, "拉齐奥", "弗拉米纳西维塔", 6, 0);
         assertFixtureOccursOnce(fixtures, LocalDate.of(2014, 11, 8),
                 Competition.CLUB_OFFICIAL_OTHER, "卢顿", "纽波特郡", 4, 2);
         assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 7, 22),
