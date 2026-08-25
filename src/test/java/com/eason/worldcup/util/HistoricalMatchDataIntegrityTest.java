@@ -778,6 +778,20 @@ class HistoricalMatchDataIntegrityTest {
     }
 
     @Test
+    void shouldKeepBadSchallerbachFixtureAndRemovePreviousDateAliasDuplicate() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertShiftedFixtureRemoved(
+                fixtures,
+                LocalDate.of(2026, 6, 25),
+                LocalDate.of(2026, 6, 24),
+                "Bad Schallerbach",
+                "LASK林茨",
+                0,
+                6);
+    }
+
+    @Test
     void shouldKeepOnlyVerifiedSlovanPafosFriendly() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
 
