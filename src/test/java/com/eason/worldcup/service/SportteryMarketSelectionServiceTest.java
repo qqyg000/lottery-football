@@ -605,6 +605,54 @@ class SportteryMarketSelectionServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void shouldApplyCompletedSportteryResultsToMatchedScheduledFixtures() {
+        LocalDate matchDate = LocalDate.of(2026, 8, 26);
+        SportteryMarketSelectionService.SportteryMarketEntry laskEntry = completedEntry(
+                "2041053",
+                "周二005",
+                matchDate,
+                "LASK林茨",
+                "凯尔特人",
+                4,
+                1);
+        SportteryMarketSelectionService.SportteryMarketEntry bodoEntry = completedEntry(
+                "2041054",
+                "周二006",
+                matchDate,
+                "博德闪耀",
+                "奈梅亨",
+                3,
+                0);
+        Map<String, SportteryMarketSelectionService.SportteryMarketEntry> entries =
+                (Map<String, SportteryMarketSelectionService.SportteryMarketEntry>)
+                        ReflectionTestUtils.getField(service, "entriesByMatchId");
+        entries.put(laskEntry.getSportteryMatchId(), laskEntry);
+        entries.put(bodoEntry.getSportteryMatchId(), bodoEntry);
+
+        MatchSchedule laskSchedule = scheduledFixture(
+                "FUTBOL24-CHAMPIONS_LEAGUE-3396885",
+                matchDate,
+                "LASK林茨",
+                "凯尔特人",
+                "LASK Linz",
+                "Celtic FC");
+        MatchSchedule bodoSchedule = scheduledFixture(
+                "FUTBOL24-CHAMPIONS_LEAGUE-3396897",
+                matchDate,
+                "博德闪耀",
+                "奈梅亨",
+                "FK Bodo/Glimt",
+                "NEC Nijmegen");
+
+        int matchedCount = service.applyCachedSelections(List.of(laskSchedule, bodoSchedule));
+
+        assertEquals(2, matchedCount);
+        assertCompletedResult(laskSchedule, "2041053", "周二005", 4, 1);
+        assertCompletedResult(bodoSchedule, "2041054", "周二006", 3, 0);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void shouldMatchRequestedSwedishCompletedFixtureAfterRefresh() {
         SportteryMarketSelectionService.SportteryMarketEntry entry =
                 new SportteryMarketSelectionService.SportteryMarketEntry();
@@ -768,6 +816,62 @@ class SportteryMarketSelectionServiceTest {
         assertEquals("韩国杯", schedule.getGroupName());
         assertEquals(1.80, schedule.getSportteryNormalOdds().getWin());
         assertEquals("SCHEDULED", schedule.getStatus());
+    }
+
+    private SportteryMarketSelectionService.SportteryMarketEntry completedEntry(
+            String matchId,
+            String matchNumber,
+            LocalDate matchDate,
+            String homeTeam,
+            String awayTeam,
+            int homeScore,
+            int awayScore) {
+        SportteryMarketSelectionService.SportteryMarketEntry entry =
+                new SportteryMarketSelectionService.SportteryMarketEntry();
+        entry.setSportteryMatchId(matchId);
+        entry.setSportteryMatchNumber(matchNumber);
+        entry.setMatchDate(matchDate);
+        entry.setCompetition(Competition.CHAMPIONS_LEAGUE);
+        entry.setLeagueName("欧冠");
+        entry.setHomeTeam(homeTeam);
+        entry.setAwayTeam(awayTeam);
+        entry.setHomeScore(homeScore);
+        entry.setAwayScore(awayScore);
+        return entry;
+    }
+
+    private MatchSchedule scheduledFixture(
+            String matchId,
+            LocalDate matchDate,
+            String homeTeamCn,
+            String awayTeamCn,
+            String homeTeamEn,
+            String awayTeamEn) {
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setMatchId(matchId);
+        schedule.setCompetition(Competition.CHAMPIONS_LEAGUE);
+        schedule.setMatchDate(matchDate);
+        schedule.setKickoffTime(LocalTime.of(3, 0));
+        schedule.setGroupName("欧冠");
+        schedule.setHomeTeamCn(homeTeamCn);
+        schedule.setAwayTeamCn(awayTeamCn);
+        schedule.setHomeTeamEn(homeTeamEn);
+        schedule.setAwayTeamEn(awayTeamEn);
+        schedule.setStatus("SCHEDULED");
+        return schedule;
+    }
+
+    private void assertCompletedResult(
+            MatchSchedule schedule,
+            String matchId,
+            String matchNumber,
+            int homeScore,
+            int awayScore) {
+        assertEquals("COMPLETED", schedule.getStatus());
+        assertEquals(homeScore, schedule.getHomeScore());
+        assertEquals(awayScore, schedule.getAwayScore());
+        assertEquals(matchId, schedule.getSportteryMatchId());
+        assertEquals(matchNumber, schedule.getSportteryMatchNumber());
     }
 
 }

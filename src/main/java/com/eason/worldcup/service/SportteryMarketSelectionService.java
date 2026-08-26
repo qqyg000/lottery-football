@@ -1530,6 +1530,7 @@ public class SportteryMarketSelectionService {
             schedule.setSportteryTotalGoalsOdds(entry.getTotalGoalsOdds() == null
                     ? existingTotalGoalsOdds
                     : entry.getTotalGoalsOdds());
+            applyCompletedResult(schedule, entry);
             usedMatchIds.add(entry.getSportteryMatchId());
             matchedCount++;
         }
@@ -1537,6 +1538,17 @@ public class SportteryMarketSelectionService {
             saveCache(LocalDateTime.now(resolveTargetZone()));
         }
         return matchedCount;
+    }
+
+    private void applyCompletedResult(
+            MatchSchedule schedule,
+            SportteryMarketEntry entry) {
+        if (!hasCompletedScore(entry)) {
+            return;
+        }
+        schedule.setStatus("COMPLETED");
+        schedule.setHomeScore(entry.getHomeScore());
+        schedule.setAwayScore(entry.getAwayScore());
     }
 
     private boolean hasBundledHistoricalOdds(MatchSchedule schedule) {
