@@ -572,7 +572,8 @@ class ClubTeamNameTranslatorTest {
                 Map.entry("USC Paredes", "Paredes"),
                 Map.entry("Ahli", "吉达国民"),
                 Map.entry("FC Felgueiras", "Felgueiras 1932"),
-                Map.entry("维戈塞尔塔", "维尔塔"),
+                Map.entry("维尔塔", "塞尔塔"),
+                Map.entry("维戈塞尔塔", "塞尔塔"),
                 Map.entry("Stoke", "斯托克城"),
                 Map.entry("Leca", "勒卡"),
                 Map.entry("Machico", "马奇科"));

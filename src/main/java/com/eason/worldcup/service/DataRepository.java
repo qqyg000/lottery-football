@@ -650,7 +650,16 @@ public class DataRepository {
             case "法国超级杯" -> "法超杯";
             default -> withoutRound;
         };
-        return normalizeTeamName(canonicalCompetition).replaceAll("[^\\p{L}\\p{N}]", "");
+        String normalizedCompetition = normalizeTeamName(canonicalCompetition)
+                .replaceAll("[^\\p{L}\\p{N}]", "");
+        return isGenericQualificationContext(normalizedCompetition)
+                ? ""
+                : normalizedCompetition;
+    }
+
+    private boolean isGenericQualificationContext(String competitionContext) {
+        return competitionContext.matches(
+                "(?:资格赛|预选赛)(?:第?[一二三四五六七八九十百零0-9]+轮)?");
     }
 
     private boolean areSimilarScheduleTeams(

@@ -2444,7 +2444,15 @@ public class ClubCompetitionScheduleUpdater {
     }
 
     private String canonicalCompetitionContext(String groupName) {
-        return canonicalTeamName(canonicalSourceCompetitionName(groupName));
+        String competitionContext = canonicalTeamName(canonicalSourceCompetitionName(groupName));
+        return isGenericQualificationContext(competitionContext)
+                ? ""
+                : competitionContext;
+    }
+
+    private boolean isGenericQualificationContext(String competitionContext) {
+        return competitionContext.matches(
+                "(?:资格赛|预选赛)(?:第?[一二三四五六七八九十百零0-9]+轮)?");
     }
 
     private boolean areSimilarScheduleTeams(
