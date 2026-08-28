@@ -697,6 +697,50 @@ class ClubTeamNameTranslatorTest {
     }
 
     @Test
+    void shouldApplyRequestedGermanAndEnglishTeamAliases() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> expectedMappings = Map.ofEntries(
+                Map.entry("拜仁慕尼黑", "拜仁"),
+                Map.entry("Wehen Wiesbaden", "韦恩"),
+                Map.entry("SV Wehen", "韦恩"),
+                Map.entry("Kickers Offenbach", "奥踢球者"),
+                Map.entry("FSV Hollenbach", "Hollenbach"),
+                Map.entry("TSG Balingen", "Balingen"),
+                Map.entry("Real Mallorca", "马洛卡"),
+                Map.entry("埃尔沃斯堡", "埃沃斯堡"),
+                Map.entry("RW Essen", "埃森"),
+                Map.entry("门兴格拉德巴赫", "门兴"),
+                Map.entry("Hansa Rostock", "罗斯托克"),
+                Map.entry("Wuppertaler SV", "乌珀塔尔"),
+                Map.entry("Wuppertal", "乌珀塔尔"),
+                Map.entry("Dynamo Dresden", "德累斯顿"),
+                Map.entry("Aarau", "阿劳"),
+                Map.entry("Winterthur", "温特图尔"),
+                Map.entry("Winterthour", "温特图尔"),
+                Map.entry("Jena", "耶拿"),
+                Map.entry("Carl Zeiss Jena", "耶拿"),
+                Map.entry("Chemnitzer FC", "开姆尼茨"),
+                Map.entry("Chemnitz", "开姆尼茨"),
+                Map.entry("Rathenow", "奥普迪克"),
+                Map.entry("Optik Rathenow", "奥普迪克"),
+                Map.entry("FCV Optik Rathenow", "奥普迪克"),
+                Map.entry("FSV Frankfurt", "FSV法兰"),
+                Map.entry("FC Gießen", "Gießen"),
+                Map.entry("Sandhausen", "桑德豪森"),
+                Map.entry("Eisbachtaler Sportfreunde", "Eisbachtal"),
+                Map.entry("Spfr Eisbachtal", "Eisbachtal"),
+                Map.entry("VfL Osnabruck", "奥斯纳"),
+                Map.entry("Magdeburg", "马格德堡"),
+                Map.entry("Magdebourg", "马格德堡"),
+                Map.entry("Preston North End", "普雷斯顿"),
+                Map.entry("Plymouth Argyle", "普利茅斯"));
+
+        expectedMappings.forEach((source, expected) ->
+                assertEquals(expected, ClubTeamNameTranslator.translate(source), source));
+    }
+
+    @Test
     void shouldApplyAugustTwentyFirstRequestedTeamMappings() throws IOException {
         assumeMappingsImported();
 

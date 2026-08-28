@@ -44,12 +44,30 @@ class ClubCompetitionScheduleUpdaterTest {
                 "HISTORICAL_FOTMOB_LEAGUE_IDS");
 
         assertNotNull(sources);
-        assertEquals(Set.of("47", "48", "53", "55", "86", "108", "132", "133", "141", "150", "186", "207", "247"),
+        assertEquals(Set.of(
+                        "47", "48", "53", "54", "55", "86", "108", "132", "133", "141", "146",
+                        "150", "186", "207", "209", "247", "8924"),
                 historicalLeagueIds);
         assertTrue(sources.stream().anyMatch(source ->
                 "47".equals(source.leagueId())
                         && source.competition() == Competition.PREMIER_LEAGUE
                         && "英超".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "54".equals(source.leagueId())
+                        && source.competition() == Competition.BUNDESLIGA
+                        && "德甲".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "146".equals(source.leagueId())
+                        && source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "德乙".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "209".equals(source.leagueId())
+                        && source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "德国杯".equals(source.sourceCompetition())));
+        assertTrue(sources.stream().anyMatch(source ->
+                "8924".equals(source.leagueId())
+                        && source.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && "德国超级杯".equals(source.sourceCompetition())));
         assertTrue(sources.stream().anyMatch(source ->
                 "48".equals(source.leagueId()) && "英冠".equals(source.sourceCompetition())));
         assertTrue(sources.stream().anyMatch(source ->
@@ -1088,6 +1106,71 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals("瓦雷泽", schedule.getAwayTeamCn());
         assertEquals(3, schedule.getHomeScore());
         assertEquals(0, schedule.getAwayScore());
+    }
+
+    @Test
+    void shouldParseGermanCupAndSuperCupMatchesInShanghaiTime() throws Exception {
+        JsonNode germanCupMatch = objectMapper.readTree("""
+                {
+                  "id": "5750697",
+                  "home": { "name": "Hansa Rostock" },
+                  "away": { "name": "VfB Stuttgart" },
+                  "status": {
+                    "utcTime": "2026-08-21T18:45:00Z",
+                    "finished": true,
+                    "cancelled": false,
+                    "scoreStr": "0 - 4",
+                    "reason": { "short": "FT" }
+                  }
+                }
+                """);
+        JsonNode superCupMatch = objectMapper.readTree("""
+                {
+                  "id": "5801099",
+                  "home": { "name": "Borussia Dortmund" },
+                  "away": { "name": "Bayern München" },
+                  "status": {
+                    "utcTime": "2026-08-22T18:30:00Z",
+                    "finished": true,
+                    "cancelled": false,
+                    "scoreStr": "1 - 2",
+                    "reason": { "short": "FT" }
+                  }
+                }
+                """);
+
+        MatchSchedule germanCup = updater.parseFotMobLeagueMatch(
+                germanCupMatch,
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "209",
+                        "德国杯"),
+                ZoneId.of("Asia/Shanghai"));
+        MatchSchedule superCup = updater.parseFotMobLeagueMatch(
+                superCupMatch,
+                new ClubCompetitionScheduleUpdater.FotMobLeagueSource(
+                        Competition.CLUB_OFFICIAL_OTHER,
+                        "8924",
+                        "德国超级杯"),
+                ZoneId.of("Asia/Shanghai"));
+
+        assertNotNull(germanCup);
+        assertEquals(LocalDate.of(2026, 8, 22), germanCup.getMatchDate());
+        assertEquals(LocalTime.of(2, 45), germanCup.getKickoffTime());
+        assertEquals("德国杯", germanCup.getGroupName());
+        assertEquals("罗斯托克", germanCup.getHomeTeamCn());
+        assertEquals("斯图加特", germanCup.getAwayTeamCn());
+        assertEquals(0, germanCup.getHomeScore());
+        assertEquals(4, germanCup.getAwayScore());
+
+        assertNotNull(superCup);
+        assertEquals(LocalDate.of(2026, 8, 23), superCup.getMatchDate());
+        assertEquals(LocalTime.of(2, 30), superCup.getKickoffTime());
+        assertEquals("德国超级杯", superCup.getGroupName());
+        assertEquals("多特蒙德", superCup.getHomeTeamCn());
+        assertEquals("拜仁", superCup.getAwayTeamCn());
+        assertEquals(1, superCup.getHomeScore());
+        assertEquals(2, superCup.getAwayScore());
     }
 
     @Test

@@ -54,9 +54,9 @@
 
 | 文件 | 行数 | 日期范围 |
 |---|---:|---|
-| `historical_matches.csv` | 235,195 | 2014-10-22 至 2026-08-22 |
+| `historical_matches.csv` | 237,047 | 2014-10-22 至 2026-08-25 |
 | `historical_odds_data.csv` | 29,251 | 2014-10-22 至 2026-08-11 |
-| `team_name_mappings.csv` | 24,338 | 2014-06-24 至 2026-08-24 |
+| `team_name_mappings.csv` | 24,564 | 2014-06-24 至 2026-08-28 |
 
 主要数据来自 FotMob、Futbol24、Foot Mercato、阿塞拜疆 PFL、Sofascore、OpenFootball、ESPN、FootballCSV、`international_results` 和中国体彩网。外部接口不可用时，服务继续使用内置数据和本地缓存。完整来源说明见 [DATA_SOURCES.md](DATA_SOURCES.md)。
 
@@ -357,7 +357,7 @@ node scripts/generate-team-name-mappings.mjs
 页面“更新数据”会异步执行以下阶段：
 
 1. 读取以当天为基准的体彩最近 30 天赛果
-2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；意甲、意乙、法联赛杯、葡萄牙杯、苏足总杯、韩国杯、芬甲、荷兰杯、西乙、西甲、欧冠、罗甲、罗超杯、波甲、斯洛文甲、亚美尼超和俱乐部友谊赛均在此阶段更新
+2. 刷新近期赛程，按统一球队名合并体彩、ESPN、FotMob 和 Futbol24 补充来源；德甲、德乙、德国杯、德国超级杯、意甲、意乙、法联赛杯、葡萄牙杯、苏足总杯、韩国杯、芬甲、荷兰杯、西乙、西甲、欧冠、罗甲、罗超杯、波甲、斯洛文甲、亚美尼超和俱乐部友谊赛均在此阶段更新
 3. 重建球队模型
 4. 更新赛事概览
 
@@ -391,6 +391,12 @@ node scripts/import-supplemental-history.mjs --write --compact --skip-national
 # 回补 2014-10-22 至今的意甲、意乙、法联赛杯和葡萄牙杯
 node scripts/import-supplemental-history.mjs --write --compact `
   --only-sources FOTMOB-55,FOTMOB-86,FOTMOB-150,FOTMOB-186 `
+  --source-min-date 2014-10-22
+
+# 权威重建 2014-10-22 至今的德甲、德乙、德国杯和德国超级杯
+node scripts/import-supplemental-history.mjs --write --compact `
+  --only-sources FOTMOB-54,FOTMOB-146,FOTMOB-209,FOTMOB-8924 `
+  --replace-source-competitions 德甲,德乙,德国杯,德国超级杯 `
   --source-min-date 2014-10-22
 
 # 仅把已存在的加时、点球比赛修正为 90 分钟比分，不新增比赛或触发全量去重

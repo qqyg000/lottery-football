@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 157 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 214,692 场，日期范围为 2014-10-22 至 2026-08-11；导入流程以 2014-10-22 作为历史数据最早截点。17 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 160 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 237,047 场，日期范围为 2014-10-22 至 2026-08-25；导入流程以 2014-10-22 作为历史数据最早截点。18 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
@@ -20,7 +20,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - ESPN Scoreboard：国内杯赛、超级杯、洲际俱乐部赛事和俱乐部友谊赛
 - Futbol24 按日及赛季比赛接口：按年度回补 2014 年以来 ESPN、FotMob 未收录的欧冠、俱乐部友谊赛，并补充罗甲、罗超杯、阿塞杯、芬超、芬兰杯、丹超、丹麦杯、波超杯、波甲、奥甲、苏超、苏足总杯、土超、土耳其杯、匈甲、匈牙利杯、克甲、塞浦甲和哈萨超
 - [Foot Mercato 俱乐部友谊赛日历](https://www.footmercato.net/international/amicaux-club/calendrier/)：补齐 Futbol24 和 FotMob 在 2026 当前赛季遗漏的已完场友谊赛
-- FotMob 按赛季接口：补充俱乐部赛、苏足总杯、芬甲、荷兰杯、西甲、西乙、苏格兰联赛杯、芬兰联赛杯、瑞典杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、荷乙、葡超、欧协联、比甲、比利时杯、比超杯、希超、捷甲、挪超、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
+- FotMob 按赛季接口：权威重建德甲、德乙、德国杯、德国超级杯，并补充俱乐部赛、苏足总杯、芬甲、荷兰杯、西甲、西乙、苏格兰联赛杯、芬兰联赛杯、瑞典杯、瑞甲、亚冠精英、Play-offs 1/2、韩挑战联、韩国杯、韩职、瑞超、荷甲、荷乙、葡超、欧协联、比甲、比利时杯、比超杯、希超、捷甲、挪超、瑞士杯、瑞士超、保杯、保超、爱超、塞超、塞杯、斯洛伐超、斯洛伐杯、卢森联、卢森杯、法罗超、法罗杯、黑山甲、冰超、冰岛杯和威尔士超
 - Soccerway 韩国杯赛季结果页：补齐 FotMob 旧赛季接口仅返回后期轮次的问题
 - Futbol24 按赛季接口：补齐 FotMob 历史覆盖不足的塞杯、卢森杯、法罗杯和威联杯
 - 阿塞拜疆职业足球联盟（PFL）官方接口：补齐 Futbol24 未收录的阿塞杯第一资格轮和阿塞超升降级附加赛
@@ -76,6 +76,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - 国内杯赛、超级杯、欧协联、解放者杯、南美杯等：俱乐部其他正式比赛
 - `club.friendly`、国际冠军杯、酋长杯、英超亚洲杯和甘伯杯：俱乐部正常阵容友谊赛
 - FotMob `leagueId=489`：俱乐部赛，其中该接口只提供当前赛季，长期历史由 ESPN 补齐
+- FotMob `leagueId=54/146/209/8924`：德甲、德乙、德国杯和德国超级杯的 2014-10-22 至今完整历史与点击更新来源
 - FotMob `leagueId=137`：苏足总杯完整赛季历史和近期比赛，开球时间统一转换为 `Asia/Shanghai`
 - FotMob `leagueId=180/342/171/168`：苏格兰联赛杯、芬兰联赛杯、瑞典杯和瑞甲完整赛季历史
 - FotMob `leagueId=172/9422`：瑞典与韩国 Play-offs 1/2 完整赛季历史，统一保留来源赛事名 `Play-offs 1/2`

@@ -62,6 +62,7 @@ const MAPPING_SOURCE_PRIORITY = new Map([
 ])
 
 const SOURCE_COMPETITION_ALIASES = new Map([
+  ['德超杯', '德国超级杯'],
   ['韩足总杯', '韩国杯'],
   ['韩国足总杯', '韩国杯'],
   ['英格兰足总杯', '英足总杯'],
@@ -192,6 +193,7 @@ const ESPN_OFFICIAL_SOURCES = [
   ['eng.charity', '英格兰社区盾'],
   ['esp.copa_del_rey', '西班牙国王杯'],
   ['esp.super_cup', '西班牙超级杯'],
+  ['ger.2', '德乙'],
   ['ger.dfb_pokal', '德国杯'],
   ['ger.super_cup', '德国超级杯'],
   ['ita.coppa_italia', '意大利杯'],
@@ -242,6 +244,38 @@ const FOTMOB_LEAGUE_SOURCES = [
     competition: 'PREMIER_LEAGUE',
     matchType: 'OFFICIAL',
     sourceCompetition: '英超',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '54',
+    competition: 'BUNDESLIGA',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '德甲',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '146',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '德乙',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '209',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '德国杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '8924',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '德国超级杯',
     calendarYearSeason: false,
     firstSeasonStartYear: 2014
   },
@@ -734,6 +768,10 @@ const FOTMOB_LEAGUE_SOURCES = [
 
 const AUTHORITATIVE_FOTMOB_LEAGUE_IDS = new Set([
   '47',
+  '54',
+  '146',
+  '209',
+  '8924',
   '48',
   '53',
   '55',
@@ -3758,8 +3796,7 @@ const effectiveMappingRows = options.resetInferredMappings
 const nationalMappings = buildMappings(effectiveMappingRows, NATIONAL_COMPETITIONS)
 const clubMappings = buildMappings(effectiveMappingRows, ALL_CLUB_COMPETITIONS)
 const replacedRows = originalRows.filter(row => (
-  row.competition === 'CLUB_OFFICIAL_OTHER'
-  && options.replaceSourceCompetitions.has(row.source_competition)
+  options.replaceSourceCompetitions.has(row.source_competition)
   && row.match_date >= options.sourceMinDate
   && row.match_date <= options.sourceMaxDate
 ))
