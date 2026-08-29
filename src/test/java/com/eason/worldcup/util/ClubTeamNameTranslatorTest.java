@@ -20,6 +20,41 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class ClubTeamNameTranslatorTest {
 
     @Test
+    void shouldTranslateAugustTwentyNinthRequestedClubAliases() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> aliases = Map.ofEntries(
+                Map.entry("Viktoria Köln", "克隆维多"),
+                Map.entry("Viktoria Köln 1904", "克隆维多"),
+                Map.entry("Preußen Münster", "明斯特"),
+                Map.entry("Würzburger Kickers", "维尔茨堡"),
+                Map.entry("Aue", "奥厄"),
+                Map.entry("Erzgebirge Aue", "奥厄"),
+                Map.entry("VfB Krieschow", "Krieschow"),
+                Map.entry("迪拜国民青年", "迪拜国青"),
+                Map.entry("1. FC Phönix Lübeck", "Phönix Lübeck"),
+                Map.entry("Eintracht Trier", "特里尔"),
+                Map.entry("VSG Altglienicke", "Altglienicke"),
+                Map.entry("TSV Schott Mainz", "Schott"),
+                Map.entry("Eintracht Braunschweig", "不伦瑞克"),
+                Map.entry("Benevento Calcio", "贝内文托"),
+                Map.entry("FC Hansa Lüneburg", "LSK Hansa"),
+                Map.entry("Fagiano Okayama FC", "冈山绿雉"),
+                Map.entry("Fagiano", "冈山绿雉"),
+                Map.entry("Energie Cottbus", "科特布斯"),
+                Map.entry("SC Schwaz", "Schwaz"),
+                Map.entry("Saarbrücken", "萨布吕肯"),
+                Map.entry("1. FC Saarbrücken", "萨布吕肯"),
+                Map.entry("Hallescher FC", "哈雷"),
+                Map.entry("Hessen Kassel", "黑森卡塞尔"),
+                Map.entry("FC Gütersloh", "居特斯洛"));
+
+        for (Map.Entry<String, String> alias : aliases.entrySet()) {
+            assertEquals(alias.getValue(), ClubTeamNameTranslator.translate(alias.getKey()));
+        }
+    }
+
+    @Test
     void shouldTranslateAugustTwentyThirdRequestedClubAliases() throws IOException {
         assumeMappingsImported();
 

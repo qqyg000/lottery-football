@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 160 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 237,047 场，日期范围为 2014-10-22 至 2026-08-25；导入流程以 2014-10-22 作为历史数据最早截点。18 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 160 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 237,035 场，日期范围为 2014-10-22 至 2026-08-25；导入流程以 2014-10-22 作为历史数据最早截点。18 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
