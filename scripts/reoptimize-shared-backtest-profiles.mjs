@@ -38,6 +38,9 @@ const MINIMUM_TRAINING_MATCHES = numberOption('MINIMUM_TRAINING_MATCHES', 10)
 const MINIMUM_VALIDATION_MATCHES = numberOption('MINIMUM_VALIDATION_MATCHES', 6)
 const MINIMUM_VALIDATION_ROI = decimalOption('MINIMUM_VALIDATION_ROI', 0)
 const MINIMUM_TRAINING_ROI = decimalOption('MINIMUM_TRAINING_ROI', 0)
+const TRAINING_STABILITY_BLOCKS = clamp(numberOption('TRAINING_STABILITY_BLOCKS', 3), 2, 5)
+const MINIMUM_STABILITY_BLOCK_MATCHES = numberOption('MINIMUM_STABILITY_BLOCK_MATCHES', 3)
+const HOLDOUT_CANDIDATE_LIMIT = numberOption('HOLDOUT_CANDIDATE_LIMIT', 24)
 const BACKTEST_PARALLELISM = clamp(numberOption('BACKTEST_PARALLELISM', 4), 1, 16)
 const ROI_EPSILON = 1e-9
 const APPLY_RESULTS = process.argv.includes('--apply')
@@ -313,6 +316,102 @@ function compareMatchesChronologically(left, right) {
     )
 }
 
+function createChronologicalBlocks(matches, requestedBlockCount = TRAINING_STABILITY_BLOCKS) {
+  const sorted = [...matches].sort(compareMatchesChronologically)
+  const dateGroups = []
+  for (const match of sorted) {
+    const date = String(match.matchDate || '')
+    const current = dateGroups.at(-1)
+    if (!current || current.date !== date) {
+      dateGroups.push({ date, matches: [match] })
+    } else {
+      current.matches.push(match)
+    }
+  }
+  const maximumBlockCount = Math.min(
+    requestedBlockCount,
+    dateGroups.length,
+    Math.floor(sorted.length / MINIMUM_STABILITY_BLOCK_MATCHES)
+  )
+  for (let blockCount = maximumBlockCount; blockCount >= 2; blockCount--) {
+    const targetSize = sorted.length / blockCount
+    const blocks = []
+    let currentBlock = []
+    let processedMatchCount = 0
+    for (const [index, group] of dateGroups.entries()) {
+      currentBlock.push(...group.matches)
+      processedMatchCount += group.matches.length
+      const remainingBlockCount = blockCount - blocks.length - 1
+      const remainingMatchCount = sorted.length - processedMatchCount
+      const enoughForRemainingBlocks = remainingMatchCount >=
+        remainingBlockCount * MINIMUM_STABILITY_BLOCK_MATCHES
+      const enoughDateGroups = dateGroups.length - index - 1 >= remainingBlockCount
+      if (
+        remainingBlockCount > 0 &&
+        currentBlock.length >= targetSize &&
+        enoughForRemainingBlocks &&
+        enoughDateGroups
+      ) {
+        blocks.push(currentBlock)
+        currentBlock = []
+      }
+    }
+    blocks.push(currentBlock)
+    if (
+      blocks.length === blockCount &&
+      blocks.every(block => block.length >= MINIMUM_STABILITY_BLOCK_MATCHES)
+    ) {
+      return blocks
+    }
+  }
+  return [sorted]
+}
+
+function evaluateTrainingStability(backtest, profile, trainingMetrics = null) {
+  const metrics = trainingMetrics || evaluateProfile(backtest, profile)
+  const blocks = createChronologicalBlocks(backtest.matches)
+  if (blocks.length < 2) {
+    return {
+      available: false,
+      blockCount: blocks.length,
+      score: metrics.roi,
+      worstRoi: metrics.roi,
+      averageRoi: metrics.roi,
+      roiStandardDeviation: 0,
+      blockMetrics: []
+    }
+  }
+  const blockMetrics = blocks.map(block => evaluateProfile(backtestPartition(block), profile))
+  const blockRois = blockMetrics.map(item => item.roi)
+  if (blockRois.some(value => !Number.isFinite(value))) {
+    return {
+      available: true,
+      blockCount: blocks.length,
+      score: Number.NEGATIVE_INFINITY,
+      worstRoi: null,
+      averageRoi: null,
+      roiStandardDeviation: null,
+      blockMetrics
+    }
+  }
+  const averageRoi = blockRois.reduce((sum, value) => sum + value, 0) / blockRois.length
+  const variance = blockRois.reduce((sum, value) => sum + (value - averageRoi) ** 2, 0) /
+    Math.max(1, blockRois.length - 1)
+  const roiStandardDeviation = Math.sqrt(variance)
+  const worstRoi = Math.min(...blockRois)
+  const downsidePenalty = Math.max(0, -worstRoi)
+  return {
+    available: true,
+    blockCount: blocks.length,
+    score: finite(metrics.roi, Number.NEGATIVE_INFINITY) -
+      roiStandardDeviation * 0.25 - downsidePenalty * 0.25,
+    worstRoi,
+    averageRoi,
+    roiStandardDeviation,
+    blockMetrics
+  }
+}
+
 function backtestPartition(matches) {
   return {
     completedMatchCount: matches.length,
@@ -368,13 +467,26 @@ function evaluateProfileRobustly(backtest, profile) {
   const validationMetrics = split.available
     ? evaluateProfile(split.validationBacktest, profile)
     : null
+  const trainingStability = evaluateTrainingStability(
+    split.trainingBacktest,
+    profile,
+    trainingMetrics
+  )
   return {
     validationAvailable: split.available,
     trainingMatchCount: split.trainingBacktest.oddsMatchCount,
     validationMatchCount: split.validationBacktest.oddsMatchCount,
     fullMetrics,
     trainingMetrics,
-    validationMetrics
+    validationMetrics,
+    trainingStability
+  }
+}
+
+function attachTrainingStability(backtest, candidate) {
+  return {
+    ...candidate,
+    trainingStability: evaluateTrainingStability(backtest, candidate.profile, candidate.metrics)
   }
 }
 
@@ -539,6 +651,11 @@ function withinSamplingBounds(candidate, samplingBounds) {
     candidate.metrics.samplingRate <= samplingBounds.maximum + ROI_EPSILON
 }
 
+function metricsWithinSamplingBounds(metrics, samplingBounds) {
+  return metrics.samplingRate + ROI_EPSILON >= samplingBounds.minimum &&
+    metrics.samplingRate <= samplingBounds.maximum + ROI_EPSILON
+}
+
 function minimumSamplingRateFor(competition, range, preset) {
   if (preset === 'STABLE') {
     return competition === 'EUROPEAN_CHAMPIONSHIP' && range === 'CURRENT' ? 0.4 : 0.6
@@ -637,6 +754,34 @@ function isRobustCandidate(candidate, competition, range, preset) {
   return candidate.metrics.roi + ROI_EPSILON >= minimumFullRoi
 }
 
+function isTrainingCandidate(candidate, competition, range, preset) {
+  const metrics = candidate?.trainingMetrics || candidate?.metrics
+  return Boolean(
+    metrics &&
+    metrics.recommendedMatchCount > 0 &&
+    meetsMinimumSamplingRate(metrics.samplingRate, competition, range, preset) &&
+    Number.isFinite(metrics.roi) &&
+    metrics.roi + ROI_EPSILON >= MINIMUM_TRAINING_ROI
+  )
+}
+
+function trainingStabilityScore(candidate) {
+  const score = candidate?.trainingStability?.score
+  return Number.isFinite(score)
+    ? score
+    : Number.NEGATIVE_INFINITY
+}
+
+function shortlistForHoldout(pool, competition, range, preset, samplingBounds) {
+  return pool
+    .filter(candidate => (
+      isTrainingCandidate(candidate, competition, range, preset) &&
+      metricsWithinSamplingBounds(candidate.trainingMetrics, samplingBounds)
+    ))
+    .sort(robustCandidateRanking)
+    .slice(0, HOLDOUT_CANDIDATE_LIMIT)
+}
+
 function isRobustPair(stable, aggressive, competition, range) {
   if (
     !isRobustCandidate(stable, competition, range, 'STABLE') ||
@@ -703,13 +848,19 @@ function bestForModelRanking(pool, baselineSamplingRate) {
   const source = constrained.length > 0
     ? constrained
     : pool.filter(candidate => candidate.metrics.samplingRate >= MINIMUM_AGGRESSIVE_SAMPLING_RATE)
-  return source.sort((left, right) => right.metrics.roi - left.metrics.roi)[0] || null
+  return source.sort((left, right) => (
+    trainingStabilityScore(right) - trainingStabilityScore(left) ||
+    right.metrics.roi - left.metrics.roi
+  ))[0] || null
 }
 
 function bestForTargetSampling(pool, samplingBounds) {
   return pool
     .filter(candidate => withinSamplingBounds(candidate, samplingBounds))
-    .sort(candidateRanking)[0] || null
+    .sort((left, right) => (
+      trainingStabilityScore(right) - trainingStabilityScore(left) ||
+      candidateRanking(left, right)
+    ))[0] || null
 }
 
 async function fetchJson(url, options = {}, attempts = 3) {
@@ -882,7 +1033,7 @@ async function optimizePreset(competition, range, preset, originalProfile, optio
         model,
         COARSE_RULE_CANDIDATES,
         stringSeed(key + ':coarse:' + index)
-      )
+      ).map(candidate => attachTrainingStability(coarseSplit.trainingBacktest, candidate))
       const best = options.samplingBounds
         ? bestForTargetSampling(pool, options.samplingBounds)
         : bestForModelRanking(pool, baselineMetrics.samplingRate)
@@ -1070,14 +1221,28 @@ function candidateRanking(left, right) {
 }
 
 function robustCandidateRanking(left, right) {
-  return right.trainingMetrics.roi - left.trainingMetrics.roi ||
+  return trainingStabilityScore(right) - trainingStabilityScore(left) ||
+    right.trainingMetrics.roi - left.trainingMetrics.roi ||
+    (right.trainingStability?.worstRoi ?? Number.NEGATIVE_INFINITY) -
+      (left.trainingStability?.worstRoi ?? Number.NEGATIVE_INFINITY) ||
     right.trainingMetrics.samplingRate - left.trainingMetrics.samplingRate ||
     right.trainingMetrics.recommendedSelectionCount - left.trainingMetrics.recommendedSelectionCount ||
     profileSignature(left.profile).localeCompare(profileSignature(right.profile))
 }
 
 function chooseAggressiveCandidate(pool, stable, competition, range, samplingBounds) {
-  return pool
+  const shortlist = pool
+    .filter(candidate => (
+      isTrainingCandidate(candidate, competition, range, 'AGGRESSIVE') &&
+      metricsWithinSamplingBounds(candidate.trainingMetrics, samplingBounds) &&
+      candidate.trainingMetrics.roi >
+        stable.trainingMetrics.roi + MINIMUM_AGGRESSIVE_ROI_GAP + ROI_EPSILON &&
+      candidate.trainingMetrics.samplingRate <=
+        stable.trainingMetrics.samplingRate + ROI_EPSILON
+    ))
+    .sort(robustCandidateRanking)
+    .slice(0, HOLDOUT_CANDIDATE_LIMIT)
+  return shortlist
     .filter(candidate => (
       withinSamplingBounds(candidate, samplingBounds) &&
       isRobustPair(stable, candidate, competition, range)
@@ -1088,11 +1253,16 @@ function chooseAggressiveCandidate(pool, stable, competition, range, samplingBou
 function bestAggressiveInSamplingWindow(pool, stable, competition, range, samplingBounds) {
   return pool
     .filter(candidate => (
+      isTrainingCandidate(candidate, competition, range, 'AGGRESSIVE') &&
+      metricsWithinSamplingBounds(candidate.trainingMetrics, samplingBounds)
+    ))
+    .sort(robustCandidateRanking)
+    .slice(0, HOLDOUT_CANDIDATE_LIMIT)
+    .filter(candidate => (
       withinSamplingBounds(candidate, samplingBounds) &&
       isRobustCandidate(candidate, competition, range, 'AGGRESSIVE') &&
       candidate.metrics.samplingRate <= stable.metrics.samplingRate + ROI_EPSILON
-    ))
-    .sort(robustCandidateRanking)[0] || null
+    ))[0] || null
 }
 
 function chooseReoptimizedPair(stableResult, aggressiveResult, competition, range) {
@@ -1124,7 +1294,13 @@ function chooseReoptimizedPair(stableResult, aggressiveResult, competition, rang
     ])
   }
   for (const [samplingPolicy, stableBounds, aggressiveBounds] of candidateGroups) {
-    const stableCandidates = stableResult.pool.filter(candidate => (
+    const stableCandidates = shortlistForHoldout(
+      stableResult.pool,
+      competition,
+      range,
+      'STABLE',
+      stableBounds
+    ).filter(candidate => (
       withinSamplingBounds(candidate, stableBounds) &&
       isRobustCandidate(candidate, competition, range, 'STABLE')
     ))
@@ -1140,7 +1316,7 @@ function chooseReoptimizedPair(stableResult, aggressiveResult, competition, rang
       if (!aggressive) {
         continue
       }
-      const score = stable.trainingMetrics.roi + aggressive.trainingMetrics.roi
+      const score = trainingStabilityScore(stable) + trainingStabilityScore(aggressive)
       if (!best || score > best.score + ROI_EPSILON ||
         (Math.abs(score - best.score) <= ROI_EPSILON &&
           aggressive.trainingMetrics.roi > best.aggressive.trainingMetrics.roi)) {
@@ -1392,7 +1568,7 @@ function buildMarkdown(report) {
     '- 激进方案ROI必须严格高于同赛事同时段稳健方案',
     `- 时间留出：按日期升序，前${percent(1 - report.options.validationFraction)}训练、后${percent(report.options.validationFraction)}验证，同日比赛不跨分区`,
     `- 最少训练/验证样本：${report.options.minimumTrainingMatches}/${report.options.minimumValidationMatches}，训练ROI下限${percent(report.options.minimumTrainingRoi)}，验证ROI下限${percent(report.options.minimumValidationRoi)}`,
-    '- 候选只按训练集ROI排序，验证集仅作通过或拒绝门禁',
+    `- 候选按训练集ROI与${report.options.trainingStabilityBlocks}个连续时间块稳定性排序，最终留出集只检查预先固定的候选池`,
     '- 无法通过稳健门禁的方案关闭，不产生投注推荐',
     samplingConstraint,
     '- 激进方案采样率和ROI均高于稳健方案时，将激进参数移植给稳健方案，再优化激进方案',
@@ -1811,6 +1987,9 @@ async function main() {
       minimumValidationMatches: MINIMUM_VALIDATION_MATCHES,
       minimumTrainingRoi: MINIMUM_TRAINING_ROI,
       minimumValidationRoi: MINIMUM_VALIDATION_ROI,
+      trainingStabilityBlocks: TRAINING_STABILITY_BLOCKS,
+      minimumStabilityBlockMatches: MINIMUM_STABILITY_BLOCK_MATCHES,
+      holdoutCandidateLimit: HOLDOUT_CANDIDATE_LIMIT,
       backtestParallelism: BACKTEST_PARALLELISM,
       reoptimizeAll: REOPTIMIZE_ALL,
       targetRanges: [...TARGET_RANGES]

@@ -109,6 +109,18 @@ const MINIMUM_TRAINING_MATCHES = Number(readArgument('--minimum-training-matches
 if (!Number.isInteger(MINIMUM_TRAINING_MATCHES) || MINIMUM_TRAINING_MATCHES < 5) {
   throw new Error('--minimum-training-matches 必须是不小于5的整数')
 }
+const TRAINING_STABILITY_BLOCKS = Number(readArgument('--training-stability-blocks', '3'))
+if (!Number.isInteger(TRAINING_STABILITY_BLOCKS) || TRAINING_STABILITY_BLOCKS < 2 || TRAINING_STABILITY_BLOCKS > 5) {
+  throw new Error('--training-stability-blocks 必须是2到5之间的整数')
+}
+const MINIMUM_STABILITY_BLOCK_MATCHES = Number(readArgument('--minimum-stability-block-matches', '3'))
+if (!Number.isInteger(MINIMUM_STABILITY_BLOCK_MATCHES) || MINIMUM_STABILITY_BLOCK_MATCHES < 2) {
+  throw new Error('--minimum-stability-block-matches 必须是不小于2的整数')
+}
+const HOLDOUT_CANDIDATE_LIMIT = Number(readArgument('--holdout-candidate-limit', String(TOP_CANDIDATE_LIMIT)))
+if (!Number.isInteger(HOLDOUT_CANDIDATE_LIMIT) || HOLDOUT_CANDIDATE_LIMIT <= 0) {
+  throw new Error('--holdout-candidate-limit 必须是正整数')
+}
 const MINIMUM_VALIDATION_ROI = Number(readArgument('--minimum-validation-roi', '0'))
 if (!Number.isFinite(MINIMUM_VALIDATION_ROI)) {
   throw new Error('--minimum-validation-roi 必须是有效数字')
@@ -329,11 +341,14 @@ async function main() {
         minimumTrainingMatches: MINIMUM_TRAINING_MATCHES,
         minimumValidationMatches: MINIMUM_VALIDATION_MATCHES,
         minimumValidationRoi: MINIMUM_VALIDATION_ROI,
-        rule: '候选参数仅在训练集搜索和细化，最终策略必须同时满足训练集、验证集和完整样本的同档采样率与命中率约束，且验证集ROI不得低于下限'
+        trainingStabilityBlocks: TRAINING_STABILITY_BLOCKS,
+        minimumStabilityBlockMatches: MINIMUM_STABILITY_BLOCK_MATCHES,
+        holdoutCandidateLimit: HOLDOUT_CANDIDATE_LIMIT,
+        rule: '候选参数仅在训练集搜索和细化，按连续时间块的ROI稳定性固定候选池后再进入最终验证；最终策略必须同时满足训练集、验证集和完整样本的同档采样率与命中率约束，且验证集ROI不得低于下限'
       },
       maximumSelectionsPerMatch: '0-4',
       strategySearch: ROBUST_VALIDATION
-        ? `仅使用训练集粗网格搜索，取目标最优的${TOP_CANDIDATE_LIMIT}个达标候选并执行最多3轮坐标细化，再通过时间留出验证集过滤过拟合候选`
+        ? `仅使用训练集粗网格搜索，按${TRAINING_STABILITY_BLOCKS}个连续时间块的ROI稳定性取${TOP_CANDIDATE_LIMIT}个达标候选并执行最多3轮坐标细化，再固定最多${HOLDOUT_CANDIDATE_LIMIT}个候选通过时间留出验证集门禁`
         : `先粗网格搜索，取目标最优的${TOP_CANDIDATE_LIMIT}个达标候选，再基于实际概率、期望值和赔率分布执行最多3轮坐标细化`,
       smallCurrentSampleRule: OPTIMIZE_SMALL_CURRENT_SAMPLES
         ? '仅本届存在样本时直接优化；无样本时沿用含上届策略'
@@ -708,6 +723,121 @@ function createChronologicalValidationSplit(matches) {
   }
 }
 
+function createChronologicalBlocks(matches, requestedBlockCount = TRAINING_STABILITY_BLOCKS) {
+  const sorted = [...matches].sort(compareMatchesChronologically)
+  const dateGroups = []
+  for (const match of sorted) {
+    const current = dateGroups.at(-1)
+    if (!current || current.date !== match.matchDate) {
+      dateGroups.push({ date: match.matchDate, matches: [match] })
+    } else {
+      current.matches.push(match)
+    }
+  }
+  const maximumBlockCount = Math.min(
+    requestedBlockCount,
+    dateGroups.length,
+    Math.floor(sorted.length / MINIMUM_STABILITY_BLOCK_MATCHES)
+  )
+  for (let blockCount = maximumBlockCount; blockCount >= 2; blockCount -= 1) {
+    const targetSize = sorted.length / blockCount
+    const blocks = []
+    let currentBlock = []
+    let processedMatchCount = 0
+    for (const [index, group] of dateGroups.entries()) {
+      currentBlock.push(...group.matches)
+      processedMatchCount += group.matches.length
+      const remainingBlockCount = blockCount - blocks.length - 1
+      const remainingMatchCount = sorted.length - processedMatchCount
+      const enoughForRemainingBlocks = remainingMatchCount >=
+        remainingBlockCount * MINIMUM_STABILITY_BLOCK_MATCHES
+      const enoughDateGroups = dateGroups.length - index - 1 >= remainingBlockCount
+      if (
+        remainingBlockCount > 0 &&
+        currentBlock.length >= targetSize &&
+        enoughForRemainingBlocks &&
+        enoughDateGroups
+      ) {
+        blocks.push(currentBlock)
+        currentBlock = []
+      }
+    }
+    blocks.push(currentBlock)
+    if (
+      blocks.length === blockCount &&
+      blocks.every(block => block.length >= MINIMUM_STABILITY_BLOCK_MATCHES)
+    ) {
+      return blocks
+    }
+  }
+  return [sorted]
+}
+
+function evaluateTrainingStability(matches, strategy, trainingMetrics = null) {
+  const metrics = trainingMetrics || evaluateStrategy(matches, strategy)
+  const blocks = createChronologicalBlocks(matches)
+  if (blocks.length < 2) {
+    return {
+      available: false,
+      blockCount: blocks.length,
+      score: metrics.roi,
+      worstRoi: metrics.roi,
+      averageRoi: metrics.roi,
+      roiStandardDeviation: 0,
+      blockMetrics: []
+    }
+  }
+  const blockMetrics = blocks.map(block => evaluateStrategy(block, strategy))
+  const blockRois = blockMetrics.map(item => item.roi)
+  if (blockRois.some(value => !Number.isFinite(value))) {
+    return {
+      available: true,
+      blockCount: blocks.length,
+      score: Number.NEGATIVE_INFINITY,
+      worstRoi: null,
+      averageRoi: null,
+      roiStandardDeviation: null,
+      blockMetrics
+    }
+  }
+  const averageRoi = blockRois.reduce((sum, value) => sum + value, 0) / blockRois.length
+  const variance = blockRois.reduce((sum, value) => sum + (value - averageRoi) ** 2, 0) /
+    Math.max(1, blockRois.length - 1)
+  const roiStandardDeviation = Math.sqrt(variance)
+  const worstRoi = Math.min(...blockRois)
+  const downsidePenalty = Math.max(0, -worstRoi)
+  return {
+    available: true,
+    blockCount: blocks.length,
+    score: (Number.isFinite(metrics.roi) ? metrics.roi : Number.NEGATIVE_INFINITY) -
+      roiStandardDeviation * 0.25 - downsidePenalty * 0.25,
+    worstRoi,
+    averageRoi,
+    roiStandardDeviation,
+    blockMetrics
+  }
+}
+
+function trainingStabilityScore(candidate) {
+  const score = candidate?.trainingStability?.score
+  return Number.isFinite(score) ? score : Number.NEGATIVE_INFINITY
+}
+
+function developmentCandidateRanking(left, right) {
+  const leftScore = trainingStabilityScore(left)
+  const rightScore = trainingStabilityScore(right)
+  if (leftScore !== rightScore) {
+    return rightScore - leftScore
+  }
+  if (isPreferredMetrics(left.trainingMetrics, right.trainingMetrics)) {
+    return -1
+  }
+  if (isPreferredMetrics(right.trainingMetrics, left.trainingMetrics)) {
+    return 1
+  }
+  return JSON.stringify(left.strategy).localeCompare(JSON.stringify(right.strategy))
+}
+
 function auditStrategyOverfitting(
   matches,
   strategy,
@@ -721,7 +851,8 @@ function auditStrategyOverfitting(
       reasons: [],
       robustnessMetrics: {
         ...emptyRobustnessMetrics(),
-        fullMetrics
+        fullMetrics,
+        trainingStability: null
       }
     }
   }
@@ -735,12 +866,18 @@ function auditStrategyOverfitting(
         validationAvailable: false,
         fullMetrics,
         trainingMetrics: evaluateStrategy(split.trainingMatches, strategy),
-        trainingMatchCount: split.trainingMatches.length
+        trainingMatchCount: split.trainingMatches.length,
+        trainingStability: null
       }
     }
   }
   const trainingMetrics = evaluateStrategy(split.trainingMatches, strategy)
   const validationMetrics = evaluateStrategy(split.validationMatches, strategy)
+  const trainingStability = evaluateTrainingStability(
+    split.trainingMatches,
+    strategy,
+    trainingMetrics
+  )
   const fullMeetsPrimary = meetsDualRateConstraint(
     fullMetrics,
     MINIMUM_SAMPLING_RATE,
@@ -799,7 +936,8 @@ function auditStrategyOverfitting(
       minimumValidationRoi: MINIMUM_VALIDATION_ROI,
       fullMetrics,
       trainingMetrics,
-      validationMetrics
+      validationMetrics,
+      trainingStability
     }
   }
 }
@@ -877,24 +1015,40 @@ function optimizeCompetitionForRobustConstraints(
     candidates,
     TOP_CANDIDATE_LIMIT,
     minimumSamplingRate,
-    minimumHitRate
+    minimumHitRate,
+    split.trainingMatches
   )
   const candidatePool = []
   for (const coarseCandidate of coarseCandidates) {
     candidatePool.push(coarseCandidate)
-    candidatePool.push(refineStrategy(
+    const refined = refineStrategy(
       split.trainingMatches,
       coarseCandidate,
       minimumTrainingMatches,
       minimumSamplingRate,
       minimumHitRate
-    ))
+    )
+    candidatePool.push({
+      ...refined,
+      trainingMetrics: refined.metrics,
+      trainingStability: evaluateTrainingStability(
+        split.trainingMatches,
+        refined.strategy,
+        refined.metrics
+      )
+    })
   }
+  const baselineTrainingMetrics = evaluateStrategy(split.trainingMatches, baselineStrategy)
   candidatePool.push({
     strategy: { ...baselineStrategy },
-    trainingMetrics: evaluateStrategy(split.trainingMatches, baselineStrategy)
+    trainingMetrics: baselineTrainingMetrics,
+    trainingStability: evaluateTrainingStability(
+      split.trainingMatches,
+      baselineStrategy,
+      baselineTrainingMetrics
+    )
   })
-  let best = null
+  const holdoutCandidates = []
   const seenStrategies = new Set()
   for (const candidate of candidatePool) {
     const strategyKey = JSON.stringify(candidate.strategy)
@@ -904,6 +1058,21 @@ function optimizeCompetitionForRobustConstraints(
     seenStrategies.add(strategyKey)
     const trainingMetrics = candidate.trainingMetrics ||
       evaluateStrategy(split.trainingMatches, candidate.strategy)
+    holdoutCandidates.push({
+      ...candidate,
+      trainingMetrics,
+      trainingStability: candidate.trainingStability || evaluateTrainingStability(
+        split.trainingMatches,
+        candidate.strategy,
+        trainingMetrics
+      )
+    })
+  }
+  holdoutCandidates.sort(developmentCandidateRanking)
+  holdoutCandidates.splice(HOLDOUT_CANDIDATE_LIMIT)
+  let best = null
+  for (const candidate of holdoutCandidates) {
+    const trainingMetrics = candidate.trainingMetrics
     const validationMetrics = evaluateStrategy(split.validationMatches, candidate.strategy)
     const fullMetrics = combinePartitionMetrics(trainingMetrics, validationMetrics)
     if (!meetsRobustOptimizationConstraints(
@@ -919,7 +1088,8 @@ function optimizeCompetitionForRobustConstraints(
       strategy: candidate.strategy,
       metrics: fullMetrics,
       trainingMetrics,
-      validationMetrics
+      validationMetrics,
+      trainingStability: candidate.trainingStability
     }
     if (isPreferredRobustCandidate(evaluated, best)) {
       best = evaluated
@@ -954,9 +1124,11 @@ function selectTopRobustStrategies(
   candidates,
   limit,
   minimumSamplingRate,
-  minimumHitRate
+  minimumHitRate,
+  trainingMatches
 ) {
-  const best = []
+  const preselected = []
+  const preselectionLimit = Math.max(limit, limit * 8)
   for (const candidate of candidates) {
     const trainingMetrics = candidate.metrics
     if (
@@ -970,19 +1142,29 @@ function selectTopRobustStrategies(
       metrics: trainingMetrics,
       trainingMetrics
     }
-    const insertionIndex = best.findIndex(existing => (
+    const insertionIndex = preselected.findIndex(existing => (
       isPreferredMetrics(evaluated.trainingMetrics, existing.trainingMetrics)
     ))
     if (insertionIndex >= 0) {
-      best.splice(insertionIndex, 0, evaluated)
-    } else if (best.length < limit) {
-      best.push(evaluated)
+      preselected.splice(insertionIndex, 0, evaluated)
+    } else if (preselected.length < preselectionLimit) {
+      preselected.push(evaluated)
     }
-    if (best.length > limit) {
-      best.pop()
+    if (preselected.length > preselectionLimit) {
+      preselected.pop()
     }
   }
-  return best
+  return preselected
+    .map(candidate => ({
+      ...candidate,
+      trainingStability: evaluateTrainingStability(
+        trainingMatches,
+        candidate.strategy,
+        candidate.trainingMetrics
+      )
+    }))
+    .sort(developmentCandidateRanking)
+    .slice(0, limit)
 }
 
 function combinePartitionMetrics(left, right) {
@@ -1037,13 +1219,7 @@ function isPreferredRobustCandidate(candidate, current) {
   if (!current) {
     return true
   }
-  if (isPreferredMetrics(candidate.trainingMetrics, current.trainingMetrics)) {
-    return true
-  }
-  if (isPreferredMetrics(current.trainingMetrics, candidate.trainingMetrics)) {
-    return false
-  }
-  return JSON.stringify(candidate.strategy).localeCompare(JSON.stringify(current.strategy)) < 0
+  return developmentCandidateRanking(candidate, current) < 0
 }
 
 function unavailableStrategy(degradationLevel, availableMatchCount) {
@@ -1548,7 +1724,8 @@ function emptyRobustnessMetrics() {
     minimumValidationRoi: MINIMUM_VALIDATION_ROI,
     fullMetrics: emptyMetrics(),
     trainingMetrics: emptyMetrics(),
-    validationMetrics: emptyMetrics()
+    validationMetrics: emptyMetrics(),
+    trainingStability: null
   }
 }
 

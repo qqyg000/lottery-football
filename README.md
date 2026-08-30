@@ -226,7 +226,7 @@ ROI = (totalReturn / totalStake - 1) × 100%
 
 ### 进球数策略稳健优化
 
-进球数策略支持按比赛日期执行时间留出验证，避免在同一批比赛上搜索参数并直接报告最优收益。开启 `--robust-validation` 后，较早约 70% 的样本用于粗网格搜索、候选排名、参数细化和最终优先级比较，较新约 30% 的样本不会参与参数搜索或候选排名，只用于有限候选的最终门禁；最终策略必须在训练集、验证集和完整样本上同时满足同一档约束，且验证集 ROI 不得低于配置下限。
+进球数策略支持按比赛日期执行时间留出验证，避免在同一批比赛上搜索参数并直接报告最优收益。开启 `--robust-validation` 后，较早约 70% 的样本用于粗网格搜索、参数细化和候选排名；训练段还会按完整比赛日切成连续时间块，以训练 ROI 扣除分块波动和下行惩罚后的分数固定一个有限候选池。较新约 30% 的样本不会参与参数搜索或训练稳定性排名，只用于有限候选的最终门禁；最终策略必须在训练集、验证集和完整样本上同时满足同一档约束，且验证集 ROI 不得低于配置下限。
 
 ```powershell
 node scripts/optimize-total-goals-strategies.mjs `
@@ -242,6 +242,9 @@ node scripts/optimize-total-goals-strategies.mjs `
   --tertiary-fallback-minimum-hit-rate 0.10 `
   --minimum-roi 0 `
   --minimum-validation-roi 0 `
+  --training-stability-blocks 3 `
+  --minimum-stability-block-matches 3 `
+  --holdout-candidate-limit 12 `
   --simulations 50000 `
   --base-url http://127.0.0.1:8080 `
   --backtest-cache-prefix temp/total-goals-robust-backtest-cache
@@ -271,16 +274,18 @@ node scripts/optimize-total-goals-strategies.mjs `
 
 ```powershell
 $env:FINAL_SIMULATIONS = '50000'
-$env:BACKTEST_PARALLELISM = '4'
+$env:BACKTEST_PARALLELISM = '16'
+$env:TRAINING_STABILITY_BLOCKS = '3'
+$env:HOLDOUT_CANDIDATE_LIMIT = '24'
 $env:REPORT_JSON_PATH = 'reports/win-draw-loss-robust-optimization.json'
 $env:REPORT_MARKDOWN_PATH = 'reports/win-draw-loss-robust-optimization.md'
 $env:CHECKPOINT_PATH = 'target/win-draw-loss-robust-optimizer-checkpoint.json'
 node scripts/reoptimize-shared-backtest-profiles.mjs --reoptimize-all
 ```
 
-异步回测服务默认使用 `recommendation-backtest.parallelism=4` 的固定线程池；胜平负优化器通过 `BACKTEST_PARALLELISM` 控制并发任务数。进球数优化器会同时回测“仅本届”和“含上届”，两个范围都完成后再执行确定性的策略搜索。
+异步回测服务默认使用 `recommendation-backtest.parallelism=4` 的固定线程池；专用回测实例可提高到 16。胜平负优化器通过 `BACKTEST_PARALLELISM` 控制并发任务数，进球数优化器会同时回测“仅本届”和“含上届”，两个范围都完成后再执行确定性的策略搜索。
 
-优化器默认按比赛日期升序将前 `70%` 作为训练集、后 `30%` 作为验证集，同一天比赛不会跨分区。模型和推荐阈值只按训练集 ROI 排名，验证集只用于通过或拒绝门禁；训练集和验证集至少分别需要 `10` 场、`6` 场。训练集 ROI 必须非负、验证集 ROI 必须非负，且训练、验证、全量样本均需达到对应赛事的采样率下限。无法满足稳健门禁或稳健/激进 ROI 关系的时段关闭推荐；仅本届样本不足时沿用已验证的含上届参数并执行额外样本外门禁，失败则关闭。
+优化器默认按比赛日期升序将前 `70%` 作为训练集、后 `30%` 作为验证集，同一天比赛不会跨分区。训练段再按完整比赛日切成最多 3 个连续时间块，候选按训练 ROI 扣除分块波动和下行惩罚后的分数排名，并在接触最终验证集前固定有限候选池；验证集只用于通过或拒绝门禁。训练集和验证集至少分别需要 `10` 场、`6` 场。训练集 ROI 必须非负、验证集 ROI 必须非负，且训练、验证、全量样本均需达到对应赛事的采样率下限。无法满足稳健门禁或稳健/激进 ROI 关系的时段关闭推荐；仅本届样本不足时沿用已验证的含上届参数并执行额外样本外门禁，失败则关闭。
 
 每个入围模型的候选池会在稳健/激进成对选择前，按候选档案中实际保存的完整模型因子强制重新生成最终模拟结果，并统一重算训练、验证和全量指标。这样可以避免长时间搜索期间的数据快照变化，也能防止候选模型因子与用于评价它的回测结果不一致。
 

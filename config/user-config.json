@@ -13,7 +13,7 @@
         "handicapSmoothingFactor" : 0.488
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.19,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 46.8,
         "handicapReverseThreshold" : 43.95,
         "singleRecommendationThreshold" : 43.12
@@ -30,7 +30,7 @@
         "handicapSmoothingFactor" : 0.526
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.73,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 44.2,
         "handicapReverseThreshold" : 48.06,
         "singleRecommendationThreshold" : 41.47
@@ -81,7 +81,7 @@
         "handicapSmoothingFactor" : 0.117
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.13,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 38.75,
         "handicapReverseThreshold" : 46.13,
         "singleRecommendationThreshold" : 53.19
@@ -98,7 +98,7 @@
         "handicapSmoothingFactor" : 0.189
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.72,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 38.63,
         "handicapReverseThreshold" : 66.28,
         "singleRecommendationThreshold" : 16.25
@@ -149,10 +149,10 @@
         "handicapSmoothingFactor" : 0.275
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.47,
-        "handicapRecommendationThreshold" : 42.93,
-        "handicapReverseThreshold" : 51.55,
-        "singleRecommendationThreshold" : 23.31
+        "recommendationOdds" : 1.35,
+        "handicapRecommendationThreshold" : 47.87,
+        "handicapReverseThreshold" : 48.63,
+        "singleRecommendationThreshold" : 6.04
       }
     },
     "COPA_AMERICA:CURRENT:AGGRESSIVE" : {
@@ -167,9 +167,9 @@
       },
       "globalParameters" : {
         "recommendationOdds" : 1.67,
-        "handicapRecommendationThreshold" : 42.42,
-        "handicapReverseThreshold" : 50.5,
-        "singleRecommendationThreshold" : 14.49
+        "handicapRecommendationThreshold" : 40.11,
+        "handicapReverseThreshold" : 47.2,
+        "singleRecommendationThreshold" : 0.0
       }
     },
     "COPA_AMERICA:PREVIOUS:STABLE" : {
@@ -183,10 +183,10 @@
         "handicapSmoothingFactor" : 0.592
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.18,
-        "handicapRecommendationThreshold" : 97.59,
-        "handicapReverseThreshold" : 37.3,
-        "singleRecommendationThreshold" : 47.1
+        "recommendationOdds" : 1.27,
+        "handicapRecommendationThreshold" : 75.04,
+        "handicapReverseThreshold" : 36.57,
+        "singleRecommendationThreshold" : 46.9
       }
     },
     "COPA_AMERICA:PREVIOUS:AGGRESSIVE" : {
@@ -200,78 +200,78 @@
         "handicapSmoothingFactor" : 0.554
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.45,
-        "handicapRecommendationThreshold" : 100.0,
-        "handicapReverseThreshold" : 26.23,
-        "singleRecommendationThreshold" : 46.14
+        "recommendationOdds" : 1.46,
+        "handicapRecommendationThreshold" : 83.92,
+        "handicapReverseThreshold" : 5.91,
+        "singleRecommendationThreshold" : 47.76
       }
     },
     "CLUB_WORLD_CUP:CURRENT:STABLE" : {
       "modelFactors" : {
         "hostTeamGoalFactor" : 1.01,
-        "homeTeamGoalFactor" : 2.42,
-        "seedTeamGoalFactor" : 0.85,
-        "officialMatchWeight" : 1.41,
-        "internationalFriendlyWeight" : 0.59,
-        "clubFriendlyWeight" : 0.7,
-        "handicapSmoothingFactor" : 0.61
+        "homeTeamGoalFactor" : 2.64,
+        "seedTeamGoalFactor" : 0.92,
+        "officialMatchWeight" : 1.81,
+        "internationalFriendlyWeight" : 0.83,
+        "clubFriendlyWeight" : 0.56,
+        "handicapSmoothingFactor" : 0.501
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.61,
-        "handicapRecommendationThreshold" : 75.19,
-        "handicapReverseThreshold" : 50.74,
-        "singleRecommendationThreshold" : 32.53
+        "recommendationOdds" : 1.71,
+        "handicapRecommendationThreshold" : 61.0,
+        "handicapReverseThreshold" : 51.24,
+        "singleRecommendationThreshold" : 43.89
       }
     },
     "CLUB_WORLD_CUP:CURRENT:AGGRESSIVE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 2.51,
-        "homeTeamGoalFactor" : 0.1,
-        "seedTeamGoalFactor" : 1.3,
-        "officialMatchWeight" : 1.09,
-        "internationalFriendlyWeight" : 0.54,
-        "clubFriendlyWeight" : 0.25,
-        "handicapSmoothingFactor" : 0.525
+        "hostTeamGoalFactor" : 1.96,
+        "homeTeamGoalFactor" : 0.11,
+        "seedTeamGoalFactor" : 1.35,
+        "officialMatchWeight" : 1.24,
+        "internationalFriendlyWeight" : 0.64,
+        "clubFriendlyWeight" : 0.02,
+        "handicapSmoothingFactor" : 0.38
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.82,
-        "handicapRecommendationThreshold" : 57.16,
-        "handicapReverseThreshold" : 53.39,
-        "singleRecommendationThreshold" : 45.34
+        "recommendationOdds" : 1.77,
+        "handicapRecommendationThreshold" : 78.88,
+        "handicapReverseThreshold" : 47.28,
+        "singleRecommendationThreshold" : 46.54
       }
     },
     "CLUB_WORLD_CUP:PREVIOUS:STABLE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 2.13,
-        "homeTeamGoalFactor" : 0.41,
-        "seedTeamGoalFactor" : 1.01,
-        "officialMatchWeight" : 1.44,
-        "internationalFriendlyWeight" : 0.65,
-        "clubFriendlyWeight" : 0.58,
-        "handicapSmoothingFactor" : 0.304
+        "hostTeamGoalFactor" : 0.81,
+        "homeTeamGoalFactor" : 1.45,
+        "seedTeamGoalFactor" : 2.74,
+        "officialMatchWeight" : 2.35,
+        "internationalFriendlyWeight" : 0.96,
+        "clubFriendlyWeight" : 0.42,
+        "handicapSmoothingFactor" : 0.444
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.92,
-        "handicapRecommendationThreshold" : 64.47,
-        "handicapReverseThreshold" : 96.9,
-        "singleRecommendationThreshold" : 47.62
+        "recommendationOdds" : 1.61,
+        "handicapRecommendationThreshold" : 53.93,
+        "handicapReverseThreshold" : 54.4,
+        "singleRecommendationThreshold" : 40.94
       }
     },
     "CLUB_WORLD_CUP:PREVIOUS:AGGRESSIVE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 2.06,
-        "homeTeamGoalFactor" : 0.29,
-        "seedTeamGoalFactor" : 1.2,
-        "officialMatchWeight" : 1.47,
-        "internationalFriendlyWeight" : 0.59,
-        "clubFriendlyWeight" : 0.96,
-        "handicapSmoothingFactor" : 0.236
+        "hostTeamGoalFactor" : 1.56,
+        "homeTeamGoalFactor" : 1.29,
+        "seedTeamGoalFactor" : 0.61,
+        "officialMatchWeight" : 2.96,
+        "internationalFriendlyWeight" : 0.07,
+        "clubFriendlyWeight" : 0.14,
+        "handicapSmoothingFactor" : 0.58
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.09,
-        "handicapRecommendationThreshold" : 61.09,
-        "handicapReverseThreshold" : 74.4,
-        "singleRecommendationThreshold" : 20.8
+        "recommendationOdds" : 1.66,
+        "handicapRecommendationThreshold" : 59.66,
+        "handicapReverseThreshold" : 52.07,
+        "singleRecommendationThreshold" : 35.95
       }
     },
     "EUROPA_LEAGUE:CURRENT:STABLE" : {
@@ -319,7 +319,7 @@
         "handicapSmoothingFactor" : 0.049
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.52,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 83.95,
         "handicapReverseThreshold" : 68.78,
         "singleRecommendationThreshold" : 1.03
@@ -336,7 +336,7 @@
         "handicapSmoothingFactor" : 0.01
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.26,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 36.51,
         "handicapReverseThreshold" : 69.25,
         "singleRecommendationThreshold" : 10.72
@@ -387,7 +387,7 @@
         "handicapSmoothingFactor" : 0.104
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.26,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 11.98,
         "handicapReverseThreshold" : 65.06,
         "singleRecommendationThreshold" : 9.81
@@ -404,7 +404,7 @@
         "handicapSmoothingFactor" : 0.152
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.45,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 31.86,
         "handicapReverseThreshold" : 66.19,
         "singleRecommendationThreshold" : 17.13
@@ -523,7 +523,7 @@
         "handicapSmoothingFactor" : 0.55
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.23,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 50.97,
         "handicapReverseThreshold" : 57.63,
         "singleRecommendationThreshold" : 16.82
@@ -540,7 +540,7 @@
         "handicapSmoothingFactor" : 0.576
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.27,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 53.56,
         "handicapReverseThreshold" : 57.35,
         "singleRecommendationThreshold" : 11.3
@@ -548,36 +548,36 @@
     },
     "SERIE_A:CURRENT:STABLE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 1.1,
-        "homeTeamGoalFactor" : 1.06,
-        "seedTeamGoalFactor" : 1.85,
-        "officialMatchWeight" : 1.0,
-        "internationalFriendlyWeight" : 0.5,
-        "clubFriendlyWeight" : 0.3,
-        "handicapSmoothingFactor" : 0.274
+        "hostTeamGoalFactor" : 1.09,
+        "homeTeamGoalFactor" : 0.65,
+        "seedTeamGoalFactor" : 1.74,
+        "officialMatchWeight" : 1.15,
+        "internationalFriendlyWeight" : 0.25,
+        "clubFriendlyWeight" : 0.39,
+        "handicapSmoothingFactor" : 0.569
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.03,
-        "handicapRecommendationThreshold" : 68.16,
-        "handicapReverseThreshold" : 46.78,
-        "singleRecommendationThreshold" : 71.72
+        "recommendationOdds" : 100.0,
+        "handicapRecommendationThreshold" : 40.38,
+        "handicapReverseThreshold" : 44.95,
+        "singleRecommendationThreshold" : 28.55
       }
     },
     "SERIE_A:CURRENT:AGGRESSIVE" : {
       "modelFactors" : {
         "hostTeamGoalFactor" : 2.3,
-        "homeTeamGoalFactor" : 1.75,
+        "homeTeamGoalFactor" : 0.71,
         "seedTeamGoalFactor" : 1.55,
         "officialMatchWeight" : 1.0,
         "internationalFriendlyWeight" : 0.5,
         "clubFriendlyWeight" : 0.3,
-        "handicapSmoothingFactor" : 0.65
+        "handicapSmoothingFactor" : 0.427
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.46,
-        "handicapRecommendationThreshold" : 89.09,
-        "handicapReverseThreshold" : 43.41,
-        "singleRecommendationThreshold" : 78.71
+        "recommendationOdds" : 100.0,
+        "handicapRecommendationThreshold" : 37.05,
+        "handicapReverseThreshold" : 50.3,
+        "singleRecommendationThreshold" : 15.96
       }
     },
     "SERIE_A:PREVIOUS:STABLE" : {
@@ -591,7 +591,7 @@
         "handicapSmoothingFactor" : 0.569
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.75,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 40.38,
         "handicapReverseThreshold" : 44.95,
         "singleRecommendationThreshold" : 28.55
@@ -608,7 +608,7 @@
         "handicapSmoothingFactor" : 0.427
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.08,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 37.05,
         "handicapReverseThreshold" : 50.3,
         "singleRecommendationThreshold" : 15.96
@@ -616,36 +616,36 @@
     },
     "BUNDESLIGA:CURRENT:STABLE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 1.1,
-        "homeTeamGoalFactor" : 1.06,
-        "seedTeamGoalFactor" : 1.85,
-        "officialMatchWeight" : 1.0,
+        "hostTeamGoalFactor" : 2.3,
+        "homeTeamGoalFactor" : 0.9,
+        "seedTeamGoalFactor" : 1.55,
+        "officialMatchWeight" : 1.15,
         "internationalFriendlyWeight" : 0.5,
-        "clubFriendlyWeight" : 0.3,
-        "handicapSmoothingFactor" : 0.274
+        "clubFriendlyWeight" : 0.85,
+        "handicapSmoothingFactor" : 0.43
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.03,
-        "handicapRecommendationThreshold" : 68.16,
-        "handicapReverseThreshold" : 46.78,
-        "singleRecommendationThreshold" : 71.72
+        "recommendationOdds" : 100.0,
+        "handicapRecommendationThreshold" : 40.59,
+        "handicapReverseThreshold" : 50.27,
+        "singleRecommendationThreshold" : 16.15
       }
     },
     "BUNDESLIGA:CURRENT:AGGRESSIVE" : {
       "modelFactors" : {
         "hostTeamGoalFactor" : 2.3,
-        "homeTeamGoalFactor" : 1.75,
+        "homeTeamGoalFactor" : 0.9,
         "seedTeamGoalFactor" : 1.55,
-        "officialMatchWeight" : 1.0,
+        "officialMatchWeight" : 1.15,
         "internationalFriendlyWeight" : 0.5,
-        "clubFriendlyWeight" : 0.3,
-        "handicapSmoothingFactor" : 0.65
+        "clubFriendlyWeight" : 0.85,
+        "handicapSmoothingFactor" : 0.43
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.46,
-        "handicapRecommendationThreshold" : 89.09,
-        "handicapReverseThreshold" : 43.41,
-        "singleRecommendationThreshold" : 78.71
+        "recommendationOdds" : 100.0,
+        "handicapRecommendationThreshold" : 40.59,
+        "handicapReverseThreshold" : 50.26,
+        "singleRecommendationThreshold" : 16.79
       }
     },
     "BUNDESLIGA:PREVIOUS:STABLE" : {
@@ -659,7 +659,7 @@
         "handicapSmoothingFactor" : 0.43
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.6,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 40.59,
         "handicapReverseThreshold" : 50.27,
         "singleRecommendationThreshold" : 16.15
@@ -676,7 +676,7 @@
         "handicapSmoothingFactor" : 0.43
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.61,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 40.59,
         "handicapReverseThreshold" : 50.26,
         "singleRecommendationThreshold" : 16.79
@@ -727,7 +727,7 @@
         "handicapSmoothingFactor" : 0.396
       },
       "globalParameters" : {
-        "recommendationOdds" : 3.03,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 65.28,
         "handicapReverseThreshold" : 95.65,
         "singleRecommendationThreshold" : 15.42
@@ -744,7 +744,7 @@
         "handicapSmoothingFactor" : 0.534
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.89,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 64.13,
         "handicapReverseThreshold" : 70.36,
         "singleRecommendationThreshold" : 18.96
@@ -761,7 +761,7 @@
         "handicapSmoothingFactor" : 0.692
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.86,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 76.78,
         "handicapReverseThreshold" : 66.85,
         "singleRecommendationThreshold" : 58.78
@@ -778,7 +778,7 @@
         "handicapSmoothingFactor" : 0.048
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.83,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 79.86,
         "handicapReverseThreshold" : 25.01,
         "singleRecommendationThreshold" : 5.91
@@ -820,36 +820,36 @@
     },
     "EREDIVISIE:CURRENT:STABLE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 1.1,
-        "homeTeamGoalFactor" : 0.25,
-        "seedTeamGoalFactor" : 1.85,
-        "officialMatchWeight" : 1.01,
-        "internationalFriendlyWeight" : 0.5,
-        "clubFriendlyWeight" : 0.3,
-        "handicapSmoothingFactor" : 0.727
+        "hostTeamGoalFactor" : 0.93,
+        "homeTeamGoalFactor" : 0.24,
+        "seedTeamGoalFactor" : 1.59,
+        "officialMatchWeight" : 1.18,
+        "internationalFriendlyWeight" : 0.47,
+        "clubFriendlyWeight" : 0.11,
+        "handicapSmoothingFactor" : 0.719
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.46,
-        "handicapRecommendationThreshold" : 74.78,
-        "handicapReverseThreshold" : 0.86,
-        "singleRecommendationThreshold" : 55.08
+        "recommendationOdds" : 2.12,
+        "handicapRecommendationThreshold" : 73.82,
+        "handicapReverseThreshold" : 77.68,
+        "singleRecommendationThreshold" : 21.71
       }
     },
     "EREDIVISIE:CURRENT:AGGRESSIVE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 2.2,
-        "homeTeamGoalFactor" : 0.59,
-        "seedTeamGoalFactor" : 1.46,
-        "officialMatchWeight" : 1.26,
-        "internationalFriendlyWeight" : 0.42,
-        "clubFriendlyWeight" : 0.4,
-        "handicapSmoothingFactor" : 0.183
+        "hostTeamGoalFactor" : 1.99,
+        "homeTeamGoalFactor" : 0.61,
+        "seedTeamGoalFactor" : 1.22,
+        "officialMatchWeight" : 1.47,
+        "internationalFriendlyWeight" : 0.54,
+        "clubFriendlyWeight" : 0.27,
+        "handicapSmoothingFactor" : 0.301
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.91,
-        "handicapRecommendationThreshold" : 48.35,
-        "handicapReverseThreshold" : 18.01,
-        "singleRecommendationThreshold" : 50.23
+        "recommendationOdds" : 1.93,
+        "handicapRecommendationThreshold" : 52.46,
+        "handicapReverseThreshold" : 39.6,
+        "singleRecommendationThreshold" : 38.0
       }
     },
     "EREDIVISIE:PREVIOUS:STABLE" : {
@@ -863,7 +863,7 @@
         "handicapSmoothingFactor" : 0.659
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.6,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 87.89,
         "handicapReverseThreshold" : 68.18,
         "singleRecommendationThreshold" : 4.47
@@ -880,7 +880,7 @@
         "handicapSmoothingFactor" : 0.279
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.88,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 61.73,
         "handicapReverseThreshold" : 56.84,
         "singleRecommendationThreshold" : 13.26
@@ -965,7 +965,7 @@
         "handicapSmoothingFactor" : 0.229
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.46,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 4.04,
         "handicapReverseThreshold" : 61.31,
         "singleRecommendationThreshold" : 37.35
@@ -982,7 +982,7 @@
         "handicapSmoothingFactor" : 0.792
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.98,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 36.3,
         "handicapReverseThreshold" : 48.04,
         "singleRecommendationThreshold" : 10.05
@@ -999,10 +999,10 @@
         "handicapSmoothingFactor" : 0.208
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.39,
-        "handicapRecommendationThreshold" : 47.32,
-        "handicapReverseThreshold" : 54.16,
-        "singleRecommendationThreshold" : 53.81
+        "recommendationOdds" : 100.0,
+        "handicapRecommendationThreshold" : 52.72,
+        "handicapReverseThreshold" : 54.03,
+        "singleRecommendationThreshold" : 52.72
       }
     },
     "SWEDISH_ALLSVENSKAN:PREVIOUS:AGGRESSIVE" : {
@@ -1016,10 +1016,10 @@
         "handicapSmoothingFactor" : 0.259
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.68,
-        "handicapRecommendationThreshold" : 72.98,
-        "handicapReverseThreshold" : 54.1,
-        "singleRecommendationThreshold" : 52.78
+        "recommendationOdds" : 100.0,
+        "handicapRecommendationThreshold" : 74.02,
+        "handicapReverseThreshold" : 52.75,
+        "singleRecommendationThreshold" : 54.29
       }
     },
     "FINNISH_VEIKKAUSLIIGA:CURRENT:STABLE" : {
@@ -1033,7 +1033,7 @@
         "handicapSmoothingFactor" : 0.093
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.44,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 86.01,
         "handicapReverseThreshold" : 54.91,
         "singleRecommendationThreshold" : 28.42
@@ -1050,7 +1050,7 @@
         "handicapSmoothingFactor" : 0.407
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.72,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 76.27,
         "handicapReverseThreshold" : 10.33,
         "singleRecommendationThreshold" : 19.1
@@ -1058,36 +1058,36 @@
     },
     "FINNISH_VEIKKAUSLIIGA:PREVIOUS:STABLE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 0.68,
-        "homeTeamGoalFactor" : 1.19,
-        "seedTeamGoalFactor" : 1.36,
-        "officialMatchWeight" : 1.28,
+        "hostTeamGoalFactor" : 0.6,
+        "homeTeamGoalFactor" : 1.17,
+        "seedTeamGoalFactor" : 1.4,
+        "officialMatchWeight" : 1.52,
         "internationalFriendlyWeight" : 0.96,
-        "clubFriendlyWeight" : 0.18,
-        "handicapSmoothingFactor" : 0.039
+        "clubFriendlyWeight" : 0.05,
+        "handicapSmoothingFactor" : 0.211
       },
       "globalParameters" : {
         "recommendationOdds" : 1.51,
-        "handicapRecommendationThreshold" : 32.57,
-        "handicapReverseThreshold" : 53.91,
-        "singleRecommendationThreshold" : 35.89
+        "handicapRecommendationThreshold" : 38.53,
+        "handicapReverseThreshold" : 58.52,
+        "singleRecommendationThreshold" : 14.24
       }
     },
     "FINNISH_VEIKKAUSLIIGA:PREVIOUS:AGGRESSIVE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 2.3,
-        "homeTeamGoalFactor" : 0.69,
-        "seedTeamGoalFactor" : 1.55,
-        "officialMatchWeight" : 1.03,
-        "internationalFriendlyWeight" : 0.5,
-        "clubFriendlyWeight" : 0.3,
-        "handicapSmoothingFactor" : 0.051
+        "hostTeamGoalFactor" : 2.02,
+        "homeTeamGoalFactor" : 0.58,
+        "seedTeamGoalFactor" : 1.26,
+        "officialMatchWeight" : 1.17,
+        "internationalFriendlyWeight" : 0.68,
+        "clubFriendlyWeight" : 0.41,
+        "handicapSmoothingFactor" : 0.012
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.11,
-        "handicapRecommendationThreshold" : 46.07,
-        "handicapReverseThreshold" : 70.2,
-        "singleRecommendationThreshold" : 14.31
+        "recommendationOdds" : 2.24,
+        "handicapRecommendationThreshold" : 49.09,
+        "handicapReverseThreshold" : 75.85,
+        "singleRecommendationThreshold" : 10.77
       }
     },
     "K_LEAGUE_1:CURRENT:STABLE" : {
@@ -1101,27 +1101,27 @@
         "handicapSmoothingFactor" : 0.062
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.59,
-        "handicapRecommendationThreshold" : 0.0,
-        "handicapReverseThreshold" : 78.34,
-        "singleRecommendationThreshold" : 17.93
+        "recommendationOdds" : 1.62,
+        "handicapRecommendationThreshold" : 6.06,
+        "handicapReverseThreshold" : 73.28,
+        "singleRecommendationThreshold" : 28.49
       }
     },
     "K_LEAGUE_1:CURRENT:AGGRESSIVE" : {
       "modelFactors" : {
-        "hostTeamGoalFactor" : 1.19,
-        "homeTeamGoalFactor" : 1.5,
-        "seedTeamGoalFactor" : 1.5,
-        "officialMatchWeight" : 1.36,
-        "internationalFriendlyWeight" : 0.62,
-        "clubFriendlyWeight" : 0.7,
-        "handicapSmoothingFactor" : 0.683
+        "hostTeamGoalFactor" : 0.94,
+        "homeTeamGoalFactor" : 1.66,
+        "seedTeamGoalFactor" : 1.21,
+        "officialMatchWeight" : 1.63,
+        "internationalFriendlyWeight" : 0.65,
+        "clubFriendlyWeight" : 0.85,
+        "handicapSmoothingFactor" : 0.598
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.16,
-        "handicapRecommendationThreshold" : 54.45,
-        "handicapReverseThreshold" : 71.56,
-        "singleRecommendationThreshold" : 21.25
+        "recommendationOdds" : 2.89,
+        "handicapRecommendationThreshold" : 57.28,
+        "handicapReverseThreshold" : 88.72,
+        "singleRecommendationThreshold" : 15.93
       }
     },
     "K_LEAGUE_1:PREVIOUS:STABLE" : {
@@ -1135,7 +1135,7 @@
         "handicapSmoothingFactor" : 0.033
       },
       "globalParameters" : {
-        "recommendationOdds" : 1.55,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 98.76,
         "handicapReverseThreshold" : 63.67,
         "singleRecommendationThreshold" : 5.92
@@ -1152,7 +1152,7 @@
         "handicapSmoothingFactor" : 0.205
       },
       "globalParameters" : {
-        "recommendationOdds" : 2.29,
+        "recommendationOdds" : 100.0,
         "handicapRecommendationThreshold" : 43.96,
         "handicapReverseThreshold" : 66.64,
         "singleRecommendationThreshold" : 20.56
@@ -1229,32 +1229,32 @@
   },
   "totalGoalsStrategies" : {
     "WORLD_CUP:CURRENT" : {
-      "minimumProbability" : 23.01,
-      "minimumExpectedValue" : 0.84693,
+      "minimumProbability" : 25.52,
+      "minimumExpectedValue" : 0.0448,
       "minimumOdds" : 3.2,
-      "maximumOdds" : 4.3,
+      "maximumOdds" : 4.2,
       "maximumSelections" : 1
     },
     "WORLD_CUP:PREVIOUS" : {
-      "minimumProbability" : 20.62,
-      "minimumExpectedValue" : 0.842,
-      "minimumOdds" : 3.8,
-      "maximumOdds" : 4.25,
+      "minimumProbability" : 23.56,
+      "minimumExpectedValue" : 0.85833,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 4.1,
       "maximumSelections" : 1
     },
     "EUROPEAN_CHAMPIONSHIP:CURRENT" : {
-      "minimumProbability" : 25.0,
-      "minimumExpectedValue" : 0.0,
+      "minimumProbability" : 22.5,
+      "minimumExpectedValue" : 0.8,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 10.0,
+      "maximumOdds" : 10,
       "maximumSelections" : 1
     },
     "EUROPEAN_CHAMPIONSHIP:PREVIOUS" : {
-      "minimumProbability" : 25.0,
-      "minimumExpectedValue" : 0.0,
-      "minimumOdds" : 1.01,
-      "maximumOdds" : 10.0,
-      "maximumSelections" : 1
+      "minimumProbability" : 23.65,
+      "minimumExpectedValue" : 0.80896,
+      "minimumOdds" : 3.35,
+      "maximumOdds" : 10,
+      "maximumSelections" : 3
     },
     "COPA_AMERICA:CURRENT" : {
       "minimumProbability" : 12.5,
@@ -1264,24 +1264,24 @@
       "maximumSelections" : 1
     },
     "COPA_AMERICA:PREVIOUS" : {
-      "minimumProbability" : 12.5,
-      "minimumExpectedValue" : 0.8,
-      "minimumOdds" : 5.4,
-      "maximumOdds" : 7.5,
+      "minimumProbability" : 0,
+      "minimumExpectedValue" : 0.95475,
+      "minimumOdds" : 3.5,
+      "maximumOdds" : 3.9,
       "maximumSelections" : 1
     },
     "CLUB_WORLD_CUP:CURRENT" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 0,
+      "minimumExpectedValue" : 1.15,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
-      "maximumSelections" : 0
+      "maximumOdds" : 10,
+      "maximumSelections" : 2
     },
     "CLUB_WORLD_CUP:PREVIOUS" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "EUROPA_LEAGUE:CURRENT" : {
@@ -1292,193 +1292,193 @@
       "maximumSelections" : 1
     },
     "EUROPA_LEAGUE:PREVIOUS" : {
-      "minimumProbability" : 21.43,
-      "minimumExpectedValue" : 0.76659,
-      "minimumOdds" : 3.45,
-      "maximumOdds" : 3.65,
-      "maximumSelections" : 2
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 8,
+      "maximumSelections" : 0
     },
     "CHAMPIONS_LEAGUE:CURRENT" : {
-      "minimumProbability" : 20.0,
-      "minimumExpectedValue" : 0.0,
-      "minimumOdds" : 4.0,
-      "maximumOdds" : 5.0,
+      "minimumProbability" : 20,
+      "minimumExpectedValue" : 0,
+      "minimumOdds" : 4,
+      "maximumOdds" : 10,
       "maximumSelections" : 1
     },
     "CHAMPIONS_LEAGUE:PREVIOUS" : {
-      "minimumProbability" : 0.0,
-      "minimumExpectedValue" : 1.05,
+      "minimumProbability" : 0,
+      "minimumExpectedValue" : 1.15,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 50.0,
+      "maximumOdds" : 20,
       "maximumSelections" : 1
     },
     "PREMIER_LEAGUE:CURRENT" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "PREMIER_LEAGUE:PREVIOUS" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "LA_LIGA:CURRENT" : {
-      "minimumProbability" : 26.27,
-      "minimumExpectedValue" : 0.8172,
-      "minimumOdds" : 3.1,
-      "maximumOdds" : 10.0,
-      "maximumSelections" : 0
+      "minimumProbability" : 26.75,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 2.85,
+      "maximumOdds" : 10,
+      "maximumSelections" : 1
     },
     "LA_LIGA:PREVIOUS" : {
-      "minimumProbability" : 26.27,
-      "minimumExpectedValue" : 0.8172,
-      "minimumOdds" : 3.1,
-      "maximumOdds" : 10.0,
+      "minimumProbability" : 26.75,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 2.85,
+      "maximumOdds" : 10,
       "maximumSelections" : 1
     },
     "SERIE_A:CURRENT" : {
-      "minimumProbability" : 26.05,
-      "minimumExpectedValue" : 1.009855,
-      "minimumOdds" : 3.9,
-      "maximumOdds" : 4.35,
-      "maximumSelections" : 1
+      "minimumProbability" : 0,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 4,
+      "maximumOdds" : 8,
+      "maximumSelections" : 0
     },
     "SERIE_A:PREVIOUS" : {
-      "minimumProbability" : 26.05,
-      "minimumExpectedValue" : 1.009855,
-      "minimumOdds" : 3.9,
-      "maximumOdds" : 4.35,
-      "maximumSelections" : 1
+      "minimumProbability" : 0,
+      "minimumExpectedValue" : 0.8,
+      "minimumOdds" : 4,
+      "maximumOdds" : 8,
+      "maximumSelections" : 2
     },
     "BUNDESLIGA:CURRENT" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "BUNDESLIGA:PREVIOUS" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "LIGUE_1:CURRENT" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "LIGUE_1:PREVIOUS" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "PRIMEIRA_LIGA:CURRENT" : {
-      "minimumProbability" : 5.0,
-      "minimumExpectedValue" : 0.0,
-      "minimumOdds" : 4.0,
-      "maximumOdds" : 5.0,
-      "maximumSelections" : 1
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 8,
+      "maximumSelections" : 0
     },
     "PRIMEIRA_LIGA:PREVIOUS" : {
-      "minimumProbability" : 5.0,
-      "minimumExpectedValue" : 0.0,
-      "minimumOdds" : 4.0,
-      "maximumOdds" : 5.0,
-      "maximumSelections" : 1
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
+      "minimumOdds" : 1.01,
+      "maximumOdds" : 8,
+      "maximumSelections" : 0
     },
     "EREDIVISIE:CURRENT" : {
-      "minimumProbability" : 0.0,
+      "minimumProbability" : 0,
       "minimumExpectedValue" : 0.4,
       "minimumOdds" : 3.5,
-      "maximumOdds" : 6.0,
+      "maximumOdds" : 6,
       "maximumSelections" : 0
     },
     "EREDIVISIE:PREVIOUS" : {
-      "minimumProbability" : 0.0,
+      "minimumProbability" : 0,
       "minimumExpectedValue" : 0.4,
       "minimumOdds" : 3.5,
-      "maximumOdds" : 6.0,
+      "maximumOdds" : 6,
       "maximumSelections" : 2
     },
     "ARGENTINE_PRIMERA_DIVISION:CURRENT" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "ARGENTINE_PRIMERA_DIVISION:PREVIOUS" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "SWEDISH_ALLSVENSKAN:CURRENT" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "SWEDISH_ALLSVENSKAN:PREVIOUS" : {
       "minimumProbability" : 18.1,
-      "minimumExpectedValue" : 0.9269,
+      "minimumExpectedValue" : 0.9282,
       "minimumOdds" : 1.01,
       "maximumOdds" : 4.75,
       "maximumSelections" : 1
     },
     "FINNISH_VEIKKAUSLIIGA:CURRENT" : {
-      "minimumProbability" : 11.6,
+      "minimumProbability" : 11.43,
       "minimumExpectedValue" : 0.4,
       "minimumOdds" : 3.5,
       "maximumOdds" : 4.5,
       "maximumSelections" : 1
     },
     "FINNISH_VEIKKAUSLIIGA:PREVIOUS" : {
-      "minimumProbability" : 15.0,
-      "minimumExpectedValue" : 1.0,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 8.0,
+      "maximumOdds" : 8,
       "maximumSelections" : 0
     },
     "K_LEAGUE_1:CURRENT" : {
       "minimumProbability" : 16.09,
       "minimumExpectedValue" : 1.32526,
       "minimumOdds" : 10.5,
-      "maximumOdds" : 11.0,
+      "maximumOdds" : 11,
       "maximumSelections" : 1
     },
     "K_LEAGUE_1:PREVIOUS" : {
-      "minimumProbability" : 0.0,
-      "minimumExpectedValue" : 0.0,
+      "minimumProbability" : 0,
+      "minimumExpectedValue" : 0,
       "minimumOdds" : 4.2,
       "maximumOdds" : 4.45,
       "maximumSelections" : 1
     },
     "SCOTTISH_FA_CUP:CURRENT" : {
-      "minimumProbability" : 5.0,
-      "minimumExpectedValue" : 1.05,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 50.0,
-      "maximumSelections" : 2
+      "maximumOdds" : 8,
+      "maximumSelections" : 0
     },
     "SCOTTISH_FA_CUP:PREVIOUS" : {
-      "minimumProbability" : 5.0,
-      "minimumExpectedValue" : 1.05,
+      "minimumProbability" : 15,
+      "minimumExpectedValue" : 1,
       "minimumOdds" : 1.01,
-      "maximumOdds" : 50.0,
-      "maximumSelections" : 2
+      "maximumOdds" : 8,
+      "maximumSelections" : 0
     }
   },
   "selectedRows" : { }
