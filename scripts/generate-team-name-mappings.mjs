@@ -758,6 +758,10 @@ const VERIFIED_SPORTTERY_ENGLISH_ALIASES = [
 ]
 
 const USER_REQUESTED_TEAM_ALIASES = [
+  ['伊斯特拉1961', 'NK Istra 1961', '2026-08-30'],
+  ['弗里斯卡', 'Friska Viljor', '2026-08-30'],
+  ['印尼明星', 'Indonesia SL All Star', '2026-08-30'],
+  ['沃尔索尔', 'Walsall', '2026-08-30'],
   ['克隆维多', 'Viktoria Köln', '2026-08-29'],
   ['克隆维多', 'Viktoria Köln 1904', '2026-08-29'],
   ['明斯特', 'Preußen Münster', '2026-08-29'],

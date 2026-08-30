@@ -188,6 +188,42 @@ class DataRepositoryTest {
     }
 
     @Test
+    void shouldDeduplicateAdjacentDatesForAugustThirtiethRequestedAliases() {
+        List<List<String>> requestedAliases = List.of(
+                List.of("NK Istra 1961", "伊斯特拉1961"),
+                List.of("Friska Viljor", "弗里斯卡"),
+                List.of("Indonesia SL All Star", "印尼明星"),
+                List.of("Walsall", "沃尔索尔"));
+        List<MatchSchedule> sourceSchedules = new ArrayList<>();
+        for (int index = 0; index < requestedAliases.size(); index++) {
+            List<String> mapping = requestedAliases.get(index);
+            MatchSchedule sourceSchedule = completedSchedule(
+                    "SOURCE-REQUESTED-" + index,
+                    mapping.get(0),
+                    "测试对手" + index);
+            sourceSchedule.setCompetition(Competition.CLUB_FRIENDLY);
+            sourceSchedule.setMatchDate(LocalDate.of(2026, 8, 29));
+            MatchSchedule nextDaySchedule = completedSchedule(
+                    "FOTMOB-REQUESTED-" + index,
+                    mapping.get(1),
+                    "测试对手" + index);
+            nextDaySchedule.setCompetition(Competition.CLUB_FRIENDLY);
+            nextDaySchedule.setMatchDate(LocalDate.of(2026, 8, 30));
+            sourceSchedules.add(sourceSchedule);
+            sourceSchedules.add(nextDaySchedule);
+        }
+
+        List<MatchSchedule> schedules = repository.deduplicateSchedulesByFixture(sourceSchedules);
+
+        assertEquals(requestedAliases.size(), schedules.size());
+        for (List<String> mapping : requestedAliases) {
+            assertEquals(1L, schedules.stream()
+                    .filter(schedule -> schedule.getHomeTeamCn().equals(mapping.get(1)))
+                    .count());
+        }
+    }
+
+    @Test
     void shouldDeduplicateAdjacentDateFinnishLeagueAcrossProviders() {
         MatchSchedule futbol24 = completedSchedule(
                 "FUTBOL24-FINNISH_VEIKKAUSLIIGA-3311994",

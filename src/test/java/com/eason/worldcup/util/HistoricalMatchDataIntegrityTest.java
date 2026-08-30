@@ -97,11 +97,11 @@ class HistoricalMatchDataIntegrityTest {
                 Competition.CLUB_OFFICIAL_OTHER, "伊普斯", "桑德兰", 1, 1);
 
         Map<String, Long> minimumCoverage = Map.of(
-                "英足总杯", 2_090L,
+                "英足总杯", 2_050L,
                 "英联赛杯", 1_260L,
                 "英社区盾", 12L,
                 "英冠", 7_300L,
-                "英甲", 8_700L,
+                "英甲", 8_500L,
                 "法超杯", 12L,
                 "法甲", 4_100L);
         minimumCoverage.forEach((sourceCompetition, minimumCount) -> {
@@ -214,6 +214,53 @@ class HistoricalMatchDataIntegrityTest {
                 "K. Diegem Sport",
                 "Celje",
                 "Riga FC");
+        assertTrue(fixtures.stream().noneMatch(fixture ->
+                replacedAliases.contains(fixture.homeTeam())
+                        || replacedAliases.contains(fixture.awayTeam())), "指定队名别名未完全归一化");
+    }
+
+    @Test
+    void shouldNormalizeAugustThirtiethTeamNamesAndRemoveDuplicates() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2014, 10, 22),
+                Competition.CLUB_OFFICIAL_OTHER,
+                "克劳利",
+                "沃尔索尔",
+                1,
+                0);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 6, 3),
+                Competition.CLUB_OFFICIAL_OTHER,
+                "Hudiksvalls FF",
+                "弗里斯卡",
+                0,
+                1);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 7, 25),
+                Competition.CLUB_FRIENDLY,
+                "莱切",
+                "伊斯特拉1961",
+                2,
+                2);
+        assertFixtureOccursOnce(
+                fixtures,
+                LocalDate.of(2026, 8, 1),
+                Competition.CLUB_FRIENDLY,
+                "印尼明星",
+                "维拉",
+                1,
+                3);
+
+        Set<String> replacedAliases = Set.of(
+                "NK Istra 1961",
+                "Friska Viljor",
+                "Indonesia SL All Star",
+                "Walsall");
         assertTrue(fixtures.stream().noneMatch(fixture ->
                 replacedAliases.contains(fixture.homeTeam())
                         || replacedAliases.contains(fixture.awayTeam())), "指定队名别名未完全归一化");

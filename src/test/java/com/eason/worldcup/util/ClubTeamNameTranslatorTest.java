@@ -20,6 +20,21 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class ClubTeamNameTranslatorTest {
 
     @Test
+    void shouldTranslateAugustThirtiethRequestedClubAliases() throws IOException {
+        assumeMappingsImported();
+
+        Map<String, String> aliases = Map.of(
+                "NK Istra 1961", "伊斯特拉1961",
+                "Friska Viljor", "弗里斯卡",
+                "Indonesia SL All Star", "印尼明星",
+                "Walsall", "沃尔索尔");
+
+        for (Map.Entry<String, String> alias : aliases.entrySet()) {
+            assertEquals(alias.getValue(), ClubTeamNameTranslator.translate(alias.getKey()));
+        }
+    }
+
+    @Test
     void shouldTranslateAugustTwentyNinthRequestedClubAliases() throws IOException {
         assumeMappingsImported();
 

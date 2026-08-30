@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 160 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 237,035 场，日期范围为 2014-10-22 至 2026-08-25；导入流程以 2014-10-22 作为历史数据最早截点。18 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 160 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 236,817 场，日期范围为 2014-10-22 至 2026-08-25；导入流程以 2014-10-22 作为历史数据最早截点。18 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
@@ -31,7 +31,7 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 公共历史源通过 `scripts/import-public-history.mjs` 导入。脚本默认只检查增量，传入 `--write` 才会写文件；下载缓存位于 `target/public-history-cache`。公共源比赛使用 `OPEN-{source}-{hash}` ID，比分重建脚本会保留这些记录。
 
-参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。Futbol24 俱乐部友谊赛从 2014 年起读取完整年度赛果，旧数据不再受最近 30 天按日接口的限制；Foot Mercato 分页日历用于补齐当前赛季的来源内缺口。ESPN、FotMob、Soccerway、Futbol24、Foot Mercato、Sofascore、PFL、VietnamPlus、UEFA、圣吉联合官网和佐加顿斯官网核验比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`FOOTMERCATO-{id}`、`SOFASCORE-{id}`、`PFL-{id}`、`VIETNAMPLUS-{postId}`、`UEFA-{id}`、`RUSG-{id}`、`DIF-{date}-{opponent}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。使用 `--update-existing-regulation-scores-only` 时，脚本只会更新已有比赛 ID 的 90 分钟比分，不新增比赛、不删除记录，也不执行全量去重；缺少可核验详情的加时或点球比赛会保持原值。国家队对俱乐部训练赛按 `CLUB_FRIENDLY` 归类；无传统主客场且在集训地进行的比赛标记为中立场。
+参赛球队的扩展历史通过 `scripts/import-supplemental-history.mjs` 导入，下载缓存位于 `target/supplemental-history-cache`。脚本强制裁剪 2014-10-22 之前的记录，并按比赛 ID、同赛事同日对阵、同赛事相邻日期同比分及“同一赛事中同队同日同得失球”四层去重；最后一种重复会合并记录，并把确认出的对手别名写入 `team_name_mappings.csv`，俱乐部友谊赛不使用该推断规则。对于本次人工确认的队名，脚本还会在同赛事前后一天内按相同得失球和不同数据源兜底去重，但不会据此自动推断对手映射。Futbol24 俱乐部友谊赛从 2014 年起读取完整年度赛果，旧数据不再受最近 30 天按日接口的限制；Foot Mercato 分页日历用于补齐当前赛季的来源内缺口。ESPN、FotMob、Soccerway、Futbol24、Foot Mercato、Sofascore、PFL、VietnamPlus、UEFA、圣吉联合官网和佐加顿斯官网核验比赛分别使用 `ESPN-{id}`、`FOTMOB-{id}`、`SOCCERWAY-{id}`、`FUTBOL24-{id}`、`FOOTMERCATO-{id}`、`SOFASCORE-{id}`、`PFL-{id}`、`VIETNAMPLUS-{postId}`、`UEFA-{id}`、`RUSG-{id}`、`DIF-{date}-{opponent}`，国家队公共源比赛使用确定性 `OPEN-{source}-{hash}`。可用 `--only-sources` 逗号分隔指定本次导入源。使用 `--update-existing-regulation-scores-only` 时，脚本只会更新已有比赛 ID 的 90 分钟比分，不新增比赛、不删除记录，也不执行全量去重；缺少可核验详情的加时或点球比赛会保持原值。国家队对俱乐部训练赛按 `CLUB_FRIENDLY` 归类；无传统主客场且在集训地进行的比赛标记为中立场。
 
 历史比赛使用以下内部类型和回测权重：
 

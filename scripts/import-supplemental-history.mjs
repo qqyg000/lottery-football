@@ -3445,6 +3445,23 @@ function isSportteryBackedHistoryRow(row) {
     || matchId.includes('SPORTTERY')
 }
 
+function historyProvider(row) {
+  return String(row?.match_id ?? '').split('-', 1)[0].trim().toUpperCase()
+}
+
+function hasDifferentHistoryProvider(left, right) {
+  const leftProvider = historyProvider(left)
+  const rightProvider = historyProvider(right)
+  return leftProvider && rightProvider && leftProvider !== rightProvider
+}
+
+const REQUESTED_DUPLICATE_ANCHOR_TEAMS = new Set([
+  '伊斯特拉1961',
+  '弗里斯卡',
+  '印尼明星',
+  '沃尔索尔'
+].map(canonicalChineseName))
+
 function areLikelyOpponentAliases(leftName, rightName, mappings, competition) {
   const mappedLeft = mappedChineseName(leftName, mappings, competition)
   const mappedRight = mappedChineseName(rightName, mappings, competition)
@@ -3572,9 +3589,31 @@ function normalizeAndDeduplicateHistoryRows(rows, nationalMappings, clubMappings
     }
     if (normalizedRow.match_type !== 'CLUB_FRIENDLY') {
       const teamEntries = teamResultEntries(normalizedRow)
-      const duplicateEntry = teamEntries
+      let duplicateEntry = teamEntries
         .map(entry => ({ ...entry, existing: rowsByTeamResult.get(entry.key) }))
         .find(entry => entry.existing)
+      if (!duplicateEntry) {
+        duplicateEntry = [-1, 1]
+          .flatMap(offset => teamResultEntries({
+            ...normalizedRow,
+            match_date: dateWithOffset(normalizedRow.match_date, offset)
+          }))
+          .map(entry => ({ ...entry, existing: rowsByTeamResult.get(entry.key) }))
+          .find(entry => {
+            if (!entry.existing) {
+              return false
+            }
+            const candidateMappingSource = entry.side === 'home'
+              ? normalizedRow._homeMappingSource
+              : normalizedRow._awayMappingSource
+            return entry.existing.mappingSource === 'MANUAL'
+              && candidateMappingSource === 'MANUAL'
+              && REQUESTED_DUPLICATE_ANCHOR_TEAMS.has(canonicalChineseName(
+                sideTeamName(normalizedRow, entry.side)
+              ))
+              && hasDifferentHistoryProvider(entry.existing.row, normalizedRow)
+          })
+      }
       const existingOpponent = duplicateEntry
         ? opponentTeamName(duplicateEntry.existing.row, duplicateEntry.existing.side)
         : null
@@ -3587,31 +3626,48 @@ function normalizeAndDeduplicateHistoryRows(rows, nationalMappings, clubMappings
       const sharedTeamMappingIsTrusted = duplicateEntry
         && duplicateEntry.existing.mappingSource !== 'INFERRED_DUPLICATE'
         && candidateSharedTeamMappingSource !== 'INFERRED_DUPLICATE'
+      const sharedTeamMappingIsManual = duplicateEntry
+        && duplicateEntry.existing.mappingSource === 'MANUAL'
+        && candidateSharedTeamMappingSource === 'MANUAL'
+      const sharedTeamIsRequestedDuplicateAnchor = duplicateEntry
+        && REQUESTED_DUPLICATE_ANCHOR_TEAMS.has(canonicalChineseName(
+          sideTeamName(normalizedRow, duplicateEntry.side)
+        ))
+      const opponentsAreLikelyAliases = duplicateEntry && areLikelyOpponentAliases(
+        existingOpponent,
+        candidateOpponent,
+        mappings,
+        row.competition
+      )
+      const manualCrossProviderDuplicate = sharedTeamMappingIsManual
+        && sharedTeamIsRequestedDuplicateAnchor
+        && hasDifferentHistoryProvider(duplicateEntry.existing.row, normalizedRow)
       const likelyDuplicate = duplicateEntry && (
         isSportteryBackedHistoryRow(duplicateEntry.existing.row)
         || isSportteryBackedHistoryRow(normalizedRow)
+        || manualCrossProviderDuplicate
         || normalizedRow.competition !== 'CLUB_OFFICIAL_OTHER'
           && sharedTeamMappingIsTrusted
-        || areLikelyOpponentAliases(
-          existingOpponent,
-          candidateOpponent,
-          mappings,
-          row.competition
-        )
+        || opponentsAreLikelyAliases
       )
       if (likelyDuplicate) {
         duplicateRows += 1
         sameTeamScoreDuplicateRows += 1
         const existingRow = duplicateEntry.existing.row
         const existingSide = duplicateEntry.existing.side
+        if (existingRow.match_date !== normalizedRow.match_date) {
+          shiftedDateDuplicateRows += 1
+        }
         const retainedFixture = `${existingRow.home_team_cn} vs ${existingRow.away_team_cn}`
         const mergedFixture = `${normalizedRow.home_team_cn} vs ${normalizedRow.away_team_cn}`
-        const standardOpponent = preferredAliasStandard(
-          existingOpponent,
-          candidateOpponent,
-          mappings,
-          row.competition
-        )
+        const standardOpponent = manualCrossProviderDuplicate && !opponentsAreLikelyAliases
+          ? null
+          : preferredAliasStandard(
+              existingOpponent,
+              candidateOpponent,
+              mappings,
+              row.competition
+            )
         if (standardOpponent) {
           setOpponentTeamName(existingRow, existingSide, standardOpponent)
           collectPairAliases(
