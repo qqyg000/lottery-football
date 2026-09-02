@@ -15,6 +15,12 @@ class CompetitionTest {
                 Competition.FINNISH_VEIKKAUSLIIGA,
                 Competition.fromSourceCompetition("芬超", Competition.CLUB_OFFICIAL_OTHER));
         assertEquals(
+                Competition.SERIE_A,
+                Competition.fromSourceCompetition("意大利杯 第1/8轮", Competition.CLUB_OFFICIAL_OTHER));
+        assertEquals(
+                Competition.SERIE_A,
+                Competition.fromSourceCompetition("意杯", Competition.CLUB_OFFICIAL_OTHER));
+        assertEquals(
                 Competition.K_LEAGUE_1,
                 Competition.fromSourceCompetition("韩国职业联赛", Competition.CLUB_OFFICIAL_OTHER));
         assertEquals(

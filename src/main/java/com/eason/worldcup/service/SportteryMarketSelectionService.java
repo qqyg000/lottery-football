@@ -1118,7 +1118,7 @@ public class SportteryMarketSelectionService {
             case "欧冠" -> Competition.CHAMPIONS_LEAGUE;
             case "英超" -> Competition.PREMIER_LEAGUE;
             case "西甲" -> Competition.LA_LIGA;
-            case "意甲" -> Competition.SERIE_A;
+            case "意甲", "意大利杯", "意杯" -> Competition.SERIE_A;
             case "德甲" -> Competition.BUNDESLIGA;
             case "法甲" -> Competition.LIGUE_1;
             case "葡超" -> Competition.PRIMEIRA_LIGA;

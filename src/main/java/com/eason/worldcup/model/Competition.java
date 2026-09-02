@@ -110,6 +110,9 @@ public enum Competition {
         if (normalized.startsWith("芬超")) {
             return FINNISH_VEIKKAUSLIIGA;
         }
+        if (normalized.startsWith("意大利杯") || normalized.startsWith("意杯")) {
+            return SERIE_A;
+        }
         if (normalized.startsWith("韩职")
                 || normalized.startsWith("韩国职业联赛")
                 || normalized.startsWith("韩国杯")

@@ -357,6 +357,26 @@ class DataRepositoryTest {
     }
 
     @Test
+    void shouldIncludeItalianCupSchedulesInSerieASelection() {
+        MatchSchedule italianCupSchedule = completedSchedule(
+                "FOTMOB-ITALIAN-CUP-001",
+                "国际米兰",
+                "尤文图斯");
+        italianCupSchedule.setCompetition(Competition.CLUB_OFFICIAL_OTHER);
+        italianCupSchedule.setGroupName("意大利杯 第1/4轮");
+        italianCupSchedule.setMatchDate(LocalDate.of(2026, 9, 1));
+        List<MatchSchedule> schedules = new ArrayList<>(List.of(italianCupSchedule));
+
+        ReflectionTestUtils.invokeMethod(repository, "normalizeScheduleTeamNames", schedules);
+        ReflectionTestUtils.setField(repository, "schedules", schedules);
+
+        assertEquals(Competition.SERIE_A, italianCupSchedule.getCompetition());
+        assertEquals(
+                List.of(italianCupSchedule),
+                repository.findSchedulesByDate(LocalDate.of(2026, 9, 1), Competition.SERIE_A));
+    }
+
+    @Test
     void shouldKeepMidnightKickoffOnShanghaiCalendarDate() {
         MatchSchedule lateMatch = completedSchedule("LATE-001", "晚场主队", "晚场客队");
         lateMatch.setMatchDate(LocalDate.of(2026, 8, 9));

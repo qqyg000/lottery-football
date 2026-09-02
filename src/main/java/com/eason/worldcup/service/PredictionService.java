@@ -73,8 +73,8 @@ public class PredictionService {
                     LocalDate.of(2025, 8, 15), LocalDate.of(2026, 5, 24),
                     LocalDate.of(2026, 8, 15), LocalDate.of(2027, 5, 30))),
             Map.entry(Competition.SERIE_A, new CompetitionBacktestPeriod(
-                    LocalDate.of(2025, 8, 23), LocalDate.of(2026, 5, 24),
-                    LocalDate.of(2026, 8, 22), LocalDate.of(2027, 5, 30))),
+                    LocalDate.of(2025, 8, 10), LocalDate.of(2026, 5, 24),
+                    LocalDate.of(2026, 8, 9), LocalDate.of(2027, 5, 30))),
             Map.entry(Competition.BUNDESLIGA, new CompetitionBacktestPeriod(
                     LocalDate.of(2025, 8, 22), LocalDate.of(2026, 5, 16),
                     LocalDate.of(2026, 8, 28), LocalDate.of(2027, 5, 22))),

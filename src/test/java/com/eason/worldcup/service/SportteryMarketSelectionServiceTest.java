@@ -153,6 +153,8 @@ class SportteryMarketSelectionServiceTest {
         Map<String, Competition> competitionsByLeagueName = Map.ofEntries(
                 Map.entry("瑞超", Competition.SWEDISH_ALLSVENSKAN),
                 Map.entry("芬超", Competition.FINNISH_VEIKKAUSLIIGA),
+                Map.entry("意大利杯", Competition.SERIE_A),
+                Map.entry("意杯", Competition.SERIE_A),
                 Map.entry("韩职", Competition.K_LEAGUE_1),
                 Map.entry("苏足总杯", Competition.SCOTTISH_FA_CUP));
 

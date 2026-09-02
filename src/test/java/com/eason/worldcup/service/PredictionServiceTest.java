@@ -39,7 +39,7 @@ class PredictionServiceTest {
             Map.entry(Competition.LA_LIGA, period(
                     "2025-08-15", "2026-05-24", "2026-08-15", "2027-05-30")),
             Map.entry(Competition.SERIE_A, period(
-                    "2025-08-23", "2026-05-24", "2026-08-22", "2027-05-30")),
+                    "2025-08-10", "2026-05-24", "2026-08-09", "2027-05-30")),
             Map.entry(Competition.BUNDESLIGA, period(
                     "2025-08-22", "2026-05-16", "2026-08-28", "2027-05-22")),
             Map.entry(Competition.LIGUE_1, period(

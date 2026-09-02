@@ -117,9 +117,9 @@ class HistoricalMatchDataIntegrityTest {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
 
         assertFixtureOccursOnce(fixtures, LocalDate.of(2014, 12, 2),
-                Competition.CLUB_OFFICIAL_OTHER, "拉齐奥", "瓦雷泽", 3, 0);
+                Competition.SERIE_A, "拉齐奥", "瓦雷泽", 3, 0);
         assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 18),
-                Competition.CLUB_OFFICIAL_OTHER, "巴勒莫", "莱切", 2, 0);
+                Competition.SERIE_A, "巴勒莫", "莱切", 2, 0);
         assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 8),
                 Competition.CLUB_FRIENDLY, "利兹联", "莱红牛", 1, 0);
 
