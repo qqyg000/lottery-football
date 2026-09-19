@@ -88,6 +88,9 @@ public class ClubCompetitionScheduleUpdater {
     private static final LocalDate HISTORICAL_BACKFILL_START_DATE = LocalDate.of(2014, 10, 22);
 
     private static final Set<String> HISTORICAL_FOTMOB_LEAGUE_IDS = Set.of(
+            "138",
+            "110",
+            "74",
             "47",
             "48",
             "53",
@@ -107,6 +110,17 @@ public class ClubCompetitionScheduleUpdater {
             "247");
 
     private static final List<VerifiedSupplementalSchedule> VERIFIED_SUPPLEMENTAL_SCHEDULES = List.of(
+            new VerifiedSupplementalSchedule(
+                    Competition.CLUB_FRIENDLY,
+                    "俱乐部友谊赛",
+                    "OPEN-VERIFIED-ANGERS-TROYES-A7B0F1AA22E0C2CA",
+                    LocalDate.of(2021, 7, 24),
+                    LocalTime.of(23, 0),
+                    "Angers",
+                    "Troyes",
+                    3,
+                    0,
+                    true),
             new VerifiedSupplementalSchedule(
                     Competition.CLUB_FRIENDLY,
                     "俱乐部友谊赛",
@@ -275,11 +289,12 @@ public class ClubCompetitionScheduleUpdater {
             new EspnLeagueSource(Competition.INTERNATIONAL_FRIENDLY, "fifa.friendly"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "uefa.europa.conf"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "uefa.europa.conf_qual"),
-            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "uefa.super_cup"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "uefa.super_cup", "欧超杯"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "eng.fa"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "eng.league_cup"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "eng.charity"),
-            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "esp.copa_del_rey"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "esp.copa_del_rey", "西国王杯"),
+            new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "fra.2", "法乙"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "esp.super_cup"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ger.2", "德乙"),
             new EspnLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "ger.dfb_pokal", "德国杯"),
@@ -307,6 +322,9 @@ public class ClubCompetitionScheduleUpdater {
     private static final List<SportsDbLeagueSource> SPORTS_DB_SOURCES = List.of();
 
     private static final List<FotMobLeagueSource> FOTMOB_SOURCES = List.of(
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "138", "西国王杯", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "110", "法乙", false),
+            new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "74", "欧超杯", false),
             new FotMobLeagueSource(Competition.CLUB_FRIENDLY, "489", "俱乐部赛", true),
             new FotMobLeagueSource(Competition.PREMIER_LEAGUE, "47", "英超", false),
             new FotMobLeagueSource(Competition.BUNDESLIGA, "54", "德甲", false),
@@ -631,7 +649,7 @@ public class ClubCompetitionScheduleUpdater {
             schedule.setHomeTeamEn(verified.homeTeam());
             schedule.setAwayTeamEn(verified.awayTeam());
             schedule.setVenue("");
-            schedule.setNeutral(false);
+            schedule.setNeutral(verified.neutral());
             schedule.setStatus("COMPLETED");
             schedule.setHomeScore(verified.homeScore());
             schedule.setAwayScore(verified.awayScore());
@@ -712,7 +730,7 @@ public class ClubCompetitionScheduleUpdater {
                                 seasonValue,
                                 zoneId,
                                 timeout,
-                                startDate),
+                                Set.of("74", "138", "110").contains(source.leagueId()) ? sourceStartDate : startDate),
                         sourceStartDate,
                         endDate));
             }
@@ -883,7 +901,7 @@ public class ClubCompetitionScheduleUpdater {
         schedule.setHomeTeamEn(homeTeam);
         schedule.setAwayTeamEn(awayTeam);
         schedule.setVenue("");
-        schedule.setNeutral(false);
+        schedule.setNeutral("74".equals(source.leagueId()));
         schedule.setStatus(completed ? "COMPLETED" : (live ? "LIVE" : "SCHEDULED"));
         if (score != null && (completed || live)) {
             schedule.setHomeScore(score.homeScore);
@@ -1021,6 +1039,8 @@ public class ClubCompetitionScheduleUpdater {
             case "英格兰联赛杯" -> "英联赛杯";
             case "英格兰社区盾", "社区盾杯" -> "英社区盾";
             case "法国超级杯" -> "法超杯";
+            case "欧洲超级杯", "欧足联超级杯", "UEFA Super Cup" -> "欧超杯";
+            case "国王杯", "西班牙国王杯", "Copa del Rey" -> "西国王杯";
             default -> withoutRound;
         };
     }
@@ -2850,7 +2870,22 @@ public class ClubCompetitionScheduleUpdater {
             String homeTeam,
             String awayTeam,
             int homeScore,
-            int awayScore) {
+            int awayScore,
+            boolean neutral) {
+
+        private VerifiedSupplementalSchedule(
+                Competition competition,
+                String groupName,
+                String matchId,
+                LocalDate matchDate,
+                LocalTime kickoffTime,
+                String homeTeam,
+                String awayTeam,
+                int homeScore,
+                int awayScore) {
+            this(competition, groupName, matchId, matchDate, kickoffTime,
+                    homeTeam, awayTeam, homeScore, awayScore, false);
+        }
 
         private VerifiedSupplementalSchedule(
                 Competition competition,

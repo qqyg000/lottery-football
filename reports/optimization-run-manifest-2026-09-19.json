@@ -1,0 +1,104 @@
+{
+  "generatedAt": "2026-09-19T02:57:30.600Z",
+  "inputs": [
+    {
+      "Path": "D:\\WorkJava\\lottery-football\\target\\lottery-football-1.0.0.jar",
+      "Hash": "9F3BA191B287985F46E0B835454B86EF7D1DB2482ADE33A1E0B37365DE95AD04"
+    },
+    {
+      "Path": "D:\\WorkJava\\lottery-football\\config\\user-config.json",
+      "Hash": "C36B6BF2451F8926D9410CAB65A6371C610A0FC45160AC51A7DC1B049152EF4B"
+    },
+    {
+      "Path": "D:\\WorkJava\\lottery-football\\config\\sporttery-market-selections.json",
+      "Hash": "BE6707190A81682CD602E1BD57204C810DD0C1C1F45DD48D200C3DF5680C4255"
+    },
+    {
+      "Path": "D:\\WorkJava\\lottery-football\\config\\club-competition-schedules.json",
+      "Hash": "1E51410725727A4965604E041285EF3DB1F8BC8A61868EE5C668701D616056B9"
+    },
+    {
+      "Path": "D:\\WorkJava\\lottery-football\\src\\main\\resources\\data\\historical_matches.csv",
+      "Hash": "44D1CD5F9CEE2BE7641806C4EFC8EB7A2CFB0AF2EC3FAA73150CA75EE4A55671"
+    },
+    {
+      "Path": "D:\\WorkJava\\lottery-football\\src\\main\\resources\\data\\historical_odds_data.csv",
+      "Hash": "0290C054BE5DE0D12FDAAAA38BE29EC3C38CC8F002F7066E6544E41C4268358E"
+    }
+  ],
+  "search": {
+    "settings": {
+      "LOTTERY_FOOTBALL_API_BASE": "http://127.0.0.1:18080",
+      "OPTIMIZER_CONFIG_PATH": "target/optimization-20260919/config/user-config.json",
+      "FINAL_SIMULATIONS": "50000",
+      "COARSE_SIMULATIONS": "8000",
+      "MODEL_VARIANT_COUNT": "20",
+      "FINALIST_MODEL_COUNT": "4",
+      "COARSE_RULE_CANDIDATES": "10000",
+      "FINAL_RULE_CANDIDATES": "30000",
+      "REFINEMENT_PASSES": "2",
+      "BACKTEST_PARALLELISM": "2",
+      "ROBUST_VALIDATION": "true",
+      "TRAINING_STABILITY_BLOCKS": "3",
+      "HOLDOUT_CANDIDATE_LIMIT": "24",
+      "USE_PREPARED_EVALUATOR": "true"
+    },
+    "groups": [
+      [
+        "WORLD_CUP",
+        "SCOTTISH_FA_CUP"
+      ],
+      [
+        "EUROPEAN_CHAMPIONSHIP",
+        "ARGENTINE_PRIMERA_DIVISION"
+      ],
+      [
+        "COPA_AMERICA",
+        "CLUB_WORLD_CUP"
+      ],
+      [
+        "EUROPA_LEAGUE",
+        "CHAMPIONS_LEAGUE"
+      ],
+      [
+        "PREMIER_LEAGUE",
+        "LA_LIGA"
+      ],
+      [
+        "BUNDESLIGA",
+        "SERIE_A"
+      ],
+      [
+        "LIGUE_1",
+        "PRIMEIRA_LIGA"
+      ],
+      [
+        "EREDIVISIE",
+        "SWEDISH_ALLSVENSKAN"
+      ],
+      [
+        "FINNISH_VEIKKAUSLIIGA",
+        "K_LEAGUE_1"
+      ]
+    ]
+  },
+  "javaEquivalence": {
+    "competition": "PREMIER_LEAGUE",
+    "matches": 37,
+    "simulations": 50000,
+    "allResponseFieldsIdentical": true,
+    "checkedAt": "2026-09-19T02:48:52.345Z"
+  },
+  "finalJarSha256": "f2c64a6030b064faf2b824d814e00ff898be5c587c9edb78038fdc8942c9f66f",
+  "configurationBackup": "temp/user-config-before-reoptimization-20260919.json",
+  "testResults": {
+    "initialFullJavaTests": 196,
+    "javaTestsAfterHistoryCache": 43,
+    "nodeTests": 24,
+    "mavenPackage": "BUILD SUCCESS"
+  },
+  "finalVerification": {
+    "wdl": "USE_PREPARED_EVALUATOR=false",
+    "goals": "fresh 50000-simulation API backtest plus frontend settlement and partition gate audit"
+  }
+}

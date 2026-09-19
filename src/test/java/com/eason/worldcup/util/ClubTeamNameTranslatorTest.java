@@ -20,6 +20,48 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class ClubTeamNameTranslatorTest {
 
     @Test
+    void shouldTranslateRequestedEuropeanClubAliasesAcrossCompetitions() {
+        Map<String, String> aliases = Map.of(
+                "Grenoble", "格勒诺布",
+                "AS Nancy Lorraine", "南锡",
+                "Club Bruges", "布鲁日",
+                "FC Südtirol", "Südtirol",
+                "AFC Wimbledon", "温布尔登");
+
+        aliases.forEach((alias, standardName) -> {
+            assertEquals(standardName, ClubTeamNameTranslator.translate(alias), alias);
+            for (Competition competition : Competition.values()) {
+                assertEquals(standardName, ClubTeamNameTranslator.translate(competition, alias),
+                        competition + ":" + alias);
+                assertEquals(standardName, ClubTeamNameTranslator.translate(competition, standardName));
+            }
+        });
+    }
+
+    @Test
+    void shouldTranslateHebcAndDusseldorfAliasesAcrossCompetitions() {
+        Map<String, String> aliases = Map.of(
+                "HEBC Hamburg", "HEBC",
+                "HEBC", "HEBC",
+                "杜塞尔多夫", "杜塞多夫",
+                "Fortuna Düsseldorf", "杜塞多夫",
+                "Düsseldorf", "杜塞多夫",
+                "杜塞多夫", "杜塞多夫");
+
+        aliases.forEach((alias, standardName) -> {
+            assertEquals(standardName, ClubTeamNameTranslator.translate(alias), alias);
+            for (Competition competition : List.of(
+                    Competition.BUNDESLIGA,
+                    Competition.CLUB_OFFICIAL_OTHER,
+                    Competition.CLUB_FRIENDLY)) {
+                assertEquals(standardName, ClubTeamNameTranslator.translate(competition, alias),
+                        competition + ":" + alias);
+                assertEquals(standardName, ClubTeamNameTranslator.translate(competition, standardName));
+            }
+        });
+    }
+
+    @Test
     void shouldTranslateAugustThirtiethRequestedClubAliases() throws IOException {
         assumeMappingsImported();
 

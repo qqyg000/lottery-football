@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -73,6 +74,8 @@ public class DataRepository {
     private final HistoricalOddsScheduleLoader historicalOddsScheduleLoader;
 
     private final SportteryMarketSelectionService sportteryMarketSelectionService;
+
+    private final Map<String, String> normalizedTeamNames = new ConcurrentHashMap<>();
 
     @Value("${football-data.historical-matches-path:classpath:data/historical_matches.csv}")
     private String historicalMatchesPath;
@@ -813,10 +816,12 @@ public class DataRepository {
     }
 
     private String normalizeTeamName(String teamName) {
-        String cleaned = teamName == null ? "" : teamName.trim().replaceAll("\\s+", " ");
-        return Normalizer.normalize(cleaned, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .toUpperCase(Locale.ROOT);
+        return normalizedTeamNames.computeIfAbsent(teamName == null ? "" : teamName, value -> {
+            String cleaned = value.trim().replaceAll("\\s+", " ");
+            return Normalizer.normalize(cleaned, Normalizer.Form.NFD)
+                    .replaceAll("\\p{M}", "")
+                    .toUpperCase(Locale.ROOT);
+        });
     }
 
 }

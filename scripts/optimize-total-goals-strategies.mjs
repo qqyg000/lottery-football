@@ -4,7 +4,7 @@ import process from 'node:process'
 import { meetsMinimumConstraint } from './total-goals-optimization-constraints.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
-const CONFIG_PATH = path.join(ROOT, 'config', 'user-config.json')
+const CONFIG_PATH = path.resolve(ROOT, readArgument('--config-path', 'config/user-config.json'))
 const EVALUATE_ONLY = process.argv.includes('--evaluate-only')
 const DRY_RUN = process.argv.includes('--dry-run')
 const STRICT_CONSTRAINTS = process.argv.includes('--strict-constraints')

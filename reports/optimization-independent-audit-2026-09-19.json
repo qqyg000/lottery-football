@@ -1,0 +1,733 @@
+{
+  "generatedAt": "2026-09-19T03:08:56.986Z",
+  "errors": [],
+  "wdlProfileCount": 72,
+  "activeWdl": 14,
+  "goalsProfileCount": 36,
+  "activeGoals": 18,
+  "changedWdl": 16,
+  "changedGoals": 19,
+  "aggregates": [
+    {
+      "type": "胜平负",
+      "range": "PREVIOUS",
+      "preset": "STABLE",
+      "before": {
+        "stake": 321,
+        "returns": 378.0099999999999,
+        "recommended": 266,
+        "roi": 0.17760124610591865
+      },
+      "after": {
+        "stake": 790,
+        "returns": 884.43,
+        "recommended": 629,
+        "roi": 0.11953164556962026
+      },
+      "validation": {
+        "stake": 249,
+        "returns": 263.88,
+        "recommended": 192,
+        "roi": 0.05975903614457834
+      }
+    },
+    {
+      "type": "胜平负",
+      "range": "PREVIOUS",
+      "preset": "AGGRESSIVE",
+      "before": {
+        "stake": 239,
+        "returns": 307.45,
+        "recommended": 186,
+        "roi": 0.28640167364016733
+      },
+      "after": {
+        "stake": 630,
+        "returns": 731.5,
+        "recommended": 467,
+        "roi": 0.1611111111111112
+      },
+      "validation": {
+        "stake": 209,
+        "returns": 223.5,
+        "recommended": 149,
+        "roi": 0.06937799043062198
+      }
+    },
+    {
+      "type": "进球数",
+      "range": "PREVIOUS",
+      "preset": "共用",
+      "before": {
+        "stake": 1105,
+        "returns": 1253.15,
+        "recommended": 902,
+        "roi": 0.13407239819004535
+      },
+      "after": {
+        "stake": 670,
+        "returns": 917.5500000000001,
+        "recommended": 670,
+        "roi": 0.3694776119402987
+      },
+      "validation": {
+        "stake": 242,
+        "returns": 314.04999999999995,
+        "recommended": 242,
+        "roi": 0.2977272727272726
+      }
+    },
+    {
+      "type": "胜平负",
+      "range": "CURRENT",
+      "preset": "STABLE",
+      "before": {
+        "stake": 203,
+        "returns": 243.81999999999994,
+        "recommended": 181,
+        "roi": 0.20108374384236427
+      },
+      "after": {
+        "stake": 84,
+        "returns": 130.74,
+        "recommended": 82,
+        "roi": 0.5564285714285715
+      },
+      "validation": {
+        "stake": 28,
+        "returns": 37.43,
+        "recommended": 27,
+        "roi": 0.33678571428571424
+      }
+    },
+    {
+      "type": "胜平负",
+      "range": "CURRENT",
+      "preset": "AGGRESSIVE",
+      "before": {
+        "stake": 135,
+        "returns": 197.14000000000001,
+        "recommended": 122,
+        "roi": 0.4602962962962964
+      },
+      "after": {
+        "stake": 62,
+        "returns": 103.84,
+        "recommended": 60,
+        "roi": 0.6748387096774193
+      },
+      "validation": {
+        "stake": 21,
+        "returns": 28.97,
+        "recommended": 20,
+        "roi": 0.3795238095238094
+      }
+    },
+    {
+      "type": "进球数",
+      "range": "CURRENT",
+      "preset": "共用",
+      "before": {
+        "stake": 160,
+        "returns": 257.05,
+        "recommended": 158,
+        "roi": 0.6065625000000001
+      },
+      "after": {
+        "stake": 223,
+        "returns": 338.55,
+        "recommended": 212,
+        "roi": 0.5181614349775785
+      },
+      "validation": {
+        "stake": 79,
+        "returns": 99.5,
+        "recommended": 76,
+        "roi": 0.259493670886076
+      }
+    }
+  ],
+  "independentGoals": [
+    {
+      "key": "WORLD_CUP:CURRENT",
+      "availableMatches": 104,
+      "metrics": {
+        "recommendedMatchCount": 91,
+        "recommendedSelectionCount": 91,
+        "winningSelectionCount": 24,
+        "totalStake": 91,
+        "totalReturn": 123.79999999999998,
+        "netProfit": 32.79999999999998,
+        "roi": 0.36043956043956027,
+        "hitRate": 0.26373626373626374,
+        "samplingRate": 0.875,
+        "volatility": 2.4848039994637237
+      }
+    },
+    {
+      "key": "WORLD_CUP:PREVIOUS",
+      "availableMatches": 130,
+      "metrics": {
+        "recommendedMatchCount": 90,
+        "recommendedSelectionCount": 90,
+        "winningSelectionCount": 27,
+        "totalStake": 90,
+        "totalReturn": 113.59999999999998,
+        "netProfit": 23.59999999999998,
+        "roi": 0.2622222222222219,
+        "hitRate": 0.3,
+        "samplingRate": 0.6923076923076923,
+        "volatility": 1.9780723665076236
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:CURRENT",
+      "availableMatches": 51,
+      "metrics": {
+        "recommendedMatchCount": 30,
+        "recommendedSelectionCount": 30,
+        "winningSelectionCount": 11,
+        "totalStake": 30,
+        "totalReturn": 38.65,
+        "netProfit": 8.649999999999999,
+        "roi": 0.28833333333333333,
+        "hitRate": 0.36666666666666664,
+        "samplingRate": 0.5882352941176471,
+        "volatility": 1.733925352037043
+      }
+    },
+    {
+      "key": "EUROPEAN_CHAMPIONSHIP:PREVIOUS",
+      "availableMatches": 102,
+      "metrics": {
+        "recommendedMatchCount": 30,
+        "recommendedSelectionCount": 30,
+        "winningSelectionCount": 12,
+        "totalStake": 30,
+        "totalReturn": 44.75,
+        "netProfit": 14.75,
+        "roi": 0.4916666666666667,
+        "hitRate": 0.4,
+        "samplingRate": 0.29411764705882354,
+        "volatility": 1.8750670486096246
+      }
+    },
+    {
+      "key": "COPA_AMERICA:CURRENT",
+      "availableMatches": 32,
+      "metrics": {
+        "recommendedMatchCount": 11,
+        "recommendedSelectionCount": 11,
+        "winningSelectionCount": 4,
+        "totalStake": 11,
+        "totalReturn": 25.1,
+        "netProfit": 14.100000000000001,
+        "roi": 1.2818181818181817,
+        "hitRate": 0.36363636363636365,
+        "samplingRate": 0.34375,
+        "volatility": 3.2068109335656763
+      }
+    },
+    {
+      "key": "COPA_AMERICA:PREVIOUS",
+      "availableMatches": 86,
+      "metrics": {
+        "recommendedMatchCount": 14,
+        "recommendedSelectionCount": 14,
+        "winningSelectionCount": 7,
+        "totalStake": 14,
+        "totalReturn": 26.55,
+        "netProfit": 12.55,
+        "roi": 0.8964285714285716,
+        "hitRate": 0.5,
+        "samplingRate": 0.16279069767441862,
+        "volatility": 1.9706953366489985
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:CURRENT",
+      "availableMatches": 55,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "CLUB_WORLD_CUP:PREVIOUS",
+      "availableMatches": 61,
+      "metrics": {
+        "recommendedMatchCount": 8,
+        "recommendedSelectionCount": 8,
+        "winningSelectionCount": 5,
+        "totalStake": 8,
+        "totalReturn": 18.05,
+        "netProfit": 10.05,
+        "roi": 1.25625,
+        "hitRate": 0.625,
+        "samplingRate": 0.13114754098360656,
+        "volatility": 1.8688112149553406
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:CURRENT",
+      "availableMatches": 28,
+      "metrics": {
+        "recommendedMatchCount": 26,
+        "recommendedSelectionCount": 37,
+        "winningSelectionCount": 14,
+        "totalStake": 37,
+        "totalReturn": 50.599999999999994,
+        "netProfit": 13.599999999999994,
+        "roi": 0.36756756756756737,
+        "hitRate": 0.3783783783783784,
+        "samplingRate": 0.9285714285714286,
+        "volatility": 1.4196776448844348
+      }
+    },
+    {
+      "key": "EUROPA_LEAGUE:PREVIOUS",
+      "availableMatches": 195,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:CURRENT",
+      "availableMatches": 30,
+      "metrics": {
+        "recommendedMatchCount": 13,
+        "recommendedSelectionCount": 13,
+        "winningSelectionCount": 7,
+        "totalStake": 13,
+        "totalReturn": 29.999999999999996,
+        "netProfit": 16.999999999999996,
+        "roi": 1.3076923076923075,
+        "hitRate": 0.5384615384615384,
+        "samplingRate": 0.43333333333333335,
+        "volatility": 2.242937634168465
+      }
+    },
+    {
+      "key": "CHAMPIONS_LEAGUE:PREVIOUS",
+      "availableMatches": 234,
+      "metrics": {
+        "recommendedMatchCount": 36,
+        "recommendedSelectionCount": 36,
+        "winningSelectionCount": 7,
+        "totalStake": 36,
+        "totalReturn": 85.7,
+        "netProfit": 49.7,
+        "roi": 1.3805555555555555,
+        "hitRate": 0.19444444444444445,
+        "samplingRate": 0.15384615384615385,
+        "volatility": 5.070577281558183
+      }
+    },
+    {
+      "key": "PREMIER_LEAGUE:CURRENT",
+      "availableMatches": 3,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "PREMIER_LEAGUE:PREVIOUS",
+      "availableMatches": 343,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "LA_LIGA:CURRENT",
+      "availableMatches": 9,
+      "metrics": {
+        "recommendedMatchCount": 3,
+        "recommendedSelectionCount": 3,
+        "winningSelectionCount": 1,
+        "totalStake": 3,
+        "totalReturn": 4.85,
+        "netProfit": 1.8499999999999996,
+        "roi": 0.6166666666666665,
+        "hitRate": 0.3333333333333333,
+        "samplingRate": 0.3333333333333333,
+        "volatility": 2.800148805569685
+      }
+    },
+    {
+      "key": "LA_LIGA:PREVIOUS",
+      "availableMatches": 364,
+      "metrics": {
+        "recommendedMatchCount": 93,
+        "recommendedSelectionCount": 93,
+        "winningSelectionCount": 27,
+        "totalStake": 93,
+        "totalReturn": 116.95000000000002,
+        "netProfit": 23.950000000000017,
+        "roi": 0.25752688172043037,
+        "hitRate": 0.2903225806451613,
+        "samplingRate": 0.2554945054945055,
+        "volatility": 1.9984769504680617
+      }
+    },
+    {
+      "key": "SERIE_A:CURRENT",
+      "availableMatches": 2,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "SERIE_A:PREVIOUS",
+      "availableMatches": 354,
+      "metrics": {
+        "recommendedMatchCount": 102,
+        "recommendedSelectionCount": 102,
+        "winningSelectionCount": 29,
+        "totalStake": 102,
+        "totalReturn": 130.8,
+        "netProfit": 28.80000000000001,
+        "roi": 0.2823529411764707,
+        "hitRate": 0.28431372549019607,
+        "samplingRate": 0.288135593220339,
+        "volatility": 2.0504001910617644
+      }
+    },
+    {
+      "key": "BUNDESLIGA:CURRENT",
+      "availableMatches": 3,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "BUNDESLIGA:PREVIOUS",
+      "availableMatches": 288,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "LIGUE_1:CURRENT",
+      "availableMatches": 1,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "LIGUE_1:PREVIOUS",
+      "availableMatches": 225,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "PRIMEIRA_LIGA:CURRENT",
+      "availableMatches": 14,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "PRIMEIRA_LIGA:PREVIOUS",
+      "availableMatches": 192,
+      "metrics": {
+        "recommendedMatchCount": 111,
+        "recommendedSelectionCount": 111,
+        "winningSelectionCount": 29,
+        "totalStake": 111,
+        "totalReturn": 161.94999999999996,
+        "netProfit": 50.94999999999996,
+        "roi": 0.45900900900900865,
+        "hitRate": 0.26126126126126126,
+        "samplingRate": 0.578125,
+        "volatility": 2.5307760056605564
+      }
+    },
+    {
+      "key": "EREDIVISIE:CURRENT",
+      "availableMatches": 15,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "EREDIVISIE:PREVIOUS",
+      "availableMatches": 204,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:CURRENT",
+      "availableMatches": 0,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": null,
+        "volatility": null
+      }
+    },
+    {
+      "key": "ARGENTINE_PRIMERA_DIVISION:PREVIOUS",
+      "availableMatches": 0,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": null,
+        "volatility": null
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:CURRENT",
+      "availableMatches": 95,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "SWEDISH_ALLSVENSKAN:PREVIOUS",
+      "availableMatches": 263,
+      "metrics": {
+        "recommendedMatchCount": 128,
+        "recommendedSelectionCount": 128,
+        "winningSelectionCount": 33,
+        "totalStake": 128,
+        "totalReturn": 138.04999999999998,
+        "netProfit": 10.049999999999983,
+        "roi": 0.07851562499999987,
+        "hitRate": 0.2578125,
+        "samplingRate": 0.4866920152091255,
+        "volatility": 1.8545823605430436
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:CURRENT",
+      "availableMatches": 88,
+      "metrics": {
+        "recommendedMatchCount": 24,
+        "recommendedSelectionCount": 24,
+        "winningSelectionCount": 9,
+        "totalStake": 24,
+        "totalReturn": 33.05,
+        "netProfit": 9.049999999999997,
+        "roi": 0.3770833333333332,
+        "hitRate": 0.375,
+        "samplingRate": 0.2727272727272727,
+        "volatility": 1.8188015145351522
+      }
+    },
+    {
+      "key": "FINNISH_VEIKKAUSLIIGA:PREVIOUS",
+      "availableMatches": 160,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": 0,
+        "volatility": null
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:CURRENT",
+      "availableMatches": 87,
+      "metrics": {
+        "recommendedMatchCount": 14,
+        "recommendedSelectionCount": 14,
+        "winningSelectionCount": 3,
+        "totalStake": 14,
+        "totalReturn": 32.5,
+        "netProfit": 18.5,
+        "roi": 1.3214285714285716,
+        "hitRate": 0.21428571428571427,
+        "samplingRate": 0.16091954022988506,
+        "volatility": 4.61438862879823
+      }
+    },
+    {
+      "key": "K_LEAGUE_1:PREVIOUS",
+      "availableMatches": 229,
+      "metrics": {
+        "recommendedMatchCount": 58,
+        "recommendedSelectionCount": 58,
+        "winningSelectionCount": 19,
+        "totalStake": 58,
+        "totalReturn": 81.15000000000002,
+        "netProfit": 23.15000000000002,
+        "roi": 0.39913793103448314,
+        "hitRate": 0.3275862068965517,
+        "samplingRate": 0.25327510917030566,
+        "volatility": 2.0225373021370947
+      }
+    },
+    {
+      "key": "SCOTTISH_FA_CUP:CURRENT",
+      "availableMatches": 0,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": null,
+        "volatility": null
+      }
+    },
+    {
+      "key": "SCOTTISH_FA_CUP:PREVIOUS",
+      "availableMatches": 0,
+      "metrics": {
+        "recommendedMatchCount": 0,
+        "recommendedSelectionCount": 0,
+        "winningSelectionCount": 0,
+        "totalStake": 0,
+        "totalReturn": 0,
+        "netProfit": 0,
+        "roi": null,
+        "hitRate": null,
+        "samplingRate": null,
+        "volatility": null
+      }
+    }
+  ],
+  "configSha256": "c2d06bf6f4914a1a370e081958ff6416f945c4215bdd91cab22dd984ba279370",
+  "caveat": "这些是历史回测及有限候选留出门禁结果；历史验证段被历次优化重复使用，不能视为完全未接触的测试集，也不能证明没有过拟合或保证未来收益",
+  "applied": true,
+  "appliedAt": "2026-09-19T03:09:49.737Z",
+  "appliedConfigSha256": "8715fcb8f402ec803de423efd793c267d404065a3b0a5aa2d120549612f28129"
+}

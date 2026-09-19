@@ -64,6 +64,8 @@ public class TeamStrengthService {
 
     private final DataRepository dataRepository;
 
+    private final Map<String, String> normalizedClubTeamNames = new ConcurrentHashMap<>();
+
     @Value("${worldcup.max-goals-lambda:4.5}")
     private double maxGoalsLambda;
 
@@ -98,6 +100,8 @@ public class TeamStrengthService {
 
     private final Map<ClubModelKey, StrengthModel> clubModelByPredictionDate = new ConcurrentHashMap<>();
 
+    private final Map<ClubTrainingMatchesKey, List<HistoricalMatch>> clubMatchesByCutoffDate = new ConcurrentHashMap<>();
+
     public TeamStrengthService(DataRepository dataRepository) {
         this.dataRepository = dataRepository;
     }
@@ -126,6 +130,7 @@ public class TeamStrengthService {
         currentModelByPredictionDate.clear();
         clubPreSeasonModelByStartDate.clear();
         clubModelByPredictionDate.clear();
+        clubMatchesByCutoffDate.clear();
     }
 
     public AdjustedExpectedGoals calculatePreTournamentExpectedGoals(MatchSchedule schedule) {
@@ -461,6 +466,12 @@ public class TeamStrengthService {
     }
 
     private List<HistoricalMatch> buildClubMatchesBefore(Competition competition, LocalDate cutoffDate) {
+        return clubMatchesByCutoffDate.computeIfAbsent(
+                new ClubTrainingMatchesKey(competition, cutoffDate),
+                ignored -> List.copyOf(loadClubMatchesBefore(competition, cutoffDate)));
+    }
+
+    private List<HistoricalMatch> loadClubMatchesBefore(Competition competition, LocalDate cutoffDate) {
         Map<String, HistoricalMatch> matchesByFixture = new LinkedHashMap<>();
         Set<String> competitionTeams = getClubCompetitionTeams(competition);
         for (HistoricalMatch historicalMatch : dataRepository.getClubHistoricalMatches(competition)) {
@@ -527,9 +538,14 @@ public class TeamStrengthService {
     }
 
     private String normalizeClubTeamName(String teamName) {
-        return Normalizer.normalize(teamName == null ? "" : teamName, Normalizer.Form.NFKC)
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("[^\\p{L}\\p{N}]", "");
+        return normalizedClubTeamNames.computeIfAbsent(teamName == null ? "" : teamName, value ->
+                Normalizer.normalize(value, Normalizer.Form.NFKC)
+                        .toLowerCase(Locale.ROOT)
+                        .replaceAll("[^\\p{L}\\p{N}]", ""));
+    }
+
+    private record ClubTrainingMatchesKey(Competition competition, LocalDate cutoffDate) {
+
     }
 
     private List<LocalDate> parseExcludedDates(String value) {

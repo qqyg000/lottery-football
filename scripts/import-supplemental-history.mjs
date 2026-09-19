@@ -69,7 +69,13 @@ const SOURCE_COMPETITION_ALIASES = new Map([
   ['英格兰联赛杯', '英联赛杯'],
   ['英格兰社区盾', '英社区盾'],
   ['社区盾杯', '英社区盾'],
-  ['法国超级杯', '法超杯']
+  ['法国超级杯', '法超杯'],
+  ['欧洲超级杯', '欧超杯'],
+  ['欧足联超级杯', '欧超杯'],
+  ['UEFA Super Cup', '欧超杯'],
+  ['国王杯', '西国王杯'],
+  ['西班牙国王杯', '西国王杯'],
+  ['Copa del Rey', '西国王杯']
 ])
 
 const EXCLUDED_HISTORICAL_MATCH_IDS = new Set([
@@ -187,11 +193,12 @@ const ESPN_PRIMARY_SOURCES = [
 const ESPN_OFFICIAL_SOURCES = [
   ['uefa.europa.conf', '欧协联'],
   ['uefa.europa.conf_qual', '欧协联资格赛'],
-  ['uefa.super_cup', '欧洲超级杯'],
+  ['uefa.super_cup', '欧超杯'],
   ['eng.fa', '英格兰足总杯'],
   ['eng.league_cup', '英格兰联赛杯'],
   ['eng.charity', '英格兰社区盾'],
-  ['esp.copa_del_rey', '西班牙国王杯'],
+  ['esp.copa_del_rey', '西国王杯'],
+  ['fra.2', '法乙'],
   ['esp.super_cup', '西班牙超级杯'],
   ['ger.2', '德乙'],
   ['ger.dfb_pokal', '德国杯'],
@@ -231,6 +238,31 @@ const ESPN_FRIENDLY_SOURCES = [
 }))
 
 const FOTMOB_LEAGUE_SOURCES = [
+  {
+    leagueId: '138',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '西国王杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '110',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '法乙',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014
+  },
+  {
+    leagueId: '74',
+    competition: 'CLUB_OFFICIAL_OTHER',
+    matchType: 'OFFICIAL',
+    sourceCompetition: '欧超杯',
+    calendarYearSeason: false,
+    firstSeasonStartYear: 2014,
+    neutral: true
+  },
   {
     leagueId: '489',
     competition: 'CLUB_FRIENDLY',
@@ -767,6 +799,9 @@ const FOTMOB_LEAGUE_SOURCES = [
 ]
 
 const AUTHORITATIVE_FOTMOB_LEAGUE_IDS = new Set([
+  '138',
+  '110',
+  '74',
   '47',
   '54',
   '146',
@@ -1072,6 +1107,20 @@ const FUTBOL24_SOURCES = [
 ]
 
 const VERIFIED_SUPPLEMENTAL_ROWS = [
+  {
+    provider: 'OPEN',
+    source: 'VERIFIED-ANGERS-TROYES',
+    competition: 'CLUB_FRIENDLY',
+    matchType: 'CLUB_FRIENDLY',
+    sourceCompetition: '俱乐部友谊赛',
+    matchDate: shanghaiDate('2021-07-24T15:00:00Z'),
+    homeTeam: 'Angers',
+    awayTeam: 'Troyes',
+    homeScore: 3,
+    awayScore: 0,
+    neutral: true,
+    sourceUrl: 'https://www.lequipe.fr/Football/Actualites/En-match-de-preparation-angers-domine-aisement-troyes-en-une-periode/1272741'
+  },
   {
     provider: 'FUTBOL24',
     providerId: '3402888',
@@ -2422,7 +2471,7 @@ async function parseFotMobRows(json, source, options) {
       awayTeam,
       homeScore: score.homeScore,
       awayScore: score.awayScore,
-      neutral: false,
+      neutral: Boolean(source.neutral),
       correctedExtraTimeGoals: score.correctedExtraTimeGoals
     })
   }

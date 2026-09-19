@@ -2,10 +2,11 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 
 import { evaluateRecommendationBacktest } from '../frontend/src/recommendation-backtest.mjs'
+import { evaluatePreparedRecommendationSummary } from './wdl-fast-evaluator.mjs'
 
 const ROOT = process.cwd()
 const API_BASE = process.env.LOTTERY_FOOTBALL_API_BASE || 'http://127.0.0.1:8080'
-const CONFIG_PATH = path.join(ROOT, 'config/user-config.json')
+const CONFIG_PATH = path.resolve(ROOT, process.env.OPTIMIZER_CONFIG_PATH || 'config/user-config.json')
 const REPORT_JSON_PATH = path.resolve(
   ROOT,
   process.env.REPORT_JSON_PATH || 'reports/shared-backtest-parameter-optimization-2026-07-27.json'
@@ -56,6 +57,7 @@ const RETRY_RANGES = new Set(
 )
 const TARGET_RANGES = stringSetOption('TARGET_RANGES')
 const BACKTEST_MEMORY_CACHE = new Map()
+const USE_PREPARED_EVALUATOR = booleanOption('USE_PREPARED_EVALUATOR', true)
 
 const COMPETITIONS = [
   ['WORLD_CUP', '世界杯'],
@@ -301,6 +303,13 @@ function observedProbabilityThresholds(matches) {
 
 function evaluateProfile(backtest, profile) {
   const normalized = normalizeProfile(profile)
+  if (USE_PREPARED_EVALUATOR) {
+    return evaluatePreparedRecommendationSummary(
+      backtest.matches,
+      normalized.globalParameters,
+      backtest.oddsMatchCount
+    )
+  }
   return evaluateRecommendationBacktest(backtest.matches, {
     oddsMatchCount: backtest.oddsMatchCount,
     modelMode: 'after',
@@ -1642,6 +1651,7 @@ async function main() {
     return
   }
   const config = JSON.parse(await fs.readFile(CONFIG_PATH, 'utf8'))
+  const originalProfiles = structuredClone(config.parameterProfiles)
   let baselineVerification = null
   let optimizationResults = []
   if (RESUME_FROM_CHECKPOINT) {
@@ -1943,6 +1953,58 @@ async function main() {
     })
   }
 
+  // 原方案作为固定基准参与比较，验证集只判断合规性，排名仍仅使用训练段
+  for (const result of optimizationResults) {
+    if (result.status === 'RETAINED_ROBUST_BASELINE') {
+      continue
+    }
+    const { competition, range } = result
+    const baselineCandidates = {}
+    for (const preset of ['STABLE', 'AGGRESSIVE']) {
+      const key = `${competition}:${range}:${preset}`
+      const baseline = verificationFor(baselineVerification, competition, range, preset)
+      baselineCandidates[preset.toLowerCase()] = baseline?.metrics && baseline?.robustness
+        ? candidateFrom(normalizeProfile(originalProfiles[key]), baseline.metrics, baseline.robustness)
+        : null
+    }
+    const { stable, aggressive } = baselineCandidates
+    if (!isRobustPair(stable, aggressive, competition, range)) {
+      continue
+    }
+    const baselineScore = trainingStabilityScore(stable) + trainingStabilityScore(aggressive)
+    const selectedScore = result.optimized
+      ? trainingStabilityScore(result.optimized.stable) + trainingStabilityScore(result.optimized.aggressive)
+      : Number.NEGATIVE_INFINITY
+    const withinBaselineBands = result.optimized && ['stable', 'aggressive'].every(preset => (
+      withinSamplingBounds(
+        result.optimized[preset],
+        samplingBoundsForProfile(
+          competition,
+          range,
+          preset.toUpperCase(),
+          baselineCandidates[preset].metrics.samplingRate
+        )
+      )
+    ))
+    if (withinBaselineBands && baselineScore + ROI_EPSILON < selectedScore) {
+      continue
+    }
+    config.parameterProfiles[`${competition}:${range}:STABLE`] = stable.profile
+    config.parameterProfiles[`${competition}:${range}:AGGRESSIVE`] = aggressive.profile
+    result.searchStatus = result.status
+    result.status = 'RETAINED_ROBUST_BASELINE'
+    result.samplingPolicy = 'BASELINE_RETAINED_BY_TRAINING_STABILITY'
+    result.optimized = { stable, aggressive }
+    result.reasons = [...result.reasons, withinBaselineBands
+      ? '原方案通过当前快照的全部门禁，训练段稳定性不低于新候选，保留原方案'
+      : '原方案通过当前快照的全部门禁，没有满足既有采样窗口的新候选，保留原方案']
+  }
+  await writeCheckpoint({
+    generatedAt: new Date().toISOString(),
+    baselineVerification,
+    optimizationResults,
+    parameterProfiles: config.parameterProfiles
+  })
   const constraintFailures = optimizationResults.filter(item => item.status === 'CONSTRAINT_FAILED')
   if (constraintFailures.length > 0) {
     const keys = constraintFailures.map(item => `${item.competition}:${item.range}`).join(', ')
@@ -1991,6 +2053,7 @@ async function main() {
       minimumStabilityBlockMatches: MINIMUM_STABILITY_BLOCK_MATCHES,
       holdoutCandidateLimit: HOLDOUT_CANDIDATE_LIMIT,
       backtestParallelism: BACKTEST_PARALLELISM,
+      preparedEvaluator: USE_PREPARED_EVALUATOR,
       reoptimizeAll: REOPTIMIZE_ALL,
       targetRanges: [...TARGET_RANGES]
     },

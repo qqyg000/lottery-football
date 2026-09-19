@@ -79,7 +79,7 @@ const lines = [
   `- 胜平负：${wdlRows.length} 套方案，${wdlActiveRows.length} 套有实际推荐，报告约束违规 ${wdlReport.violations?.length || 0} 项`,
   `- 进球数：${goalsRows.length} 套方案，${goalsActiveRows.length} 套有实际推荐，过拟合标记 ${goalsOverfittingRows.length} 项`,
   '- 采样数统一表示“推荐场次/可结算赔率场次”；进球数的稳健/激进界面共用同一策略',
-  '- 命中率按命中比赛数除以推荐比赛数计算，ROI 按总返奖除以总投入减一计算',
+  '- 胜平负命中率按命中比赛数除以推荐比赛数计算，进球数命中率按命中注数除以推荐注数计算；ROI 按总返奖除以总投入减一计算',
   '- 仅本届小样本沿用含上届参数时，本表仍展示仅本届直接样本表现，并在状态列标明参数来源',
   '',
   '## 胜平负方案（72 套）',
@@ -180,6 +180,8 @@ function presetName(preset) {
 function wdlStatus(status) {
   const labels = {
     OPTIMIZED: '启用',
+    RETAINED_ROBUST_BASELINE: '保留原方案（复验通过）',
+    CLOSED_FINAL_VERIFICATION_FAILED: '关闭（最终复验未通过）',
     CLOSED_CONSTRAINTS_NOT_MET: '关闭（稳健约束未通过）',
     CLOSED_INSUFFICIENT_VALIDATION_SAMPLE: '关闭（验证样本不足或门禁失败）',
     NO_DATA: '无数据'

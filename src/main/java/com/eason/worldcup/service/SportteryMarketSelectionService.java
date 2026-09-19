@@ -1130,6 +1130,8 @@ public class SportteryMarketSelectionService {
             case "苏足总杯", "苏格兰足总杯", "苏格兰杯" -> Competition.SCOTTISH_FA_CUP;
             case "俱乐部赛", "俱乐部友谊赛" -> Competition.CLUB_FRIENDLY;
             case "联赛杯", "苏联赛杯",
+                    "欧超杯", "欧洲超级杯", "欧足联超级杯",
+                    "西国王杯", "国王杯", "西班牙国王杯", "法乙",
                     "瑞甲",
                     "亚冠精英", "亚洲冠军联赛精英",
                     "Play-offs 1/2",

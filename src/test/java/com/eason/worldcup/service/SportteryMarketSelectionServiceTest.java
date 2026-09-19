@@ -122,6 +122,13 @@ class SportteryMarketSelectionServiceTest {
     @Test
     void shouldRecognizeRequestedEuropeanDomesticCompetitionNames() throws Exception {
         for (String leagueName : List.of(
+                "西国王杯",
+                "国王杯",
+                "西班牙国王杯",
+                "法乙",
+                "欧超杯",
+                "欧洲超级杯",
+                "欧足联超级杯",
                 "芬兰杯",
                 "丹超",
                 "波超杯",

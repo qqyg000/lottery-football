@@ -758,6 +758,10 @@ const VERIFIED_SPORTTERY_ENGLISH_ALIASES = [
 ]
 
 const USER_REQUESTED_TEAM_ALIASES = [
+  ['昂热', '昂熱', '2026-09-19'],
+  ['格勒诺布', '格勒诺布尔', '2026-09-19'],
+  ['格勒诺布', 'Grenoble', '2026-09-19'],
+  ['格勒诺布', 'Grenoble Foot 38', '2026-09-19'],
   ['伊斯特拉1961', 'NK Istra 1961', '2026-08-30'],
   ['弗里斯卡', 'Friska Viljor', '2026-08-30'],
   ['印尼明星', 'Indonesia SL All Star', '2026-08-30'],
@@ -1174,6 +1178,12 @@ const USER_REQUESTED_TEAM_ALIASES = [
   ['克里斯蒂', 'Kristiansund BK', '2026-08-18'],
   ['里斯本', 'Sporting', '2026-08-19'],
   ['杜塞多夫', 'Düsseldorf', '2026-08-19'],
+  ['杜塞多夫', '杜塞尔多夫', '2026-09-19'],
+  ['HEBC', 'HEBC Hamburg', '2026-09-19'],
+  ['南锡', 'AS Nancy Lorraine', '2026-09-19'],
+  ['布鲁日', 'Club Bruges', '2026-09-19'],
+  ['Südtirol', 'FC Südtirol', '2026-09-19'],
+  ['温布尔登', 'AFC Wimbledon', '2026-09-19'],
   ['基迪纳摩', 'Dynamo Kiev', '2026-08-19'],
   ['鲁容贝罗', 'Ruzomberok', '2026-08-19'],
   ['Nafta', 'Nafta 1903', '2026-08-19'],
@@ -1201,6 +1211,62 @@ const USER_REQUESTED_SCOPED_TEAM_ALIASES = [
   aliasName,
   lastSeenDate: '2026-08-08',
   source: 'MANUAL'
+}))
+
+// 根据同场历史记录核对的中文名和 FotMob 英文别名
+const COPA_LIGUE_TWO_TEAM_ALIASES = [
+  ['博格斯', '布尔戈斯'],
+  ["瓦朗谢纳", "Valenciennes FC"],
+  ["尼奥尔", "Niort"],
+  ["沙托鲁", "Chateauroux"],
+  ["图尔", "Tours FC"],
+  ["布尔格", "Bourg en Bresse Peronnas"],
+  ["奎维利", "Quevilly"],
+  ["阿纳西", "Annecy FC"],
+  ["敦刻尔克", "Dunkerque"],
+  ["尚布利", "FC Chambly"],
+  ["贝济耶", "AS Béziers"],
+  ["阿尔勒", "AC Arles"],
+  ["米兰德斯", "Mirandés"],
+  ["阿科尔孔", "Alcorcon"],
+  ["萨拉戈萨", "Real Zaragoza"],
+  ["努曼西亚", "Numancia"],
+  ["塔拉戈纳", "Gimnastic"],
+  ["蓬费拉迪", "Ponferradina"],
+  ["福门特拉", "SD Formentera"],
+  ["雷乌斯", "Reus"],
+  ["穆尔天主", "UCAM Murcia"],
+  ["莱里达", "Lleida Esportiu"],
+  ["洛格罗", "Logrones"],
+  ["卡塔赫纳", "FC Cartagena"],
+  ["科内利亚", "UE Cornellà"],
+  ["阿科亚诺", "CD Alcoyano"],
+  ["洛斯皮塔", "CE L'Hospitalet"],
+  ["巴拉卡多", "Barakaldo CF"],
+  ["利亚戈", "Badalona Futur"],
+  ["林恩斯", "Linense"],
+  ["托莱多", "CD Toledo"],
+  ["吉胡埃洛", "CD Guijuelo"],
+  ["穆尔西亚", "Real Murcia"],
+  ["富恩拉夫", "CF Fuenlabrada"],
+  ["比利亚诺", "Villanovense"],
+  ["埃库莱斯", "Hércules CF"],
+  ["洛尔卡", "Lorca FC"],
+  ["莱昂内萨", "Cultural Leonesa"],
+  ["马哈达翁", "Rayo Majadahonda"],
+  ["阿罗", "Club Haro Deportivo"],
+  ["马韦利亚", "Marbella FC"],
+  ["卡塞雷诺", "Cacereño"],
+  ["利纳雷斯", "Linares Deportivo"],
+  ["圣胡城际", "CF Intercity"],
+  ["费罗尔", "Racing de Ferrol"],
+  ["埃尔登斯", "Eldense"]
+].map(([standardName, aliasName]) => ({
+  competition: '*',
+  standardName,
+  aliasName,
+  lastSeenDate: '2026-09-19',
+  source: 'VERIFIED_ALIAS'
 }))
 
 const REQUESTED_DOMESTIC_COMPETITION_ALIASES = [
@@ -1772,6 +1838,7 @@ function addVerifiedSportteryEnglishAliases(rowsByKey) {
     ...VERIFIED_SPORTTERY_ENGLISH_ALIASES,
     ...USER_REQUESTED_TEAM_ALIASES,
     ...USER_REQUESTED_SCOPED_TEAM_ALIASES,
+    ...COPA_LIGUE_TWO_TEAM_ALIASES,
     ...REQUESTED_DOMESTIC_COMPETITION_ALIASES
   ]) {
     registerAlias(

@@ -45,7 +45,7 @@ class ClubCompetitionScheduleUpdaterTest {
 
         assertNotNull(sources);
         assertEquals(Set.of(
-                        "47", "48", "53", "54", "55", "86", "108", "132", "133", "141", "146",
+                        "47", "48", "53", "54", "55", "74", "86", "108", "110", "132", "133", "138", "141", "146",
                         "150", "186", "207", "209", "247", "8924"),
                 historicalLeagueIds);
         assertTrue(sources.stream().anyMatch(source ->
@@ -538,6 +538,55 @@ class ClubCompetitionScheduleUpdaterTest {
         assertEquals(1, schedules.size());
         assertEquals("阿尔克马", schedules.get(0).getHomeTeamCn());
         assertEquals("安德莱", schedules.get(0).getAwayTeamCn());
+    }
+
+    @Test
+    void shouldDeduplicateRequestedAliasesAcrossMonthBoundaryAndReversedTeams() {
+        for (List<String> names : List.of(
+                List.of("Grenoble", "格勒诺布"),
+                List.of("AS Nancy Lorraine", "南锡"),
+                List.of("Club Bruges", "布鲁日"),
+                List.of("FC Südtirol", "Südtirol"),
+                List.of("AFC Wimbledon", "温布尔登"),
+                List.of("HEBC Hamburg", "HEBC"),
+                List.of("杜塞尔多夫", "杜塞多夫"))) {
+            MatchSchedule original = completedClubFriendlySchedule(
+                    "ESPN-CLUB_FRIENDLY-ALIAS", names.get(0), "多特蒙德", 0, 5);
+            original.setMatchDate(LocalDate.of(2026, 8, 31));
+            MatchSchedule duplicate = completedClubFriendlySchedule(
+                    "FUTBOL24-CLUB_FRIENDLY-ALIAS", "多特蒙德", names.get(1), 5, 0);
+            duplicate.setMatchDate(LocalDate.of(2026, 9, 1));
+
+            List<MatchSchedule> schedules = updater.deduplicateSchedulesByFixture(
+                    List.of(original, duplicate));
+
+            assertEquals(1, schedules.size(), names.get(0));
+            MatchSchedule retained = schedules.get(0);
+            assertTrue(names.get(1).equals(retained.getHomeTeamCn())
+                    || names.get(1).equals(retained.getAwayTeamCn()), names.get(0));
+        }
+    }
+
+    @Test
+    void shouldKeepDifferentAdjacentDateResultsForRequestedAliases() {
+        for (List<String> names : List.of(
+                List.of("Grenoble", "格勒诺布"),
+                List.of("AS Nancy Lorraine", "南锡"),
+                List.of("Club Bruges", "布鲁日"),
+                List.of("FC Südtirol", "Südtirol"),
+                List.of("AFC Wimbledon", "温布尔登"),
+                List.of("HEBC Hamburg", "HEBC"),
+                List.of("杜塞尔多夫", "杜塞多夫"))) {
+            MatchSchedule first = completedClubFriendlySchedule(
+                    "ESPN-CLUB_FRIENDLY-FIRST", names.get(0), "多特蒙德", 0, 5);
+            first.setMatchDate(LocalDate.of(2026, 8, 31));
+            MatchSchedule second = completedClubFriendlySchedule(
+                    "FUTBOL24-CLUB_FRIENDLY-SECOND", names.get(1), "多特蒙德", 1, 5);
+            second.setMatchDate(LocalDate.of(2026, 9, 1));
+
+            assertEquals(2, updater.deduplicateSchedulesByFixture(List.of(first, second)).size(),
+                    names.get(0));
+        }
     }
 
     @Test
@@ -1651,7 +1700,7 @@ class ClubCompetitionScheduleUpdaterTest {
     void shouldExposeVerifiedPrivateFriendliesToRuntimeCards() {
         List<MatchSchedule> schedules = updater.verifiedSupplementalSchedules();
 
-        assertEquals(14, schedules.size());
+        assertEquals(15, schedules.size());
         assertTrue(schedules.stream().anyMatch(schedule ->
                 schedule.getMatchDate().equals(LocalDate.of(2025, 1, 30))
                         && schedule.getCompetition() == Competition.CLUB_FRIENDLY

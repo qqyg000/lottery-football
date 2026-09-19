@@ -91,6 +91,9 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - FotMob `leagueId=67/57/111/61`：瑞超、荷甲、荷乙和葡超完整赛季历史
 - FotMob `leagueId=185/187/58`：葡甲、葡联赛杯和荷乙升降级附加赛完整赛季历史，并接入点击“更新数据”的近期赛程刷新链路
 - FotMob `leagueId=188`：葡超杯完整赛季历史和近期比赛
+- FotMob `leagueId=74`：欧超杯 2015 年起的完整历史和点击“更新数据”的历史补齐来源，ESPN `uefa.super_cup` 与体彩欧超杯赛果共同补充；统一归入 `CLUB_OFFICIAL_OTHER`，来源赛事名为“欧超杯”，按中立场与 90 分钟比分处理
+- FotMob `leagueId=138/110`：西国王杯和法乙从 2014-10-22 起的完整赛季历史，并接入点击“更新数据”的历史补齐；ESPN `esp.copa_del_rey/fra.2` 和体彩同名赛事补充近期数据，统一归入 `CLUB_OFFICIAL_OTHER`
+- `VERIFIED-ANGERS-TROYES`：补齐 2021-07-24 昂热 3:0 特鲁瓦的中立场友谊赛，[现场赛报](https://www.lequipe.fr/Football/Actualites/En-match-de-preparation-angers-domine-aisement-troyes-en-une-periode/1272741)已核验比分；UTC 15:00 转为北京时间 23:00，运行时同步保留已核验记录
 - FotMob `leagueId=10216/10615`：欧协联正赛和资格赛完整赛季历史
 - FotMob `leagueId=40/149/266/164/69`：比甲、比利时杯、比超杯、瑞士杯和瑞士超完整赛季历史
 - FotMob `leagueId=135/122/59`：希超、捷甲和挪超完整赛季历史
@@ -125,6 +128,10 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - Sofascore `tournamentId=853`：Futbol24 不可用时的俱乐部友谊赛降级来源
 - VietnamPlus/VFF 已核验赛报：国家队对俱乐部训练赛，使用 `VERIFIED-VIETNAMPLUS` 来源键定向导入
 
+欧超杯定向导入命令：`node scripts/import-supplemental-history.mjs --only-sources FOTMOB-74 --compact --write`。FotMob 的赛季标签可能对应次年八月的决赛，因此更新会从历史起点读取各赛季并按实际开球时间过滤，按对阵去重。2026 年巴黎圣曼 2:1 维拉的开球时间为 `2026-08-12T19:00:00Z`，转换后为北京时间 `2026-08-13 03:00`；英文队名通过统一映射转换为“巴黎圣曼”和“维拉”。比赛结果已与[巴黎官网](https://www.psg.fr/en/matches/mens-football/20262027/paris-vs-aston-villa-2026-08-12)核对。
+
+西国王杯、法乙及昂热友谊赛可定向导入：`node scripts/import-supplemental-history.mjs --only-sources FOTMOB-138,FOTMOB-110,VERIFIED-ANGERS-TROYES --compact --write`。来源“国王杯”“西班牙国王杯”和“Copa del Rey”统一显示为“西国王杯”；“昂熱”归一为“昂热”，“Grenoble”“Grenoble Foot 38”和“格勒诺布尔”归一为“格勒诺布”。开球时间先转换为 `Asia/Shanghai` 再取日期，已核实 2024-01-17 毕尔巴鄂 2:0 阿拉维斯、2024-04-21 昂热 2:1 特鲁瓦和 2026-05-10 格勒诺布 1:0 特鲁瓦分别为北京时间 04:00、01:00 和 02:00。
+
 上述 FotMob、Futbol24 可信固定联赛、杯赛和 FotMob 俱乐部赛按整项赛事进入运行时缓存，即使新升班马暂时没有映射也不会被丢弃；ESPN 和 Foot Mercato 开放式俱乐部友谊赛仍要求至少一方能映射到系统球队。已映射球队使用统一名称，未被体彩收录的低级别、预备队或临时对手保留数据源官方名称并写入自映射。瑞超、芬超、韩职和苏足总杯使用独立赛事代码，韩国杯归入韩职展示；其余国家队和俱乐部补充源仍使用内部分类代码，不会加入前端 18 类赛事加“全部”的下拉选项。
 
 巴甲、巴乙、巴西杯、巴西东北杯（Copa do Nordeste）和圣保罗州锦标赛（Campeonato Paulista）在历史导入、运行时赛程和体彩结果入口统一排除，不会写入静态数据或运行时缓存。
@@ -134,6 +141,8 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 ## 全场比分口径
 
 系统只保存 90 分钟加伤停补时的全场比分，不抓取半场比分。ESPN 赛事会根据进球明细排除加时赛和点球大战；FotMob 对 `AET` 和点球决胜场次读取比赛详情中的 90 分钟 `FT` 检查点，详情缺失时不使用加时后的最终比分；Futbol24 的赛季接口出现 `AET`、`AP` 或点球比分时，会继续读取比赛详情页的 `FT` 比分，详情缺失时不使用加时后的最终比分；Sofascore 优先读取 `normaltime`；OpenFootball 标记为加时赛的最终比分不会直接写入常规时间赛果。俱乐部官网等 `VERIFIED-*` 核验源优先于聚合比分源，可覆盖同日同对阵的错误赛果。
+
+本次导入核验至 2026-09-19：西国王杯 1,314 场、法乙 4,271 场，保留原有法乙升降级附加赛；补齐 46 个历史别名映射后清理 1,183 条重复记录。重复执行上述定向导入，新增、修改和去重数量均为 0。
 
 ## 体彩玩法开售状态、让球数与总进球数
 

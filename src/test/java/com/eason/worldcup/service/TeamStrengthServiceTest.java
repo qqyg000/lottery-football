@@ -2,13 +2,19 @@ package com.eason.worldcup.service;
 
 import com.eason.worldcup.model.Competition;
 import com.eason.worldcup.model.HistoricalMatchType;
+import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.MatchSchedule;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class TeamStrengthServiceTest {
 
@@ -164,6 +170,41 @@ class TeamStrengthServiceTest {
         schedule.setCompetition(Competition.WORLD_CUP);
         schedule.setMatchDate(matchDate);
         return schedule;
+    }
+
+    @Test
+    void shouldShareReadOnlyClubHistoryWithoutLeakingFutureMatchesAndInvalidateAfterRefresh() {
+        DataRepository repository = mock(DataRepository.class);
+        TeamStrengthService service = new TeamStrengthService(repository);
+        HistoricalMatch early = clubMatch(LocalDate.of(2026, 8, 1));
+        HistoricalMatch later = clubMatch(LocalDate.of(2026, 8, 3));
+        when(repository.getClubHistoricalMatches()).thenReturn(List.of(early, later));
+        when(repository.getClubHistoricalMatches(Competition.PREMIER_LEAGUE)).thenReturn(List.of(early, later));
+        when(repository.getSchedules()).thenReturn(List.of());
+        when(repository.getSchedules(Competition.PREMIER_LEAGUE)).thenReturn(List.of());
+
+        List<HistoricalMatch> before = ReflectionTestUtils.invokeMethod(
+                service, "buildClubMatchesBefore", Competition.PREMIER_LEAGUE, LocalDate.of(2026, 8, 3));
+        assertEquals(List.of(early), before);
+        assertSame(before, ReflectionTestUtils.invokeMethod(
+                service, "buildClubMatchesBefore", Competition.PREMIER_LEAGUE, LocalDate.of(2026, 8, 3)));
+        assertThrows(UnsupportedOperationException.class, () -> before.add(later));
+        assertEquals(List.of(early, later), ReflectionTestUtils.invokeMethod(
+                service, "buildClubMatchesBefore", Competition.PREMIER_LEAGUE, LocalDate.of(2026, 8, 4)));
+
+        when(repository.getClubHistoricalMatches(Competition.PREMIER_LEAGUE)).thenReturn(List.of(later));
+        service.clearDynamicModelCaches();
+        assertEquals(List.of(), ReflectionTestUtils.invokeMethod(
+                service, "buildClubMatchesBefore", Competition.PREMIER_LEAGUE, LocalDate.of(2026, 8, 3)));
+    }
+
+    private HistoricalMatch clubMatch(LocalDate date) {
+        HistoricalMatch match = new HistoricalMatch();
+        match.setMatchDate(date);
+        match.setTournament(Competition.PREMIER_LEAGUE.getDisplayName());
+        match.setHomeTeam("Manchester City");
+        match.setAwayTeam("Arsenal");
+        return match;
     }
 
 }

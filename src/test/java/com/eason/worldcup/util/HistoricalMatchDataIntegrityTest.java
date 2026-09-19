@@ -23,6 +23,63 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HistoricalMatchDataIntegrityTest {
 
     @Test
+    void shouldContainCopaLigueTwoAndAngersTroyesHistory() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2024, 1, 17),
+                Competition.CLUB_OFFICIAL_OTHER, "毕尔巴鄂", "阿拉维斯", 2, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2024, 4, 21),
+                Competition.CLUB_OFFICIAL_OTHER, "昂热", "特鲁瓦", 2, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 5, 10),
+                Competition.CLUB_OFFICIAL_OTHER, "格勒诺布", "特鲁瓦", 1, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2021, 7, 24),
+                Competition.CLUB_FRIENDLY, "昂热", "特鲁瓦", 3, 0);
+        assertTrue(fixtures.stream().filter(fixture -> fixture.sourceCompetition().equals("西国王杯")).count() >= 1_300);
+        assertTrue(fixtures.stream().filter(fixture -> fixture.sourceCompetition().equals("法乙")).count() >= 4_200);
+        assertTrue(fixtures.stream().noneMatch(fixture ->
+                fixture.sourceCompetition().equals("国王杯") || fixture.sourceCompetition().equals("西班牙国王杯")));
+    }
+
+    @Test
+    void shouldKeepRequestedEuropeanClubFixturesWithoutSameOrAdjacentDateDuplicates() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 1),
+                Competition.CLUB_FRIENDLY, "克莱蒙", "格勒诺布", 1, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2025, 7, 23),
+                Competition.CLUB_FRIENDLY, "南锡", "斯特拉斯", 1, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 16),
+                Competition.SERIE_A, "Catanzaro", "Südtirol", 2, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2014, 11, 8),
+                Competition.CLUB_OFFICIAL_OTHER, "约克城", "温布尔登", 1, 1);
+        assertShiftedFixtureRemoved(fixtures,
+                LocalDate.of(2016, 7, 27), LocalDate.of(2016, 7, 28),
+                "温布尔登", "水晶宫", 2, 3);
+        assertShiftedFixtureRemoved(fixtures,
+                LocalDate.of(2026, 7, 25), LocalDate.of(2026, 7, 26),
+                "雷恩", "布鲁日", 2, 1);
+    }
+
+    @Test
+    void shouldContainCompleteSuperCupHistoryWithRegulationScores() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+        List<HistoricalFixture> superCups = fixtures.stream()
+                .filter(fixture -> fixture.sourceCompetition().equals("欧超杯"))
+                .toList();
+
+        assertEquals(12, superCups.size());
+        assertEquals(12, superCups.stream().map(fixture -> fixture.matchDate().getYear()).distinct().count());
+        assertTrue(superCups.stream().allMatch(fixture ->
+                fixture.competition() == Competition.CLUB_OFFICIAL_OTHER
+                        && fixture.matchType().equals("OFFICIAL")));
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 8, 13),
+                Competition.CLUB_OFFICIAL_OTHER, "巴黎圣曼", "维拉", 2, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2025, 8, 14),
+                Competition.CLUB_OFFICIAL_OTHER, "巴黎圣曼", "热刺", 2, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2015, 8, 12),
+                Competition.CLUB_OFFICIAL_OTHER, "巴萨", "塞维利亚", 4, 4);
+    }
+
+    @Test
     void shouldContainCompleteRequestedGermanCompetitionHistory() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
 
@@ -98,10 +155,10 @@ class HistoricalMatchDataIntegrityTest {
 
         Map<String, Long> minimumCoverage = Map.of(
                 "英足总杯", 2_050L,
-                "英联赛杯", 1_260L,
+                "英联赛杯", 1_256L,
                 "英社区盾", 12L,
                 "英冠", 7_300L,
-                "英甲", 8_500L,
+                "英甲", 8_475L,
                 "法超杯", 12L,
                 "法甲", 4_100L);
         minimumCoverage.forEach((sourceCompetition, minimumCount) -> {
