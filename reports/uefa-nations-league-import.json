@@ -1,0 +1,143 @@
+{
+  "startDate": "2014-10-22",
+  "endDate": "2026-09-27",
+  "previousCount": 688,
+  "importedCount": 688,
+  "firstMatchDate": "2018-09-06",
+  "lastMatchDate": "2026-09-27",
+  "addedMappings": 0,
+  "updatedMappings": 0,
+  "sourceSummary": [
+    {
+      "league": "9806",
+      "season": "2018/2019",
+      "completed": 28
+    },
+    {
+      "league": "9807",
+      "season": "2018/2019",
+      "completed": 24
+    },
+    {
+      "league": "9808",
+      "season": "2018/2019",
+      "completed": 42
+    },
+    {
+      "league": "9809",
+      "season": "2018/2019",
+      "completed": 48
+    },
+    {
+      "league": "9806",
+      "season": "2020/2021",
+      "completed": 52
+    },
+    {
+      "league": "9807",
+      "season": "2020/2021",
+      "completed": 48
+    },
+    {
+      "league": "9808",
+      "season": "2020/2021",
+      "completed": 52
+    },
+    {
+      "league": "9809",
+      "season": "2020/2021",
+      "completed": 18
+    },
+    {
+      "league": "9806",
+      "season": "2022/2023",
+      "completed": 52
+    },
+    {
+      "league": "9807",
+      "season": "2022/2023",
+      "completed": 42
+    },
+    {
+      "league": "9808",
+      "season": "2022/2023",
+      "completed": 50
+    },
+    {
+      "league": "9809",
+      "season": "2022/2023",
+      "completed": 18
+    },
+    {
+      "league": "9806",
+      "season": "2024/2025",
+      "completed": 60
+    },
+    {
+      "league": "9807",
+      "season": "2024/2025",
+      "completed": 48
+    },
+    {
+      "league": "9808",
+      "season": "2024/2025",
+      "completed": 48
+    },
+    {
+      "league": "9809",
+      "season": "2024/2025",
+      "completed": 12
+    },
+    {
+      "league": "10717",
+      "season": "2024/2025",
+      "completed": 8
+    },
+    {
+      "league": "10718",
+      "season": "2024/2025",
+      "completed": 8
+    },
+    {
+      "league": "10719",
+      "season": "2024/2025",
+      "completed": 4
+    },
+    {
+      "league": "9806",
+      "season": "2026/2027",
+      "completed": 8
+    },
+    {
+      "league": "9807",
+      "season": "2026/2027",
+      "completed": 8
+    },
+    {
+      "league": "9808",
+      "season": "2026/2027",
+      "completed": 8
+    },
+    {
+      "league": "9809",
+      "season": "2026/2027",
+      "completed": 2
+    },
+    {
+      "league": "10717",
+      "season": "2026/2027",
+      "completed": 0
+    },
+    {
+      "league": "10718",
+      "season": "2026/2027",
+      "completed": 0
+    },
+    {
+      "league": "10719",
+      "season": "2026/2027",
+      "completed": 0
+    }
+  ],
+  "written": true
+}

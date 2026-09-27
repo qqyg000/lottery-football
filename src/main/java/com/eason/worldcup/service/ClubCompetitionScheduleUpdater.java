@@ -88,6 +88,8 @@ public class ClubCompetitionScheduleUpdater {
     private static final LocalDate HISTORICAL_BACKFILL_START_DATE = LocalDate.of(2014, 10, 22);
 
     private static final Set<String> HISTORICAL_FOTMOB_LEAGUE_IDS = Set.of(
+            "9806", "9807", "9808", "9809",
+            "10717", "10718", "10719",
             "138",
             "110",
             "74",
@@ -257,6 +259,7 @@ public class ClubCompetitionScheduleUpdater {
                     0));
 
     private static final List<EspnLeagueSource> BASE_ESPN_SOURCES = List.of(
+            new EspnLeagueSource(Competition.UEFA_NATIONS_LEAGUE, "uefa.nations", "欧国联"),
             new EspnLeagueSource(Competition.EUROPEAN_CHAMPIONSHIP, "uefa.euro"),
             new EspnLeagueSource(Competition.COPA_AMERICA, "conmebol.america"),
             new EspnLeagueSource(Competition.CLUB_WORLD_CUP, "fifa.cwc"),
@@ -274,7 +277,6 @@ public class ClubCompetitionScheduleUpdater {
 
     private static final List<EspnLeagueSource> SUPPLEMENTAL_ESPN_SOURCES = List.of(
             new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "uefa.euroq"),
-            new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "uefa.nations"),
             new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "fifa.worldq.uefa"),
             new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "fifa.worldq.conmebol"),
             new EspnLeagueSource(Competition.INTERNATIONAL_OFFICIAL, "fifa.worldq.concacaf"),
@@ -322,6 +324,13 @@ public class ClubCompetitionScheduleUpdater {
     private static final List<SportsDbLeagueSource> SPORTS_DB_SOURCES = List.of();
 
     private static final List<FotMobLeagueSource> FOTMOB_SOURCES = List.of(
+            new FotMobLeagueSource(Competition.UEFA_NATIONS_LEAGUE, "9806", "欧国联", false),
+            new FotMobLeagueSource(Competition.UEFA_NATIONS_LEAGUE, "9807", "欧国联", false),
+            new FotMobLeagueSource(Competition.UEFA_NATIONS_LEAGUE, "9808", "欧国联", false),
+            new FotMobLeagueSource(Competition.UEFA_NATIONS_LEAGUE, "9809", "欧国联", false),
+            new FotMobLeagueSource(Competition.UEFA_NATIONS_LEAGUE, "10717", "欧国联", false),
+            new FotMobLeagueSource(Competition.UEFA_NATIONS_LEAGUE, "10718", "欧国联", false),
+            new FotMobLeagueSource(Competition.UEFA_NATIONS_LEAGUE, "10719", "欧国联", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "138", "西国王杯", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "110", "法乙", false),
             new FotMobLeagueSource(Competition.CLUB_OFFICIAL_OTHER, "74", "欧超杯", false),
@@ -722,6 +731,9 @@ public class ClubCompetitionScheduleUpdater {
                             ? Integer.MAX_VALUE
                             : source.lastSeasonStartYear());
             for (int season = firstSeason; season <= lastSeason; season++) {
+                if (!source.supportsSeason(season)) {
+                    continue;
+                }
                 int seasonValue = season;
                 tasks.add(() -> filterSchedulesByDate(
                         loadFotMobSeason(
@@ -730,7 +742,9 @@ public class ClubCompetitionScheduleUpdater {
                                 seasonValue,
                                 zoneId,
                                 timeout,
-                                Set.of("74", "138", "110").contains(source.leagueId()) ? sourceStartDate : startDate),
+                                source.competition() == Competition.UEFA_NATIONS_LEAGUE
+                                        || Set.of("74", "138", "110").contains(source.leagueId())
+                                        ? sourceStartDate : startDate),
                         sourceStartDate,
                         endDate));
             }
@@ -768,6 +782,11 @@ public class ClubCompetitionScheduleUpdater {
                 .replace("{season}", seasonValue);
         try {
             JsonNode root = downloadJsonWithRetry(client, url, timeout, 2);
+            if (source.competition() == Competition.UEFA_NATIONS_LEAGUE
+                    && !root.path("details").path("selectedSeason").asText("")
+                            .equals(seasonValue.replace("%2F", "/"))) {
+                return List.of();
+            }
             List<MatchSchedule> result = new ArrayList<>();
             for (JsonNode match : root.path("fixtures").path("allMatches")) {
                 JsonNode matchDetails = shouldLoadFotMobRegulationDetails(
@@ -901,7 +920,10 @@ public class ClubCompetitionScheduleUpdater {
         schedule.setHomeTeamEn(homeTeam);
         schedule.setAwayTeamEn(awayTeam);
         schedule.setVenue("");
-        schedule.setNeutral("74".equals(source.leagueId()));
+        schedule.setNeutral("74".equals(source.leagueId())
+                || competition == Competition.UEFA_NATIONS_LEAGUE
+                        && "9806".equals(source.leagueId())
+                        && Set.of("1/2", "final", "bronze").contains(round.toLowerCase(Locale.ROOT)));
         schedule.setStatus(completed ? "COMPLETED" : (live ? "LIVE" : "SCHEDULED"));
         if (score != null && (completed || live)) {
             schedule.setHomeScore(score.homeScore);
@@ -2806,6 +2828,12 @@ public class ClubCompetitionScheduleUpdater {
             return usesCrossYearSeason(seasonStartYear)
                     ? seasonStartYear + "%2F" + (seasonStartYear + 1)
                     : String.valueOf(seasonStartYear);
+        }
+
+        boolean supportsSeason(int seasonStartYear) {
+            return competition != Competition.UEFA_NATIONS_LEAGUE
+                    || seasonStartYear >= (leagueId.startsWith("107") ? 2024 : 2018)
+                            && seasonStartYear % 2 == 0;
         }
 
     }

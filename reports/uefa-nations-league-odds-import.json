@@ -1,0 +1,3389 @@
+{
+  "generatedAt": "2026-09-27T11:58:21.367Z",
+  "startDate": "2018-09-06",
+  "endDate": "2026-09-27",
+  "csvRowCount": 29730,
+  "officialMatchCount": 479,
+  "matchedCsvMatchCount": 479,
+  "matchedExistingCsvMatchCount": 0,
+  "appendedCsvMatchCount": 479,
+  "oddsRefreshTargetCount": 479,
+  "updatedTotalGoalsMatchCount": 475,
+  "totalGoalsOddsMatchCount": 475,
+  "unavailableTotalGoalsMatchCount": 4,
+  "failedRequestCount": 4,
+  "unmatchedOfficialMatches": [],
+  "appendedOfficialMatches": [
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110765",
+      "matchDate": "2018-09-12",
+      "homeTeam": "匈牙利",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110764",
+      "matchDate": "2018-09-12",
+      "homeTeam": "芬兰",
+      "awayTeam": "爱沙尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110763",
+      "matchDate": "2018-09-12",
+      "homeTeam": "波黑",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110762",
+      "matchDate": "2018-09-12",
+      "homeTeam": "西班牙",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110761",
+      "matchDate": "2018-09-12",
+      "homeTeam": "冰岛",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110746",
+      "matchDate": "2018-09-11",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110745",
+      "matchDate": "2018-09-11",
+      "homeTeam": "苏格兰",
+      "awayTeam": "阿尔巴尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110744",
+      "matchDate": "2018-09-11",
+      "homeTeam": "瑞典",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110743",
+      "matchDate": "2018-09-11",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110750",
+      "matchDate": "2018-09-10",
+      "homeTeam": "北马其顿",
+      "awayTeam": "亚美尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110749",
+      "matchDate": "2018-09-10",
+      "homeTeam": "丹麦",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110735",
+      "matchDate": "2018-09-10",
+      "homeTeam": "塞浦路斯",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110734",
+      "matchDate": "2018-09-10",
+      "homeTeam": "法国",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110732",
+      "matchDate": "2018-09-10",
+      "homeTeam": "保加利亚",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110731",
+      "matchDate": "2018-09-09",
+      "homeTeam": "乌克兰",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110713",
+      "matchDate": "2018-09-09",
+      "homeTeam": "爱沙尼亚",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110712",
+      "matchDate": "2018-09-09",
+      "homeTeam": "英格兰",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110710",
+      "matchDate": "2018-09-09",
+      "homeTeam": "芬兰",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110709",
+      "matchDate": "2018-09-09",
+      "homeTeam": "瑞士",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110698",
+      "matchDate": "2018-09-08",
+      "homeTeam": "北爱尔兰",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110685",
+      "matchDate": "2018-09-08",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110684",
+      "matchDate": "2018-09-08",
+      "homeTeam": "立陶宛",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110683",
+      "matchDate": "2018-09-08",
+      "homeTeam": "土耳其",
+      "awayTeam": "俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110682",
+      "matchDate": "2018-09-08",
+      "homeTeam": "意大利",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110664",
+      "matchDate": "2018-09-07",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110663",
+      "matchDate": "2018-09-07",
+      "homeTeam": "挪威",
+      "awayTeam": "塞浦路斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110662",
+      "matchDate": "2018-09-07",
+      "homeTeam": "威尔士",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110661",
+      "matchDate": "2018-09-07",
+      "homeTeam": "捷克",
+      "awayTeam": "乌克兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "110660",
+      "matchDate": "2018-09-07",
+      "homeTeam": "德国",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112183",
+      "matchDate": "2018-10-17",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "塞浦路斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112182",
+      "matchDate": "2018-10-17",
+      "homeTeam": "挪威",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112181",
+      "matchDate": "2018-10-17",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112180",
+      "matchDate": "2018-10-17",
+      "homeTeam": "乌克兰",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112179",
+      "matchDate": "2018-10-17",
+      "homeTeam": "法国",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112158",
+      "matchDate": "2018-10-16",
+      "homeTeam": "芬兰",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112157",
+      "matchDate": "2018-10-16",
+      "homeTeam": "爱沙尼亚",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112156",
+      "matchDate": "2018-10-16",
+      "homeTeam": "波黑",
+      "awayTeam": "北爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112155",
+      "matchDate": "2018-10-16",
+      "homeTeam": "西班牙",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112154",
+      "matchDate": "2018-10-16",
+      "homeTeam": "冰岛",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112148",
+      "matchDate": "2018-10-15",
+      "homeTeam": "立陶宛",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112147",
+      "matchDate": "2018-10-15",
+      "homeTeam": "以色列",
+      "awayTeam": "阿尔巴尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112146",
+      "matchDate": "2018-10-15",
+      "homeTeam": "波兰",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112145",
+      "matchDate": "2018-10-15",
+      "homeTeam": "俄罗斯",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112141",
+      "matchDate": "2018-10-14",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112126",
+      "matchDate": "2018-10-14",
+      "homeTeam": "保加利亚",
+      "awayTeam": "塞浦路斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112125",
+      "matchDate": "2018-10-14",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112124",
+      "matchDate": "2018-10-14",
+      "homeTeam": "荷兰",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112121",
+      "matchDate": "2018-10-14",
+      "homeTeam": "挪威",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112111",
+      "matchDate": "2018-10-13",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112100",
+      "matchDate": "2018-10-13",
+      "homeTeam": "希腊",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112099",
+      "matchDate": "2018-10-13",
+      "homeTeam": "爱沙尼亚",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112098",
+      "matchDate": "2018-10-13",
+      "homeTeam": "奥地利",
+      "awayTeam": "北爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112097",
+      "matchDate": "2018-10-13",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112096",
+      "matchDate": "2018-10-13",
+      "homeTeam": "比利时",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112075",
+      "matchDate": "2018-10-12",
+      "homeTeam": "俄罗斯",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112073",
+      "matchDate": "2018-10-12",
+      "homeTeam": "黑山",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112072",
+      "matchDate": "2018-10-12",
+      "homeTeam": "立陶宛",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112071",
+      "matchDate": "2018-10-12",
+      "homeTeam": "以色列",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "112070",
+      "matchDate": "2018-10-12",
+      "homeTeam": "波兰",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113740",
+      "matchDate": "2018-11-21",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "立陶宛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113739",
+      "matchDate": "2018-11-21",
+      "homeTeam": "黑山",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113738",
+      "matchDate": "2018-11-21",
+      "homeTeam": "苏格兰",
+      "awayTeam": "以色列"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113737",
+      "matchDate": "2018-11-21",
+      "homeTeam": "瑞典",
+      "awayTeam": "俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113736",
+      "matchDate": "2018-11-21",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113693",
+      "matchDate": "2018-11-20",
+      "homeTeam": "塞浦路斯",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113692",
+      "matchDate": "2018-11-20",
+      "homeTeam": "保加利亚",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113691",
+      "matchDate": "2018-11-20",
+      "homeTeam": "丹麦",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113690",
+      "matchDate": "2018-11-20",
+      "homeTeam": "捷克",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113689",
+      "matchDate": "2018-11-20",
+      "homeTeam": "德国",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113684",
+      "matchDate": "2018-11-19",
+      "homeTeam": "匈牙利",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113683",
+      "matchDate": "2018-11-19",
+      "homeTeam": "希腊",
+      "awayTeam": "爱沙尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113682",
+      "matchDate": "2018-11-19",
+      "homeTeam": "瑞士",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113676",
+      "matchDate": "2018-11-19",
+      "homeTeam": "北爱尔兰",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113672",
+      "matchDate": "2018-11-18",
+      "homeTeam": "英格兰",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113661",
+      "matchDate": "2018-11-18",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "立陶宛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113660",
+      "matchDate": "2018-11-18",
+      "homeTeam": "阿尔巴尼亚",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113659",
+      "matchDate": "2018-11-18",
+      "homeTeam": "意大利",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113655",
+      "matchDate": "2018-11-18",
+      "homeTeam": "土耳其",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113644",
+      "matchDate": "2018-11-17",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113618",
+      "matchDate": "2018-11-17",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113617",
+      "matchDate": "2018-11-17",
+      "homeTeam": "塞浦路斯",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113616",
+      "matchDate": "2018-11-17",
+      "homeTeam": "威尔士",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113615",
+      "matchDate": "2018-11-17",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "乌克兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113614",
+      "matchDate": "2018-11-17",
+      "homeTeam": "荷兰",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113579",
+      "matchDate": "2018-11-16",
+      "homeTeam": "匈牙利",
+      "awayTeam": "爱沙尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113578",
+      "matchDate": "2018-11-16",
+      "homeTeam": "希腊",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113577",
+      "matchDate": "2018-11-16",
+      "homeTeam": "奥地利",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113576",
+      "matchDate": "2018-11-16",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "113575",
+      "matchDate": "2018-11-16",
+      "homeTeam": "比利时",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "119438",
+      "matchDate": "2019-06-10",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "119437",
+      "matchDate": "2019-06-09",
+      "homeTeam": "瑞士",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "119368",
+      "matchDate": "2019-06-07",
+      "homeTeam": "荷兰",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "119365",
+      "matchDate": "2019-06-06",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000505",
+      "matchDate": "2020-09-09",
+      "homeTeam": "卢森堡",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000504",
+      "matchDate": "2020-09-09",
+      "homeTeam": "塞浦路斯",
+      "awayTeam": "阿塞拜疆"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000502",
+      "matchDate": "2020-09-09",
+      "homeTeam": "格鲁吉亚",
+      "awayTeam": "北马其顿"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000501",
+      "matchDate": "2020-09-09",
+      "homeTeam": "亚美尼亚",
+      "awayTeam": "爱沙尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000440",
+      "matchDate": "2020-09-09",
+      "homeTeam": "瑞典",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000439",
+      "matchDate": "2020-09-09",
+      "homeTeam": "法国",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000438",
+      "matchDate": "2020-09-09",
+      "homeTeam": "丹麦",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000437",
+      "matchDate": "2020-09-09",
+      "homeTeam": "比利时",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000402",
+      "matchDate": "2020-09-08",
+      "homeTeam": "波黑",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000401",
+      "matchDate": "2020-09-08",
+      "homeTeam": "以色列",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000400",
+      "matchDate": "2020-09-08",
+      "homeTeam": "捷克",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000399",
+      "matchDate": "2020-09-08",
+      "homeTeam": "北爱尔兰",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000398",
+      "matchDate": "2020-09-08",
+      "homeTeam": "奥地利",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000397",
+      "matchDate": "2020-09-08",
+      "homeTeam": "荷兰",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000491",
+      "matchDate": "2020-09-07",
+      "homeTeam": "哈萨克斯坦",
+      "awayTeam": "白俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000436",
+      "matchDate": "2020-09-07",
+      "homeTeam": "科索沃",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000435",
+      "matchDate": "2020-09-07",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "摩尔多瓦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000382",
+      "matchDate": "2020-09-07",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000381",
+      "matchDate": "2020-09-07",
+      "homeTeam": "瑞士",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000380",
+      "matchDate": "2020-09-07",
+      "homeTeam": "西班牙",
+      "awayTeam": "乌克兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000378",
+      "matchDate": "2020-09-07",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000377",
+      "matchDate": "2020-09-07",
+      "homeTeam": "匈牙利",
+      "awayTeam": "俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000374",
+      "matchDate": "2020-09-06",
+      "homeTeam": "威尔士",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000430",
+      "matchDate": "2020-09-06",
+      "homeTeam": "爱沙尼亚",
+      "awayTeam": "格鲁吉亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000429",
+      "matchDate": "2020-09-06",
+      "homeTeam": "塞浦路斯",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000431",
+      "matchDate": "2020-09-06",
+      "homeTeam": "阿塞拜疆",
+      "awayTeam": "卢森堡"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000357",
+      "matchDate": "2020-09-06",
+      "homeTeam": "瑞典",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000356",
+      "matchDate": "2020-09-06",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000355",
+      "matchDate": "2020-09-06",
+      "homeTeam": "丹麦",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000353",
+      "matchDate": "2020-09-06",
+      "homeTeam": "冰岛",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000427",
+      "matchDate": "2020-09-05",
+      "homeTeam": "北马其顿",
+      "awayTeam": "亚美尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000309",
+      "matchDate": "2020-09-05",
+      "homeTeam": "意大利",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000311",
+      "matchDate": "2020-09-05",
+      "homeTeam": "白俄罗斯",
+      "awayTeam": "阿尔巴尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000308",
+      "matchDate": "2020-09-05",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000307",
+      "matchDate": "2020-09-05",
+      "homeTeam": "苏格兰",
+      "awayTeam": "以色列"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000306",
+      "matchDate": "2020-09-05",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "北爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000305",
+      "matchDate": "2020-09-05",
+      "homeTeam": "挪威",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000304",
+      "matchDate": "2020-09-05",
+      "homeTeam": "荷兰",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000310",
+      "matchDate": "2020-09-05",
+      "homeTeam": "立陶宛",
+      "awayTeam": "哈萨克斯坦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000325",
+      "matchDate": "2020-09-04",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000324",
+      "matchDate": "2020-09-04",
+      "homeTeam": "芬兰",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000323",
+      "matchDate": "2020-09-04",
+      "homeTeam": "保加利亚",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000322",
+      "matchDate": "2020-09-04",
+      "homeTeam": "土耳其",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000321",
+      "matchDate": "2020-09-04",
+      "homeTeam": "俄罗斯",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000320",
+      "matchDate": "2020-09-04",
+      "homeTeam": "乌克兰",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1000319",
+      "matchDate": "2020-09-04",
+      "homeTeam": "德国",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001446",
+      "matchDate": "2020-10-15",
+      "homeTeam": "波兰",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001445",
+      "matchDate": "2020-10-15",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001444",
+      "matchDate": "2020-10-15",
+      "homeTeam": "意大利",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001443",
+      "matchDate": "2020-10-15",
+      "homeTeam": "白俄罗斯",
+      "awayTeam": "哈萨克斯坦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001442",
+      "matchDate": "2020-10-15",
+      "homeTeam": "保加利亚",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001441",
+      "matchDate": "2020-10-15",
+      "homeTeam": "土耳其",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001440",
+      "matchDate": "2020-10-15",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001439",
+      "matchDate": "2020-10-15",
+      "homeTeam": "英格兰",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001438",
+      "matchDate": "2020-10-15",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "以色列"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001437",
+      "matchDate": "2020-10-15",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001436",
+      "matchDate": "2020-10-15",
+      "homeTeam": "挪威",
+      "awayTeam": "北爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001435",
+      "matchDate": "2020-10-15",
+      "homeTeam": "苏格兰",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001434",
+      "matchDate": "2020-10-15",
+      "homeTeam": "立陶宛",
+      "awayTeam": "阿尔巴尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001433",
+      "matchDate": "2020-10-15",
+      "homeTeam": "芬兰",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001475",
+      "matchDate": "2020-10-14",
+      "homeTeam": "黑山",
+      "awayTeam": "卢森堡"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001413",
+      "matchDate": "2020-10-14",
+      "homeTeam": "乌克兰",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001412",
+      "matchDate": "2020-10-14",
+      "homeTeam": "德国",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001379",
+      "matchDate": "2020-10-12",
+      "homeTeam": "俄罗斯",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001378",
+      "matchDate": "2020-10-12",
+      "homeTeam": "法国",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001377",
+      "matchDate": "2020-10-12",
+      "homeTeam": "波兰",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001376",
+      "matchDate": "2020-10-12",
+      "homeTeam": "希腊",
+      "awayTeam": "摩尔多瓦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001375",
+      "matchDate": "2020-10-12",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001374",
+      "matchDate": "2020-10-12",
+      "homeTeam": "冰岛",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001373",
+      "matchDate": "2020-10-12",
+      "homeTeam": "苏格兰",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001372",
+      "matchDate": "2020-10-12",
+      "homeTeam": "以色列",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001371",
+      "matchDate": "2020-10-12",
+      "homeTeam": "北爱尔兰",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001370",
+      "matchDate": "2020-10-12",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001369",
+      "matchDate": "2020-10-12",
+      "homeTeam": "英格兰",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001368",
+      "matchDate": "2020-10-12",
+      "homeTeam": "挪威",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001367",
+      "matchDate": "2020-10-11",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001408",
+      "matchDate": "2020-10-11",
+      "homeTeam": "乌克兰",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1001355",
+      "matchDate": "2020-10-11",
+      "homeTeam": "西班牙",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002529",
+      "matchDate": "2020-11-19",
+      "homeTeam": "匈牙利",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002528",
+      "matchDate": "2020-11-19",
+      "homeTeam": "以色列",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002527",
+      "matchDate": "2020-11-19",
+      "homeTeam": "科索沃",
+      "awayTeam": "摩尔多瓦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002526",
+      "matchDate": "2020-11-19",
+      "homeTeam": "希腊",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002525",
+      "matchDate": "2020-11-19",
+      "homeTeam": "格鲁吉亚",
+      "awayTeam": "爱沙尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002500",
+      "matchDate": "2020-11-19",
+      "homeTeam": "波黑",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002499",
+      "matchDate": "2020-11-19",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002498",
+      "matchDate": "2020-11-19",
+      "homeTeam": "捷克",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002497",
+      "matchDate": "2020-11-19",
+      "homeTeam": "北爱尔兰",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002496",
+      "matchDate": "2020-11-19",
+      "homeTeam": "波兰",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002495",
+      "matchDate": "2020-11-19",
+      "homeTeam": "威尔士",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002494",
+      "matchDate": "2020-11-19",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002493",
+      "matchDate": "2020-11-19",
+      "homeTeam": "英格兰",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002492",
+      "matchDate": "2020-11-19",
+      "homeTeam": "比利时",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002524",
+      "matchDate": "2020-11-18",
+      "homeTeam": "哈萨克斯坦",
+      "awayTeam": "立陶宛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002523",
+      "matchDate": "2020-11-18",
+      "homeTeam": "阿尔巴尼亚",
+      "awayTeam": "白俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002521",
+      "matchDate": "2020-11-18",
+      "homeTeam": "黑山",
+      "awayTeam": "塞浦路斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002518",
+      "matchDate": "2020-11-18",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002482",
+      "matchDate": "2020-11-18",
+      "homeTeam": "西班牙",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002481",
+      "matchDate": "2020-11-18",
+      "homeTeam": "法国",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002480",
+      "matchDate": "2020-11-16",
+      "homeTeam": "摩尔多瓦",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002479",
+      "matchDate": "2020-11-16",
+      "homeTeam": "捷克",
+      "awayTeam": "以色列"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002478",
+      "matchDate": "2020-11-16",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "科索沃"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002476",
+      "matchDate": "2020-11-16",
+      "homeTeam": "土耳其",
+      "awayTeam": "俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002475",
+      "matchDate": "2020-11-16",
+      "homeTeam": "阿尔巴尼亚",
+      "awayTeam": "哈萨克斯坦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002474",
+      "matchDate": "2020-11-16",
+      "homeTeam": "白俄罗斯",
+      "awayTeam": "立陶宛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002448",
+      "matchDate": "2020-11-16",
+      "homeTeam": "奥地利",
+      "awayTeam": "北爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002447",
+      "matchDate": "2020-11-16",
+      "homeTeam": "匈牙利",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002446",
+      "matchDate": "2020-11-16",
+      "homeTeam": "意大利",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002445",
+      "matchDate": "2020-11-16",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002444",
+      "matchDate": "2020-11-16",
+      "homeTeam": "丹麦",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002443",
+      "matchDate": "2020-11-16",
+      "homeTeam": "比利时",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002442",
+      "matchDate": "2020-11-16",
+      "homeTeam": "荷兰",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002441",
+      "matchDate": "2020-11-16",
+      "homeTeam": "威尔士",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002440",
+      "matchDate": "2020-11-16",
+      "homeTeam": "保加利亚",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002473",
+      "matchDate": "2020-11-15",
+      "homeTeam": "北马其顿",
+      "awayTeam": "爱沙尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002439",
+      "matchDate": "2020-11-15",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002467",
+      "matchDate": "2020-11-15",
+      "homeTeam": "塞浦路斯",
+      "awayTeam": "卢森堡"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002461",
+      "matchDate": "2020-11-15",
+      "homeTeam": "瑞典",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002420",
+      "matchDate": "2020-11-15",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002419",
+      "matchDate": "2020-11-15",
+      "homeTeam": "瑞士",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1002418",
+      "matchDate": "2020-11-15",
+      "homeTeam": "德国",
+      "awayTeam": "乌克兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1009025",
+      "matchDate": "2021-10-11",
+      "homeTeam": "西班牙",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1008989",
+      "matchDate": "2021-10-07",
+      "homeTeam": "意大利",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013320",
+      "matchDate": "2022-06-15",
+      "homeTeam": "波黑",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013319",
+      "matchDate": "2022-06-15",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013318",
+      "matchDate": "2022-06-15",
+      "homeTeam": "乌克兰",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013317",
+      "matchDate": "2022-06-15",
+      "homeTeam": "英格兰",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013316",
+      "matchDate": "2022-06-15",
+      "homeTeam": "德国",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013315",
+      "matchDate": "2022-06-15",
+      "homeTeam": "荷兰",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013314",
+      "matchDate": "2022-06-15",
+      "homeTeam": "波兰",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013313",
+      "matchDate": "2022-06-15",
+      "homeTeam": "卢森堡",
+      "awayTeam": "法罗群岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013311",
+      "matchDate": "2022-06-15",
+      "homeTeam": "亚美尼亚",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013302",
+      "matchDate": "2022-06-14",
+      "homeTeam": "丹麦",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013301",
+      "matchDate": "2022-06-14",
+      "homeTeam": "法国",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013300",
+      "matchDate": "2022-06-14",
+      "homeTeam": "冰岛",
+      "awayTeam": "以色列"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013298",
+      "matchDate": "2022-06-14",
+      "homeTeam": "阿塞拜疆",
+      "awayTeam": "白俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013297",
+      "matchDate": "2022-06-13",
+      "homeTeam": "哈萨克斯坦",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013291",
+      "matchDate": "2022-06-13",
+      "homeTeam": "西班牙",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013290",
+      "matchDate": "2022-06-13",
+      "homeTeam": "瑞士",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013289",
+      "matchDate": "2022-06-13",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013288",
+      "matchDate": "2022-06-13",
+      "homeTeam": "希腊",
+      "awayTeam": "科索沃"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013287",
+      "matchDate": "2022-06-13",
+      "homeTeam": "挪威",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013286",
+      "matchDate": "2022-06-13",
+      "homeTeam": "格鲁吉亚",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013285",
+      "matchDate": "2022-06-13",
+      "homeTeam": "北马其顿",
+      "awayTeam": "直布罗陀"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013284",
+      "matchDate": "2022-06-12",
+      "homeTeam": "北爱尔兰",
+      "awayTeam": "塞浦路斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013270",
+      "matchDate": "2022-06-12",
+      "homeTeam": "英格兰",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013269",
+      "matchDate": "2022-06-12",
+      "homeTeam": "匈牙利",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013268",
+      "matchDate": "2022-06-12",
+      "homeTeam": "荷兰",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013267",
+      "matchDate": "2022-06-12",
+      "homeTeam": "威尔士",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013266",
+      "matchDate": "2022-06-12",
+      "homeTeam": "黑山",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013265",
+      "matchDate": "2022-06-12",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013264",
+      "matchDate": "2022-06-12",
+      "homeTeam": "卢森堡",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013263",
+      "matchDate": "2022-06-12",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013262",
+      "matchDate": "2022-06-11",
+      "homeTeam": "乌克兰",
+      "awayTeam": "亚美尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013245",
+      "matchDate": "2022-06-11",
+      "homeTeam": "丹麦",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013244",
+      "matchDate": "2022-06-11",
+      "homeTeam": "白俄罗斯",
+      "awayTeam": "哈萨克斯坦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013243",
+      "matchDate": "2022-06-11",
+      "homeTeam": "奥地利",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013242",
+      "matchDate": "2022-06-11",
+      "homeTeam": "阿尔巴尼亚",
+      "awayTeam": "以色列"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013241",
+      "matchDate": "2022-06-11",
+      "homeTeam": "阿塞拜疆",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013226",
+      "matchDate": "2022-06-10",
+      "homeTeam": "希腊",
+      "awayTeam": "塞浦路斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013225",
+      "matchDate": "2022-06-10",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013224",
+      "matchDate": "2022-06-10",
+      "homeTeam": "瑞士",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013223",
+      "matchDate": "2022-06-10",
+      "homeTeam": "挪威",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013222",
+      "matchDate": "2022-06-10",
+      "homeTeam": "瑞典",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013221",
+      "matchDate": "2022-06-10",
+      "homeTeam": "科索沃",
+      "awayTeam": "北爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013220",
+      "matchDate": "2022-06-10",
+      "homeTeam": "直布罗陀",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013219",
+      "matchDate": "2022-06-10",
+      "homeTeam": "北马其顿",
+      "awayTeam": "格鲁吉亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013210",
+      "matchDate": "2022-06-09",
+      "homeTeam": "比利时",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013209",
+      "matchDate": "2022-06-09",
+      "homeTeam": "威尔士",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013208",
+      "matchDate": "2022-06-09",
+      "homeTeam": "苏格兰",
+      "awayTeam": "亚美尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013207",
+      "matchDate": "2022-06-09",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "乌克兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013203",
+      "matchDate": "2022-06-08",
+      "homeTeam": "德国",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013202",
+      "matchDate": "2022-06-08",
+      "homeTeam": "意大利",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013201",
+      "matchDate": "2022-06-08",
+      "homeTeam": "波黑",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013200",
+      "matchDate": "2022-06-08",
+      "homeTeam": "法罗群岛",
+      "awayTeam": "卢森堡"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013196",
+      "matchDate": "2022-06-08",
+      "homeTeam": "芬兰",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013182",
+      "matchDate": "2022-06-07",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "哈萨克斯坦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013181",
+      "matchDate": "2022-06-07",
+      "homeTeam": "奥地利",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013180",
+      "matchDate": "2022-06-07",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013179",
+      "matchDate": "2022-06-07",
+      "homeTeam": "冰岛",
+      "awayTeam": "阿尔巴尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013178",
+      "matchDate": "2022-06-07",
+      "homeTeam": "白俄罗斯",
+      "awayTeam": "阿塞拜疆"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013168",
+      "matchDate": "2022-06-06",
+      "homeTeam": "捷克",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013167",
+      "matchDate": "2022-06-06",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013166",
+      "matchDate": "2022-06-06",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013165",
+      "matchDate": "2022-06-06",
+      "homeTeam": "瑞典",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013164",
+      "matchDate": "2022-06-06",
+      "homeTeam": "科索沃",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013163",
+      "matchDate": "2022-06-06",
+      "homeTeam": "保加利亚",
+      "awayTeam": "格鲁吉亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013162",
+      "matchDate": "2022-06-06",
+      "homeTeam": "塞浦路斯",
+      "awayTeam": "北爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013161",
+      "matchDate": "2022-06-06",
+      "homeTeam": "直布罗陀",
+      "awayTeam": "北马其顿"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013142",
+      "matchDate": "2022-06-05",
+      "homeTeam": "意大利",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013141",
+      "matchDate": "2022-06-05",
+      "homeTeam": "黑山",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013184",
+      "matchDate": "2022-06-05",
+      "homeTeam": "土耳其",
+      "awayTeam": "法罗群岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013139",
+      "matchDate": "2022-06-05",
+      "homeTeam": "匈牙利",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013138",
+      "matchDate": "2022-06-05",
+      "homeTeam": "芬兰",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013136",
+      "matchDate": "2022-06-04",
+      "homeTeam": "亚美尼亚",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013123",
+      "matchDate": "2022-06-04",
+      "homeTeam": "法国",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013122",
+      "matchDate": "2022-06-04",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013121",
+      "matchDate": "2022-06-04",
+      "homeTeam": "比利时",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013120",
+      "matchDate": "2022-06-04",
+      "homeTeam": "白俄罗斯",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013118",
+      "matchDate": "2022-06-03",
+      "homeTeam": "哈萨克斯坦",
+      "awayTeam": "阿塞拜疆"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013105",
+      "matchDate": "2022-06-03",
+      "homeTeam": "捷克",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013104",
+      "matchDate": "2022-06-03",
+      "homeTeam": "西班牙",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013103",
+      "matchDate": "2022-06-03",
+      "homeTeam": "以色列",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013102",
+      "matchDate": "2022-06-03",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013101",
+      "matchDate": "2022-06-03",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013100",
+      "matchDate": "2022-06-03",
+      "homeTeam": "北爱尔兰",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013099",
+      "matchDate": "2022-06-03",
+      "homeTeam": "塞浦路斯",
+      "awayTeam": "科索沃"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013110",
+      "matchDate": "2022-06-03",
+      "homeTeam": "格鲁吉亚",
+      "awayTeam": "直布罗陀"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013098",
+      "matchDate": "2022-06-03",
+      "homeTeam": "保加利亚",
+      "awayTeam": "北马其顿"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1013094",
+      "matchDate": "2022-06-02",
+      "homeTeam": "波兰",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015186",
+      "matchDate": "2022-09-28",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015185",
+      "matchDate": "2022-09-28",
+      "homeTeam": "瑞士",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015184",
+      "matchDate": "2022-09-28",
+      "homeTeam": "乌克兰",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015183",
+      "matchDate": "2022-09-28",
+      "homeTeam": "挪威",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015182",
+      "matchDate": "2022-09-28",
+      "homeTeam": "瑞典",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015166",
+      "matchDate": "2022-09-27",
+      "homeTeam": "英格兰",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015165",
+      "matchDate": "2022-09-27",
+      "homeTeam": "匈牙利",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015164",
+      "matchDate": "2022-09-26",
+      "homeTeam": "丹麦",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015163",
+      "matchDate": "2022-09-26",
+      "homeTeam": "奥地利",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015162",
+      "matchDate": "2022-09-26",
+      "homeTeam": "荷兰",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015161",
+      "matchDate": "2022-09-26",
+      "homeTeam": "威尔士",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015160",
+      "matchDate": "2022-09-26",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "白俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015152",
+      "matchDate": "2022-09-25",
+      "homeTeam": "捷克",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015151",
+      "matchDate": "2022-09-25",
+      "homeTeam": "西班牙",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015150",
+      "matchDate": "2022-09-25",
+      "homeTeam": "苏格兰",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015149",
+      "matchDate": "2022-09-25",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015148",
+      "matchDate": "2022-09-25",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015147",
+      "matchDate": "2022-09-25",
+      "homeTeam": "北爱尔兰",
+      "awayTeam": "科索沃"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015146",
+      "matchDate": "2022-09-24",
+      "homeTeam": "亚美尼亚",
+      "awayTeam": "乌克兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015132",
+      "matchDate": "2022-09-24",
+      "homeTeam": "德国",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015131",
+      "matchDate": "2022-09-24",
+      "homeTeam": "意大利",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015117",
+      "matchDate": "2022-09-23",
+      "homeTeam": "法国",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015116",
+      "matchDate": "2022-09-23",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015115",
+      "matchDate": "2022-09-23",
+      "homeTeam": "比利时",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015114",
+      "matchDate": "2022-09-23",
+      "homeTeam": "波兰",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015113",
+      "matchDate": "2022-09-23",
+      "homeTeam": "土耳其",
+      "awayTeam": "卢森堡"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015112",
+      "matchDate": "2022-09-23",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "阿塞拜疆"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015111",
+      "matchDate": "2022-09-22",
+      "homeTeam": "哈萨克斯坦",
+      "awayTeam": "白俄罗斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1015110",
+      "matchDate": "2022-09-22",
+      "homeTeam": "苏格兰",
+      "awayTeam": "乌克兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1019919",
+      "matchDate": "2023-06-19",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1019918",
+      "matchDate": "2023-06-18",
+      "homeTeam": "荷兰",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1019873",
+      "matchDate": "2023-06-16",
+      "homeTeam": "西班牙",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1019870",
+      "matchDate": "2023-06-15",
+      "homeTeam": "荷兰",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026933",
+      "matchDate": "2024-09-11",
+      "homeTeam": "北马其顿",
+      "awayTeam": "亚美尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026932",
+      "matchDate": "2024-09-11",
+      "homeTeam": "阿尔巴尼亚",
+      "awayTeam": "格鲁吉亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026931",
+      "matchDate": "2024-09-11",
+      "homeTeam": "荷兰",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026930",
+      "matchDate": "2024-09-11",
+      "homeTeam": "英格兰",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026929",
+      "matchDate": "2024-09-11",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026928",
+      "matchDate": "2024-09-11",
+      "homeTeam": "匈牙利",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026914",
+      "matchDate": "2024-09-10",
+      "homeTeam": "法国",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026913",
+      "matchDate": "2024-09-10",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "哈萨克斯坦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026912",
+      "matchDate": "2024-09-10",
+      "homeTeam": "挪威",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026911",
+      "matchDate": "2024-09-10",
+      "homeTeam": "黑山",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026910",
+      "matchDate": "2024-09-10",
+      "homeTeam": "土耳其",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026909",
+      "matchDate": "2024-09-09",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026908",
+      "matchDate": "2024-09-09",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026907",
+      "matchDate": "2024-09-09",
+      "homeTeam": "瑞士",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026906",
+      "matchDate": "2024-09-09",
+      "homeTeam": "丹麦",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026896",
+      "matchDate": "2024-09-08",
+      "homeTeam": "希腊",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026895",
+      "matchDate": "2024-09-08",
+      "homeTeam": "德国",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026894",
+      "matchDate": "2024-09-08",
+      "homeTeam": "荷兰",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026893",
+      "matchDate": "2024-09-08",
+      "homeTeam": "格鲁吉亚",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026892",
+      "matchDate": "2024-09-08",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026880",
+      "matchDate": "2024-09-07",
+      "homeTeam": "威尔士",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026879",
+      "matchDate": "2024-09-07",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026878",
+      "matchDate": "2024-09-07",
+      "homeTeam": "冰岛",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026877",
+      "matchDate": "2024-09-07",
+      "homeTeam": "法国",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026875",
+      "matchDate": "2024-09-06",
+      "homeTeam": "哈萨克斯坦",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026862",
+      "matchDate": "2024-09-06",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026861",
+      "matchDate": "2024-09-06",
+      "homeTeam": "丹麦",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026860",
+      "matchDate": "2024-09-06",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1026859",
+      "matchDate": "2024-09-06",
+      "homeTeam": "苏格兰",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027367",
+      "matchDate": "2024-10-16",
+      "homeTeam": "北爱尔兰",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027366",
+      "matchDate": "2024-10-16",
+      "homeTeam": "瑞士",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027365",
+      "matchDate": "2024-10-16",
+      "homeTeam": "波兰",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027364",
+      "matchDate": "2024-10-16",
+      "homeTeam": "苏格兰",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027363",
+      "matchDate": "2024-10-16",
+      "homeTeam": "科索沃",
+      "awayTeam": "塞浦路斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027362",
+      "matchDate": "2024-10-16",
+      "homeTeam": "西班牙",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027342",
+      "matchDate": "2024-10-15",
+      "homeTeam": "威尔士",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027341",
+      "matchDate": "2024-10-15",
+      "homeTeam": "冰岛",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027340",
+      "matchDate": "2024-10-15",
+      "homeTeam": "波黑",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027339",
+      "matchDate": "2024-10-15",
+      "homeTeam": "德国",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027338",
+      "matchDate": "2024-10-15",
+      "homeTeam": "爱沙尼亚",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027337",
+      "matchDate": "2024-10-15",
+      "homeTeam": "比利时",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027336",
+      "matchDate": "2024-10-15",
+      "homeTeam": "阿塞拜疆",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027335",
+      "matchDate": "2024-10-15",
+      "homeTeam": "格鲁吉亚",
+      "awayTeam": "阿尔巴尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027333",
+      "matchDate": "2024-10-14",
+      "homeTeam": "希腊",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027332",
+      "matchDate": "2024-10-14",
+      "homeTeam": "奥地利",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027331",
+      "matchDate": "2024-10-14",
+      "homeTeam": "亚美尼亚",
+      "awayTeam": "北马其顿"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027330",
+      "matchDate": "2024-10-14",
+      "homeTeam": "芬兰",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027329",
+      "matchDate": "2024-10-13",
+      "homeTeam": "哈萨克斯坦",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027324",
+      "matchDate": "2024-10-13",
+      "homeTeam": "波兰",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027323",
+      "matchDate": "2024-10-13",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027322",
+      "matchDate": "2024-10-13",
+      "homeTeam": "西班牙",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027321",
+      "matchDate": "2024-10-13",
+      "homeTeam": "塞浦路斯",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027319",
+      "matchDate": "2024-10-13",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027318",
+      "matchDate": "2024-10-13",
+      "homeTeam": "保加利亚",
+      "awayTeam": "卢森堡"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027314",
+      "matchDate": "2024-10-12",
+      "homeTeam": "冰岛",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027313",
+      "matchDate": "2024-10-12",
+      "homeTeam": "波黑",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027312",
+      "matchDate": "2024-10-12",
+      "homeTeam": "匈牙利",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027311",
+      "matchDate": "2024-10-12",
+      "homeTeam": "土耳其",
+      "awayTeam": "黑山"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027310",
+      "matchDate": "2024-10-12",
+      "homeTeam": "捷克",
+      "awayTeam": "阿尔巴尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027309",
+      "matchDate": "2024-10-12",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "瑞典"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027298",
+      "matchDate": "2024-10-11",
+      "homeTeam": "挪威",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027297",
+      "matchDate": "2024-10-11",
+      "homeTeam": "意大利",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027296",
+      "matchDate": "2024-10-11",
+      "homeTeam": "英格兰",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1028016",
+      "matchDate": "2024-11-20",
+      "homeTeam": "瑞典",
+      "awayTeam": "阿塞拜疆"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1028015",
+      "matchDate": "2024-11-20",
+      "homeTeam": "波黑",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1028014",
+      "matchDate": "2024-11-20",
+      "homeTeam": "黑山",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1028013",
+      "matchDate": "2024-11-20",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "爱沙尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1028012",
+      "matchDate": "2024-11-20",
+      "homeTeam": "威尔士",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1028011",
+      "matchDate": "2024-11-20",
+      "homeTeam": "捷克",
+      "awayTeam": "格鲁吉亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1028010",
+      "matchDate": "2024-11-20",
+      "homeTeam": "匈牙利",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027969",
+      "matchDate": "2024-11-19",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027968",
+      "matchDate": "2024-11-19",
+      "homeTeam": "波兰",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027967",
+      "matchDate": "2024-11-19",
+      "homeTeam": "卢森堡",
+      "awayTeam": "北爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027966",
+      "matchDate": "2024-11-19",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "塞浦路斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027965",
+      "matchDate": "2024-11-19",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027964",
+      "matchDate": "2024-11-19",
+      "homeTeam": "西班牙",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027963",
+      "matchDate": "2024-11-18",
+      "homeTeam": "意大利",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027962",
+      "matchDate": "2024-11-18",
+      "homeTeam": "挪威",
+      "awayTeam": "哈萨克斯坦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027961",
+      "matchDate": "2024-11-18",
+      "homeTeam": "芬兰",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027960",
+      "matchDate": "2024-11-18",
+      "homeTeam": "英格兰",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027959",
+      "matchDate": "2024-11-18",
+      "homeTeam": "奥地利",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027958",
+      "matchDate": "2024-11-17",
+      "homeTeam": "北马其顿",
+      "awayTeam": "法罗群岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027970",
+      "matchDate": "2024-11-17",
+      "homeTeam": "拉脱维亚",
+      "awayTeam": "亚美尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027955",
+      "matchDate": "2024-11-17",
+      "homeTeam": "瑞典",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027954",
+      "matchDate": "2024-11-17",
+      "homeTeam": "德国",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027953",
+      "matchDate": "2024-11-17",
+      "homeTeam": "荷兰",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027952",
+      "matchDate": "2024-11-17",
+      "homeTeam": "阿尔巴尼亚",
+      "awayTeam": "捷克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027951",
+      "matchDate": "2024-11-17",
+      "homeTeam": "土耳其",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027950",
+      "matchDate": "2024-11-17",
+      "homeTeam": "黑山",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027949",
+      "matchDate": "2024-11-16",
+      "homeTeam": "阿塞拜疆",
+      "awayTeam": "爱沙尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027928",
+      "matchDate": "2024-11-16",
+      "homeTeam": "丹麦",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027927",
+      "matchDate": "2024-11-16",
+      "homeTeam": "罗马尼亚",
+      "awayTeam": "科索沃"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027926",
+      "matchDate": "2024-11-16",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "波兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027925",
+      "matchDate": "2024-11-16",
+      "homeTeam": "瑞士",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027924",
+      "matchDate": "2024-11-16",
+      "homeTeam": "卢森堡",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027923",
+      "matchDate": "2024-11-16",
+      "homeTeam": "苏格兰",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027889",
+      "matchDate": "2024-11-15",
+      "homeTeam": "比利时",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027888",
+      "matchDate": "2024-11-15",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "芬兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027887",
+      "matchDate": "2024-11-15",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "挪威"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "1027886",
+      "matchDate": "2024-11-15",
+      "homeTeam": "希腊",
+      "awayTeam": "英格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030662",
+      "matchDate": "2025-03-24",
+      "homeTeam": "德国",
+      "awayTeam": "意大利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030661",
+      "matchDate": "2025-03-24",
+      "homeTeam": "西班牙",
+      "awayTeam": "荷兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030660",
+      "matchDate": "2025-03-24",
+      "homeTeam": "法国",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030659",
+      "matchDate": "2025-03-24",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030658",
+      "matchDate": "2025-03-24",
+      "homeTeam": "爱尔兰",
+      "awayTeam": "保加利亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030657",
+      "matchDate": "2025-03-24",
+      "homeTeam": "匈牙利",
+      "awayTeam": "土耳其"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030656",
+      "matchDate": "2025-03-24",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "奥地利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030655",
+      "matchDate": "2025-03-24",
+      "homeTeam": "苏格兰",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030654",
+      "matchDate": "2025-03-24",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "斯洛伐克"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030653",
+      "matchDate": "2025-03-23",
+      "homeTeam": "格鲁吉亚",
+      "awayTeam": "亚美尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030593",
+      "matchDate": "2025-03-21",
+      "homeTeam": "意大利",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030592",
+      "matchDate": "2025-03-21",
+      "homeTeam": "丹麦",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030591",
+      "matchDate": "2025-03-21",
+      "homeTeam": "荷兰",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030590",
+      "matchDate": "2025-03-21",
+      "homeTeam": "克罗地亚",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030589",
+      "matchDate": "2025-03-21",
+      "homeTeam": "奥地利",
+      "awayTeam": "塞尔维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030588",
+      "matchDate": "2025-03-21",
+      "homeTeam": "希腊",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030587",
+      "matchDate": "2025-03-21",
+      "homeTeam": "斯洛伐克",
+      "awayTeam": "斯洛文尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030586",
+      "matchDate": "2025-03-21",
+      "homeTeam": "科索沃",
+      "awayTeam": "冰岛"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030585",
+      "matchDate": "2025-03-21",
+      "homeTeam": "保加利亚",
+      "awayTeam": "爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030582",
+      "matchDate": "2025-03-21",
+      "homeTeam": "土耳其",
+      "awayTeam": "匈牙利"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2030581",
+      "matchDate": "2025-03-21",
+      "homeTeam": "亚美尼亚",
+      "awayTeam": "格鲁吉亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2032130",
+      "matchDate": "2025-06-09",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2032129",
+      "matchDate": "2025-06-08",
+      "homeTeam": "德国",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2032083",
+      "matchDate": "2025-06-06",
+      "homeTeam": "西班牙",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2032076",
+      "matchDate": "2025-06-05",
+      "homeTeam": "德国",
+      "awayTeam": "葡萄牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041721",
+      "matchDate": "2026-09-27",
+      "homeTeam": "英格兰",
+      "awayTeam": "西班牙"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041720",
+      "matchDate": "2026-09-27",
+      "homeTeam": "北马其顿",
+      "awayTeam": "瑞士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041719",
+      "matchDate": "2026-09-27",
+      "homeTeam": "捷克",
+      "awayTeam": "克罗地亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041717",
+      "matchDate": "2026-09-27",
+      "homeTeam": "保加利亚",
+      "awayTeam": "卢森堡"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041716",
+      "matchDate": "2026-09-27",
+      "homeTeam": "冰岛",
+      "awayTeam": "爱沙尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041715",
+      "matchDate": "2026-09-27",
+      "homeTeam": "法罗群岛",
+      "awayTeam": "哈萨克斯坦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041713",
+      "matchDate": "2026-09-26",
+      "homeTeam": "斯洛文尼亚",
+      "awayTeam": "苏格兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041695",
+      "matchDate": "2026-09-26",
+      "homeTeam": "瑞典",
+      "awayTeam": "罗马尼亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041694",
+      "matchDate": "2026-09-26",
+      "homeTeam": "土耳其",
+      "awayTeam": "法国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041693",
+      "matchDate": "2026-09-26",
+      "homeTeam": "波兰",
+      "awayTeam": "波黑"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041692",
+      "matchDate": "2026-09-26",
+      "homeTeam": "黑山",
+      "awayTeam": "塞浦路斯"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041691",
+      "matchDate": "2026-09-26",
+      "homeTeam": "意大利",
+      "awayTeam": "比利时"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041690",
+      "matchDate": "2026-09-26",
+      "homeTeam": "亚美尼亚",
+      "awayTeam": "拉脱维亚"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041689",
+      "matchDate": "2026-09-26",
+      "homeTeam": "格鲁吉亚",
+      "awayTeam": "北爱尔兰"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041654",
+      "matchDate": "2026-09-25",
+      "homeTeam": "挪威",
+      "awayTeam": "丹麦"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041653",
+      "matchDate": "2026-09-25",
+      "homeTeam": "塞尔维亚",
+      "awayTeam": "希腊"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041652",
+      "matchDate": "2026-09-25",
+      "homeTeam": "荷兰",
+      "awayTeam": "德国"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041651",
+      "matchDate": "2026-09-25",
+      "homeTeam": "葡萄牙",
+      "awayTeam": "威尔士"
+    },
+    {
+      "competition": "UEFA_NATIONS_LEAGUE",
+      "matchId": "2041650",
+      "matchDate": "2026-09-25",
+      "homeTeam": "科索沃",
+      "awayTeam": "爱尔兰"
+    }
+  ],
+  "failures": [
+    {
+      "matchId": "1000400",
+      "message": "体彩接口返回失败"
+    },
+    {
+      "matchId": "1000310",
+      "message": "体彩接口返回失败"
+    },
+    {
+      "matchId": "1001372",
+      "message": "体彩接口返回失败"
+    },
+    {
+      "matchId": "1002445",
+      "message": "体彩接口返回失败"
+    }
+  ]
+}

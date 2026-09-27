@@ -7,7 +7,11 @@ import java.util.List;
 
 public class MatchPredictionResponse {
 
+    // 查询、参数配置和回测统计所属的赛事分组
     private Competition competition = Competition.WORLD_CUP;
+
+    // 比赛的真实赛事名称，用于卡片和比赛记录展示
+    private String competitionName;
 
     private String matchId;
 
@@ -85,6 +89,14 @@ public class MatchPredictionResponse {
 
     public void setCompetition(Competition competition) {
         this.competition = competition == null ? Competition.WORLD_CUP : competition;
+    }
+
+    public String getCompetitionName() {
+        return competitionName;
+    }
+
+    public void setCompetitionName(String competitionName) {
+        this.competitionName = competitionName;
     }
 
     public String getMatchId() {

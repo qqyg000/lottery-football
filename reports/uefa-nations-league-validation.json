@@ -1,0 +1,44 @@
+{
+  "nations": 688,
+  "first": "2018-09-06",
+  "last": "2026-09-27",
+  "marketRows": 479,
+  "normalOdds": 462,
+  "handicapOdds": 475,
+  "totalGoalsOdds": 475,
+  "uniqueFixtures": 688,
+  "changedOtherHistory": 0,
+  "changedOtherOdds": 0,
+  "unmatchedMarketRows": [],
+  "scoreConflicts": [],
+  "aliasMappings": 58,
+  "previousMatchCount": 455,
+  "addedMatchCount": 233,
+  "reimportUsingDownloadedSnapshots": {
+    "historySha256Unchanged": true,
+    "mappingsSha256Unchanged": true
+  },
+  "tests": {
+    "backendPassed": 222,
+    "frontendAndScriptsPassed": 26,
+    "failed": 0,
+    "skipped": 0,
+    "mavenPackage": "BUILD SUCCESS"
+  },
+  "runtimeVerification": {
+    "displayCompetition": "WORLD_CUP",
+    "cardsOn20260926": 9,
+    "cardsAllGroupedAsWorldCup": true,
+    "cardsActualCompetitionName": "欧国联",
+    "historicalCardActualCompetitionName": "欧国联",
+    "headToHeadActualCompetitionName": "欧国联",
+    "netherlandsEnglandOn20190607RegularTimeScore": "1 - 1",
+    "currentBacktestCompletedMatches": 130,
+    "currentBacktestMatchesWithOdds": 123,
+    "currentBacktestNationsLeagueMatchesWithOdds": 19,
+    "includingPreviousBacktestCompletedMatches": 382,
+    "includingPreviousBacktestMatchesWithOdds": 312,
+    "includingPreviousBacktestNationsLeagueMatchesWithOdds": 144,
+    "offlineRefreshJobStatus": "COMPLETED"
+  }
+}

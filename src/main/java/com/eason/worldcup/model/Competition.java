@@ -8,6 +8,7 @@ import java.util.Locale;
 public enum Competition {
 
     WORLD_CUP("世界杯", false, false),
+    UEFA_NATIONS_LEAGUE("欧国联", false, true),
     EUROPEAN_CHAMPIONSHIP("欧洲杯", false, false),
     COPA_AMERICA("美洲杯", false, false),
     INTERNATIONAL_OFFICIAL("国家队其他正式比赛", false, false),
@@ -54,6 +55,16 @@ public enum Competition {
         return crossYearSeason;
     }
 
+    // 欧国联保留真实赛事类型，对外查询分组和参数档案统一使用世界杯
+    public Competition getDisplayCompetition() {
+        return this == UEFA_NATIONS_LEAGUE ? WORLD_CUP : this;
+    }
+
+    public boolean includes(Competition competition) {
+        return competition != null
+                && (this == competition || this == competition.getDisplayCompetition());
+    }
+
     public LocalDate getSeasonStartDate(LocalDate referenceDate) {
         LocalDate effectiveDate = referenceDate == null ? ApplicationTime.today() : referenceDate;
         if (!crossYearSeason) {
@@ -62,6 +73,9 @@ public enum Competition {
         int seasonStartYear = effectiveDate.getMonthValue() >= 7
                 ? effectiveDate.getYear()
                 : effectiveDate.getYear() - 1;
+        if (this == UEFA_NATIONS_LEAGUE) {
+            seasonStartYear -= Math.floorMod(seasonStartYear, 2);
+        }
         return LocalDate.of(seasonStartYear, 7, 1);
     }
 
@@ -104,6 +118,12 @@ public enum Competition {
 
     public static Competition fromSourceCompetition(String sourceCompetition, Competition fallback) {
         String normalized = sourceCompetition == null ? "" : sourceCompetition.trim();
+        if (normalized.startsWith("欧国联")
+                || normalized.startsWith("欧洲国家联赛")
+                || normalized.startsWith("欧足联国家联赛")
+                || normalized.toUpperCase(Locale.ROOT).startsWith("UEFA NATIONS LEAGUE")) {
+            return UEFA_NATIONS_LEAGUE;
+        }
         if (normalized.startsWith("瑞超") || normalized.startsWith("瑞典超")) {
             return SWEDISH_ALLSVENSKAN;
         }

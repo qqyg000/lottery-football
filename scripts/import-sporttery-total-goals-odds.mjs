@@ -21,6 +21,7 @@ const TOTAL_GOALS_COLUMNS = [
 ]
 const LEAGUE_ID_COMPETITIONS = new Map([
   ['72', 'WORLD_CUP'],
+  ['127', 'UEFA_NATIONS_LEAGUE'],
   ['27', 'EUROPEAN_CHAMPIONSHIP'],
   ['13', 'COPA_AMERICA'],
   ['14', 'CLUB_WORLD_CUP'],
@@ -37,6 +38,8 @@ const LEAGUE_ID_COMPETITIONS = new Map([
 ])
 const LEAGUE_NAME_COMPETITIONS = new Map([
   ['世界杯', 'WORLD_CUP'],
+  ['欧国联', 'UEFA_NATIONS_LEAGUE'],
+  ['欧洲国家联赛', 'UEFA_NATIONS_LEAGUE'],
   ['欧洲杯', 'EUROPEAN_CHAMPIONSHIP'],
   ['美洲杯', 'COPA_AMERICA'],
   ['世俱杯', 'CLUB_WORLD_CUP'],
@@ -70,6 +73,7 @@ function parseArgs(argv) {
     csvPath: path.resolve('src/main/resources/data/historical_odds_data.csv'),
     mappingsPath: path.resolve('src/main/resources/data/team_name_mappings.csv'),
     concurrency: DEFAULT_CONCURRENCY,
+    competition: '',
     reportPath: path.resolve('reports/sporttery-total-goals-import.json')
   }
   for (const argument of argv) {
@@ -83,11 +87,16 @@ function parseArgs(argv) {
       args.mappingsPath = path.resolve(argument.slice('--mappings='.length))
     } else if (argument.startsWith('--concurrency=')) {
       args.concurrency = Math.max(1, Number(argument.slice('--concurrency='.length)) || DEFAULT_CONCURRENCY)
+    } else if (argument.startsWith('--competition=')) {
+      args.competition = argument.slice('--competition='.length)
     } else if (argument.startsWith('--report=')) {
       args.reportPath = path.resolve(argument.slice('--report='.length))
     }
   }
   validateDate(args.startDate, '--start')
+  if (args.competition && !new Set(LEAGUE_NAME_COMPETITIONS.values()).has(args.competition)) {
+    throw new Error('不支持的赛事代码：' + args.competition)
+  }
   validateDate(args.endDate, '--end')
   if (args.endDate < args.startDate) {
     throw new Error('--end 不能早于 --start')
@@ -312,7 +321,7 @@ async function fetchJson(url, headers, attempts = 4) {
   throw lastError
 }
 
-async function downloadResults(startDate, endDate) {
+async function downloadResults(startDate, endDate, competition = '') {
   const matches = []
   let cursor = new Date(startDate + 'T00:00:00Z')
   const limit = new Date(endDate + 'T00:00:00Z')
@@ -329,7 +338,7 @@ async function downloadResults(startDate, endDate) {
       const params = new URLSearchParams({
         matchBeginDate: rangeStart,
         matchEndDate: rangeEnd,
-        leagueId: '',
+        leagueId: [...LEAGUE_ID_COMPETITIONS].find(([, value]) => value === competition)?.[0] || '',
         pageSize: '100',
         pageNo: String(pageNo),
         isFix: '0',
@@ -594,7 +603,7 @@ async function main() {
   })
 
   const [historicalMatches, calculatorMatches] = await Promise.all([
-    downloadResults(args.startDate, args.endDate),
+    downloadResults(args.startDate, args.endDate, args.competition),
     downloadCalculatorMatches().catch(error => {
       console.error(`在售接口读取失败: ${error.message}`)
       return []
@@ -603,7 +612,8 @@ async function main() {
   const officialMatchesById = new Map()
   for (const sourceMatch of historicalMatches.concat(calculatorMatches)) {
     const match = normalizeOfficialMatch(sourceMatch)
-    if (!match || match.matchDate < args.startDate || match.matchDate > args.endDate) {
+    if (!match || match.matchDate < args.startDate || match.matchDate > args.endDate
+        || args.competition && match.competition !== args.competition) {
       continue
     }
     officialMatchesById.set(
@@ -698,6 +708,7 @@ async function main() {
   const totalGoalsOddsMatchCount = csvRows.slice(1).filter(row => (
     row[csvIndexes.match_date] >= args.startDate
     && row[csvIndexes.match_date] <= args.endDate
+    && (!args.competition || row[csvIndexes.competition] === args.competition)
     && hasCompleteCsvOdds(row, csvIndexes, TOTAL_GOALS_COLUMNS.slice(0, 8))
   )).length
   const report = {
@@ -712,6 +723,12 @@ async function main() {
     oddsRefreshTargetCount: oddsTargets.length,
     updatedTotalGoalsMatchCount: updatedCount,
     totalGoalsOddsMatchCount,
+    normalOddsMatchCount: matchedOfficialMatches.filter(match => hasCompleteCsvOdds(
+      match.csvMatch.row, csvIndexes, ['normal_win', 'normal_draw', 'normal_lose']
+    )).length,
+    handicapOddsMatchCount: matchedOfficialMatches.filter(match => hasCompleteCsvOdds(
+      match.csvMatch.row, csvIndexes, ['handicap_win', 'handicap_draw', 'handicap_lose']
+    )).length,
     unavailableTotalGoalsMatchCount: unavailableCount,
     failedRequestCount: failures.length,
     unmatchedOfficialMatches: [],

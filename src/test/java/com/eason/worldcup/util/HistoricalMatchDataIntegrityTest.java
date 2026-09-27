@@ -23,6 +23,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HistoricalMatchDataIntegrityTest {
 
     @Test
+    void shouldContainNationsLeagueDivisionsPlayoffsAndRegulationScores() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+        List<HistoricalFixture> nations = fixtures.stream()
+                .filter(fixture -> fixture.sourceCompetition().equals("欧国联"))
+                .toList();
+        assertTrue(nations.size() >= 688);
+        assertTrue(nations.stream().allMatch(fixture ->
+                fixture.competition() == Competition.UEFA_NATIONS_LEAGUE
+                        && fixture.matchType().equals("OFFICIAL")
+                        && !fixture.matchDate().isBefore(LocalDate.of(2018, 9, 6))));
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2019, 6, 7),
+                Competition.UEFA_NATIONS_LEAGUE, "荷兰", "英格兰", 1, 1);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2025, 3, 24),
+                Competition.UEFA_NATIONS_LEAGUE, "斯洛文尼", "斯洛伐克", 0, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2025, 6, 9),
+                Competition.UEFA_NATIONS_LEAGUE, "葡萄牙", "西班牙", 2, 2);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 9, 27),
+                Competition.UEFA_NATIONS_LEAGUE, "英格兰", "西班牙", 2, 3);
+    }
+
+    @Test
     void shouldContainCopaLigueTwoAndAngersTroyesHistory() throws IOException {
         List<HistoricalFixture> fixtures = readHistoricalFixtures();
         assertFixtureOccursOnce(fixtures, LocalDate.of(2024, 1, 17),

@@ -4,7 +4,7 @@
 
 ## 历史比赛数据
 
-`src/main/resources/data/historical_matches.csv` 保存 160 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 236,817 场，日期范围为 2014-10-22 至 2026-08-25；导入流程以 2014-10-22 作为历史数据最早截点。18 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，原始赛事名保存在 `source_competition`。字段为：
+`src/main/resources/data/historical_matches.csv` 保存 158 种来源赛事及其全部参赛球队的比赛，当前包含去重后的 239,359 场，日期范围为 2014-10-22 至 2026-09-27；导入流程以 2014-10-22 作为历史数据最早截点。18 类前端可查询赛事保留独立内部代码，其余比赛按国家队正式赛、国家队友谊赛、俱乐部正式赛和俱乐部友谊赛归类，欧国联保留单独内部类型并归入世界杯查询分组，原始赛事名保存在 `source_competition`。字段为：
 
 ```text
 match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,neutral,match_type,source_competition
@@ -43,6 +43,23 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 
 程序启动和点击“更新数据”时会动态加载近期赛程，因此赛程、开球时间、场地、状态等易变字段不再存入历史比赛 CSV。
 
+## 欧国联
+
+欧国联使用内部代码 `UEFA_NATIONS_LEAGUE`，保留真实赛事来源和主客场属性；查询、参数档案和回测统计统一归入 `WORLD_CUP`，选择世界杯时一并显示欧国联卡片，前端不增加独立赛事入口或合并说明。比赛卡片、推荐汇总和历史比赛记录仍显示真实赛事名称“欧国联”，接口 `competition` 表示查询及统计分组，`competitionName` 表示真实赛事名称，`groupName` 保留原始赛事与轮次信息。回测按欧国联自身的两年届次选择“本届 / 含上届”，再合并到世界杯统计，避免世界杯决赛结束日把九月欧国联排除。该内部类型不应用世界杯主办国与种子队加成，赛前模型只使用比赛日之前的数据。
+
+导入起点为 `2014-10-22`，由于[首届赛事于 2018-09-06 开始](https://www.uefa.com/uefanationsleague/news/0253-0d82228e134c-5dc931ea1e1f-1000--inaugural-uefa-nations-league-under-way/)，实际最早记录为该日。赛程源为 FotMob `9806/9807/9808/9809`（A/B/C/D 级）以及 `10717/10718/10719`（升降级附加赛），ESPN `uefa.nations` 补充近期赛程。FotMob 不存在的赛季不导入，所有日期转为北京时间；加时和点球场次读取比赛详情中的 90 分钟比分，详情不可核验时停止历史导入。
+
+历史赛果与体彩赔率分别执行：
+
+```powershell
+node scripts/import-uefa-nations-league.mjs --write
+node scripts/import-sporttery-total-goals-odds.mjs --start=2018-09-06 --end=2026-09-27 --competition=UEFA_NATIONS_LEAGUE --report=reports/uefa-nations-league-odds-import.json
+```
+
+赛果脚本默认预览，`--write` 落盘，`--refresh` 重新下载缓存，`--end=yyyy-MM-dd` 限制截止日。赔率脚本的结束日期应按需要调整；欧国联体彩 `leagueId=127`，只对确有官方投注市场的比赛保存赔率，不为未开售或停售场次填充估算赔率。2026-09-27 导入详情见 `reports/uefa-nations-league-import.json` 和 `reports/uefa-nations-league-odds-import.json`。
+
+后续点击现有“更新数据”会同步欧国联赛程、赛果和近期竞彩赔率；选择历史日期再点击时，同时强制刷新该日所属分组的历史初盘赔率。远程数据继续使用现有赛程和体彩缓存，断网时内置历史比赛仍可加载。
+
 ## 欧洲冠军联赛
 
 欧冠赛程和历史结果优先由 ESPN Scoreboard 接口动态加载，并使用 Futbol24 `league_id=8` 补齐 ESPN 不可用或漏场的资格赛。ESPN 分为两个赛事代码：
@@ -68,11 +85,12 @@ match_id,match_date,competition,home_team_cn,away_team_cn,home_score,away_score,
 - `por.1`：葡超
 - `ned.1`：荷甲
 - `arg.1`：阿甲
+- `uefa.nations`：欧国联，归入世界杯查询分组
 
 为补足上述 17 类赛事参赛球队的近期样本，同一刷新流程还会加载：
 
 - `fifa.friendly`：国家队国际友谊赛
-- 世界杯各大洲预选赛、欧预赛、欧国联、金杯赛、非洲杯和亚洲杯：国家队其他正式比赛
+- 世界杯各大洲预选赛、欧预赛、金杯赛、非洲杯和亚洲杯：国家队其他正式比赛
 - 国内杯赛、超级杯、欧协联、解放者杯、南美杯等：俱乐部其他正式比赛
 - `club.friendly`、国际冠军杯、酋长杯、英超亚洲杯和甘伯杯：俱乐部正常阵容友谊赛
 - FotMob `leagueId=489`：俱乐部赛，其中该接口只提供当前赛季，长期历史由 ESPN 补齐

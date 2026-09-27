@@ -88,6 +88,7 @@ const EXCLUDED_HISTORICAL_MATCH_IDS = new Set([
 ])
 
 const NATIONAL_COMPETITIONS = new Set([
+  'UEFA_NATIONS_LEAGUE',
   'WORLD_CUP',
   'EUROPEAN_CHAMPIONSHIP',
   'COPA_AMERICA'
@@ -118,6 +119,7 @@ const ALL_CLUB_COMPETITIONS = new Set([
 ])
 
 const COMPETITION_NAMES = new Map(Object.entries({
+  UEFA_NATIONS_LEAGUE: '欧国联',
   WORLD_CUP: '世界杯',
   EUROPEAN_CHAMPIONSHIP: '欧洲杯',
   COPA_AMERICA: '美洲杯',
@@ -1755,10 +1757,13 @@ function canonicalChineseName(value) {
 }
 
 function normalizeHistoryRow(row) {
-  const competition = String(row.competition ?? '').trim()
+  let competition = String(row.competition ?? '').trim()
   const sourceCompetition = String(row.source_competition ?? '').trim()
     || COMPETITION_NAMES.get(competition)
     || competition
+  if (/^(欧国联|欧洲国家联赛|UEFA Nations League)/i.test(sourceCompetition)) {
+    competition = 'UEFA_NATIONS_LEAGUE'
+  }
   const defaultType = competition === 'INTERNATIONAL_FRIENDLY'
     ? 'INTERNATIONAL_FRIENDLY'
     : competition === 'CLUB_FRIENDLY'
@@ -1909,6 +1914,9 @@ function regulationNationalScore(result, extraTimeGoals) {
 }
 
 function nationalCompetition(tournament) {
+  if (tournament === 'UEFA Nations League') {
+    return 'UEFA_NATIONS_LEAGUE'
+  }
   if (tournament === 'FIFA World Cup') {
     return 'WORLD_CUP'
   }

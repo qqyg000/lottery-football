@@ -5,7 +5,7 @@
   "scripts": {
     "serve": "vue-cli-service serve --host 0.0.0.0 --port 8091",
     "build": "vue-cli-service build",
-    "test": "node --test tests/backtest-roi.test.mjs tests/recommendation-backtest.test.mjs tests/total-goals-optimization-constraints.test.mjs ../scripts/wdl-fast-evaluator.test.mjs"
+    "test": "node --test tests/backtest-roi.test.mjs tests/recommendation-backtest.test.mjs tests/total-goals-optimization-constraints.test.mjs ../scripts/wdl-fast-evaluator.test.mjs ../scripts/import-uefa-nations-league.test.mjs"
   },
   "dependencies": {
     "vue": "2.7.16"

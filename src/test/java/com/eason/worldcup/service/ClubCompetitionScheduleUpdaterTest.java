@@ -46,7 +46,8 @@ class ClubCompetitionScheduleUpdaterTest {
         assertNotNull(sources);
         assertEquals(Set.of(
                         "47", "48", "53", "54", "55", "74", "86", "108", "110", "132", "133", "138", "141", "146",
-                        "150", "186", "207", "209", "247", "8924"),
+                        "150", "186", "207", "209", "247", "8924",
+                        "9806", "9807", "9808", "9809", "10717", "10718", "10719"),
                 historicalLeagueIds);
         assertTrue(sources.stream().anyMatch(source ->
                 "47".equals(source.leagueId())

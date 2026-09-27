@@ -58,6 +58,7 @@ public class SportteryMarketSelectionService {
 
     private static final Map<Integer, Competition> COMPETITIONS_BY_LEAGUE_ID = Map.ofEntries(
             Map.entry(72, Competition.WORLD_CUP),
+            Map.entry(127, Competition.UEFA_NATIONS_LEAGUE),
             Map.entry(27, Competition.EUROPEAN_CHAMPIONSHIP),
             Map.entry(13, Competition.COPA_AMERICA),
             Map.entry(14, Competition.CLUB_WORLD_CUP),
@@ -375,6 +376,9 @@ public class SportteryMarketSelectionService {
             return Set.of();
         }
         Set<Competition> normalized = new HashSet<>(competitions);
+        if (normalized.contains(Competition.WORLD_CUP)) {
+            normalized.add(Competition.UEFA_NATIONS_LEAGUE);
+        }
         Set<Competition> unsupported = new HashSet<>(normalized);
         unsupported.removeAll(SUPPORTED_COMPETITIONS);
         if (!unsupported.isEmpty()) {
@@ -1111,6 +1115,7 @@ public class SportteryMarketSelectionService {
         }
         return switch (leagueName) {
             case "世界杯" -> Competition.WORLD_CUP;
+            case "欧国联", "欧洲国家联赛", "欧足联国家联赛" -> Competition.UEFA_NATIONS_LEAGUE;
             case "欧洲杯" -> Competition.EUROPEAN_CHAMPIONSHIP;
             case "美洲杯" -> Competition.COPA_AMERICA;
             case "世俱杯", "俱世界杯" -> Competition.CLUB_WORLD_CUP;

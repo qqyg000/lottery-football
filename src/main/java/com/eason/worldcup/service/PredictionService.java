@@ -319,7 +319,7 @@ public class PredictionService {
         List<MatchSchedule> completedScheduleCandidates = dataRepository.getSchedules().stream()
                 .filter(schedule -> competitions == null
                         || competitions.isEmpty()
-                        || competitions.contains(schedule.getCompetition()))
+                        || competitions.stream().anyMatch(competition -> competition.includes(schedule.getCompetition())))
                 .filter(schedule -> isWithinRecommendationBacktestRange(
                         schedule,
                         backtestEndDate,
@@ -394,7 +394,7 @@ public class PredictionService {
         if (competition == null || modelFactorsByCompetition == null) {
             return null;
         }
-        return modelFactorsByCompetition.get(competition);
+        return modelFactorsByCompetition.get(competition.getDisplayCompetition());
     }
 
     private Double resolveModelFactor(Double competitionValue, Double fallbackValue) {
@@ -431,7 +431,7 @@ public class PredictionService {
         List<MatchSchedule> schedules = dataRepository.getSchedules().stream()
                 .filter(schedule -> schedule.getMatchDate() != null)
                 .filter(schedule -> targetCompetitions.isEmpty()
-                        || targetCompetitions.contains(schedule.getCompetition()))
+                        || targetCompetitions.stream().anyMatch(competition -> competition.includes(schedule.getCompetition())))
                 .filter(schedule -> !schedule.getMatchDate().isBefore(startDate))
                 .filter(schedule -> !schedule.getMatchDate().isAfter(endDate))
                 .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
@@ -455,7 +455,7 @@ public class PredictionService {
         if (schedule.getCompetition() == null || schedule.getMatchDate() == null) {
             return false;
         }
-        CompetitionBacktestPeriod period = COMPETITION_BACKTEST_PERIODS.get(schedule.getCompetition());
+        CompetitionBacktestPeriod period = resolveCompetitionBacktestPeriod(schedule.getCompetition());
         if (period == null) {
             return false;
         }
@@ -472,6 +472,11 @@ public class PredictionService {
     }
 
     CompetitionBacktestPeriod resolveCompetitionBacktestPeriod(Competition competition) {
+        if (competition == Competition.UEFA_NATIONS_LEAGUE) {
+            LocalDate currentStart = competition.getSeasonStartDate(ApplicationTime.today());
+            return new CompetitionBacktestPeriod(currentStart.minusYears(2), currentStart.minusDays(1),
+                    currentStart, currentStart.plusYears(2).minusDays(1));
+        }
         return COMPETITION_BACKTEST_PERIODS.get(competition);
     }
 
@@ -514,7 +519,7 @@ public class PredictionService {
         if (schedule == null || schedule.getCompetition() == null) {
             return false;
         }
-        CompetitionBacktestPeriod period = COMPETITION_BACKTEST_PERIODS.get(schedule.getCompetition());
+        CompetitionBacktestPeriod period = resolveCompetitionBacktestPeriod(schedule.getCompetition());
         if (period == null) {
             return false;
         }
@@ -591,6 +596,11 @@ public class PredictionService {
             BiConsumer<Integer, String> progressConsumer) {
         notifyDataRefreshProgress(progressConsumer, 5, "正在读取体彩最近30天赛果");
         sportteryMarketSelectionService.forceRefresh(null);
+        if (date != null && date.isBefore(ApplicationTime.today())) {
+            notifyDataRefreshProgress(progressConsumer, 20, "正在更新所选日期的历史赔率");
+            Competition selectedCompetition = competition == null ? Competition.WORLD_CUP : competition;
+            sportteryMarketSelectionService.refreshHistoricalRange(date, date, Set.of(selectedCompetition));
+        }
         notifyDataRefreshProgress(progressConsumer, 25, "体彩赛果已更新，正在刷新18类赛事赛程与补充数据");
         dataRepository.refreshSchedules(progressConsumer);
         notifyDataRefreshProgress(progressConsumer, 65, "赛程数据已更新，正在重建球队模型");
@@ -986,7 +996,8 @@ public class PredictionService {
                 clubFriendlyWeight);
         SimulationCounter postMatchCounter = runMonteCarlo(schedule, postMatchExpectedGoals, simulationCount, effectiveHandicapSmoothingFactor);
         MatchPredictionResponse response = new MatchPredictionResponse();
-        response.setCompetition(schedule.getCompetition());
+        response.setCompetition(schedule.getCompetition().getDisplayCompetition());
+        response.setCompetitionName(schedule.getCompetition().getDisplayName());
         response.setMatchId(schedule.getMatchId());
         response.setMatchDate(schedule.getMatchDate());
         response.setKickoffTime(schedule.getKickoffTime());

@@ -21,6 +21,7 @@ const HEADERS = [
 
 const DIRECT_COMPETITIONS = new Map([
   ['世界杯', 'WORLD_CUP'],
+  ['欧国联', 'UEFA_NATIONS_LEAGUE'],
   ['欧洲杯', 'EUROPEAN_CHAMPIONSHIP'],
   ['美洲杯', 'COPA_AMERICA'],
   ['世俱杯', 'CLUB_WORLD_CUP'],

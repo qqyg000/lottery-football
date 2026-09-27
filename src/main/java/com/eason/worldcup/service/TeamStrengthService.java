@@ -170,7 +170,9 @@ public class TeamStrengthService {
                 clubFriendlyWeightOverride);
         StrengthModel model = schedule.getCompetition().isClubCompetition()
                 ? getClubPreSeasonModel(schedule.getCompetition(), schedule.getMatchDate(), matchTypeWeights)
-                : getPreTournamentModel(matchTypeWeights);
+                : schedule.getCompetition() == Competition.UEFA_NATIONS_LEAGUE
+                        ? getCurrentModelForPredictionDate(schedule.getMatchDate(), matchTypeWeights)
+                        : getPreTournamentModel(matchTypeWeights);
         ExpectedGoals expectedGoals = calculateExpectedGoals(
                 schedule,
                 model,

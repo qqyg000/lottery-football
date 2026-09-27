@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -130,7 +131,8 @@ public class DataRepository {
         List<HistoricalMatch> reloadedClubHistoricalMatches = Collections.unmodifiableList(loadClubHistoricalMatches());
         List<MatchSchedule> reloadedSchedules = Collections.unmodifiableList(loadSchedules(
                 includeSupplementalSources,
-                progressConsumer));
+                progressConsumer,
+                reloadedHistoricalMatches));
         this.historicalMatches = reloadedHistoricalMatches;
         this.clubHistoricalMatches = reloadedClubHistoricalMatches;
         this.schedules = reloadedSchedules;
@@ -196,7 +198,7 @@ public class DataRepository {
     public List<MatchSchedule> getSchedules(Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         return schedules.stream()
-                .filter(item -> item.getCompetition() == effectiveCompetition)
+                .filter(item -> effectiveCompetition.includes(item.getCompetition()))
                 .collect(Collectors.toList());
     }
 
@@ -204,7 +206,7 @@ public class DataRepository {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         LocalDate today = ApplicationTime.today();
         return schedules.stream()
-                .filter(item -> item.getCompetition() == effectiveCompetition)
+                .filter(item -> effectiveCompetition.includes(item.getCompetition()))
                 .filter(item -> effectiveCompetition.isDateInSeason(item.getMatchDate(), today))
                 .collect(Collectors.toList());
     }
@@ -222,7 +224,7 @@ public class DataRepository {
     public List<MatchSchedule> findSchedulesByDate(LocalDate date, Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         return schedules.stream()
-                .filter(item -> item.getCompetition() == effectiveCompetition)
+                .filter(item -> effectiveCompetition.includes(item.getCompetition()))
                 .filter(item -> date.equals(item.getMatchDate()))
                 .sorted(Comparator.comparingInt(this::getScheduleSortSeconds)
                         .thenComparing(MatchSchedule::getMatchDate)
@@ -237,7 +239,7 @@ public class DataRepository {
     public List<String> findScheduleDates(Competition competition) {
         Competition effectiveCompetition = competition == null ? Competition.WORLD_CUP : competition;
         return schedules.stream()
-                .filter(item -> item.getCompetition() == effectiveCompetition)
+                .filter(item -> effectiveCompetition.includes(item.getCompetition()))
                 .filter(item -> item.getMatchDate() != null)
                 .filter(this::hasSportteryOdds)
                 .map(item -> item.getMatchDate().toString())
@@ -334,6 +336,13 @@ public class DataRepository {
     private List<MatchSchedule> loadSchedules(
             boolean includeSupplementalSources,
             BiConsumer<Integer, String> progressConsumer) {
+        return loadSchedules(includeSupplementalSources, progressConsumer, historicalMatches);
+    }
+
+    private List<MatchSchedule> loadSchedules(
+            boolean includeSupplementalSources,
+            BiConsumer<Integer, String> progressConsumer,
+            List<HistoricalMatch> nationalHistory) {
         List<MatchSchedule> result = new ArrayList<>();
         notifyRefreshProgress(progressConsumer, 26, "正在刷新世界杯 OpenFootball 赛程");
         scheduleUpdater.updateSchedules(result);
@@ -375,6 +384,7 @@ public class DataRepository {
             }
         }
         notifyRefreshProgress(progressConsumer, 61, "体彩赛程已合并，正在加载历史赔率");
+        mergeNationsLeagueHistory(result, nationalHistory);
         historicalOddsScheduleLoader.mergeInto(result);
         notifyRefreshProgress(progressConsumer, 62, "历史赔率已加载，正在统一球队名称");
         normalizeScheduleTeamNames(result);
@@ -383,6 +393,36 @@ public class DataRepository {
         removeExcludedCompetitionSchedules(result);
         result.sort(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getKickoffTime));
         return result;
+    }
+
+    void mergeNationsLeagueHistory(List<MatchSchedule> schedules, List<HistoricalMatch> nationalHistory) {
+        Set<String> fixtures = schedules.stream().map(this::buildScheduleIdentity)
+                .collect(Collectors.toCollection(HashSet::new));
+        for (HistoricalMatch match : nationalHistory) {
+            if (Competition.fromSourceCompetition(match.getSourceCompetition(), null)
+                    != Competition.UEFA_NATIONS_LEAGUE) {
+                continue;
+            }
+            MatchSchedule schedule = new MatchSchedule();
+            schedule.setCompetition(Competition.UEFA_NATIONS_LEAGUE);
+            schedule.setMatchDate(match.getMatchDate());
+            schedule.setKickoffTime(LocalTime.NOON);
+            schedule.setHomeTeamCn(match.getHomeTeam());
+            schedule.setAwayTeamCn(match.getAwayTeam());
+            schedule.setHomeTeamEn(match.getHomeTeam());
+            schedule.setAwayTeamEn(match.getAwayTeam());
+            schedule.setHomeScore(match.getHomeScore());
+            schedule.setAwayScore(match.getAwayScore());
+            schedule.setNeutral(match.isNeutral());
+            schedule.setStatus("COMPLETED");
+            schedule.setGroupName(Competition.UEFA_NATIONS_LEAGUE.getDisplayName());
+            schedule.setVenue("");
+            String fixture = buildScheduleIdentity(schedule);
+            schedule.setMatchId("HISTORY-" + fixture);
+            if (fixtures.add(fixture)) {
+                schedules.add(schedule);
+            }
+        }
     }
 
     static int mapClubCompetitionProgress(int progress) {

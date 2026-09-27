@@ -343,7 +343,7 @@
       <article v-for="match in matches" :key="match.competition + '-' + match.matchId" class="match-card">
         <div class="match-head">
           <div class="match-info">
-            <div class="match-time">{{ match.matchDate }} {{ match.kickoffTime }} · {{ match.groupName }}</div>
+            <div class="match-time">{{ match.matchDate }} {{ match.kickoffTime }} · {{ match.groupName || match.competitionName }}</div>
             <h2>
               <button
                 type="button"
@@ -1232,7 +1232,7 @@ export default {
         key: matchKey,
         kickoffTime: match.kickoffTime ? String(match.kickoffTime).slice(0, 5) : '--',
         matchNumber: match.sportteryMatchNumber || '',
-        competitionName: competition ? competition.name : (match.competition || '--'),
+        competitionName: match.competitionName || (competition ? competition.name : (match.competition || '--')),
         homeTeamCn: match.homeTeamCn,
         awayTeamCn: match.awayTeamCn,
         recommendations,
