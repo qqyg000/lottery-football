@@ -174,12 +174,13 @@ class HistoricalMatchDataIntegrityTest {
         assertFixtureOccursOnce(fixtures, LocalDate.of(2021, 12, 18),
                 Competition.CLUB_OFFICIAL_OTHER, "伊普斯", "桑德兰", 1, 1);
 
+        // 2026-09-28 核实别名后分别去掉 26、14、218、103 条重复来源记录
         Map<String, Long> minimumCoverage = Map.of(
-                "英足总杯", 2_050L,
-                "英联赛杯", 1_256L,
+                "英足总杯", 2_047L,
+                "英联赛杯", 1_242L,
                 "英社区盾", 12L,
-                "英冠", 7_300L,
-                "英甲", 8_475L,
+                "英冠", 7_124L,
+                "英甲", 8_372L,
                 "法超杯", 12L,
                 "法甲", 4_100L);
         minimumCoverage.forEach((sourceCompetition, minimumCount) -> {
@@ -631,7 +632,10 @@ class HistoricalMatchDataIntegrityTest {
                 .count();
 
         assertEquals(19L, polishLeagueCount, "2026 比亚韦波甲数据不完整");
-        assertEquals(14L, clubMatchCount, "2026 比亚韦俱乐部赛数据不完整");
+        // CSKA 1948 与 CSKA 1948 Sofia 是同一个对手，1 月 19 日仅计一场
+        assertEquals(13L, clubMatchCount, "2026 比亚韦俱乐部赛数据不完整");
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2026, 1, 19),
+                Competition.CLUB_FRIENDLY, "比亚韦", "索菲亚1948", 1, 1);
         assertFixtureOccursOnce(
                 fixtures,
                 LocalDate.of(2026, 8, 1),
@@ -844,6 +848,20 @@ class HistoricalMatchDataIntegrityTest {
                 .toList();
 
         assertEquals(List.of(), duplicates, "存在统一队名后的重复比赛");
+    }
+
+    @Test
+    void shouldRetainOfficialScoresAfterVerifiedAliasDeduplication() throws IOException {
+        List<HistoricalFixture> fixtures = readHistoricalFixtures();
+
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2017, 1, 18),
+                Competition.CLUB_FRIENDLY, "帕德博恩", "多特蒙德", 1, 6);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2019, 1, 6),
+                Competition.CLUB_OFFICIAL_OTHER, "曼城", "罗瑟汉姆", 7, 0);
+        assertFixtureOccursOnce(fixtures, LocalDate.of(2019, 3, 30),
+                Competition.CLUB_OFFICIAL_OTHER, "德比郡", "罗瑟汉姆", 6, 1);
+        Set<String> incorrectScoreIds = Set.of("EXCEL-24431", "EXCEL-45959", "EXCEL-47540");
+        assertTrue(fixtures.stream().noneMatch(fixture -> incorrectScoreIds.contains(fixture.matchId())));
     }
 
     @Test
