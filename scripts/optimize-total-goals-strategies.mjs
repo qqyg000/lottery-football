@@ -2,6 +2,8 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { meetsMinimumConstraint } from './total-goals-optimization-constraints.mjs'
+import { chronologicalSplitIndex } from './chronological-validation.mjs'
+import { BACKTEST_COMPETITIONS, filterBacktestProfiles, isBacktestCompetition } from '../frontend/src/backtest-competitions.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const CONFIG_PATH = path.resolve(ROOT, readArgument('--config-path', 'config/user-config.json'))
@@ -24,46 +26,8 @@ const CONFIGURED_REPORT_PATH = path.resolve(ROOT, readArgument(
 ))
 const BASE_URL = readArgument('--base-url', 'http://127.0.0.1:18080')
 const SIMULATIONS = Number(readArgument('--simulations', '5000'))
-const COMPETITIONS = [
-  'WORLD_CUP',
-  'EUROPEAN_CHAMPIONSHIP',
-  'COPA_AMERICA',
-  'CLUB_WORLD_CUP',
-  'EUROPA_LEAGUE',
-  'CHAMPIONS_LEAGUE',
-  'PREMIER_LEAGUE',
-  'LA_LIGA',
-  'SERIE_A',
-  'BUNDESLIGA',
-  'LIGUE_1',
-  'PRIMEIRA_LIGA',
-  'EREDIVISIE',
-  'ARGENTINE_PRIMERA_DIVISION',
-  'SWEDISH_ALLSVENSKAN',
-  'FINNISH_VEIKKAUSLIIGA',
-  'K_LEAGUE_1',
-  'SCOTTISH_FA_CUP'
-]
-const COMPETITION_NAMES = {
-  WORLD_CUP: '世界杯',
-  EUROPEAN_CHAMPIONSHIP: '欧洲杯',
-  COPA_AMERICA: '美洲杯',
-  CLUB_WORLD_CUP: '世俱杯',
-  EUROPA_LEAGUE: '欧罗巴',
-  CHAMPIONS_LEAGUE: '欧冠',
-  PREMIER_LEAGUE: '英超',
-  LA_LIGA: '西甲',
-  SERIE_A: '意甲',
-  BUNDESLIGA: '德甲',
-  LIGUE_1: '法甲',
-  PRIMEIRA_LIGA: '葡超',
-  EREDIVISIE: '荷甲',
-  ARGENTINE_PRIMERA_DIVISION: '阿甲',
-  SWEDISH_ALLSVENSKAN: '瑞超',
-  FINNISH_VEIKKAUSLIIGA: '芬超',
-  K_LEAGUE_1: '韩职',
-  SCOTTISH_FA_CUP: '苏足总杯'
-}
+const COMPETITIONS = BACKTEST_COMPETITIONS.map(competition => competition.code)
+const COMPETITION_NAMES = Object.fromEntries(BACKTEST_COMPETITIONS.map(({ code, name }) => [code, name]))
 const requestedCompetitions = readArgument('--competitions', 'ALL')
 const TARGET_COMPETITIONS = requestedCompetitions === 'ALL'
   ? COMPETITIONS
@@ -235,9 +199,9 @@ async function main() {
       configuredStrategyConstraints)
   }
 
-  const strategies = { ...(config.totalGoalsStrategies || {}) }
+  const strategies = filterBacktestProfiles(config.totalGoalsStrategies)
   const reportRows = existingReport
-    ? existingReport.strategies.filter(row => !(
+    ? existingReport.strategies.filter(row => isBacktestCompetition(row.competition) && !(
         TARGET_COMPETITIONS.includes(row.competition) && TARGET_RANGES.includes(row.range)
       ))
     : []
@@ -690,30 +654,12 @@ function compareMatchesChronologically(left, right) {
 }
 
 function createChronologicalValidationSplit(matches) {
-  if (matches.length < MINIMUM_TRAINING_MATCHES + MINIMUM_VALIDATION_MATCHES) {
+  const splitIndex = chronologicalSplitIndex(matches, VALIDATION_FRACTION, MINIMUM_TRAINING_MATCHES, MINIMUM_VALIDATION_MATCHES)
+  if (splitIndex < 0) {
     return {
       available: false,
       trainingMatches: matches,
       validationMatches: []
-    }
-  }
-  const requestedValidationCount = Math.max(
-    MINIMUM_VALIDATION_MATCHES,
-    Math.ceil(matches.length * VALIDATION_FRACTION)
-  )
-  let splitIndex = Math.max(
-    MINIMUM_TRAINING_MATCHES,
-    matches.length - requestedValidationCount
-  )
-  splitIndex = Math.min(splitIndex, matches.length - MINIMUM_VALIDATION_MATCHES)
-  const boundaryDate = matches[splitIndex]?.matchDate
-  if (boundaryDate) {
-    let sameDateStart = splitIndex
-    while (sameDateStart > MINIMUM_TRAINING_MATCHES && matches[sameDateStart - 1]?.matchDate === boundaryDate) {
-      sameDateStart -= 1
-    }
-    if (matches.length - sameDateStart >= MINIMUM_VALIDATION_MATCHES) {
-      splitIndex = sameDateStart
     }
   }
   return {

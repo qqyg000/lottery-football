@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { filterBacktestProfiles, isBacktestCompetition } from '../frontend/src/backtest-competitions.mjs'
 
 const ROOT = process.cwd()
 const args = process.argv.slice(2)
@@ -30,7 +31,7 @@ if (!outputPath || inputPaths.length === 0) {
 const config = JSON.parse(
   await fs.readFile(path.join(ROOT, 'config/user-config.json'), 'utf8')
 )
-const parameterProfiles = structuredClone(config.parameterProfiles || {})
+const parameterProfiles = structuredClone(filterBacktestProfiles(config.parameterProfiles))
 const expectedProfileKeys = Object.keys(parameterProfiles)
 const expectedRangeKeys = new Set(
   expectedProfileKeys.map(key => key.split(':').slice(0, 2).join(':'))
@@ -43,9 +44,11 @@ for (const inputPath of inputPaths) {
     await fs.readFile(path.resolve(ROOT, inputPath), 'utf8')
   )
   for (const item of checkpoint.baselineVerification || []) {
+    if (!isBacktestCompetition(item.competition)) continue
     baselineByKey.set(item.key, item)
   }
   for (const result of checkpoint.optimizationResults || []) {
+    if (!isBacktestCompetition(result.competition)) continue
     const rangeKey = `${result.competition}:${result.range}`
     if (resultByRange.has(rangeKey)) {
       throw new Error(`duplicate optimization result: ${rangeKey}`)

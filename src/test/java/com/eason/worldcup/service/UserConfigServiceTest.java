@@ -5,6 +5,7 @@ import com.eason.worldcup.model.UserConfig;
 import com.eason.worldcup.model.UserConfig.ParameterProfile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -25,7 +26,7 @@ class UserConfigServiceTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void shouldMigrateLegacyParametersToSeventyTwoIndependentProfiles() throws Exception {
+    void shouldMigrateLegacyParametersToSixtyEightIndependentProfiles() throws Exception {
         Path configPath = tempDirectory.resolve("user-config.json");
         Files.writeString(configPath, """
                 {
@@ -50,8 +51,8 @@ class UserConfigServiceTest {
 
         UserConfig config = service.load();
 
-        assertEquals(72, config.getParameterProfiles().size());
-        assertEquals(36, config.getTotalGoalsStrategies().size());
+        assertEquals(68, config.getParameterProfiles().size());
+        assertEquals(34, config.getTotalGoalsStrategies().size());
         ParameterProfile currentProfile = config.getParameterProfiles().get(UserConfig.parameterProfileKey(
                 Competition.WORLD_CUP,
                 UserConfig.CURRENT_EDITION_PROFILE,
@@ -89,7 +90,7 @@ class UserConfigServiceTest {
     }
 
     @Test
-    void shouldPersistOnlySeventyTwoProfileStructureAfterMigration() throws Exception {
+    void shouldPersistOnlySixtyEightProfileStructureAfterMigration() throws Exception {
         Path configPath = tempDirectory.resolve("user-config.json");
         Files.writeString(configPath, """
                 {
@@ -109,9 +110,9 @@ class UserConfigServiceTest {
         assertFalse(persisted.has("modelFactors"));
         assertFalse(persisted.has("globalParameters"));
         assertTrue(persisted.has("parameterProfiles"));
-        assertEquals(72, persisted.get("parameterProfiles").size());
+        assertEquals(68, persisted.get("parameterProfiles").size());
         assertTrue(persisted.has("totalGoalsStrategies"));
-        assertEquals(36, persisted.get("totalGoalsStrategies").size());
+        assertEquals(34, persisted.get("totalGoalsStrategies").size());
         JsonNode modelFactors = persisted.get("parameterProfiles")
                 .get("WORLD_CUP:CURRENT:STABLE")
                 .get("modelFactors");
@@ -193,6 +194,30 @@ class UserConfigServiceTest {
                 UserConfig.CURRENT_EDITION_PROFILE,
                 UserConfig.STABLE_PARAMETER_PRESET));
         assertEquals(2.5D, savedAgainProfile.getModelFactors().getOfficialMatchWeight());
+    }
+
+    @Test
+    void shouldRemoveScottishFaCupProfilesFromOldConfigWithoutChangingOtherSettings() throws Exception {
+        Path configPath = tempDirectory.resolve("user-config.json");
+        UserConfigService service = createService(configPath);
+        JsonNode expected = objectMapper.readTree(configPath.toFile());
+        ObjectNode legacy = expected.deepCopy();
+        ObjectNode profiles = (ObjectNode) legacy.get("parameterProfiles");
+        ObjectNode strategies = (ObjectNode) legacy.get("totalGoalsStrategies");
+        for (String range : UserConfig.getParameterProfileRanges()) {
+            for (String preset : UserConfig.getParameterPresets()) {
+                profiles.set("SCOTTISH_FA_CUP:" + range + ":" + preset,
+                        profiles.get("WORLD_CUP:" + range + ":" + preset).deepCopy());
+            }
+            strategies.set("SCOTTISH_FA_CUP:" + range, strategies.get("WORLD_CUP:" + range).deepCopy());
+        }
+        objectMapper.writeValue(configPath.toFile(), legacy);
+
+        UserConfig loaded = service.load();
+
+        assertEquals(68, loaded.getParameterProfiles().size());
+        assertEquals(34, loaded.getTotalGoalsStrategies().size());
+        assertEquals(expected, objectMapper.readTree(configPath.toFile()));
     }
 
     private UserConfigService createService(Path configPath) {

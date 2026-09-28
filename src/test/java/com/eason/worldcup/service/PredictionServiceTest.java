@@ -5,6 +5,7 @@ import com.eason.worldcup.model.HeadToHeadOverviewResponse;
 import com.eason.worldcup.model.HistoricalMatch;
 import com.eason.worldcup.model.HistoricalMatchType;
 import com.eason.worldcup.model.MatchSchedule;
+import com.eason.worldcup.model.RecommendationBacktestResponse;
 import com.eason.worldcup.model.UserConfig;
 import org.junit.jupiter.api.Test;
 
@@ -12,12 +13,15 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class PredictionServiceTest {
 
@@ -55,11 +59,36 @@ class PredictionServiceTest {
             Map.entry(Competition.FINNISH_VEIKKAUSLIIGA, period(
                     "2025-04-05", "2025-11-09", "2026-04-04", "2026-11-08")),
             Map.entry(Competition.K_LEAGUE_1, period(
-                    "2025-02-15", "2025-11-30", "2026-02-28", "2026-12-06")),
-            Map.entry(Competition.SCOTTISH_FA_CUP, period(
-                    "2025-08-09", "2026-05-23", "2026-08-01", "2027-05-22")));
+                    "2025-02-15", "2025-11-30", "2026-02-28", "2026-12-06")));
 
     private final PredictionService predictionService = new PredictionService(null, null, null);
+
+    @Test
+    void shouldExcludeScottishFaCupFromAllAndExplicitBettingBacktests() {
+        MatchSchedule schedule = new MatchSchedule();
+        schedule.setMatchId("SCOTTISH-EXCLUDED");
+        schedule.setCompetition(Competition.SCOTTISH_FA_CUP);
+        schedule.setMatchDate(LocalDate.of(2026, 8, 15));
+        schedule.setStatus("COMPLETED");
+        schedule.setHomeScore(1);
+        schedule.setAwayScore(0);
+        schedule.setSportteryMatchId("20260815-001");
+        DataRepository repository = mock(DataRepository.class);
+        when(repository.getSchedules()).thenReturn(List.of(schedule));
+        PredictionService service = new PredictionService(
+                repository, null, mock(SportteryMarketSelectionService.class));
+
+        for (Set<Competition> competitions : List.of(Set.<Competition>of(), Set.of(Competition.SCOTTISH_FA_CUP))) {
+            for (boolean includePreviousEdition : List.of(false, true)) {
+                RecommendationBacktestResponse response = service.queryRecommendationBacktest(
+                        competitions, 1000, null, null, null, null, includePreviousEdition);
+                assertEquals(0, response.getCompletedMatchCount());
+                assertEquals(0, response.getSportteryCompletedMatchCount());
+                assertEquals(0, response.getOddsMatchCount());
+                assertTrue(response.getMatches().isEmpty());
+            }
+        }
+    }
 
     @Test
     void shouldResolveBacktestFactorsByCompetition() {

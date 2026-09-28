@@ -3,6 +3,8 @@ import path from 'node:path'
 
 import { evaluateRecommendationBacktest } from '../frontend/src/recommendation-backtest.mjs'
 import { evaluatePreparedRecommendationSummary } from './wdl-fast-evaluator.mjs'
+import { chronologicalSplitIndex } from './chronological-validation.mjs'
+import { BACKTEST_COMPETITIONS, filterBacktestProfiles, isBacktestCompetition } from '../frontend/src/backtest-competitions.mjs'
 
 const ROOT = process.cwd()
 const API_BASE = process.env.LOTTERY_FOOTBALL_API_BASE || 'http://127.0.0.1:8080'
@@ -59,26 +61,7 @@ const TARGET_RANGES = stringSetOption('TARGET_RANGES')
 const BACKTEST_MEMORY_CACHE = new Map()
 const USE_PREPARED_EVALUATOR = booleanOption('USE_PREPARED_EVALUATOR', true)
 
-const COMPETITIONS = [
-  ['WORLD_CUP', '世界杯'],
-  ['EUROPEAN_CHAMPIONSHIP', '欧洲杯'],
-  ['COPA_AMERICA', '美洲杯'],
-  ['CLUB_WORLD_CUP', '世俱杯'],
-  ['EUROPA_LEAGUE', '欧罗巴'],
-  ['CHAMPIONS_LEAGUE', '欧冠'],
-  ['PREMIER_LEAGUE', '英超'],
-  ['LA_LIGA', '西甲'],
-  ['BUNDESLIGA', '德甲'],
-  ['SERIE_A', '意甲'],
-  ['LIGUE_1', '法甲'],
-  ['PRIMEIRA_LIGA', '葡超'],
-  ['EREDIVISIE', '荷甲'],
-  ['ARGENTINE_PRIMERA_DIVISION', '阿甲'],
-  ['SWEDISH_ALLSVENSKAN', '瑞超'],
-  ['FINNISH_VEIKKAUSLIIGA', '芬超'],
-  ['K_LEAGUE_1', '韩职'],
-  ['SCOTTISH_FA_CUP', '苏足总杯']
-]
+const COMPETITIONS = BACKTEST_COMPETITIONS.map(({ code, name }) => [code, name])
 
 const FORCE_REOPTIMIZE_RANGES = process.env.FORCE_REOPTIMIZE_RANGES == null
   ? new Set([
@@ -431,34 +414,15 @@ function backtestPartition(matches) {
 
 function createChronologicalValidationSplit(backtest) {
   const matches = [...backtest.matches].sort(compareMatchesChronologically)
-  if (!ROBUST_VALIDATION || matches.length < MINIMUM_TRAINING_MATCHES + MINIMUM_VALIDATION_MATCHES) {
+  const splitIndex = ROBUST_VALIDATION
+    ? chronologicalSplitIndex(matches, VALIDATION_FRACTION, MINIMUM_TRAINING_MATCHES, MINIMUM_VALIDATION_MATCHES)
+    : -1
+  if (splitIndex < 0) {
     return {
       available: false,
       fullBacktest: backtestPartition(matches),
       trainingBacktest: backtestPartition(matches),
       validationBacktest: backtestPartition([])
-    }
-  }
-  const requestedValidationCount = Math.max(
-    MINIMUM_VALIDATION_MATCHES,
-    Math.ceil(matches.length * VALIDATION_FRACTION)
-  )
-  let splitIndex = Math.max(
-    MINIMUM_TRAINING_MATCHES,
-    matches.length - requestedValidationCount
-  )
-  splitIndex = Math.min(splitIndex, matches.length - MINIMUM_VALIDATION_MATCHES)
-  const boundaryDate = matches[splitIndex]?.matchDate
-  if (boundaryDate) {
-    let sameDateStart = splitIndex
-    while (
-      sameDateStart > MINIMUM_TRAINING_MATCHES &&
-      matches[sameDateStart - 1]?.matchDate === boundaryDate
-    ) {
-      sameDateStart -= 1
-    }
-    if (matches.length - sameDateStart >= MINIMUM_VALIDATION_MATCHES) {
-      splitIndex = sameDateStart
     }
   }
   return {
@@ -1651,6 +1615,8 @@ async function main() {
     return
   }
   const config = JSON.parse(await fs.readFile(CONFIG_PATH, 'utf8'))
+  config.parameterProfiles = filterBacktestProfiles(config.parameterProfiles)
+  config.totalGoalsStrategies = filterBacktestProfiles(config.totalGoalsStrategies)
   const originalProfiles = structuredClone(config.parameterProfiles)
   let baselineVerification = null
   let optimizationResults = []
@@ -1658,16 +1624,17 @@ async function main() {
     try {
       const checkpoint = JSON.parse(await fs.readFile(CHECKPOINT_PATH, 'utf8'))
       baselineVerification = Array.isArray(checkpoint.baselineVerification)
-        ? checkpoint.baselineVerification
+        ? checkpoint.baselineVerification.filter(item => isBacktestCompetition(item.competition))
         : null
       optimizationResults = Array.isArray(checkpoint.optimizationResults)
         ? checkpoint.optimizationResults.filter(item => (
+            isBacktestCompetition(item.competition) &&
             item.status !== 'CONSTRAINT_FAILED' &&
             !RETRY_RANGES.has(`${item.competition}:${item.range}`)
           ))
         : []
       if (checkpoint.parameterProfiles) {
-        config.parameterProfiles = checkpoint.parameterProfiles
+        config.parameterProfiles = filterBacktestProfiles(checkpoint.parameterProfiles)
       }
       process.stdout.write(`resumed ${optimizationResults.length}/${allCompetitionRanges().length} ranges\n`)
     } catch (error) {

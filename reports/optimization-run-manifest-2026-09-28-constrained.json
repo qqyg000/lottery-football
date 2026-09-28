@@ -1,0 +1,213 @@
+{
+  "startedAt": "2026-09-28T13:35:54.479Z",
+  "baseline": "temp/user-config-before-unconstrained-1790599157963.json",
+  "constraintsRestoredFrom": "reports/optimization-run-manifest-2026-09-19.json",
+  "inputs": [
+    {
+      "file": "target/optimization-constrained-20260928/snapshot.jar",
+      "sha256": "dc126ff92c9955db404609b2f788e7018ac9f40a9358bcd2c6bef8f1c0154370"
+    },
+    {
+      "file": "target/optimization-constrained-20260928/config/user-config.json",
+      "sha256": "5c9b69519c42b6a70e7f39546a40ab5d5b094851e950916e1620fa47a3187e00"
+    },
+    {
+      "file": "target/optimization-constrained-20260928/config/club-competition-schedules.json",
+      "sha256": "49e88d8f615c67853de4e365e2e93628049eb0c599bcc76a67861a6631e4265c"
+    },
+    {
+      "file": "target/optimization-constrained-20260928/config/sporttery-market-selections.json",
+      "sha256": "495e4ff5afb99f8f8a0bac66d7a395437766c1d3b618150a7afe5e939ede4b47"
+    },
+    {
+      "file": "target/optimization-constrained-20260928/user-config.before.json",
+      "sha256": "dc4551702ae25c5099b2a5dda58e7398306d2360c467d79ca926294f87a8cd9a"
+    }
+  ],
+  "sources": [
+    {
+      "file": "scripts/reoptimize-shared-backtest-profiles.mjs",
+      "sha256": "acbae4d1649a1a84c28bb9fe6506c5a9f1657de6866d0a6fda0ba7450e791431"
+    },
+    {
+      "file": "scripts/optimize-total-goals-strategies.mjs",
+      "sha256": "85460874337fb374f27f8b1b9ec54d64022f920ec80005578b3f2bf2bffa2c7b"
+    },
+    {
+      "file": "scripts/chronological-validation.mjs",
+      "sha256": "44f7d6636552337024ebe9a2c56abed51964f66cde05c22237e77158e438c4c6"
+    },
+    {
+      "file": "scripts/wdl-fast-evaluator.mjs",
+      "sha256": "861b3b8e28acfe9978583f14f4e3b106035f43264c7f8a9ecd73a6a1b5c6348f"
+    },
+    {
+      "file": "frontend/src/recommendation-backtest.mjs",
+      "sha256": "0b05bb8eeca247c85afd3ef2dac1468016c0b5b52b6037dd08aa5b54e5d9155a"
+    }
+  ],
+  "backendParallelism": 24,
+  "shards": 9,
+  "finalSimulations": 50000,
+  "baselineSnapshot": "完整缓存，远程刷新关闭；所有新旧方案使用相同数据",
+  "boundaryFix": "保持原场次下限，同日比赛绝不跨训练和验证",
+  "status": "APPLIED",
+  "completedAt": "2026-09-28T13:53:42.140Z",
+  "search": {
+    "settings": {
+      "LOTTERY_FOOTBALL_API_BASE": "http://127.0.0.1:18080",
+      "OPTIMIZER_CONFIG_PATH": "target/optimization-constrained-20260928/config/user-config.json",
+      "FINAL_SIMULATIONS": "50000",
+      "COARSE_SIMULATIONS": "8000",
+      "MODEL_VARIANT_COUNT": "20",
+      "FINALIST_MODEL_COUNT": "4",
+      "COARSE_RULE_CANDIDATES": "10000",
+      "FINAL_RULE_CANDIDATES": "30000",
+      "REFINEMENT_PASSES": "2",
+      "BACKTEST_PARALLELISM": "3",
+      "ROBUST_VALIDATION": "true",
+      "TRAINING_STABILITY_BLOCKS": "3",
+      "HOLDOUT_CANDIDATE_LIMIT": "24",
+      "USE_PREPARED_EVALUATOR": "true",
+      "SAMPLING_TOLERANCE": "0.03",
+      "SAMPLING_MAX_INCREASE": "0.03",
+      "STRICT_SAMPLING_BAND": "false",
+      "MINIMUM_AGGRESSIVE_SAMPLING_RATE": "0.333",
+      "MINIMUM_AGGRESSIVE_ROI_GAP": "0",
+      "VALIDATION_FRACTION": "0.3",
+      "MINIMUM_TRAINING_MATCHES": "10",
+      "MINIMUM_VALIDATION_MATCHES": "6",
+      "MINIMUM_TRAINING_ROI": "0",
+      "MINIMUM_VALIDATION_ROI": "0",
+      "MINIMUM_STABILITY_BLOCK_MATCHES": "3"
+    },
+    "groups": [
+      [
+        "WORLD_CUP",
+        "SCOTTISH_FA_CUP"
+      ],
+      [
+        "EUROPEAN_CHAMPIONSHIP",
+        "ARGENTINE_PRIMERA_DIVISION"
+      ],
+      [
+        "COPA_AMERICA",
+        "CLUB_WORLD_CUP"
+      ],
+      [
+        "EUROPA_LEAGUE",
+        "CHAMPIONS_LEAGUE"
+      ],
+      [
+        "PREMIER_LEAGUE",
+        "LA_LIGA"
+      ],
+      [
+        "BUNDESLIGA",
+        "SERIE_A"
+      ],
+      [
+        "LIGUE_1",
+        "PRIMEIRA_LIGA"
+      ],
+      [
+        "EREDIVISIE",
+        "SWEDISH_ALLSVENSKAN"
+      ],
+      [
+        "FINNISH_VEIKKAUSLIIGA",
+        "K_LEAGUE_1"
+      ]
+    ]
+  },
+  "audit": {
+    "violations": 0,
+    "activeWdl": 10,
+    "activeGoals": 10
+  },
+  "application": {
+    "appliedAt": "2026-09-28T14:44:52.673Z",
+    "configPath": "config/user-config.json",
+    "configurationBackup": "temp/user-config-before-excluding-scottish-1790606587113.json",
+    "sha256": "95743794cbba5e8902eb0c9eb6fa9e260008cb4c08ec05f068b93ba438f1bd9b",
+    "verifiedBy": "8080服务68套胜平负与34套进球数逐字段一致，其余赛事参数保持不变"
+  },
+  "testResults": {
+    "javaTests": 229,
+    "nodeTests": 39,
+    "mavenPackage": "BUILD SUCCESS"
+  },
+  "finalVerification": {
+    "wdl": "USE_PREPARED_EVALUATOR=false，复验72套及原采样率与ROI门槛",
+    "goals": "fresh 50000-simulation API backtest，页面算法独立复算全量、训练和验证段结算",
+    "live": {
+      "configHttpStatus": 200,
+      "health": {
+        "message": "竞彩足球预测服务运行中",
+        "status": "OK"
+      },
+      "pageHttpStatus": 200
+    },
+    "scopeCheck": {
+      "checkedAt": "2026-09-28T14:43:51.169Z",
+      "base": "http://127.0.0.1:8080",
+      "parameterProfiles": 68,
+      "totalGoalsStrategies": 34,
+      "otherParametersUnchanged": true,
+      "scopedSyncCurrentAndPreviousEmpty": true,
+      "scopedAsyncEmpty": true,
+      "allMatches": null,
+      "allResultsExcludeScottishFaCup": null,
+      "homepageStatus": 200
+    }
+  },
+  "reportingSources": [
+    {
+      "file": "scripts/generate-optimization-summary.mjs",
+      "sha256": "26b28bc53ec1cddcfae805e28d3b408c1999923b711c98ecf85c4be733663bd1"
+    },
+    {
+      "file": "target/optimization-constrained-20260928/audit-and-compare.mjs",
+      "sha256": "3708b8dda6f30f2b70f30e6956f1be2984e003dc451e65f7beb896aa569d2d3a"
+    }
+  ],
+  "isolatedServiceStoppedAt": "2026-09-28T13:55:23.698Z",
+  "scopeAdjustment": {
+    "updatedAt": "2026-09-28T14:44:52.673Z",
+    "excludedCompetitions": [
+      "SCOTTISH_FA_CUP"
+    ],
+    "reportBackup": "temp/backtest-reports-before-scope-1790606692666",
+    "previousCounts": {
+      "competitions": 18,
+      "wdl": 72,
+      "goals": 36
+    },
+    "currentCounts": {
+      "competitions": 17,
+      "wdl": 68,
+      "goals": 34
+    },
+    "note": "仅移除不参与投注回测的苏足总杯，保留其余赛事原有50,000次模拟复验指标，本次没有重新搜索参数",
+    "previousApplication": {
+      "appliedAt": "2026-09-28T13:54:37.548Z",
+      "configPath": "config/user-config.json",
+      "configurationBackup": "temp/user-config-before-constrained-1790603677545.json",
+      "sha256": "91c95f09ca2ad718aedd4637c347c4b93efe6ef9ba46b1e7dac7e894c4fab59f",
+      "verifiedBy": "8080服务读取的72套胜平负及36套进球数配置与候选逐字段一致"
+    },
+    "jarSha256": "a437443876f86b914703819ec9b972ed6aabc34adbd194cdef1520ca78dca777",
+    "checks": {
+      "checkedAt": "2026-09-28T14:43:51.169Z",
+      "base": "http://127.0.0.1:8080",
+      "parameterProfiles": 68,
+      "totalGoalsStrategies": 34,
+      "otherParametersUnchanged": true,
+      "scopedSyncCurrentAndPreviousEmpty": true,
+      "scopedAsyncEmpty": true,
+      "allMatches": null,
+      "allResultsExcludeScottishFaCup": null,
+      "homepageStatus": 200
+    }
+  }
+}

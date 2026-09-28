@@ -98,10 +98,7 @@ public class PredictionService {
                     LocalDate.of(2026, 4, 4), LocalDate.of(2026, 11, 8))),
             Map.entry(Competition.K_LEAGUE_1, new CompetitionBacktestPeriod(
                     LocalDate.of(2025, 2, 15), LocalDate.of(2025, 11, 30),
-                    LocalDate.of(2026, 2, 28), LocalDate.of(2026, 12, 6))),
-            Map.entry(Competition.SCOTTISH_FA_CUP, new CompetitionBacktestPeriod(
-                    LocalDate.of(2025, 8, 9), LocalDate.of(2026, 5, 23),
-                    LocalDate.of(2026, 8, 1), LocalDate.of(2027, 5, 22))));
+                    LocalDate.of(2026, 2, 28), LocalDate.of(2026, 12, 6))));
 
     private final DataRepository dataRepository;
 

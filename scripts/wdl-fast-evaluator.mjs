@@ -8,7 +8,7 @@ const KEYS = ['win', 'draw', 'lose']
 const preparedMatches = new WeakMap()
 
 // 仅供固定比赛快照的离线搜索使用，最终验收仍使用页面回测算法
-function prepareMatch(match) {
+export function prepareRecommendationMatch(match) {
   const cached = preparedMatches.get(match)
   if (cached) return cached
   const selection = getAutomaticMarketSelection(match)
@@ -86,7 +86,7 @@ export function evaluatePreparedRecommendationSummary(matches, globalParameters,
   let totalReturn = 0
   const returns = []
   for (const match of matches) {
-    const prepared = prepareMatch(match)
+    const prepared = prepareRecommendationMatch(match)
     if (!prepared) continue
     const choice = prepared.switch && prepared.switchProbability >= globalParameters.handicapRecommendationThreshold
       ? prepared.switch

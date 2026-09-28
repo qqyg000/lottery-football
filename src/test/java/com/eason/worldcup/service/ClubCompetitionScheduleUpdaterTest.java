@@ -32,6 +32,27 @@ class ClubCompetitionScheduleUpdaterTest {
     private final ClubCompetitionScheduleUpdater updater = new ClubCompetitionScheduleUpdater(objectMapper);
 
     @Test
+    void shouldLoadAndDeduplicateCacheWithoutRemoteRefresh(@TempDir Path tempDir) throws Exception {
+        Path cachePath = tempDir.resolve("club-competition-schedules.json");
+        MatchSchedule cached = completedClubFriendlySchedule("OFFLINE-CACHE", "阿森纳", "切尔西", 2, 1);
+        cached.setCompetition(Competition.PREMIER_LEAGUE);
+        cached.setGroupName("英超");
+        cached.setMatchDate(LocalDate.of(2026, 9, 20));
+        objectMapper.writeValue(cachePath.toFile(), List.of(cached));
+        byte[] originalCache = java.nio.file.Files.readAllBytes(cachePath);
+        ReflectionTestUtils.setField(updater, "cachePath", cachePath.toString());
+        ReflectionTestUtils.setField(updater, "enabled", false);
+        List<MatchSchedule> schedules = new ArrayList<>();
+
+        assertEquals(1, updater.updateSchedules(schedules, false));
+        assertEquals(1, updater.updateSchedules(schedules, false));
+        assertEquals(1, schedules.size());
+        assertEquals(2, schedules.get(0).getHomeScore());
+        assertEquals(LocalDate.of(2026, 9, 20), schedules.get(0).getMatchDate());
+        org.junit.jupiter.api.Assertions.assertArrayEquals(originalCache, java.nio.file.Files.readAllBytes(cachePath));
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void shouldConfigureRequestedHistoricalFotMobSources() {
         List<ClubCompetitionScheduleUpdater.FotMobLeagueSource> sources =

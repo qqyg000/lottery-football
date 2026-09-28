@@ -533,9 +533,10 @@ public class ClubCompetitionScheduleUpdater {
             boolean includeSupplementalSources,
             BiConsumer<Integer, String> progressConsumer) {
         if (!enabled) {
-            log.info("Club competition schedule update is disabled.");
+            int cachedCount = mergeSchedules(schedules, loadCachedSchedules());
+            log.info("Club competition remote refresh is disabled; loaded {} cached schedule rows.", cachedCount);
             notifyRefreshProgress(progressConsumer, 100, "俱乐部赛事远程刷新已禁用，继续使用缓存数据");
-            return 0;
+            return cachedCount;
         }
 
         ZoneId zoneId = ZoneId.of(targetZone);

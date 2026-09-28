@@ -158,14 +158,28 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 
 ### 参数优化
 
-- 胜平负优化入口：`scripts/reoptimize-shared-backtest-profiles.mjs`
-- 进球数优化入口：`scripts/optimize-total-goals-strategies.mjs`，使用 `--robust-validation` 开启时间留出验证
-- 时间留出验证按完整比赛日划分前约 70% 训练集和后约 30% 验证集，训练集用于搜索与稳定性排名，验证集只用于通过或拒绝候选
-- 候选按实际保存的完整模型因子重新回测，统一核验训练、验证和全量指标；无法满足门槛时关闭对应推荐，样本不足时复用含上届方案并执行额外验证
+当前恢复有约束优化，覆盖17类赛事的68套胜平负和34套共用进球数策略。苏足总杯不属于投注回测范围，页面、优化器和结果汇总共用 `frontend/src/backtest-competitions.mjs` 中的赛事名单：
 
-胜平负搜索预计算比赛快照的选盘与结算信息；独立复验可设置 `USE_PREPARED_EVALUATOR=false` 使用页面回测算法。原方案通过全部门槛时保留为基准，仅在新候选满足采样率窗口且训练稳定性更高时替换，不按验证集 ROI 排名。后端缓存球队名归一化结果，并在同赛事、同截止日期的模型间共用只读历史列表以减少重复计算；模型重建时清除历史列表缓存。
+- 胜平负入口：`scripts/reoptimize-shared-backtest-profiles.mjs`，使用 `--reoptimize-all` 全量重算，默认开启时间留出验证
+- 稳健全量ROI至少5%，训练和验证ROI不低于0；激进训练与全量ROI须高于稳健，各分区采样率不得高于稳健
+- 稳健采样率通常至少60%，仅本届欧洲杯至少40%；激进通常至少50%，仅本届欧洲杯、芬超严格大于33.3%，仅本届韩职至少40%
+- 优先遵守原方案采样率上下3个百分点的窗口；按上一版规则，无可行解时允许退到赛事硬下限；原方案合规且训练稳定性不低于新候选时保留原方案
+- 进球数入口：`scripts/optimize-total-goals-strategies.mjs`，使用 `--robust-validation --strict-constraints`，采样率和单注命中率按33.3%、25%、20%、10%逐档搜索，上一档无可行解才进入下一档
+- 进球数训练和全量ROI须严格大于0，验证ROI不低于0，训练、验证和全量均须通过同档采样率与命中率门槛
+- 按完整比赛日划分前约70%训练、后约30%验证，至少10场训练和6场验证；边界不得切开同一天，无法同时满足时按样本不足处理
+- 训练段分为3个连续时间块，按收益扣除波动和下行惩罚后的分数排名；候选只在训练段搜索与细化，验证段用于通过或拒绝，不用于ROI排名
+- 胜平负留出候选上限24个，进球数上限12个；无合格方案时关闭推荐，小样本仅按既有回退规则及额外验证处理
+- 每个范围的进球数仍共用对应稳健模型；最终以实际保存参数和每场50,000次模拟重新回测，使用页面算法独立核验结算与门槛
 
-隔离优化可通过胜平负优化器的 `OPTIMIZER_CONFIG_PATH` 或进球数优化器的 `--config-path` 指定配置副本。并行运行时使用独立检查点和报告路径，进球数搜索添加 `--dry-run`，复验通过后再合并正式配置。
+隔离运行可通过胜平负优化器的 `OPTIMIZER_CONFIG_PATH` 或进球数优化器的 `--config-path` 指定配置副本。并行任务必须使用不同检查点、缓存前缀和报告路径，进球数搜索添加 `--dry-run`，复验全部通过后再合并正式配置。完整运行设置、数据及算法SHA-256见 `reports/optimization-run-manifest-2026-09-28-constrained.json`。
+
+隔离服务使用独立工作目录以及JAR、赛程缓存、赔率缓存和用户配置副本。关闭远程刷新时仍加载本地赛程缓存，避免离线回测漏数。示例启动参数：
+
+```powershell
+java -Xmx20g -jar snapshot.jar --server.port=18080 --recommendation-backtest.parallelism=24 --worldcup.schedule-update.enabled=false --worldcup.espn-update.enabled=false --champions-league.espn-update.enabled=false --club-competitions.schedule-update.enabled=false --sporttery.result-update.enabled=false
+```
+
+历史验证段已被历次优化反复使用，留出门禁通过不等于独立测试通过，也不代表未来收益保证。`scripts/optimize-unconstrained-strategies.mjs` 保留作为无门槛实验入口，不参与当前有约束优化。
 
 ## 模型说明
 

@@ -671,6 +671,7 @@ import {
   getRecommendationOddsDetails as getSharedRecommendationOddsDetails,
   getTotalGoalsRecommendations as getSharedTotalGoalsRecommendations
 } from './recommendation-backtest.mjs'
+import { BACKTEST_COMPETITIONS } from './backtest-competitions.mjs'
 
 const FIXED_SIMULATIONS = 50000
 const BACKTEST_PROGRESS_POLL_INTERVAL = 300
@@ -679,23 +680,7 @@ const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
 const UTC_PLUS_EIGHT_TIME_ZONE = 'Asia/Shanghai'
 const COMPETITIONS = [
   { code: 'ALL', name: '全部' },
-  { code: 'WORLD_CUP', name: '世界杯' },
-  { code: 'EUROPEAN_CHAMPIONSHIP', name: '欧洲杯' },
-  { code: 'COPA_AMERICA', name: '美洲杯' },
-  { code: 'CLUB_WORLD_CUP', name: '世俱杯' },
-  { code: 'EUROPA_LEAGUE', name: '欧罗巴' },
-  { code: 'CHAMPIONS_LEAGUE', name: '欧冠' },
-  { code: 'PREMIER_LEAGUE', name: '英超' },
-  { code: 'LA_LIGA', name: '西甲' },
-  { code: 'BUNDESLIGA', name: '德甲' },
-  { code: 'SERIE_A', name: '意甲' },
-  { code: 'LIGUE_1', name: '法甲' },
-  { code: 'PRIMEIRA_LIGA', name: '葡超' },
-  { code: 'EREDIVISIE', name: '荷甲' },
-  { code: 'ARGENTINE_PRIMERA_DIVISION', name: '阿甲' },
-  { code: 'SWEDISH_ALLSVENSKAN', name: '瑞超' },
-  { code: 'FINNISH_VEIKKAUSLIIGA', name: '芬超' },
-  { code: 'K_LEAGUE_1', name: '韩职' }
+  ...BACKTEST_COMPETITIONS
 ]
 const CURRENT_EDITION_START_DATES = {
   WORLD_CUP: '2026-06-11',
@@ -714,8 +699,7 @@ const CURRENT_EDITION_START_DATES = {
   ARGENTINE_PRIMERA_DIVISION: '2026-01-25',
   SWEDISH_ALLSVENSKAN: '2026-04-04',
   FINNISH_VEIKKAUSLIIGA: '2026-04-04',
-  K_LEAGUE_1: '2026-02-28',
-  SCOTTISH_FA_CUP: '2026-08-01'
+  K_LEAGUE_1: '2026-02-28'
 }
 const SELECTION_COOKIE = 'worldcup_recommendation_rows'
 const SELECTION_COOKIE_MAX_AGE = 60 * 60 * 24 * 180

@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { BACKTEST_COMPETITIONS, isBacktestCompetition } from '../frontend/src/backtest-competitions.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const WDL_REPORT_PATH = resolveArgument(
@@ -18,26 +19,7 @@ const OUTPUT_PATH = resolveArgument(
   '--output',
   'reports/all-competition-strategy-summary-2026-08-22.md'
 )
-const COMPETITION_ORDER = [
-  'WORLD_CUP',
-  'EUROPEAN_CHAMPIONSHIP',
-  'COPA_AMERICA',
-  'CLUB_WORLD_CUP',
-  'EUROPA_LEAGUE',
-  'CHAMPIONS_LEAGUE',
-  'PREMIER_LEAGUE',
-  'LA_LIGA',
-  'BUNDESLIGA',
-  'SERIE_A',
-  'LIGUE_1',
-  'PRIMEIRA_LIGA',
-  'EREDIVISIE',
-  'ARGENTINE_PRIMERA_DIVISION',
-  'SWEDISH_ALLSVENSKAN',
-  'FINNISH_VEIKKAUSLIIGA',
-  'K_LEAGUE_1',
-  'SCOTTISH_FA_CUP'
-]
+const COMPETITION_ORDER = BACKTEST_COMPETITIONS.map(competition => competition.code)
 const RANGE_ORDER = ['PREVIOUS', 'CURRENT']
 const PRESET_ORDER = ['STABLE', 'AGGRESSIVE']
 const JSON_EOL = process.platform === 'win32' ? '\r\n' : '\n'
@@ -59,12 +41,12 @@ const goalsOptimizationByKey = new Map((goalsOptimizationReport.strategies || []
 const competitionIndex = new Map(COMPETITION_ORDER.map((competition, index) => [competition, index]))
 const rangeIndex = new Map(RANGE_ORDER.map((range, index) => [range, index]))
 const presetIndex = new Map(PRESET_ORDER.map((preset, index) => [preset, index]))
-const wdlRows = [...(wdlReport.verification || [])].sort((left, right) => (
+const wdlRows = (wdlReport.verification || []).filter(row => isBacktestCompetition(row.competition)).sort((left, right) => (
   orderOf(competitionIndex, left.competition) - orderOf(competitionIndex, right.competition) ||
   orderOf(rangeIndex, left.range) - orderOf(rangeIndex, right.range) ||
   orderOf(presetIndex, left.preset) - orderOf(presetIndex, right.preset)
 ))
-const goalsRows = [...(goalsVerificationReport.strategies || [])].sort((left, right) => (
+const goalsRows = (goalsVerificationReport.strategies || []).filter(row => isBacktestCompetition(row.competition)).sort((left, right) => (
   orderOf(competitionIndex, left.competition) - orderOf(competitionIndex, right.competition) ||
   orderOf(rangeIndex, left.range) - orderOf(rangeIndex, right.range)
 ))
@@ -82,10 +64,10 @@ const lines = [
   '- 胜平负命中率按命中比赛数除以推荐比赛数计算，进球数命中率按命中注数除以推荐注数计算；ROI 按总返奖除以总投入减一计算',
   '- 仅本届小样本沿用含上届参数时，本表仍展示仅本届直接样本表现，并在状态列标明参数来源',
   '',
-  '## 胜平负方案（72 套）',
+  `## 胜平负方案（${wdlRows.length} 套）`,
   '',
-  '| 赛事 | 范围 | 方案 | 状态 | 采样数 | 采样率 | 命中率 | ROI |',
-  '| --- | --- | --- | --- | ---: | ---: | ---: | ---: |'
+  '| 赛事 | 范围 | 方案 | 状态 | 采样数 | 采样率 | 命中率 | 全量ROI | 训练ROI | 验证ROI |',
+  '| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |'
 ]
 
 for (const row of wdlRows) {
@@ -102,16 +84,18 @@ for (const row of wdlRows) {
     sampleText(metrics.recommendedMatchCount, row.oddsMatchCount),
     percent(metrics.samplingRate, row.oddsMatchCount > 0),
     percent(hitRate),
-    percent(metrics.roi)
+    percent(metrics.roi),
+    percent(row.robustness?.trainingMetrics?.roi),
+    percent(row.robustness?.validationMetrics?.roi)
   ].map(tableCell).join(' | ').replace(/^/, '| ').concat(' |'))
 }
 
 lines.push(
   '',
-  '## 进球数方案（36 套，稳健/激进共用）',
+  `## 进球数方案（${goalsRows.length} 套，稳健/激进共用）`,
   '',
-  '| 赛事 | 范围 | 状态 | 采样数 | 采样率 | 命中率 | ROI |',
-  '| --- | --- | --- | --- | ---: | ---: | ---: | ---: |'
+  '| 赛事 | 范围 | 状态 | 采样数 | 采样率 | 命中率 | 全量ROI | 训练ROI | 验证ROI |',
+  '| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |'
 )
 
 for (const row of goalsRows) {
@@ -127,7 +111,9 @@ for (const row of goalsRows) {
     sampleText(metrics.recommendedMatchCount, metrics.availableMatchCount),
     percent(samplingRate, metrics.availableMatchCount > 0),
     percent(metrics.hitRate),
-    percent(metrics.roi)
+    percent(metrics.roi),
+    percent(row.robustnessMetrics?.trainingMetrics?.roi),
+    percent(row.robustnessMetrics?.validationMetrics?.roi)
   ].map(tableCell).join(' | ').replace(/^/, '| ').concat(' |'))
 }
 
@@ -138,7 +124,9 @@ lines.push(
   '- 胜平负按比赛日期执行 70% 训练、30% 最终留出验证，同一天比赛不跨分区；训练段再按连续时间块计算 ROI 稳定性并固定有限候选池，最终验证集只作门禁',
   '- 胜平负启用方案均满足训练 ROI、验证 ROI 非负；稳健 ROI 不低于 5%，激进 ROI 严格高于对应稳健方案',
   '- 进球数按训练段连续时间块稳定性筛选候选；启用方案均满足对应采样率/命中率分档、训练及全样本 ROI 为正、验证 ROI 非负',
-  '- 无数据、验证样本不足或约束无法同时满足的方案均关闭，不以降低门禁换取表面 ROI',
+  '- 无合格方案则关闭；小样本只按原规则尝试沿用含上届参数，通过本届门禁后才启用，无有效样本的方案不能解释为通过验证',
+  '- 同日边界可能使训练/验证比例偏离70/30，仍须满足至少10场训练、6场验证；没有可用验证段时显示“--”',
+  '- 历史验证段已被历次优化重复使用，只能用于约束复验，不能视为完全未接触的测试集，也不能证明没有过拟合或保证未来收益',
   '',
   '## 原始报告',
   '',
@@ -181,6 +169,7 @@ function wdlStatus(status) {
   const labels = {
     OPTIMIZED: '启用',
     RETAINED_ROBUST_BASELINE: '保留原方案（复验通过）',
+    FALLBACK_TO_PREVIOUS: '沿用含上届参数（本届门禁通过）',
     CLOSED_FINAL_VERIFICATION_FAILED: '关闭（最终复验未通过）',
     CLOSED_CONSTRAINTS_NOT_MET: '关闭（稳健约束未通过）',
     CLOSED_INSUFFICIENT_VALIDATION_SAMPLE: '关闭（验证样本不足或门禁失败）',
