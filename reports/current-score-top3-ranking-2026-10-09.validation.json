@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-09T03:21:33.088Z",
+  "rows": 34,
+  "checkedMatches": 2860,
+  "samePresetSamples": true,
+  "sortedRankings": true,
+  "apiChecks": [
+    {
+      "competition": "COPA_AMERICA",
+      "preset": "STABLE",
+      "matched": 32,
+      "hits": 16
+    },
+    {
+      "competition": "EUROPEAN_CHAMPIONSHIP",
+      "preset": "AGGRESSIVE",
+      "matched": 51,
+      "hits": 23
+    },
+    {
+      "competition": "WORLD_CUP",
+      "preset": "STABLE",
+      "matched": 156,
+      "hits": 51
+    },
+    {
+      "competition": "PREMIER_LEAGUE",
+      "preset": "STABLE",
+      "matched": 45,
+      "hits": 1
+    }
+  ]
+}
