@@ -2,7 +2,8 @@ server:
   port: 8080
 
 recommendation-backtest:
-  parallelism: 4
+  # 0 表示按逻辑核心数预留4核，自动使用最多24个回测线程
+  parallelism: ${BACKTEST_PARALLELISM:0}
 
 spring:
   application:

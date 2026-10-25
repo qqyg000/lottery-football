@@ -158,20 +158,37 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 
 ### 参数优化
 
-当前恢复有约束优化，覆盖17类赛事的68套胜平负和34套共用进球数策略。苏足总杯不属于投注回测范围，页面、优化器和结果汇总共用 `frontend/src/backtest-competitions.mjs` 中的赛事名单：
+统一优化入口为 `scripts/optimize-constrained-strategies.mjs`，覆盖17类赛事的68套胜平负和34套共用进球数策略。苏足总杯不属于投注回测范围，页面、优化器和结果汇总共用 `frontend/src/backtest-competitions.mjs` 中的赛事名单：
 
-- 胜平负入口：`scripts/reoptimize-shared-backtest-profiles.mjs`，使用 `--reoptimize-all` 全量重算，默认开启时间留出验证
+- Node Worker Threads 按赛事并行搜索，Java线程池并行计算比赛预测，赛事内先处理含上届再处理仅本届，保证小样本回退引用的是本轮已验证策略
 - 稳健全量ROI至少5%，训练和验证ROI不低于0；激进训练与全量ROI须高于稳健，各分区采样率不得高于稳健
 - 稳健采样率通常至少60%，仅本届欧洲杯至少40%；激进通常至少50%，仅本届欧洲杯、芬超严格大于33.3%，仅本届韩职至少40%
 - 优先遵守原方案采样率上下3个百分点的窗口；按上一版规则，无可行解时允许退到赛事硬下限；原方案合规且训练稳定性不低于新候选时保留原方案
-- 进球数入口：`scripts/optimize-total-goals-strategies.mjs`，使用 `--robust-validation --strict-constraints`，采样率和单注命中率按33.3%、25%、20%、10%逐档搜索，上一档无可行解才进入下一档
+- 进球数采样率和单注命中率按33.3%、25%、20%、10%逐档搜索，上一档无可行解才进入下一档
 - 进球数训练和全量ROI须严格大于0，验证ROI不低于0，训练、验证和全量均须通过同档采样率与命中率门槛
 - 按完整比赛日划分前约70%训练、后约30%验证，至少10场训练和6场验证；边界不得切开同一天，无法同时满足时按样本不足处理
-- 训练段分为3个连续时间块，按收益扣除波动和下行惩罚后的分数排名；候选只在训练段搜索与细化，验证段用于通过或拒绝，不用于ROI排名
-- 胜平负留出候选上限24个，进球数上限12个；无合格方案时关闭推荐，小样本仅按既有回退规则及额外验证处理
+- 固定种子生成候选，训练段分为3个连续时间块，收益向固定先验收缩，并扣除不确定性、跨块波动和下行风险；最终排序进一步扣除参数小幅扰动后的收益退化
+- 粗搜每场8,000次模拟，训练段选择最多4个精搜模型并保留原模型对照，精搜每场50,000次模拟；验证段只用于通过或拒绝，不用于ROI排名或追加搜索
+- 验证前保存候选冻结文件，胜平负每档候选上限24个，进球数全部层级合计上限12个；无合格方案时关闭推荐，小样本仅按既有回退规则及额外验证处理
+- 训练段内增加逐折滚动诊断，每折只用更早时间块选择模型和规则，再在下一块结算；进球数逐折使用更早选择的稳健模型，避免沿用整个训练段选出的模型
 - 每个范围的进球数仍共用对应稳健模型；最终以实际保存参数和每场50,000次模拟重新回测，使用页面算法独立核验结算与门槛
 
-隔离运行可通过胜平负优化器的 `OPTIMIZER_CONFIG_PATH` 或进球数优化器的 `--config-path` 指定配置副本。并行任务必须使用不同检查点、缓存前缀和报告路径，进球数搜索添加 `--dry-run`，复验全部通过后再合并正式配置。完整运行设置、数据及算法SHA-256见 `reports/optimization-run-manifest-2026-09-28-constrained.json`。
+推荐通过 PowerShell 入口自动保存数据快照、启动隔离服务并管理工作线程。必须先构建JAR，优化时不要执行 `mvn clean`，避免删除运行中的快照和缓存：
+
+```powershell
+mvn package
+.\target\node\npm.cmd --prefix frontend test
+# 不加 -Apply 时只生成候选配置和报告
+.\scripts\run-constrained-optimization.ps1 -Workers 24 -BackendParallelism 24 -Apply
+# 构建成功且优化完成后，分发目录会同时复制JAR和本次参数、赛程、赔率缓存
+.\scripts\restart-service.ps1
+# 对重启后的服务复验全部68套胜平负与34套进球数，并与优化快照比较
+.\target\node\node.exe scripts\verify-constrained-strategies.mjs
+```
+
+默认预留4个逻辑核心，Java回测并行度最多24，可通过环境变量 `BACKTEST_PARALLELISM` 或 `--recommendation-backtest.parallelism` 覆盖。`--workers` 控制Node工作线程数，实际不超过17个赛事任务。运行清单记录输入文件与算法SHA-256、硬件、参数、随机种子来源和分区日期；缓存单独验证数据及自身内容指纹。中断后通过 `-Directory 原快照目录 -Resume` 恢复，工作线程等设置须与原运行一致，数据、代码或设置变化时拒绝复用旧结果。
+
+2026-10-25运行结果见 `reports/constrained-robust-optimization-2026-10-25.md` 及同名JSON。原有两个独立优化入口保留供历史结果复现；新的统一入口负责本轮完整搜索、同快照对照、约束审计、参数备份及原子应用。
 
 隔离服务使用独立工作目录以及JAR、赛程缓存、赔率缓存和用户配置副本。关闭远程刷新时仍加载本地赛程缓存，避免离线回测漏数。示例启动参数：
 
@@ -179,7 +196,7 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 java -Xmx20g -jar snapshot.jar --server.port=18080 --recommendation-backtest.parallelism=24 --worldcup.schedule-update.enabled=false --worldcup.espn-update.enabled=false --champions-league.espn-update.enabled=false --club-competitions.schedule-update.enabled=false --sporttery.result-update.enabled=false
 ```
 
-历史验证段已被历次优化反复使用，留出门禁通过不等于独立测试通过，也不代表未来收益保证。`scripts/optimize-unconstrained-strategies.mjs` 保留作为无门槛实验入口，不参与当前有约束优化。
+历史验证段已被历次优化反复使用，本轮也作为门禁，不能当成独立测试。滚动诊断使用各折当时选出的参数，覆盖最终关闭的赛事，必须与最终启用方案的全量ROI分开阅读；进球数与稳健方案共用模型，两个玩法的门禁也不独立。本轮部分滚动诊断仍为负收益，不能仅凭全量或门禁ROI认定策略具有未来盈利能力。`scripts/optimize-unconstrained-strategies.mjs` 保留作为无门槛实验入口，不参与当前有约束优化。
 
 ## 模型说明
 

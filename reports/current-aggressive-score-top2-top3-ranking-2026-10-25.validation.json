@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-25T10:14:35.257Z",
+  "competitions": 17,
+  "checkedMatches": 1713,
+  "coverageDifferences": [],
+  "sortedRankings": true,
+  "monotonicTopN": true,
+  "verifiedSnapshotInputs": 4,
+  "productionProfilesMatch": true,
+  "status": "PASSED"
+}

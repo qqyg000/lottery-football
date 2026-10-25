@@ -47,9 +47,11 @@ public class RecommendationBacktestJobService {
 
     public RecommendationBacktestJobService(
             PredictionService predictionService,
-            @Value("${recommendation-backtest.parallelism:4}") int parallelism) {
+            @Value("${recommendation-backtest.parallelism:0}") int parallelism) {
         this.predictionService = predictionService;
-        int threadCount = Math.max(1, Math.min(parallelism, Runtime.getRuntime().availableProcessors()));
+        int processors = Runtime.getRuntime().availableProcessors();
+        int requestedThreads = parallelism <= 0 ? Math.min(24, Math.max(1, processors - 4)) : parallelism;
+        int threadCount = Math.max(1, Math.min(requestedThreads, processors));
         AtomicInteger threadSequence = new AtomicInteger();
         executorService = Executors.newFixedThreadPool(threadCount, runnable -> {
             Thread thread = new Thread(

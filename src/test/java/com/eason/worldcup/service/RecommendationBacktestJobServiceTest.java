@@ -39,6 +39,29 @@ class RecommendationBacktestJobServiceTest {
         }
     }
 
+    @Test
+    void shouldAutoSizeBacktestPoolWhenParallelismIsZero() throws Exception {
+        if (Runtime.getRuntime().availableProcessors() < 6) {
+            return;
+        }
+        BlockingPredictionService predictionService = new BlockingPredictionService();
+        RecommendationBacktestJobService service = new RecommendationBacktestJobService(predictionService, 0);
+        try {
+            RecommendationBacktestJobResponse first = startJob(service);
+            RecommendationBacktestJobResponse second = startJob(service);
+
+            assertTrue(predictionService.awaitBothJobsStarted());
+            assertEquals(2, predictionService.getMaximumConcurrentJobs());
+
+            predictionService.releaseJobs();
+            awaitCompleted(service, first.getJobId());
+            awaitCompleted(service, second.getJobId());
+        } finally {
+            predictionService.releaseJobs();
+            service.shutdown();
+        }
+    }
+
     private RecommendationBacktestJobResponse startJob(RecommendationBacktestJobService service) {
         return service.start(
                 Set.of(Competition.WORLD_CUP),

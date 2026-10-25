@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-25T10:28:48.010Z",
+  "status": "PASSED",
+  "competitions": 17,
+  "checkedMatches": 1713,
+  "groups": 3,
+  "actualRanksRecomputed": true,
+  "uniqueCandidateScores": true,
+  "pairCountsMatchSingleRanks": true,
+  "rank12MatchesSourceTop2": true,
+  "sumOfThreePairHitsEqualsTwiceTop3Hits": true,
+  "sortedDescending": true,
+  "productionProfilesMatch": true
+}
