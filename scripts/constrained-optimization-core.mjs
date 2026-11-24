@@ -15,17 +15,24 @@ const signature = value => JSON.stringify(value)
 const round = (value, digits = 2) => Number(value.toFixed(digits))
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value))
 
-export function validationPlan(matches) {
+export function validationPlan(matches, validationFrom = null) {
   const sorted = [...matches].sort((a, b) => a.matchDate.localeCompare(b.matchDate) || String(a.matchId).localeCompare(String(b.matchId)))
   if (sorted.some(match => !/^\d{4}-\d{2}-\d{2}$/.test(match.matchDate))) throw new Error('回测比赛缺少有效日期')
-  const index = chronologicalSplitIndex(sorted, POLICY.validationFraction, POLICY.minimumTrainingMatches, POLICY.minimumValidationMatches)
+  const boundary = validationFrom ? sorted.findIndex(match => match.matchDate >= validationFrom)
+    : chronologicalSplitIndex(sorted, POLICY.validationFraction, POLICY.minimumTrainingMatches, POLICY.minimumValidationMatches)
+  const index = boundary >= POLICY.minimumTrainingMatches && sorted.length - boundary >= POLICY.minimumValidationMatches ? boundary : -1
   const training = index < 0 ? [] : sorted.slice(0, index)
   const dates = [...new Set(training.map(match => match.matchDate))]
   const blockCount = Math.min(POLICY.trainingBlocks, dates.length, Math.floor(training.length / 3))
   const dateToBlock = Object.fromEntries(dates.map((date, i) => [date, Math.min(blockCount - 1, Math.floor(i * blockCount / dates.length))]))
-  return { available: index >= 0, validationFrom: index < 0 ? null : sorted[index].matchDate,
+  return { available: index >= 0, validationFrom: index < 0 ? null : validationFrom || sorted[index].matchDate,
     trainingMatchCount: training.length, validationMatchCount: index < 0 ? 0 : sorted.length - index,
     blockCount, dateToBlock }
+}
+
+export function marketValidationPlan(matches, scorePlan, modelChanged) {
+  const plan = validationPlan(matches, scorePlan?.validationFrom)
+  return !plan.available && scorePlan?.validationFrom && !modelChanged ? validationPlan(matches) : plan
 }
 
 export function minimumWdlSampling(competition, range, preset) {

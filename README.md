@@ -104,6 +104,7 @@ lottery-football
 | GET | `/recommendation-backtest` | 同步推荐回测 |
 | POST | `/recommendation-backtest/jobs` | 创建异步回测任务 |
 | GET | `/recommendation-backtest/jobs/{jobId}` | 查询回测进度 |
+| GET | `/score-backtest` | 按赛事和日期回测修正后前 3 比分，覆盖无赔率的完赛场次 |
 | GET、PUT | `/user-config` | 读取或保存用户配置 |
 
 查询示例：
@@ -120,6 +121,15 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 | `includePreviousEdition` | 是否把上届赛事纳入回测范围 |
 
 只有球队、日期和主客方向可靠匹配时，系统才会关联体彩比赛 ID 和赔率。
+
+`/score-backtest` 接受单个 `competition`，可传 `includePreviousEdition` 与闭区间边界 `from`、`through`，日期按北京时间。支持 `hostTeamGoalFactor`、`homeTeamGoalFactor`、`seedTeamGoalFactor`、`officialMatchWeight`、`internationalFriendlyWeight`、`clubFriendlyWeight`。
+
+| 响应字段 | 说明 |
+|---|---|
+| `matchId`、`matchDate` | 比赛 ID 和北京时间比赛日，按比赛日、ID 排序 |
+| `homeScore`、`awayScore` | 常规时间主客队实际比分 |
+| `expectedHomeGoals`、`expectedAwayGoals` | 只基于比赛日前数据计算的主客队期望进球 |
+| `topScores` | 传入 `simulations` 时返回与预测接口排序相同的前 3 项，字段为 `homeScore`、`awayScore` 和百分比 `probability`。省略 `simulations` 时返回空数组 |
 
 ## 参数与回测
 
@@ -157,6 +167,14 @@ GET /api/football/predictions?competition=CHAMPIONS_LEAGUE&date=2026-07-14&simul
 没有推荐项时 ROI 为空，全部未命中时为 `-100%`；少于 2 场推荐比赛时波动率为空。已完赛比赛总数仅用于展示数据覆盖情况，不作为采样率分母。
 
 ### 参数优化
+
+比分优先模式使用 `/api/football/score-backtest` 的常规时间比分和精确期望进球，覆盖无体彩赔率的完赛场次。候选按较早场次的前 3 比分命中率、跨时段波动和对数损失排序，每个赛事范围只留一个候选，按固定种子模拟验证后分别决定稳健和激进是否采用。投注规则沿用原采样率、命中率和 ROI 门槛。
+
+```powershell
+.\scripts\run-constrained-optimization.ps1 -Objective score-top3 -RecentFrom 2026-10-26 -Workers 17 -BackendParallelism 24
+```
+
+`-RecentFrom` 指定上轮结束后的留出起始日。新增样本不足时按完整比赛日留出历史尾段。更新比分模型的方案沿用比分验证分界，沿用原模型且该分界缺少赔率样本时使用对应玩法的历史尾段。报告输出为 `reports/score-top3-optimization-YYYY-MM-DD.md` 及同名 JSON，核对后可使用同一快照目录加 `-Resume -Apply` 应用。
 
 统一优化入口为 `scripts/optimize-constrained-strategies.mjs`，覆盖17类赛事的68套胜平负和34套共用进球数策略。苏足总杯不属于投注回测范围，页面、优化器和结果汇总共用 `frontend/src/backtest-competitions.mjs` 中的赛事名单：
 

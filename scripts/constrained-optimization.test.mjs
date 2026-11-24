@@ -2,11 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { Worker } from 'node:worker_threads'
 import {
-  POLICY, validationPlan, minimumWdlSampling, wdlPairPass, goalsCandidatePass,
+  POLICY, validationPlan, marketValidationPlan, minimumWdlSampling, wdlPairPass, goalsCandidatePass,
   modelCandidates, wdlRules, goalsRules, parameterNeighbors, selectWdlPair, selectGoals,
   samplingWindow, freezeShortlist
 } from './constrained-optimization-core.mjs'
 import { searchWdl, searchGoals, verifyMetrics } from './constrained-optimization-worker.mjs'
+import { scorePass, scorePlan } from './score-top3-optimization.mjs'
 import { DEFAULT_RULE, DEFAULT_GOALS } from './strategy-optimization-core.mjs'
 
 function matches() {
@@ -22,6 +23,38 @@ function matches() {
     scoreText: `${index % 3}-${index % 2}`
   }))
 }
+
+test('比分与投注共用完整比赛日分界，新增样本不足时留出历史尾段', () => {
+  const rows = matches()
+  const fresh = scorePlan(rows, '2026-09-17')
+  assert.equal(fresh.validationKind, 'NEW_MATCHES')
+  assert.equal(fresh.validationFrom, '2026-09-17')
+  assert.equal(fresh.trainingMatches, 64)
+  assert.equal(fresh.validationMatches, 16)
+  const oddsRows = rows.filter(match => match.matchDate !== fresh.validationFrom)
+  const betting = validationPlan(oddsRows, fresh.validationFrom)
+  assert.equal(betting.validationFrom, fresh.validationFrom)
+  assert.equal(betting.trainingMatchCount, 64)
+  assert.equal(betting.validationMatchCount, 12)
+  const scarceOdds = rows.filter(match => match.matchDate < '2026-09-18')
+  assert.equal(marketValidationPlan(scarceOdds, fresh, true).available, false)
+  assert.equal(marketValidationPlan(scarceOdds, fresh, false).validationFrom, '2026-09-12')
+  const historical = scorePlan(rows, '2026-09-19')
+  assert.equal(historical.validationKind, 'HISTORICAL_TAIL')
+  assert.equal(historical.validationFrom, '2026-09-15')
+  assert.equal(scorePlan(rows.slice(0, 24), '2026-09-19').validationFrom, null)
+})
+
+test('比分候选需提高训练与验证命中率，拒绝单日改善和明显失准', () => {
+  const training = { netHits: 3 }
+  const validation = { netHits: 3, favorableDates: 2, lowerBound: 0,
+    before: { matches: 80, logLoss: 2.85 }, after: { logLoss: 2.87 } }
+  assert.ok(scorePass(training, validation))
+  assert.equal(scorePass({ netHits: 0 }, validation), false)
+  assert.equal(scorePass(training, { ...validation, favorableDates: 1 }), false)
+  assert.equal(scorePass(training, { ...validation, lowerBound: -0.01 }), false)
+  assert.equal(scorePass(training, { ...validation, after: { logLoss: 2.91 } }), false)
+})
 
 const metrics = (roi, samplingRate = 0.8, selectionHitRate = 0.5) => ({
   roi, samplingRate, selectionHitRate, totalStake: 100, recommendedMatchCount: 80

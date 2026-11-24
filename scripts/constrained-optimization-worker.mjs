@@ -5,10 +5,11 @@ import { isMainThread, parentPort, workerData } from 'node:worker_threads'
 import { evaluateRecommendationBacktest, evaluateTotalGoalsBacktest } from '../frontend/src/recommendation-backtest.mjs'
 import { prepareMatches, evaluateBlocks, combineMetrics, DEFAULT_GOALS, DEFAULT_MODEL } from './strategy-optimization-core.mjs'
 import {
-  POLICY, validationPlan, modelCandidates, wdlRules, goalsRules, samplingWindow,
+  POLICY, marketValidationPlan, modelCandidates, wdlRules, goalsRules, samplingWindow,
   wdlTrainingPass, goalsTrainingPass, trainingScore, offerCandidate, checkNeighborhood,
   freezeShortlist, selectWdlPair, selectGoals, goalsCandidatePass, wdlPairPass
 } from './constrained-optimization-core.mjs'
+import { optimizeScoreModels } from './score-top3-optimization.mjs'
 
 const digest = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex')
 const modelKey = model => JSON.stringify(Object.keys(DEFAULT_MODEL).map(key => model[key]))
@@ -106,7 +107,7 @@ export function searchWdl(matches, rules, plan, modelIndex, context, pools, roll
   for (const parameters of rules) {
     const blocks = evaluateBlocks(prepared, parameters, 'WDL', plan.blockCount)
     const training = combineMetrics(blocks)
-    for (const preset of ['STABLE', 'AGGRESSIVE']) {
+    for (const preset of context.presets ?? ['STABLE', 'AGGRESSIVE']) {
       if (wdlTrainingPass(training, context.competition, context.range, preset)) offerCandidate(pools[preset], {
         parameters, modelIndex, blocks, training, score: trainingScore(blocks, preset)
       })
@@ -174,30 +175,43 @@ function uncertainty(matches, parameters, market, seed) {
 async function optimizeRange(options) {
   const { competition, range, config, modelCount, ruleCount, goalCount, directory } = options
   const key = `${competition}:${range}`
-  const originals = ['STABLE', 'AGGRESSIVE'].map(preset => config.parameterProfiles[`${key}:${preset}`])
-  const models = modelCandidates(originals, modelCount, `${key}:models:v2`)
+  const presets = ['STABLE', 'AGGRESSIVE']
+  const originals = presets.map(preset => config.parameterProfiles[`${key}:${preset}`])
+  const scoreOptimization = options.objective === 'score-top3'
+  if (scoreOptimization) progress(key, '筛选比分模型', 0, 1)
+  const scores = scoreOptimization ? await optimizeScoreModels(options, originals) : null
+  const marketModels = scores?.profiles.map(({ model }) => [model,
+    { ...model, handicapSmoothingFactor: 0.274 }, { ...model, handicapSmoothingFactor: 0.65 }])
+  const models = marketModels
+    ? [...new Map([...originals.map(profile => profile.modelFactors), ...marketModels.flat()].map(model => [modelKey(model), model])).values()]
+    : modelCandidates(originals, modelCount, `${key}:models:v2`)
+  const findModel = model => models.findIndex(candidate => modelKey(candidate) === modelKey(model))
+  const originalIndices = originals.map(profile => findModel(profile.modelFactors))
+  if (originalIndices.some(index => index < 0)) throw new Error(`${key} 原模型未纳入候选`)
+  const scoreIndices = marketModels?.map(candidates => candidates.map(findModel))
   const rules = wdlRules(ruleCount, `${key}:rules:v2`, originals.map(profile => profile.globalParameters))
   const coarse = []
   const coarsePools = newPools()
   let plan
   let dataHash
   let rolling
-  for (const [index, model] of models.entries()) {
-    const result = await fetchBacktest(options, model, options.coarseSimulations)
-    coarse[index] = result
+  function checkData(result) {
     if (!plan) {
-      plan = validationPlan(result.matches)
+      plan = marketValidationPlan(result.matches, scores?.plan, scores?.profiles.some(profile => profile.accepted))
       dataHash = settlementDataHash(result.matches)
-      rolling = Object.fromEntries(['STABLE', 'AGGRESSIVE'].map(preset => [preset, Array(Math.max(0, plan.blockCount - 1)).fill(null)]))
+      rolling = Object.fromEntries(presets.map(preset => [preset, Array(scoreOptimization ? 0 : Math.max(0, plan.blockCount - 1)).fill(null)]))
     }
     if (settlementDataHash(result.matches) !== dataHash) throw new Error(`${key} 模型间数据快照发生变化`)
+  }
+  for (const [index, model] of (scoreOptimization ? [] : models).entries()) {
+    const result = await fetchBacktest(options, model, options.coarseSimulations)
+    coarse[index] = result
+    checkData(result)
     searchWdl(result.matches, rules, plan, index, options, coarsePools, rolling)
     progress(key, '粗搜', index + 1, models.length)
     if (!plan.available) break
   }
-  const originalIndices = originals.map(profile => models.findIndex(model => modelKey(model) === modelKey(profile.modelFactors)))
-  if (originalIndices.some(index => index < 0)) throw new Error(`${key} 原模型未纳入候选`)
-  const finalists = new Set(originalIndices)
+  const finalists = new Set([...originalIndices, ...(scoreIndices?.flat() ?? [])])
   const orderedModels = []
   for (let rank = 0; rank < 96; rank++) for (const preset of ['STABLE', 'AGGRESSIVE']) {
     const candidate = coarsePools[preset][rank]
@@ -208,19 +222,24 @@ async function optimizeRange(options) {
   const pools = newPools()
   for (const index of finalists) {
     data[index] = await fetchBacktest(options, models[index])
-    if (settlementDataHash(data[index].matches) !== dataHash) throw new Error(`${key} 精搜数据与粗搜不一致`)
-    searchWdl(data[index].matches, rules, plan, index, options, pools)
+    checkData(data[index])
+    const eligible = scoreIndices ? presets.filter((_, i) => scoreIndices[i].includes(index)) : presets
+    if (eligible.length) searchWdl(data[index].matches, rules, plan, index, { ...options, presets: eligible }, pools)
+    if (scoreOptimization && !data[index].matches.length) break
     progress(key, '精搜', data.filter(Boolean).length, finalists.size)
   }
   const windows = {}
   const shortlists = {}
-  for (const [presetIndex, preset] of ['STABLE', 'AGGRESSIVE'].entries()) {
-    const baselineMetrics = verifyMetrics(data[originalIndices[presetIndex]].matches, originals[presetIndex].globalParameters, 'WDL')
+  const matchesAt = index => (data[index] ?? data[originalIndices[0]]).matches
+  for (const [presetIndex, preset] of presets.entries()) {
+    const oldMatches = matchesAt(originalIndices[presetIndex])
+    const windowMatches = scoreOptimization ? oldMatches.filter(match => match.matchDate in plan.dateToBlock) : oldMatches
+    const baselineMetrics = verifyMetrics(windowMatches, originals[presetIndex].globalParameters, 'WDL')
     windows[preset] = samplingWindow(competition, range, preset, baselineMetrics.samplingRate)
     const perturbed = perturbedPool(pools[preset], data, 'WDL', plan, preset)
     let baseline = null
-    if (plan.available) {
-      const blocks = evaluateBlocks(prepareMatches(data[originalIndices[presetIndex]].matches, 'WDL', plan), originals[presetIndex].globalParameters, 'WDL', plan.blockCount)
+    if (plan.available && (!scoreIndices || scoreIndices[presetIndex].includes(originalIndices[presetIndex]))) {
+      const blocks = evaluateBlocks(prepareMatches(oldMatches, 'WDL', plan), originals[presetIndex].globalParameters, 'WDL', plan.blockCount)
       const training = combineMetrics(blocks)
       if (wdlTrainingPass(training, competition, range, preset)) baseline = perturbedPool([{
         parameters: originals[presetIndex].globalParameters, modelIndex: originalIndices[presetIndex], blocks, training, score: trainingScore(blocks, preset), original: true
@@ -231,9 +250,9 @@ async function optimizeRange(options) {
   await save(path.join(directory, `${competition}-${range}-wdl-frozen.json`), { dataHash, plan, models, windows, shortlists,
     note: '训练段冻结候选，验证段只执行门槛检查，禁止根据验证ROI重排或追加候选' })
   const pair = selectWdlPair(shortlists, { competition, range, windows }, candidate => checkedCandidate(candidate, data, 'WDL', plan))
-  const stableIndex = pair.stable?.modelIndex ?? originalIndices[0]
-  const stableMatches = goalMatches(data[stableIndex].matches)
-  const goalsPlan = validationPlan(stableMatches)
+  const stableIndex = pair.stable?.modelIndex ?? scoreIndices?.[0][0] ?? originalIndices[0]
+  const stableMatches = goalMatches(matchesAt(stableIndex))
+  const goalsPlan = marketValidationPlan(stableMatches, scores?.plan, scores?.profiles[0].accepted)
   const originalStrategy = config.totalGoalsStrategies[key] || { ...DEFAULT_GOALS, maximumSelections: 0 }
   const goalRules = goalsRules(goalCount, `${key}:goals:v2`, originalStrategy)
   const goalsPools = searchGoals(stableMatches, goalRules, goalsPlan, stableIndex)
@@ -257,11 +276,11 @@ async function optimizeRange(options) {
   await save(path.join(directory, `${competition}-${range}-goals-frozen.json`), { dataHash, plan: goalsPlan, model: models[stableIndex], shortlists: goalShortlists })
   const selectedGoals = selectGoals(goalShortlists, candidate => checkedCandidate(candidate, data, 'GOALS', goalsPlan))
   const rows = []
-  for (const [presetIndex, preset] of ['STABLE', 'AGGRESSIVE'].entries()) {
+  for (const [presetIndex, preset] of presets.entries()) {
     const selected = preset === 'STABLE' ? pair.stable : pair.aggressive
-    const index = selected?.modelIndex ?? originalIndices[presetIndex]
+    const index = selected?.modelIndex ?? scoreIndices?.[presetIndex][0] ?? originalIndices[presetIndex]
     const parameters = selected?.parameters ?? { ...originals[presetIndex].globalParameters, recommendationOdds: 100 }
-    const chosen = data[index].matches
+    const chosen = matchesAt(index)
     const after = byPeriod(chosen, parameters, 'WDL', plan, options.recentFrom)
     if (!selected && after.full.totalStake) throw new Error(`${key}:${preset} 关闭后仍产生投注`)
     const folds = []
@@ -273,14 +292,14 @@ async function optimizeRange(options) {
     rows.push({ competition, range, market: 'WDL', preset,
       status: selected ? (selected.original ? 'RETAINED' : 'OPTIMIZED') : !chosen.length ? 'NO_DATA' : !plan.available ? 'INSUFFICIENT_DATA' : 'CLOSED',
       profile: { modelFactors: models[index], globalParameters: parameters }, originalProfile: originals[presetIndex],
-      before: byPeriod(data[originalIndices[presetIndex]].matches, originals[presetIndex].globalParameters, 'WDL', plan, options.recentFrom), after,
+      before: byPeriod(matchesAt(originalIndices[presetIndex]), originals[presetIndex].globalParameters, 'WDL', plan, options.recentFrom), after,
       trainingScore: selected?.score ?? null, neighborhood: selected?.neighborhood ?? null,
       walkForward: combineMetrics(folds.map(fold => fold.validation)), folds,
       validationUncertainty: uncertainty(chosen.filter(match => plan.validationFrom && match.matchDate >= plan.validationFrom), parameters, 'WDL', `${key}:${preset}`) })
   }
   const strategy = selectedGoals.candidate?.parameters ?? { ...originalStrategy, maximumSelections: 0 }
   const goalFolds = []
-  if (goalsPlan.available) for (let prefix = 1; prefix < goalsPlan.blockCount; prefix++) {
+  if (!scoreOptimization && goalsPlan.available) for (let prefix = 1; prefix < goalsPlan.blockCount; prefix++) {
     const targetDate = Object.keys(goalsPlan.dateToBlock).find(date => goalsPlan.dateToBlock[date] === prefix)
     const safeFold = rolling.STABLE.filter(Boolean).filter(fold => {
       const dates = Object.keys(plan.dateToBlock).filter(date => plan.dateToBlock[date] < fold.prefix)
@@ -300,19 +319,19 @@ async function optimizeRange(options) {
   rows.push({ competition, range, market: 'GOALS', preset: 'SHARED',
     status: selectedGoals.candidate ? (selectedGoals.candidate.original ? 'RETAINED' : 'OPTIMIZED') : !stableMatches.length ? 'NO_DATA' : !goalsPlan.available ? 'INSUFFICIENT_DATA' : 'CLOSED',
     strategy, originalStrategy, modelFactors: models[stableIndex], tier: selectedGoals.tier,
-    before: byPeriod(goalMatches(data[originalIndices[0]].matches), originalStrategy, 'GOALS', goalsPlan, options.recentFrom),
+    before: byPeriod(goalMatches(matchesAt(originalIndices[0])), originalStrategy, 'GOALS', goalsPlan, options.recentFrom),
     after: byPeriod(stableMatches, strategy, 'GOALS', goalsPlan, options.recentFrom),
     trainingScore: selectedGoals.candidate?.score ?? null, neighborhood: selectedGoals.candidate?.neighborhood ?? null,
     walkForward: combineMetrics(goalFolds.map(fold => fold.validation)), folds: goalFolds,
     validationUncertainty: uncertainty(stableMatches.filter(match => goalsPlan.validationFrom && match.matchDate >= goalsPlan.validationFrom), strategy, 'GOALS', `${key}:goals`) })
   if (pair.stable && !wdlPairPass(pair.stable, pair.aggressive, competition, range)) throw new Error(`${key} 胜平负最终门槛未通过`)
   if (selectedGoals.candidate && !goalsCandidatePass(selectedGoals.candidate, selectedGoals.tier)) throw new Error(`${key} 进球数最终门槛未通过`)
-  return { competition, range, plan, goalsPlan, rows, dataHash, windows, samplingWindowRelaxed: pair.relaxed,
+  return { competition, range, plan, goalsPlan, rows, dataHash, windows, scores, samplingWindowRelaxed: pair.relaxed,
     coarseModels: coarse.filter(Boolean).length, finalModels: data.filter(Boolean).length,
     searchedRules: rules.length, searchedGoalRules: goalRules.length,
     holdoutCandidates: { stable: shortlists.STABLE.length, aggressive: shortlists.AGGRESSIVE.length, goals: goalFrozen.length },
     holdoutEvaluated: { wdl: pair.evaluatedCandidates, goals: selectedGoals.evaluatedCandidates },
-    independentVerification: 'PASSED', stableData: data[stableIndex] }
+    independentVerification: 'PASSED', stableMatches: matchesAt(stableIndex) }
 }
 
 export async function optimizeCompetition(options) {
@@ -321,8 +340,8 @@ export async function optimizeCompetition(options) {
   const current = await optimizeRange({ ...options, range: 'CURRENT' })
   const currentGoals = current.rows.find(row => row.market === 'GOALS')
   const previousGoals = previous.rows.find(row => row.market === 'GOALS')
-  const matches = goalMatches(current.stableData.matches)
-  if (matches.length <= 10 && previousGoals.strategy.maximumSelections > 0) {
+  const matches = goalMatches(current.stableMatches)
+  if (matches.length <= (options.objective === 'score-top3' ? 0 : 10) && previousGoals.strategy.maximumSelections > 0) {
     const after = byPeriod(matches, previousGoals.strategy, 'GOALS', current.goalsPlan, options.recentFrom)
     if (!matches.length || goalsTrainingPass(after.full, previousGoals.tier)) {
       currentGoals.strategy = previousGoals.strategy
@@ -335,8 +354,8 @@ export async function optimizeCompetition(options) {
       currentGoals.validationUncertainty = { dateCount: 0, roi95Interval: null }
     }
   }
-  delete previous.stableData
-  delete current.stableData
+  delete previous.stableMatches
+  delete current.stableMatches
   return { competition: options.competition, ranges: [previous, current], independentVerification: 'PASSED' }
 }
 

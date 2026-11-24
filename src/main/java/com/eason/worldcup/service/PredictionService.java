@@ -11,6 +11,7 @@ import com.eason.worldcup.model.MatchSchedule;
 import com.eason.worldcup.model.ModelOverviewResponse;
 import com.eason.worldcup.model.PredictionQueryResponse;
 import com.eason.worldcup.model.RecommendationBacktestResponse;
+import com.eason.worldcup.model.ScoreBacktestMatch;
 import com.eason.worldcup.model.ScoreProbability;
 import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
 import com.eason.worldcup.model.ThreeWayProbability;
@@ -28,6 +29,7 @@ import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -312,20 +314,8 @@ public class PredictionService {
             Map<Competition, UserConfig.ModelFactors> modelFactorsByCompetition,
             BiConsumer<Integer, Integer> progressConsumer) {
         int simulationCount = normalizeSimulationCount(simulations);
-        LocalDate backtestEndDate = ApplicationTime.today();
-        List<MatchSchedule> completedScheduleCandidates = dataRepository.getSchedules().stream()
-                .filter(schedule -> competitions == null
-                        || competitions.isEmpty()
-                        || competitions.stream().anyMatch(competition -> competition.includes(schedule.getCompetition())))
-                .filter(schedule -> isWithinRecommendationBacktestRange(
-                        schedule,
-                        backtestEndDate,
-                        includePreviousEdition))
-                .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
-                .filter(schedule -> schedule.getHomeScore() != null && schedule.getAwayScore() != null)
-                .toList();
-        sportteryMarketSelectionService.applyCachedSelections(completedScheduleCandidates);
-        List<MatchSchedule> completedSchedules = deduplicateSchedules(completedScheduleCandidates);
+        List<MatchSchedule> completedSchedules = findCompletedBacktestSchedules(
+                competitions, includePreviousEdition, null, ApplicationTime.today());
         List<MatchSchedule> sportterySchedules = completedSchedules.stream()
                 .filter(schedule -> schedule.getSportteryMatchId() != null && !schedule.getSportteryMatchId().isBlank())
                 .toList();
@@ -383,6 +373,51 @@ public class PredictionService {
         response.setOddsMatchCount(oddsSchedules.size());
         response.setMatches(matches);
         return response;
+    }
+
+    public List<ScoreBacktestMatch> queryScoreBacktest(
+            Competition competition,
+            boolean includePreviousEdition,
+            LocalDate from,
+            LocalDate through,
+            Integer simulations,
+            UserConfig.ModelFactors modelFactors) {
+        LocalDate today = ApplicationTime.today();
+        LocalDate endDate = through != null && through.isBefore(today) ? through : today;
+        List<MatchSchedule> schedules = findCompletedBacktestSchedules(
+                Set.of(competition), includePreviousEdition, from, endDate);
+        return schedules.stream()
+                .sorted(Comparator.comparing(MatchSchedule::getMatchDate).thenComparing(MatchSchedule::getMatchId))
+                .map(schedule -> {
+                    var expectedGoals = teamStrengthService.calculateCurrentExpectedGoals(
+                            schedule, schedule.getMatchDate(), modelFactors.getHostTeamGoalFactor(),
+                            modelFactors.getSeedTeamGoalFactor(), modelFactors.getHomeTeamGoalFactor(),
+                            modelFactors.getOfficialMatchWeight(), modelFactors.getInternationalFriendlyWeight(),
+                            modelFactors.getClubFriendlyWeight());
+                    List<ScoreProbability> topScores = List.of();
+                    if (simulations != null) {
+                        int count = normalizeSimulationCount(simulations);
+                        topScores = toTopScoreProbabilities(simulateScores(schedule, expectedGoals, count), count, 3);
+                    }
+                    return new ScoreBacktestMatch(schedule.getMatchId(), schedule.getMatchDate(),
+                            schedule.getHomeScore(), schedule.getAwayScore(), expectedGoals.getHomeGoals(),
+                            expectedGoals.getAwayGoals(), topScores);
+                })
+                .toList();
+    }
+
+    private List<MatchSchedule> findCompletedBacktestSchedules(
+            Set<Competition> competitions, boolean includePreviousEdition, LocalDate from, LocalDate through) {
+        List<MatchSchedule> candidates = dataRepository.getSchedules().stream()
+                .filter(schedule -> competitions == null || competitions.isEmpty()
+                        || competitions.stream().anyMatch(competition -> competition.includes(schedule.getCompetition())))
+                .filter(schedule -> isWithinRecommendationBacktestRange(schedule, through, includePreviousEdition))
+                .filter(schedule -> from == null || !schedule.getMatchDate().isBefore(from))
+                .filter(schedule -> "COMPLETED".equalsIgnoreCase(schedule.getStatus()))
+                .filter(schedule -> schedule.getHomeScore() != null && schedule.getAwayScore() != null)
+                .toList();
+        sportteryMarketSelectionService.applyCachedSelections(candidates);
+        return deduplicateSchedules(candidates);
     }
 
     UserConfig.ModelFactors resolveBacktestModelFactors(
@@ -1051,18 +1086,56 @@ public class PredictionService {
     }
 
     private SimulationCounter runMonteCarlo(MatchSchedule schedule, TeamStrengthService.ExpectedGoals expectedGoals, int simulationCount, double effectiveHandicapSmoothingFactor) {
-        long seed = buildSeed(schedule, expectedGoals, simulationCount);
-        SplittableRandom random = new SplittableRandom(seed);
-        SimulationCounter counter = new SimulationCounter(effectiveHandicapSmoothingFactor);
+        int[][] scores = simulateScores(schedule, expectedGoals, simulationCount);
+        return new SimulationCounter(scores, effectiveHandicapSmoothingFactor);
+    }
+
+    private int[][] simulateScores(MatchSchedule schedule, TeamStrengthService.ExpectedGoals expectedGoals, int simulationCount) {
+        SplittableRandom random = new SplittableRandom(buildSeed(schedule, expectedGoals, simulationCount));
+        var homeSampler = new PoissonRandom.Sampler(expectedGoals.getHomeGoals());
+        var awaySampler = new PoissonRandom.Sampler(expectedGoals.getAwayGoals());
+        int[][] scores = new int[16][16];
         for (int i = 0; i < simulationCount; i++) {
-            int homeGoals = PoissonRandom.next(expectedGoals.getHomeGoals(), random);
-            int awayGoals = PoissonRandom.next(expectedGoals.getAwayGoals(), random);
-            counter.addNormal(homeGoals, awayGoals);
-            for (int handicap : HANDICAPS) {
-                counter.addHandicap(handicap, homeGoals, awayGoals);
+            int homeGoals = homeSampler.next(random);
+            int awayGoals = awaySampler.next(random);
+            if (homeGoals >= scores.length) {
+                scores = Arrays.copyOf(scores, homeGoals + 1);
+            }
+            int[] row = scores[homeGoals];
+            if (row == null || awayGoals >= row.length) {
+                row = row == null ? new int[awayGoals + 1] : Arrays.copyOf(row, awayGoals + 1);
+                scores[homeGoals] = row;
+            }
+            row[awayGoals]++;
+        }
+        return scores;
+    }
+
+    private List<ScoreProbability> toTopScoreProbabilities(int[][] scores, int simulationCount, int limit) {
+        List<ScoreCount> frequencies = new ArrayList<>();
+        forEachScore(scores, (home, away, count) -> frequencies.add(new ScoreCount(home, away, count)));
+        return frequencies.stream()
+                .sorted(Comparator.comparingInt(ScoreCount::count).reversed()
+                        .thenComparingInt(score -> score.homeScore() + score.awayScore())
+                        .thenComparingInt(ScoreCount::homeScore))
+                .limit(limit)
+                .map(score -> new ScoreProbability(score.homeScore(), score.awayScore(),
+                        round(score.count() * 100.0D / simulationCount, 2)))
+                .toList();
+    }
+
+    private void forEachScore(int[][] scores, ScoreCountConsumer consumer) {
+        for (int home = 0; home < scores.length; home++) {
+            int[] row = scores[home];
+            if (row == null) {
+                continue;
+            }
+            for (int away = 0; away < row.length; away++) {
+                if (row[away] > 0) {
+                    consumer.accept(home, away, row[away]);
+                }
             }
         }
-        return counter;
     }
 
     private int normalizeSimulationCount(Integer simulations) {
@@ -1125,88 +1198,50 @@ public class PredictionService {
 
         private final double effectiveHandicapSmoothingFactor;
 
+        private final int[][] scores;
+
         private int win;
 
         private int draw;
 
         private int lose;
 
-        private final Map<String, ScoreCounter> scoreCounters = new HashMap<>();
-
         private final Map<Integer, Integer> totalGoalsCounters = new HashMap<>();
 
         private final List<HandicapCounter> handicapCounters = new ArrayList<>();
 
-        private SimulationCounter(double effectiveHandicapSmoothingFactor) {
+        private SimulationCounter(int[][] scores, double effectiveHandicapSmoothingFactor) {
+            this.scores = scores;
             this.effectiveHandicapSmoothingFactor = effectiveHandicapSmoothingFactor;
             for (int handicap : HANDICAPS) {
                 handicapCounters.add(new HandicapCounter(handicap));
             }
+            forEachScore(scores, this::addScore);
         }
 
-        private void addNormal(int homeGoals, int awayGoals) {
-            addScore(homeGoals, awayGoals);
-            addTotalGoals(homeGoals, awayGoals);
+        private void addScore(int homeGoals, int awayGoals, int count) {
+            totalGoalsCounters.merge(homeGoals + awayGoals, count, Integer::sum);
             if (homeGoals > awayGoals) {
-                win++;
+                win += count;
             } else if (homeGoals == awayGoals) {
-                draw++;
+                draw += count;
             } else {
-                lose++;
+                lose += count;
             }
-        }
-
-        private void addScore(int homeGoals, int awayGoals) {
-            String key = homeGoals + "-" + awayGoals;
-            ScoreCounter counter = scoreCounters.computeIfAbsent(key, ignored -> new ScoreCounter(homeGoals, awayGoals));
-            counter.count++;
-        }
-
-        private void addTotalGoals(int homeGoals, int awayGoals) {
-            totalGoalsCounters.merge(homeGoals + awayGoals, 1, Integer::sum);
-        }
-
-        private void addHandicap(int handicap, int homeGoals, int awayGoals) {
-            int adjustedHomeGoals = homeGoals + handicap;
             for (HandicapCounter counter : handicapCounters) {
-                if (counter.handicap != handicap) {
-                    continue;
-                }
+                int adjustedHomeGoals = homeGoals + counter.handicap;
                 if (adjustedHomeGoals > awayGoals) {
-                    counter.win++;
+                    counter.win += count;
                 } else if (adjustedHomeGoals == awayGoals) {
-                    counter.draw++;
+                    counter.draw += count;
                 } else {
-                    counter.lose++;
+                    counter.lose += count;
                 }
-                return;
             }
         }
 
         private List<ScoreProbability> toTopScoreProbabilities(int simulationCount) {
-            return scoreCounters.values()
-                    .stream()
-                    .sorted((left, right) -> {
-                        int countCompare = Integer.compare(right.count, left.count);
-                        if (countCompare != 0) {
-                            return countCompare;
-                        }
-                        int totalCompare = Integer.compare(left.homeScore + left.awayScore, right.homeScore + right.awayScore);
-                        if (totalCompare != 0) {
-                            return totalCompare;
-                        }
-                        int homeCompare = Integer.compare(left.homeScore, right.homeScore);
-                        if (homeCompare != 0) {
-                            return homeCompare;
-                        }
-                        return Integer.compare(left.awayScore, right.awayScore);
-                    })
-                    .limit(4)
-                    .map(counter -> new ScoreProbability(
-                            counter.homeScore,
-                            counter.awayScore,
-                            roundPercent(counter.count * 100.0D / simulationCount)))
-                    .toList();
+            return PredictionService.this.toTopScoreProbabilities(scores, simulationCount, 4);
         }
 
         private List<TotalGoalsProbability> toTopTotalGoalsProbabilities(int simulationCount) {
@@ -1350,18 +1385,14 @@ public class PredictionService {
 
     }
 
-    private static class ScoreCounter {
+    private record ScoreCount(int homeScore, int awayScore, int count) {
 
-        private final int homeScore;
+    }
 
-        private final int awayScore;
+    @FunctionalInterface
+    private interface ScoreCountConsumer {
 
-        private int count;
-
-        private ScoreCounter(int homeScore, int awayScore) {
-            this.homeScore = homeScore;
-            this.awayScore = awayScore;
-        }
+        void accept(int homeGoals, int awayGoals, int count);
 
     }
 

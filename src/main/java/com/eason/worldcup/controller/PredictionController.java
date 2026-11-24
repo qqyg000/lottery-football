@@ -9,6 +9,7 @@ import com.eason.worldcup.model.PredictionQueryResponse;
 import com.eason.worldcup.model.RecommendationBacktestJobResponse;
 import com.eason.worldcup.model.RecommendationBacktestRequest;
 import com.eason.worldcup.model.RecommendationBacktestResponse;
+import com.eason.worldcup.model.ScoreBacktestMatch;
 import com.eason.worldcup.model.SportteryHistoricalOddsRefreshResponse;
 import com.eason.worldcup.model.UserConfig;
 import com.eason.worldcup.service.DataRefreshJobService;
@@ -18,6 +19,7 @@ import com.eason.worldcup.service.UserConfigService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -147,6 +149,21 @@ public class PredictionController {
                 officialMatchWeight,
                 internationalFriendlyWeight,
                 clubFriendlyWeight);
+    }
+
+    @GetMapping("/score-backtest")
+    public List<ScoreBacktestMatch> scoreBacktest(
+            @RequestParam("competition") String competition,
+            @RequestParam(value = "includePreviousEdition", defaultValue = "false") boolean includePreviousEdition,
+            @RequestParam(value = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(value = "through", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate through,
+            @RequestParam(value = "simulations", required = false) Integer simulations,
+            @ModelAttribute UserConfig.ModelFactors modelFactors) {
+        if (from != null && through != null && from.isAfter(through)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "起始日期不得晚于结束日期");
+        }
+        return predictionService.queryScoreBacktest(
+                parseCompetition(competition), includePreviousEdition, from, through, simulations, modelFactors);
     }
 
     @GetMapping("/head-to-head")

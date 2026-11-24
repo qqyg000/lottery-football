@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -107,6 +109,45 @@ class PredictionServiceTest {
         assertNull(predictionService.resolveBacktestModelFactors(
                 Competition.LA_LIGA,
                 factorsByCompetition));
+    }
+
+    @Test
+    void shouldIncludeMatchesWithoutOddsAndUseTheSameScoreOrderAsPredictions() {
+        LocalDate oldDate = LocalDate.of(2021, 6, 11);
+        LocalDate currentDate = LocalDate.of(2024, 6, 17);
+        MatchSchedule previous = completedSchedule("EURO-OLD", oldDate, LocalTime.NOON, "法国", "德国", 1, 0);
+        MatchSchedule current = completedSchedule("EURO-NEW", currentDate, LocalTime.NOON, "奥地利", "法国", 0, 1);
+        previous.setCompetition(Competition.EUROPEAN_CHAMPIONSHIP);
+        current.setCompetition(Competition.EUROPEAN_CHAMPIONSHIP);
+        DataRepository repository = mock(DataRepository.class);
+        when(repository.getSchedules()).thenReturn(List.of(current, previous));
+        when(repository.findSchedulesByDate(currentDate, Competition.EUROPEAN_CHAMPIONSHIP)).thenReturn(List.of(current));
+        TeamStrengthService strength = mock(TeamStrengthService.class);
+        var expected = new TeamStrengthService.AdjustedExpectedGoals(1.36, 1.47, 5);
+        when(strength.calculatePreTournamentExpectedGoals(eq(current), any(), any(), any(), any(), any(), any())).thenReturn(expected);
+        when(strength.calculateCurrentExpectedGoals(any(MatchSchedule.class), any(), any(), any(), any(), any(), any(), any())).thenReturn(expected);
+        PredictionService service = new PredictionService(repository, strength, mock(SportteryMarketSelectionService.class));
+
+        var scoreBacktest = service.queryScoreBacktest(Competition.EUROPEAN_CHAMPIONSHIP, true,
+                currentDate, currentDate, 50000, new UserConfig.ModelFactors());
+        var predictions = service.queryByDate(Competition.EUROPEAN_CHAMPIONSHIP, currentDate, 50000, null, null, null);
+        assertEquals(1, scoreBacktest.size());
+        var score = scoreBacktest.get(0);
+        assertEquals("EURO-NEW", score.matchId());
+        assertEquals(0, score.homeScore());
+        assertEquals(1, score.awayScore());
+        assertEquals(1.36, score.expectedHomeGoals());
+        var predictedScores = predictions.getMatches().get(0).getAdjustedScoreProbabilities();
+        for (int i = 0; i < score.topScores().size(); i++) {
+            assertEquals(predictedScores.get(i).getHomeScore(), score.topScores().get(i).getHomeScore());
+            assertEquals(predictedScores.get(i).getAwayScore(), score.topScores().get(i).getAwayScore());
+            assertEquals(predictedScores.get(i).getProbability(), score.topScores().get(i).getProbability());
+        }
+        assertEquals(3, score.topScores().size());
+        assertEquals(2, service.queryScoreBacktest(Competition.EUROPEAN_CHAMPIONSHIP, true,
+                null, currentDate, null, new UserConfig.ModelFactors()).size());
+        assertEquals(1, service.queryScoreBacktest(Competition.EUROPEAN_CHAMPIONSHIP, false,
+                null, currentDate, null, new UserConfig.ModelFactors()).size());
     }
 
     @Test
